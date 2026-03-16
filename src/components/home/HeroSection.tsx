@@ -129,10 +129,6 @@ const HeroSection = () => {
               <WeatherIcon icon={weather.icon} />
               <span className="text-white font-bold text-lg leading-none">{weather.temp}°</span>
               <span className="text-white/60 text-[10px]">{weather.description}</span>
-              <div className="flex items-center gap-0.5">
-                <MapPin size={10} className="text-white/40" />
-                <span className="text-white/40 text-[9px]">{weather.city}</span>
-              </div>
             </div>
           )}
         </div>
