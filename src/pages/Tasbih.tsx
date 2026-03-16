@@ -90,7 +90,7 @@ const Tasbih = () => {
             navigate("/");
           }}
         >
-          <span className="text-sm font-semibold text-foreground">ذكر</span>
+          <span className="text-sm font-semibold text-foreground">العودة</span>
           <ChevronRight size={18} className="text-foreground" />
         </button>
       </div>
