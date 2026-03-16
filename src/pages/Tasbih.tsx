@@ -62,7 +62,7 @@ const Tasbih = () => {
               <BarChart3 size={18} className="text-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-[calc(100vw-2rem)]" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem className="flex items-center justify-between" onSelect={(e) => e.preventDefault()}>
               <span>صوت النقر</span>
               <Switch
