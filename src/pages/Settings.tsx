@@ -83,10 +83,11 @@ const Settings = () => {
               </div>
               <div
                 className={`relative h-6 w-11 rounded-full transition-colors ${islamicMode ? "bg-primary" : "bg-input"}`}
+                style={{ direction: "ltr" }}
                 aria-hidden="true"
               >
                 <div
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-background shadow-lg transition-transform ${islamicMode ? "translate-x-0.5" : "translate-x-5"}`}
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-background shadow-lg transition-transform ${islamicMode ? "translate-x-5" : "translate-x-0.5"}`}
                 />
               </div>
             </button>
