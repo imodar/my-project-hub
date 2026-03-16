@@ -25,7 +25,7 @@ const QuickActions = () => {
         <button
           key={action.label}
           onClick={() => navigate(action.path)}
-          className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl transition-transform active:scale-95 flex-1"
+          className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl transition-transform active:scale-95 flex-1 sm:max-w-[200px]"
           style={{
             background: "hsla(0,0%,100%,0.95)",
             boxShadow: "0 4px 20px hsla(0,0%,0%,0.08)",
