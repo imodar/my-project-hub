@@ -114,6 +114,12 @@ const HeroSection = () => {
               <p className="text-white/60 text-sm mb-1">{hijriDate} • {gregorianDate}</p>
             )}
             <h2 className="text-2xl font-bold text-white">{greeting}</h2>
+            {weather && (
+              <div className="flex items-center gap-1 mt-1">
+                <MapPin size={12} className="text-white/50" />
+                <span className="text-white/50 text-xs">{weather.city}</span>
+              </div>
+            )}
           </div>
           {weather && (
             <div className="flex flex-col items-center gap-1 rounded-2xl px-3 py-2" style={{
