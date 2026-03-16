@@ -7,7 +7,7 @@ import BottomNav from "@/components/home/BottomNav";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background max-w-md mx-auto relative">
+    <div className="min-h-screen bg-background max-w-2xl mx-auto relative">
       <HeroSection />
       <QuickActions />
       <FeatureGrid />
