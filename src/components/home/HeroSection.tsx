@@ -1,5 +1,6 @@
 import { Compass, Bell, Settings, CloudSun, CloudRain, Sun, Cloud, MapPin } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
+import { useIslamicMode } from "@/contexts/IslamicModeContext";
 
 interface WeatherData {
   temp: number;
@@ -25,6 +26,7 @@ const WeatherIcon = ({ icon }: { icon: string }) => {
 };
 
 const HeroSection = () => {
+  const { islamicMode } = useIslamicMode();
   const hijriDate = "٢١ رمضان ١٤٤٧";
   const gregorianDate = "١٦ مارس ٢٠٢٦";
   const nextPrayer = "المغرب";
@@ -53,11 +55,6 @@ const HeroSection = () => {
             `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code`
           );
           const data = await res.json();
-
-          // Reverse geocode for city name
-          const geoRes = await fetch(
-            `https://geocoding-api.open-meteo.com/v1/search?name=&count=1&latitude=${latitude}&longitude=${longitude}`
-          );
 
           let cityName = "موقعك";
           try {
@@ -111,9 +108,11 @@ const HeroSection = () => {
         </div>
 
         {/* Greeting + Weather */}
-        <div className="mb-6 flex items-start justify-between">
+        <div className={`flex items-start justify-between ${islamicMode ? "mb-6" : "mb-4"}`}>
           <div>
-            <p className="text-white/60 text-sm mb-1">{hijriDate} • {gregorianDate}</p>
+            {islamicMode && (
+              <p className="text-white/60 text-sm mb-1">{hijriDate} • {gregorianDate}</p>
+            )}
             <h2 className="text-2xl font-bold text-white">{greeting}</h2>
           </div>
           {weather && (
@@ -132,38 +131,42 @@ const HeroSection = () => {
           )}
         </div>
 
-        {/* Qibla Compass */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="relative w-28 h-28 rounded-full flex items-center justify-center" style={{
-            background: "hsla(0,0%,100%,0.08)",
-            border: "2px solid hsla(0,0%,100%,0.15)"
-          }}>
-            <div className="absolute inset-2 rounded-full flex items-center justify-center" style={{
-              background: "hsla(0,0%,100%,0.06)",
-              border: "1px solid hsla(0,0%,100%,0.1)"
+        {/* Qibla Compass - Islamic mode only */}
+        {islamicMode && (
+          <div className="flex flex-col items-center mb-6">
+            <div className="relative w-28 h-28 rounded-full flex items-center justify-center" style={{
+              background: "hsla(0,0%,100%,0.08)",
+              border: "2px solid hsla(0,0%,100%,0.15)"
             }}>
-              <Compass size={40} className="animate-pulse-glow" style={{ color: "hsl(var(--gold))" }} />
+              <div className="absolute inset-2 rounded-full flex items-center justify-center" style={{
+                background: "hsla(0,0%,100%,0.06)",
+                border: "1px solid hsla(0,0%,100%,0.1)"
+              }}>
+                <Compass size={40} className="animate-pulse-glow" style={{ color: "hsl(var(--gold))" }} />
+              </div>
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45" style={{
+                background: "hsl(var(--gold))"
+              }} />
             </div>
-            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45" style={{
-              background: "hsl(var(--gold))"
-            }} />
+            <p className="text-white/50 text-xs mt-2">اتجاه القبلة</p>
+            <p className="text-white font-bold text-lg" style={{ color: "hsl(var(--gold))" }}>{qiblaDirection}</p>
           </div>
-          <p className="text-white/50 text-xs mt-2">اتجاه القبلة</p>
-          <p className="text-white font-bold text-lg" style={{ color: "hsl(var(--gold))" }}>{qiblaDirection}</p>
-        </div>
+        )}
 
-        {/* Next Prayer */}
-        <div className="rounded-2xl p-4 text-center" style={{
-          background: "hsla(0,0%,100%,0.1)",
-          backdropFilter: "blur(12px)",
-          border: "1px solid hsla(0,0%,100%,0.15)"
-        }}>
-          <p className="text-white/50 text-xs mb-1">الصلاة القادمة</p>
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-2xl font-bold text-white">{nextPrayer}</span>
-            <span className="text-xl font-semibold" style={{ color: "hsl(var(--gold))" }}>{nextPrayerTime}</span>
+        {/* Next Prayer - Islamic mode only */}
+        {islamicMode && (
+          <div className="rounded-2xl p-4 text-center" style={{
+            background: "hsla(0,0%,100%,0.1)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid hsla(0,0%,100%,0.15)"
+          }}>
+            <p className="text-white/50 text-xs mb-1">الصلاة القادمة</p>
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-2xl font-bold text-white">{nextPrayer}</span>
+              <span className="text-xl font-semibold" style={{ color: "hsl(var(--gold))" }}>{nextPrayerTime}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

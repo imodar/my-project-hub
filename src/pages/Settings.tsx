@@ -1,32 +1,35 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2 } from "lucide-react";
-
-const settingsGroups = [
-  {
-    title: "عام",
-    items: [
-      { icon: Bell, label: "الإشعارات", desc: "إدارة التنبيهات والإشعارات", path: "" },
-      { icon: Moon, label: "المظهر", desc: "الوضع الداكن والمظهر العام", path: "" },
-      { icon: Globe, label: "اللغة", desc: "العربية", path: "" },
-    ],
-  },
-  {
-    title: "حول التطبيق",
-    items: [
-      { icon: Info, label: "عن التطبيق", desc: "الإصدار 1.0.0", path: "" },
-      { icon: Shield, label: "سياسة الخصوصية", desc: "", path: "" },
-    ],
-  },
-  {
-    title: "أخرى",
-    items: [
-      { icon: Trash2, label: "مسح البيانات", desc: "حذف جميع البيانات المحفوظة", path: "", danger: true },
-    ],
-  },
-];
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, Mosque } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useIslamicMode } from "@/contexts/IslamicModeContext";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { islamicMode, setIslamicMode } = useIslamicMode();
+
+  const settingsGroups = [
+    {
+      title: "عام",
+      items: [
+        { icon: Bell, label: "الإشعارات", desc: "إدارة التنبيهات والإشعارات" },
+        { icon: Moon, label: "المظهر", desc: "الوضع الداكن والمظهر العام" },
+        { icon: Globe, label: "اللغة", desc: "العربية" },
+      ],
+    },
+    {
+      title: "حول التطبيق",
+      items: [
+        { icon: Info, label: "عن التطبيق", desc: "الإصدار 1.0.0" },
+        { icon: Shield, label: "سياسة الخصوصية", desc: "" },
+      ],
+    },
+    {
+      title: "أخرى",
+      items: [
+        { icon: Trash2, label: "مسح البيانات", desc: "حذف جميع البيانات المحفوظة", danger: true },
+      ],
+    },
+  ];
 
   return (
     <div
@@ -49,8 +52,40 @@ const Settings = () => {
         </button>
       </div>
 
-      {/* Settings Groups */}
+      {/* Settings */}
       <div className="flex-1 px-4 pb-8 space-y-6">
+        {/* Islamic Mode Toggle */}
+        <div>
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">الوضع</h2>
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: "hsla(0,0%,100%,0.9)",
+              boxShadow: "0 2px 12px hsla(0,0%,0%,0.05)",
+            }}
+          >
+            <div className="w-full flex items-center gap-3 px-4 py-3.5">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "hsl(145, 40%, 42%, 0.1)" }}
+              >
+                <Mosque size={18} style={{ color: "hsl(145, 40%, 42%)" }} />
+              </div>
+              <div className="flex-1 text-right">
+                <p className="text-sm font-semibold text-foreground">الوضع الإسلامي</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {islamicMode ? "يعرض القرآن والأذكار والمسبحة والصلاة والقبلة" : "يعرض السوق والتقويم والديون"}
+                </p>
+              </div>
+              <Switch
+                checked={islamicMode}
+                onCheckedChange={setIslamicMode}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Other Settings Groups */}
         {settingsGroups.map((group) => (
           <div key={group.title}>
             <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">

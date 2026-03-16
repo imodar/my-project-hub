@@ -1,14 +1,23 @@
-import { BookOpen, Heart, Hand } from "lucide-react";
+import { BookOpen, Heart, Hand, ShoppingCart, Calendar, HandCoins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useIslamicMode } from "@/contexts/IslamicModeContext";
 
-const actions = [
+const islamicActions = [
   { icon: BookOpen, label: "القرآن", color: "hsl(145, 40%, 45%)", path: "/" },
   { icon: Heart, label: "الأذكار", color: "hsl(200, 50%, 55%)", path: "/" },
   { icon: Hand, label: "المسبحة", color: "hsl(43, 55%, 54%)", path: "/tasbih" },
 ];
 
+const generalActions = [
+  { icon: ShoppingCart, label: "السوق", color: "hsl(145, 40%, 42%)", path: "/" },
+  { icon: Calendar, label: "التقويم", color: "hsl(220, 60%, 50%)", path: "/" },
+  { icon: HandCoins, label: "الديون", color: "hsl(0, 60%, 55%)", path: "/" },
+];
+
 const QuickActions = () => {
   const navigate = useNavigate();
+  const { islamicMode } = useIslamicMode();
+  const actions = islamicMode ? islamicActions : generalActions;
 
   return (
     <div className="flex items-center justify-center gap-4 px-5 -mt-5 relative z-20">
