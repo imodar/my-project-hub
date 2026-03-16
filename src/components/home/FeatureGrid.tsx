@@ -23,7 +23,7 @@ const FeatureGrid = () => {
   return (
     <div className="px-5 mt-8">
       <h3 className="text-base font-bold text-foreground mb-4">الأدوات</h3>
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
         {features.map((feature) => (
           <button
             key={feature.label}
