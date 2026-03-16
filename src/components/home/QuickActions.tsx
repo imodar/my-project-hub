@@ -1,17 +1,21 @@
 import { BookOpen, Heart, Hand } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const actions = [
-  { icon: BookOpen, label: "القرآن", color: "hsl(145, 40%, 45%)" },
-  { icon: Heart, label: "الأذكار", color: "hsl(200, 50%, 55%)" },
-  { icon: Hand, label: "المسبحة", color: "hsl(43, 55%, 54%)" },
+  { icon: BookOpen, label: "القرآن", color: "hsl(145, 40%, 45%)", path: "/" },
+  { icon: Heart, label: "الأذكار", color: "hsl(200, 50%, 55%)", path: "/" },
+  { icon: Hand, label: "المسبحة", color: "hsl(43, 55%, 54%)", path: "/tasbih" },
 ];
 
 const QuickActions = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex items-center justify-center gap-4 px-5 -mt-5 relative z-20">
       {actions.map((action) => (
         <button
           key={action.label}
+          onClick={() => navigate(action.path)}
           className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl transition-transform active:scale-95 flex-1"
           style={{
             background: "hsla(0,0%,100%,0.95)",
