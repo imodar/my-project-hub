@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, Mosque } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 
