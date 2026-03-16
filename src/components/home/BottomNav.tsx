@@ -1,10 +1,10 @@
 import { Home, Map, MessageCircle, Menu } from "lucide-react";
 
 const navItems = [
-  { icon: Menu, label: "المزيد", active: false },
-  { icon: MessageCircle, label: "المحادثة", active: false },
-  { icon: Map, label: "الخريطة", active: false },
   { icon: Home, label: "الرئيسية", active: true },
+  { icon: Map, label: "الخريطة", active: false },
+  { icon: MessageCircle, label: "المحادثة", active: false },
+  { icon: Menu, label: "المزيد", active: false },
 ];
 
 const BottomNav = () => {
