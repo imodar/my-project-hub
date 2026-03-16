@@ -1,10 +1,11 @@
-import { Home, Map, MessageCircle, Menu } from "lucide-react";
+import { Home, Map, MessageCircle, Settings } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const navItems = [
-  { icon: Home, label: "الرئيسية", active: true },
-  { icon: Map, label: "الخريطة", active: false },
-  { icon: MessageCircle, label: "المحادثة", active: false },
-  { icon: Menu, label: "المزيد", active: false },
+  { icon: Home, label: "الرئيسية", path: "/" },
+  { icon: Map, label: "الخريطة", path: "/map" },
+  { icon: MessageCircle, label: "المحادثة", path: "/chat" },
+  { icon: Settings, label: "الإعدادات", path: "/settings" },
 ];
 
 const BottomNav = () => {
