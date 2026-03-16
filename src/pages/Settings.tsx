@@ -86,7 +86,7 @@ const Settings = () => {
                 aria-hidden="true"
               >
                 <div
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-background shadow-lg transition-transform ${islamicMode ? "translate-x-5" : "translate-x-0.5"}`}
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-background shadow-lg transition-transform ${islamicMode ? "translate-x-0.5" : "translate-x-5"}`}
                 />
               </div>
             </button>
