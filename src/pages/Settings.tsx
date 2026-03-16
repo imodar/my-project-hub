@@ -69,7 +69,7 @@ const Settings = () => {
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{ background: "hsl(145, 40%, 42%, 0.1)" }}
               >
-                <Mosque size={18} style={{ color: "hsl(145, 40%, 42%)" }} />
+                <BookOpen size={18} style={{ color: "hsl(145, 40%, 42%)" }} />
               </div>
               <div className="flex-1 text-right">
                 <p className="text-sm font-semibold text-foreground">الوضع الإسلامي</p>
