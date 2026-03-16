@@ -64,9 +64,10 @@ const Settings = () => {
               boxShadow: "0 2px 12px hsla(0,0%,0%,0.05)",
             }}
           >
-            <div className="w-full flex items-center gap-3 px-4 py-3.5"
+            <button
+              type="button"
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-right cursor-pointer"
               onClick={() => setIslamicMode(!islamicMode)}
-              role="button"
             >
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -80,12 +81,15 @@ const Settings = () => {
                   {islamicMode ? "يعرض القرآن والأذكار والمسبحة والصلاة والقبلة" : "يعرض السوق والتقويم والديون"}
                 </p>
               </div>
-              <Switch
-                checked={islamicMode}
-                onCheckedChange={(val) => setIslamicMode(val)}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
+              <div
+                className={`relative h-6 w-11 rounded-full transition-colors ${islamicMode ? "bg-primary" : "bg-input"}`}
+                aria-hidden="true"
+              >
+                <div
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-background shadow-lg transition-transform ${islamicMode ? "translate-x-5" : "translate-x-0.5"}`}
+                />
+              </div>
+            </button>
           </div>
         </div>
 
