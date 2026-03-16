@@ -64,7 +64,10 @@ const Settings = () => {
               boxShadow: "0 2px 12px hsla(0,0%,0%,0.05)",
             }}
           >
-            <div className="w-full flex items-center gap-3 px-4 py-3.5">
+            <div className="w-full flex items-center gap-3 px-4 py-3.5"
+              onClick={() => setIslamicMode(!islamicMode)}
+              role="button"
+            >
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{ background: "hsl(145, 40%, 42%, 0.1)" }}
@@ -79,7 +82,8 @@ const Settings = () => {
               </div>
               <Switch
                 checked={islamicMode}
-                onCheckedChange={setIslamicMode}
+                onCheckedChange={(val) => setIslamicMode(val)}
+                onClick={(e) => e.stopPropagation()}
               />
             </div>
           </div>
