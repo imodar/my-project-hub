@@ -551,7 +551,9 @@ const FamilyManagement = () => {
                   className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl transition-colors active:bg-primary/10"
                   style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.15)" }}
                 >
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(200, 60%, 92%)" }}>👦</div>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "hsl(200, 60%, 92%)" }}>
+                    <Baby size={24} className="text-blue-500" />
+                  </div>
                   <span className="text-sm font-bold text-foreground">ابن</span>
                 </button>
                 <button
@@ -559,7 +561,8 @@ const FamilyManagement = () => {
                   className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl transition-colors active:bg-primary/10"
                   style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.15)" }}
                 >
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(340, 60%, 92%)" }}>👧</div>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "hsl(340, 60%, 92%)" }}>
+                    <Baby size={24} className="text-pink-500" />
                   <span className="text-sm font-bold text-foreground">ابنة</span>
                 </button>
               </div>
