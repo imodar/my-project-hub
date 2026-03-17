@@ -383,28 +383,26 @@ const CalendarPage = () => {
             return (
               <div key={ev.id} className="relative overflow-hidden rounded-2xl select-none">
                 {/* 3 action buttons behind the card */}
-                <div className="absolute left-0 top-0 bottom-0 flex items-stretch rounded-2xl overflow-hidden" style={{ width: `${SWIPE_WIDTH}px` }}>
+                <div className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1" style={{ width: `${SWIPE_WIDTH}px` }}>
                   {/* Delete */}
                   <button
                     onClick={() => { setDeleteTarget(ev); closeSwipe(ev.id); }}
-                    className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors"
+                    className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
                   >
                     <Trash2 size={16} className="text-destructive-foreground" />
                     <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
                   </button>
-                  {/* Edit */}
                   <button
                     onClick={() => openEdit(ev)}
-                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
+                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
                     style={{ background: "hsl(220, 60%, 50%)" }}
                   >
                     <Pencil size={16} className="text-white" />
                     <span className="text-[10px] text-white font-semibold">تعديل</span>
                   </button>
-                  {/* Personal reminder */}
                   <button
                     onClick={() => openPersonalReminders(ev)}
-                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
+                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
                     style={{ background: "hsl(35, 80%, 50%)" }}
                   >
                     {hasPersonalReminder ? <BellRing size={16} className="text-white" /> : <Bell size={16} className="text-white" />}
