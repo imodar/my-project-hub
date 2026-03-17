@@ -426,32 +426,72 @@ const FamilyManagement = () => {
 
             <div>
               <label className="text-sm font-semibold text-foreground block mb-2">دورك في الأسرة</label>
-              <div className="flex gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setSetupRole("father")}
-                  className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
                     setupRole === "father" ? "border-primary bg-primary/10" : "border-border bg-card"
                   }`}
                 >
-                  <span className="text-3xl">👨</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--primary) / 0.15)" }}>
+                    <User size={22} className="text-primary" />
+                  </div>
                   <span className="text-sm font-bold text-foreground">أب</span>
                 </button>
                 <button
                   onClick={() => setSetupRole("mother")}
-                  className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
                     setupRole === "mother" ? "border-primary bg-primary/10" : "border-border bg-card"
                   }`}
                 >
-                  <span className="text-3xl">👩</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--primary) / 0.15)" }}>
+                    <Heart size={22} className="text-primary" />
+                  </div>
                   <span className="text-sm font-bold text-foreground">أم</span>
+                </button>
+                <button
+                  onClick={() => setSetupRole("son")}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    setupRole === "son" ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(200, 60%, 92%)" }}>
+                    <Baby size={22} className="text-blue-500" />
+                  </div>
+                  <span className="text-sm font-bold text-foreground">ابن</span>
+                </button>
+                <button
+                  onClick={() => setSetupRole("daughter")}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    setupRole === "daughter" ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(340, 60%, 92%)" }}>
+                    <Baby size={22} className="text-pink-500" />
+                  </div>
+                  <span className="text-sm font-bold text-foreground">ابنة</span>
                 </button>
               </div>
             </div>
 
             <div className="bg-muted/50 rounded-xl p-3">
               <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                <Crown size={12} className="inline ml-1 text-primary" />
-                ستكون المشرف الرئيسي على الأسرة. يمكنك لاحقاً إضافة {setupRole === "father" ? "زوجتك" : setupRole === "mother" ? "زوجك" : "شريك/ة حياتك"} كمشرف إضافي.
+                {(setupRole === "father" || setupRole === "mother") ? (
+                  <>
+                    <Crown size={12} className="inline ml-1 text-primary" />
+                    ستكون المشرف الرئيسي على الأسرة. يمكنك لاحقاً إضافة {setupRole === "father" ? "زوجتك" : "زوجك"} كمشرف إضافي.
+                  </>
+                ) : (setupRole === "son" || setupRole === "daughter") ? (
+                  <>
+                    <ShieldCheck size={12} className="inline ml-1 text-primary" />
+                    الأب والأم يحصلان على صلاحيات الإشراف بشكل افتراضي ولا يمكن إلغاء إشرافهم.
+                  </>
+                ) : (
+                  <>
+                    <Crown size={12} className="inline ml-1 text-primary" />
+                    اختر دورك لمعرفة صلاحياتك في الأسرة.
+                  </>
+                )}
               </p>
             </div>
 
