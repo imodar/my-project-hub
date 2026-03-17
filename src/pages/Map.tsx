@@ -241,13 +241,13 @@ const Map = () => {
           onClick={() => setExpandedList(!expandedList)}
           className="w-full flex items-center justify-between px-4 py-3 bg-card rounded-t-2xl border border-border"
         >
-          <span className="text-sm font-bold text-foreground">أفراد العائلة ({mockMembers.length})</span>
+          <span className="text-sm font-bold text-foreground">أفراد العائلة ({members.length})</span>
           {expandedList ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
         </button>
 
         {expandedList && (
           <div className="border border-t-0 border-border rounded-b-2xl overflow-hidden">
-            {mockMembers.map((member, idx) => (
+            {members.map((member, idx) => (
               <div
                 key={member.id}
                 className={`flex items-center gap-3 px-4 py-3 bg-card ${idx < mockMembers.length - 1 ? "border-b border-border" : ""}`}
