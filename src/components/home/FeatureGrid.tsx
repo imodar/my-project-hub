@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   ShoppingCart, Calendar, HandCoins, Wallet,
   Image, Plane, FileText, ListChecks,
@@ -7,7 +8,7 @@ import {
 const features = [
   { icon: ShoppingCart, label: "السوق", color: "hsl(145, 40%, 42%)", bg: "hsl(145, 40%, 95%)", badge: 3 },
   { icon: Calendar, label: "التقويم", color: "hsl(220, 60%, 50%)", bg: "hsl(220, 60%, 95%)" },
-  { icon: HandCoins, label: "الديون", color: "hsl(0, 60%, 55%)", bg: "hsl(0, 60%, 95%)", badge: 2 },
+  { icon: HandCoins, label: "الديون", color: "hsl(0, 60%, 55%)", bg: "hsl(0, 60%, 95%)", badge: 2, route: "/debts" },
   { icon: Wallet, label: "الميزانية", color: "hsl(270, 40%, 50%)", bg: "hsl(270, 40%, 95%)" },
   { icon: Image, label: "الألبوم", color: "hsl(330, 50%, 55%)", bg: "hsl(330, 50%, 95%)" },
   { icon: Plane, label: "الرحلات", color: "hsl(200, 60%, 45%)", bg: "hsl(200, 60%, 95%)" },
@@ -20,6 +21,7 @@ const features = [
 ];
 
 const FeatureGrid = () => {
+  const navigate = useNavigate();
   return (
     <div className="px-5 mt-8">
       <h3 className="text-base font-bold text-foreground mb-4">الأدوات</h3>
@@ -27,6 +29,7 @@ const FeatureGrid = () => {
         {features.map((feature) => (
           <button
             key={feature.label}
+            onClick={() => feature.route && navigate(feature.route)}
             className="relative flex flex-col items-center gap-2 py-4 rounded-2xl transition-transform active:scale-95"
             style={{
               background: feature.bg,
