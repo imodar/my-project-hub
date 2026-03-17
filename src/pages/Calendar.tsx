@@ -12,8 +12,26 @@ import {
   GraduationCap,
   Calendar as CalendarIcon,
   Trash2,
+  Pencil,
+  Bell,
+  BellRing,
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTrash } from "@/contexts/TrashContext";
 import BottomNav from "@/components/home/BottomNav";
@@ -21,10 +39,11 @@ import BottomNav from "@/components/home/BottomNav";
 interface FamilyEvent {
   id: string;
   title: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   icon: string;
   reminderBefore?: string[];
   addedBy: string;
+  personalReminders?: string[]; // personal reminder keys for this user
 }
 
 const REMINDER_OPTIONS = [
@@ -33,15 +52,6 @@ const REMINDER_OPTIONS = [
   { key: "7d", label: "قبل أسبوع" },
   { key: "30d", label: "قبل شهر" },
 ];
-
-const ICONS: Record<string, any> = {
-  cake: Cake,
-  plane: Plane,
-  heart: Heart,
-  star: Star,
-  graduation: GraduationCap,
-  calendar: CalendarIcon,
-};
 
 const ICON_OPTIONS = [
   { key: "cake", label: "🎂" },
@@ -66,23 +76,18 @@ const toArabicNum = (n: number) => n.toLocaleString("ar-EG");
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
 }
-
 function getFirstDayOfMonth(year: number, month: number) {
   return new Date(year, month, 1).getDay();
 }
-
 function formatDate(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
-
 function daysUntil(dateStr: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const target = new Date(dateStr);
-  const diff = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  return diff;
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
-
 function daysLabel(d: number) {
   if (d === 0) return "اليوم";
   if (d === 1) return "غداً";
@@ -120,30 +125,33 @@ const CalendarPage = () => {
     reminderBefore: [] as string[],
   });
 
+  // Swipe
   const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
   const touchStartXRef = useRef(0);
   const activeSwipeRef = useRef<string | null>(null);
+
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<FamilyEvent | null>(null);
+
+  // Edit dialog
+  const [editTarget, setEditTarget] = useState<FamilyEvent | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", date: "", hasReminder: false, reminderBefore: [] as string[] });
+
+  // Personal reminders dialog
+  const [reminderTarget, setReminderTarget] = useState<FamilyEvent | null>(null);
+  const [personalReminders, setPersonalReminders] = useState<string[]>([]);
 
   useEffect(() => {
     localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
   }, [events]);
 
   const prevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear((y) => y - 1);
-    } else {
-      setCurrentMonth((m) => m - 1);
-    }
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear((y) => y - 1); }
+    else setCurrentMonth((m) => m - 1);
   };
-
   const nextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear((y) => y + 1);
-    } else {
-      setCurrentMonth((m) => m + 1);
-    }
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear((y) => y + 1); }
+    else setCurrentMonth((m) => m + 1);
   };
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
@@ -151,35 +159,27 @@ const CalendarPage = () => {
   const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate());
 
   const eventsForDay = (dateStr: string) => events.filter((e) => e.date === dateStr);
-
   const allUpcoming = [...events]
     .filter((e) => daysUntil(e.date) >= 0)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const dayHasEvent = (d: number) => {
-    const dateStr = formatDate(currentYear, currentMonth, d);
-    return events.some((e) => e.date === dateStr);
-  };
+  const dayHasEvent = (d: number) => events.some((e) => e.date === formatDate(currentYear, currentMonth, d));
 
-  const handleDayClick = (d: number) => {
-    const dateStr = formatDate(currentYear, currentMonth, d);
-    setSelectedDay(dateStr);
-  };
+  const handleDayClick = (d: number) => setSelectedDay(formatDate(currentYear, currentMonth, d));
 
-  const toggleReminderOption = useCallback((key: string) => {
-    setNewEvent((prev) => ({
+  const toggleReminderOption = useCallback((key: string, setter: React.Dispatch<React.SetStateAction<any>>, field: string = "reminderBefore") => {
+    setter((prev: any) => ({
       ...prev,
-      reminderBefore: prev.reminderBefore.includes(key)
-        ? prev.reminderBefore.filter((item) => item !== key)
-        : [...prev.reminderBefore, key],
+      [field]: prev[field].includes(key)
+        ? prev[field].filter((i: string) => i !== key)
+        : [...prev[field], key],
     }));
   }, []);
 
   const handleAddEvent = () => {
     if (!newEvent.title.trim()) return;
     if (newEvent.hasReminder && newEvent.reminderBefore.length === 0) return;
-
-    const dateStr = selectedDay || formatDate(currentYear, currentMonth, today.getDate());
+    const dateStr = selectedDay || todayStr;
     const ev: FamilyEvent = {
       id: crypto.randomUUID(),
       title: newEvent.title.trim(),
@@ -188,33 +188,80 @@ const CalendarPage = () => {
       reminderBefore: newEvent.hasReminder ? newEvent.reminderBefore : undefined,
       addedBy: "أنا",
     };
-
     setEvents((prev) => [...prev, ev]);
-    setNewEvent({
-      title: "",
-      hasReminder: false,
-      reminderBefore: [],
-    });
+    setNewEvent({ title: "", hasReminder: false, reminderBefore: [] });
     setShowAddDialog(false);
   };
 
-  const handleDelete = (ev: FamilyEvent) => {
+  // Delete with confirmation
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
     addToTrash({
       type: "event",
-      title: ev.title,
-      description: `${ev.date}`,
+      title: deleteTarget.title,
+      description: deleteTarget.date,
       deletedBy: "أنا",
       isShared: true,
-      originalData: ev,
+      originalData: deleteTarget,
     });
-    setEvents((prev) => prev.filter((e) => e.id !== ev.id));
-    setSwipeOffset((prev) => {
-      const next = { ...prev };
-      delete next[ev.id];
-      return next;
-    });
+    setEvents((prev) => prev.filter((e) => e.id !== deleteTarget.id));
+    setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
+    setDeleteTarget(null);
   };
 
+  // Edit
+  const openEdit = (ev: FamilyEvent) => {
+    setEditTarget(ev);
+    setEditForm({
+      title: ev.title,
+      date: ev.date,
+      hasReminder: !!(ev.reminderBefore && ev.reminderBefore.length > 0),
+      reminderBefore: ev.reminderBefore || [],
+    });
+    closeSwipe(ev.id);
+  };
+  const saveEdit = () => {
+    if (!editTarget || !editForm.title.trim()) return;
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id === editTarget.id
+          ? {
+              ...e,
+              title: editForm.title.trim(),
+              date: editForm.date,
+              reminderBefore: editForm.hasReminder && editForm.reminderBefore.length > 0 ? editForm.reminderBefore : undefined,
+            }
+          : e
+      )
+    );
+    setEditTarget(null);
+  };
+
+  // Personal reminders
+  const openPersonalReminders = (ev: FamilyEvent) => {
+    setReminderTarget(ev);
+    setPersonalReminders(ev.personalReminders || []);
+    closeSwipe(ev.id);
+  };
+  const savePersonalReminders = () => {
+    if (!reminderTarget) return;
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id === reminderTarget.id
+          ? { ...e, personalReminders: personalReminders.length > 0 ? personalReminders : undefined }
+          : e
+      )
+    );
+    setReminderTarget(null);
+  };
+  const togglePersonalReminder = (key: string) => {
+    setPersonalReminders((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
+  // Swipe handlers
+  const SWIPE_WIDTH = 200;
   const closeSwipe = useCallback((id: string) => {
     setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
     activeSwipeRef.current = null;
@@ -225,63 +272,42 @@ const CalendarPage = () => {
     activeSwipeRef.current = id;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
-
   const handlePointerMove = (e: React.PointerEvent, id: string) => {
     if (activeSwipeRef.current !== id) return;
     const diff = e.clientX - touchStartXRef.current;
-    setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, 88) : 0 }));
+    setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, SWIPE_WIDTH) : 0 }));
   };
-
   const handlePointerUp = (e: React.PointerEvent, id: string) => {
     const offset = swipeOffset[id] || 0;
-    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 44 ? 88 : 0 }));
+    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
     activeSwipeRef.current = null;
     if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     }
   };
 
-  const getMonthShort = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return ARABIC_MONTHS[d.getMonth()].slice(0, 3);
-  };
-
-  const getEventIcon = (iconKey: string) => {
-    const opt = ICON_OPTIONS.find((o) => o.key === iconKey);
-    return opt ? opt.label : "📅";
-  };
-
+  const getMonthShort = (dateStr: string) => ARABIC_MONTHS[new Date(dateStr).getMonth()].slice(0, 3);
+  const getEventIcon = (iconKey: string) => ICON_OPTIONS.find((o) => o.key === iconKey)?.label || "📅";
   const getReminderLabel = (value?: string[]) => {
     if (!value || value.length === 0) return null;
-    return value
-      .map((item) => REMINDER_OPTIONS.find((option) => option.key === item)?.label || item)
-      .join(" • ");
+    return value.map((item) => REMINDER_OPTIONS.find((o) => o.key === item)?.label || item).join(" • ");
   };
 
+  // Calendar grid
   const calendarCells: (number | null)[] = [];
   for (let i = 0; i < firstDay; i++) calendarCells.push(null);
   for (let d = 1; d <= daysInMonth; d++) calendarCells.push(d);
   while (calendarCells.length % 7 !== 0) calendarCells.push(null);
-
   const rows: (number | null)[][] = [];
-  for (let i = 0; i < calendarCells.length; i += 7) {
-    rows.push(calendarCells.slice(i, i + 7).reverse());
-  }
-
-  const reminderLabel = getReminderLabel(newEvent.reminderBefore);
+  for (let i = 0; i < calendarCells.length; i += 7) rows.push(calendarCells.slice(i, i + 7).reverse());
 
   return (
-    <div
-      className="min-h-screen max-w-2xl mx-auto flex flex-col pb-24"
-      dir="rtl"
-      style={{ background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)" }}
-    >
-      <div
-        className="sticky top-0 z-40 px-4 pt-12 pb-3"
-        style={{
-          background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-        }}
-      >
+    <div className="min-h-screen max-w-2xl mx-auto flex flex-col pb-24" dir="rtl"
+      style={{ background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)" }}>
+
+      {/* Header */}
+      <div className="sticky top-0 z-40 px-4 pt-12 pb-3"
+        style={{ background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))" }}>
         <div className="flex items-center gap-3">
           <button onClick={() => navigate("/")} className="p-1.5 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
             <ArrowRight size={20} className="text-white" />
@@ -301,6 +327,7 @@ const CalendarPage = () => {
         </div>
       </div>
 
+      {/* Calendar Grid */}
       <div className="px-4 mt-4">
         <div className="bg-card rounded-2xl p-4 border border-border" style={{ boxShadow: "0 2px 12px hsla(0,0%,0%,0.04)" }}>
           <div className="grid grid-cols-7 mb-3">
@@ -308,7 +335,6 @@ const CalendarPage = () => {
               <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1">{d}</div>
             ))}
           </div>
-
           {rows.map((row, ri) => (
             <div key={ri} className="grid grid-cols-7">
               {row.map((day, ci) => {
@@ -317,17 +343,12 @@ const CalendarPage = () => {
                 const isToday = dateStr === todayStr;
                 const hasEvent = dayHasEvent(day);
                 return (
-                  <button
-                    key={ci}
-                    onClick={() => handleDayClick(day)}
-                    className={`relative py-2 flex flex-col items-center justify-center transition-colors rounded-xl mx-0.5 my-0.5 ${isToday ? "bg-primary text-primary-foreground font-black" : "hover:bg-muted"}`}
-                  >
+                  <button key={ci} onClick={() => handleDayClick(day)}
+                    className={`relative py-2 flex flex-col items-center justify-center transition-colors rounded-xl mx-0.5 my-0.5 ${isToday ? "bg-primary text-primary-foreground font-black" : "hover:bg-muted"}`}>
                     <span className={`text-sm ${isToday ? "font-black" : "font-semibold text-foreground"}`}>{toArabicNum(day)}</span>
                     {hasEvent && (
-                      <div
-                        className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isToday ? "bg-primary-foreground" : ""}`}
-                        style={isToday ? {} : { background: "hsl(var(--primary))" }}
-                      />
+                      <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isToday ? "bg-primary-foreground" : ""}`}
+                        style={isToday ? {} : { background: "hsl(var(--primary))" }} />
                     )}
                   </button>
                 );
@@ -337,16 +358,12 @@ const CalendarPage = () => {
         </div>
       </div>
 
+      {/* Upcoming Events */}
       <div className="mt-6 px-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-black text-foreground">المناسبات القادمة</h3>
-          <button
-            onClick={() => {
-              setSelectedDay(todayStr);
-              setShowAddDialog(true);
-            }}
-            className="w-10 h-10 rounded-xl flex items-center justify-center bg-card border border-border active:scale-95 transition-transform"
-          >
+          <button onClick={() => { setSelectedDay(todayStr); setShowAddDialog(true); }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center bg-card border border-border active:scale-95 transition-transform">
             <Plus size={20} className="text-primary" />
           </button>
         </div>
@@ -361,16 +378,41 @@ const CalendarPage = () => {
             const d = daysUntil(ev.date);
             const dayNum = new Date(ev.date).getDate();
             const reminderText = getReminderLabel(ev.reminderBefore);
+            const hasPersonalReminder = ev.personalReminders && ev.personalReminders.length > 0;
 
             return (
               <div key={ev.id} className="relative overflow-hidden rounded-2xl select-none">
-                <div className="absolute right-0 top-0 bottom-0 w-24 flex items-center justify-center rounded-2xl bg-destructive">
-                  <button onClick={() => handleDelete(ev)} className="flex flex-col items-center gap-1">
-                    <Trash2 size={18} className="text-destructive-foreground" />
+                {/* 3 action buttons behind the card */}
+                <div className="absolute right-0 top-0 bottom-0 flex items-stretch rounded-2xl overflow-hidden" style={{ width: `${SWIPE_WIDTH}px` }}>
+                  {/* Delete */}
+                  <button
+                    onClick={() => { setDeleteTarget(ev); closeSwipe(ev.id); }}
+                    className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors"
+                  >
+                    <Trash2 size={16} className="text-destructive-foreground" />
                     <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
+                  </button>
+                  {/* Edit */}
+                  <button
+                    onClick={() => openEdit(ev)}
+                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
+                    style={{ background: "hsl(220, 60%, 50%)" }}
+                  >
+                    <Pencil size={16} className="text-white" />
+                    <span className="text-[10px] text-white font-semibold">تعديل</span>
+                  </button>
+                  {/* Personal reminder */}
+                  <button
+                    onClick={() => openPersonalReminders(ev)}
+                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
+                    style={{ background: "hsl(35, 80%, 50%)" }}
+                  >
+                    {hasPersonalReminder ? <BellRing size={16} className="text-white" /> : <Bell size={16} className="text-white" />}
+                    <span className="text-[10px] text-white font-semibold">تنبيه</span>
                   </button>
                 </div>
 
+                {/* Card */}
                 <div
                   className="relative bg-card border border-border rounded-2xl p-4 flex items-center gap-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing"
                   style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
@@ -378,27 +420,23 @@ const CalendarPage = () => {
                   onPointerMove={(e) => handlePointerMove(e, ev.id)}
                   onPointerUp={(e) => handlePointerUp(e, ev.id)}
                   onPointerCancel={() => closeSwipe(ev.id)}
-                  onPointerLeave={(e) => {
-                    if (activeSwipeRef.current === ev.id && e.pointerType === "mouse") {
-                      handlePointerUp(e, ev.id);
-                    }
-                  }}
                 >
                   <div className="w-14 h-14 rounded-2xl bg-primary flex flex-col items-center justify-center shrink-0">
                     <span className="text-lg font-black text-primary-foreground leading-none">{toArabicNum(dayNum)}</span>
                     <span className="text-[10px] font-semibold text-primary-foreground/80 mt-0.5">{getMonthShort(ev.date)}</span>
                   </div>
-
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
                       <span>{getEventIcon(ev.icon)}</span>
                       <span className="truncate">{ev.title}</span>
+                      {hasPersonalReminder && (
+                        <BellRing size={13} className="text-amber-500 shrink-0" />
+                      )}
                     </p>
                     {reminderText && (
                       <p className="text-xs text-muted-foreground mt-1">🔔 {reminderText}</p>
                     )}
                   </div>
-
                   <span className={`text-xs font-bold shrink-0 ${d <= 1 ? "text-destructive" : "text-primary"}`}>
                     {daysLabel(d)}
                   </span>
@@ -409,16 +447,16 @@ const CalendarPage = () => {
         </div>
 
         <button
-          onClick={() => {
-            setSelectedDay(todayStr);
-            setShowAddDialog(true);
-          }}
+          onClick={() => { setSelectedDay(todayStr); setShowAddDialog(true); }}
           className="w-full mt-6 py-4 rounded-2xl bg-primary text-primary-foreground font-bold text-sm active:scale-[0.98] transition-transform"
         >
           + إضافة مناسبة جديدة
         </button>
       </div>
 
+      {/* ===== DIALOGS ===== */}
+
+      {/* Day Events Dialog */}
       <Dialog open={!!selectedDay && !showAddDialog} onOpenChange={(o) => { if (!o) setSelectedDay(null); }}>
         <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
           <DialogHeader>
@@ -431,27 +469,30 @@ const CalendarPage = () => {
               <p className="text-center text-sm text-muted-foreground py-4">لا توجد مناسبات في هذا اليوم</p>
             )}
             {selectedDay && eventsForDay(selectedDay).map((ev) => {
-              const reminderText = getReminderLabel(ev.reminderBefore);
+              const rt = getReminderLabel(ev.reminderBefore);
+              const hasP = ev.personalReminders && ev.personalReminders.length > 0;
               return (
                 <div key={ev.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
                   <span className="text-lg">{getEventIcon(ev.icon)}</span>
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-foreground">{ev.title}</p>
-                    {reminderText && <p className="text-xs text-muted-foreground">🔔 {reminderText}</p>}
+                    <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                      {ev.title}
+                      {hasP && <BellRing size={13} className="text-amber-500" />}
+                    </p>
+                    {rt && <p className="text-xs text-muted-foreground">🔔 {rt}</p>}
                   </div>
                 </div>
               );
             })}
-            <button
-              onClick={() => setShowAddDialog(true)}
-              className="w-full py-3 rounded-xl border-2 border-dashed border-primary/30 text-primary text-sm font-semibold active:scale-[0.98] transition-transform"
-            >
+            <button onClick={() => setShowAddDialog(true)}
+              className="w-full py-3 rounded-xl border-2 border-dashed border-primary/30 text-primary text-sm font-semibold active:scale-[0.98] transition-transform">
               + إضافة مناسبة
             </button>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Add Event Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
           <DialogHeader>
@@ -460,65 +501,157 @@ const CalendarPage = () => {
           <div className="space-y-4 mt-2">
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">اسم المناسبة</label>
-              <input
-                value={newEvent.title}
-                onChange={(e) => setNewEvent((p) => ({ ...p, title: e.target.value }))}
+              <input value={newEvent.title} onChange={(e) => setNewEvent((p) => ({ ...p, title: e.target.value }))}
                 placeholder="مثال: عيد ميلاد فهد"
-                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
+                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">التاريخ</label>
-              <input
-                type="date"
-                value={selectedDay || ""}
-                onChange={(e) => setSelectedDay(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
+              <input type="date" value={selectedDay || ""} onChange={(e) => setSelectedDay(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
             <div className="space-y-3">
               <label className="text-xs font-semibold text-muted-foreground block">التذكير</label>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setNewEvent((prev) => ({ ...prev, hasReminder: false, reminderBefore: [] }))}
-                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${!newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}
-                >
+                <button type="button"
+                  onClick={() => setNewEvent((p) => ({ ...p, hasReminder: false, reminderBefore: [] }))}
+                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${!newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
                   بدون تذكير
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setNewEvent((prev) => ({ ...prev, hasReminder: true }))}
-                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}
-                >
+                <button type="button"
+                  onClick={() => setNewEvent((p) => ({ ...p, hasReminder: true }))}
+                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
                   مع تذكير
                 </button>
               </div>
-
               {newEvent.hasReminder && (
                 <div className="space-y-2 rounded-2xl border border-border bg-muted/20 p-3">
-                  <p className="text-xs text-muted-foreground">اختر أكثر من وقت للتذكير بنفس المناسبة</p>
-                  {REMINDER_OPTIONS.map((opt) => {
-                    const checked = newEvent.reminderBefore.includes(opt.key);
-                    return (
-                      <label key={opt.key} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 cursor-pointer hover:bg-muted/40">
-                        <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                        <Checkbox checked={checked} onCheckedChange={() => toggleReminderOption(opt.key)} />
-                      </label>
-                    );
-                  })}
-                  {reminderLabel && (
-                    <p className="text-xs font-medium text-primary">سيتم التذكير: {reminderLabel}</p>
-                  )}
+                  <p className="text-xs text-muted-foreground">اختر أكثر من وقت للتذكير</p>
+                  {REMINDER_OPTIONS.map((opt) => (
+                    <label key={opt.key} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 cursor-pointer hover:bg-muted/40">
+                      <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                      <Checkbox checked={newEvent.reminderBefore.includes(opt.key)}
+                        onCheckedChange={() => toggleReminderOption(opt.key, setNewEvent)} />
+                    </label>
+                  ))}
                 </div>
               )}
             </div>
-            <button
-              onClick={handleAddEvent}
+            <button onClick={handleAddEvent}
               disabled={newEvent.hasReminder && newEvent.reminderBefore.length === 0}
-              className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-sm active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
-            >
+              className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-sm active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed">
               إضافة المناسبة
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center font-black">تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              هل أنت متأكد من حذف مناسبة "{deleteTarget?.title}"؟ سيتم نقلها إلى سلة المحذوفات.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-2 sm:flex-row-reverse">
+            <AlertDialogAction onClick={confirmDelete}
+              className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl font-bold">
+              حذف
+            </AlertDialogAction>
+            <AlertDialogCancel className="flex-1 rounded-xl font-bold">إلغاء</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Event Dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-center text-base font-black">تعديل المناسبة</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">اسم المناسبة</label>
+              <input value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">التاريخ</label>
+              <input type="date" value={editForm.date} onChange={(e) => setEditForm((p) => ({ ...p, date: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            </div>
+            <div className="space-y-3">
+              <label className="text-xs font-semibold text-muted-foreground block">التذكير</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button"
+                  onClick={() => setEditForm((p) => ({ ...p, hasReminder: false, reminderBefore: [] }))}
+                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${!editForm.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
+                  بدون تذكير
+                </button>
+                <button type="button"
+                  onClick={() => setEditForm((p) => ({ ...p, hasReminder: true }))}
+                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${editForm.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
+                  مع تذكير
+                </button>
+              </div>
+              {editForm.hasReminder && (
+                <div className="space-y-2 rounded-2xl border border-border bg-muted/20 p-3">
+                  {REMINDER_OPTIONS.map((opt) => (
+                    <label key={opt.key} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 cursor-pointer hover:bg-muted/40">
+                      <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                      <Checkbox checked={editForm.reminderBefore.includes(opt.key)}
+                        onCheckedChange={() => toggleReminderOption(opt.key, setEditForm)} />
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={saveEdit}
+              className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-sm active:scale-[0.98] transition-transform">
+              حفظ التعديلات
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Personal Reminders Dialog */}
+      <Dialog open={!!reminderTarget} onOpenChange={(o) => { if (!o) setReminderTarget(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-center text-base font-black flex items-center justify-center gap-2">
+              <Bell size={18} className="text-amber-500" />
+              تنبيهات شخصية
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="text-center">
+              <p className="text-sm font-bold text-foreground">{reminderTarget?.title}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {reminderTarget?.date ? new Date(reminderTarget.date).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" }) : ""}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-muted/20 p-3 space-y-1">
+              <p className="text-xs text-muted-foreground mb-2">اختر متى تريد أن يتم تذكيرك بهذه المناسبة</p>
+              {REMINDER_OPTIONS.map((opt) => (
+                <label key={opt.key} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 cursor-pointer hover:bg-muted/40">
+                  <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                  <Checkbox checked={personalReminders.includes(opt.key)} onCheckedChange={() => togglePersonalReminder(opt.key)} />
+                </label>
+              ))}
+            </div>
+
+            {personalReminders.length > 0 && (
+              <p className="text-xs font-medium text-amber-600 text-center">
+                🔔 سيتم تذكيرك: {getReminderLabel(personalReminders)}
+              </p>
+            )}
+
+            <button onClick={savePersonalReminders}
+              className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-sm active:scale-[0.98] transition-transform">
+              {personalReminders.length > 0 ? "حفظ التنبيهات" : "إزالة التنبيهات"}
             </button>
           </div>
         </DialogContent>
