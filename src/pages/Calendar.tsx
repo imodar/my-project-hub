@@ -175,7 +175,7 @@ const CalendarPage = () => {
     addToTrash({
       type: "event",
       title: ev.title,
-      description: `${ev.date} - ${ev.reminder || ""}`,
+      description: `${ev.date}`,
       deletedBy: "أنا",
       isShared: true,
       originalData: ev,
