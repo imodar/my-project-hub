@@ -70,7 +70,6 @@ const FamilyManagement = () => {
   });
 
   const [showSetupDialog, setShowSetupDialog] = useState(false);
-  const [setupName, setSetupName] = useState("");
   const [setupRole, setSetupRole] = useState<"father" | "mother" | "son" | "daughter" | null>(null);
 
   // Show setup if no creator role yet
@@ -86,13 +85,13 @@ const FamilyManagement = () => {
   }, [members]);
 
   const handleSetupComplete = () => {
-    if (!setupRole || !setupName.trim()) return;
+    if (!setupRole) return;
     const role = setupRole;
     setCreatorRole(role);
     localStorage.setItem("family_creator_role", role);
     const creator: FamilyMember = {
       id: "creator",
-      name: setupName.trim(),
+      name: "أنا",
       role,
       isCreator: true,
     };
@@ -413,16 +412,6 @@ const FamilyManagement = () => {
           <p className="text-sm text-muted-foreground text-center">اختر دورك في الأسرة لإنشاء مجموعتك العائلية</p>
 
           <div className="space-y-4 mt-2">
-            <div>
-              <label className="text-sm font-semibold text-foreground block mb-2">اسمك</label>
-              <input
-                value={setupName}
-                onChange={(e) => setSetupName(e.target.value)}
-                placeholder="أدخل اسمك"
-                className="w-full px-4 py-3 rounded-xl text-right text-sm border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                autoFocus
-              />
-            </div>
 
             <div>
               <label className="text-sm font-semibold text-foreground block mb-2">دورك في الأسرة</label>
@@ -497,7 +486,7 @@ const FamilyManagement = () => {
 
             <button
               onClick={handleSetupComplete}
-              disabled={!setupRole || !setupName.trim()}
+              disabled={!setupRole}
               className="w-full py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary transition-colors disabled:opacity-40"
             >
               إنشاء الأسرة
