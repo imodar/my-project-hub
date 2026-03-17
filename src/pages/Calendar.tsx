@@ -382,7 +382,7 @@ const CalendarPage = () => {
                 <span className="text-lg">{getEventIcon(ev.icon)}</span>
                 <div className="flex-1">
                   <p className="text-sm font-bold text-foreground">{ev.title}</p>
-                  {ev.reminder && <p className="text-xs text-muted-foreground">{ev.reminder}</p>}
+                  {ev.reminderBefore && <p className="text-xs text-muted-foreground">🔔 {REMINDER_OPTIONS.find(r => r.key === ev.reminderBefore)?.label || ev.reminderBefore}</p>}
                 </div>
               </div>
             ))}
