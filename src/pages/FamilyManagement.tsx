@@ -43,7 +43,6 @@ const FamilyManagement = () => {
   const [codeCopied, setCodeCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [swipedId, setSwipedId] = useState<string | null>(null);
-  const [touchStartX, setTouchStartX] = useState(0);
   const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
 
   // Code timer countdown
