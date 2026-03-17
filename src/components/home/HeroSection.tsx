@@ -1,6 +1,7 @@
-import { Compass, Bell, Settings, CloudSun, CloudRain, Sun, Cloud, MapPin } from "lucide-react";
+import { Compass, Bell, CloudSun, CloudRain, Sun, Cloud, MapPin } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
+import ProfileSheet from "./ProfileSheet";
 
 interface WeatherData {
   temp: number;
