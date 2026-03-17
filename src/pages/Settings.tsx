@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 
@@ -26,6 +26,7 @@ const Settings = () => {
     {
       title: "أخرى",
       items: [
+        { icon: Archive, label: "سلة المحذوفات", desc: "استعادة أو حذف العناصر نهائياً", onClick: () => navigate("/trash") },
         { icon: Trash2, label: "مسح البيانات", desc: "حذف جميع البيانات المحفوظة", danger: true },
       ],
     },
