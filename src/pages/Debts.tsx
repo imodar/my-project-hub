@@ -141,8 +141,11 @@ const SwipeableDebtCard = ({
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      {/* Action buttons behind */}
-      <div className="absolute inset-y-0 right-0 flex" style={{ width: 160 }}>
+      {/* Action buttons behind - on the left since card slides right in RTL */}
+      <div
+        className="absolute inset-y-0 left-0 flex overflow-hidden rounded-r-2xl"
+        style={{ width: 160, opacity: swipeX > 0 ? 1 : 0, pointerEvents: swipeX > 0 ? 'auto' : 'none' }}
+      >
         <button
           onClick={onEdit}
           className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white"
@@ -152,7 +155,7 @@ const SwipeableDebtCard = ({
         </button>
         <button
           onClick={onDelete}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-white"
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-destructive-foreground"
         >
           <Trash2 size={20} />
           <span className="text-[10px] font-bold">حذف</span>
@@ -161,7 +164,7 @@ const SwipeableDebtCard = ({
 
       {/* Card content */}
       <div
-        className="relative z-10"
+        className="relative z-10 bg-background rounded-2xl"
         style={{
           transform: `translateX(${swipeX}px)`,
           transition: isDraggingRef.current ? 'none' : 'transform 300ms ease-out',
