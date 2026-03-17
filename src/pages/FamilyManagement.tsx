@@ -486,7 +486,7 @@ const FamilyManagement = () => {
 
             <button
               onClick={handleSetupComplete}
-              disabled={!setupRole || !setupName.trim()}
+              disabled={!setupRole}
               className="w-full py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary transition-colors disabled:opacity-40"
             >
               إنشاء الأسرة
