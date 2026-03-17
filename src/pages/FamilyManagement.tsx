@@ -177,9 +177,9 @@ const FamilyManagement = () => {
             const isParent = member.role === "father" || member.role === "mother";
             return (
               <div key={member.id} className="relative overflow-hidden rounded-2xl">
-                {/* Delete button behind */}
+                {/* Delete button behind - positioned on the left for RTL swipe */}
                 {!isParent && (
-                  <div className="absolute inset-y-0 right-0 w-20 flex items-center justify-center rounded-2xl" style={{ background: "hsl(var(--destructive))" }}>
+                  <div className="absolute inset-y-0 left-0 w-20 flex items-center justify-center rounded-2xl" style={{ background: "hsl(var(--destructive))" }}>
                     <button onClick={() => handleRemoveMember(member.id)} className="flex flex-col items-center gap-1 text-white">
                       <Trash2 size={18} />
                       <span className="text-[10px]">حذف</span>
