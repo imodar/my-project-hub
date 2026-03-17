@@ -181,6 +181,7 @@ const Map = () => {
               }}
             >
               <span className="text-xs font-bold">{member.name}</span>
+            </div>
             {/* Arrow */}
             <div className="flex justify-center -mt-1">
               <div
