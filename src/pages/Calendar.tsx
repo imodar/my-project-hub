@@ -23,9 +23,17 @@ interface FamilyEvent {
   title: string;
   date: string; // YYYY-MM-DD
   icon: string;
-  reminder?: string;
+  reminderBefore?: string; // "1d" | "7d" | "30d" | custom
   addedBy: string;
 }
+
+const REMINDER_OPTIONS = [
+  { key: "1d", label: "قبل يوم" },
+  { key: "3d", label: "قبل ٣ أيام" },
+  { key: "7d", label: "قبل أسبوع" },
+  { key: "30d", label: "قبل شهر" },
+  { key: "none", label: "بدون تذكير" },
+];
 
 const ICONS: Record<string, any> = {
   cake: Cake,
@@ -84,10 +92,10 @@ function daysLabel(d: number) {
 }
 
 const initialEvents: FamilyEvent[] = [
-  { id: "1", title: "عيد ميلاد نورة", date: "2026-03-15", icon: "cake", reminder: "كل العائلة", addedBy: "أم فهد" },
-  { id: "2", title: "ذكرى الزواج", date: "2026-03-22", icon: "heart", reminder: "أبو فهد وأم فهد", addedBy: "أبو فهد" },
-  { id: "3", title: "رحلة أبها", date: "2026-04-01", icon: "plane", reminder: "كل العائلة", addedBy: "فهد" },
-  { id: "4", title: "تخرج سارة", date: "2026-05-10", icon: "graduation", reminder: "كل العائلة", addedBy: "سارة" },
+  { id: "1", title: "عيد ميلاد نورة", date: "2026-03-15", icon: "cake", reminderBefore: "1d", addedBy: "أم فهد" },
+  { id: "2", title: "ذكرى الزواج", date: "2026-03-22", icon: "heart", reminderBefore: "7d", addedBy: "أبو فهد" },
+  { id: "3", title: "رحلة أبها", date: "2026-04-01", icon: "plane", reminderBefore: "3d", addedBy: "فهد" },
+  { id: "4", title: "تخرج سارة", date: "2026-05-10", icon: "graduation", reminderBefore: "30d", addedBy: "سارة" },
 ];
 
 const CalendarPage = () => {
@@ -107,7 +115,7 @@ const CalendarPage = () => {
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newEvent, setNewEvent] = useState({ title: "", icon: "calendar", reminder: "" });
+  const [newEvent, setNewEvent] = useState({ title: "", reminderBefore: "1d" });
 
   // Swipe state
   const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
@@ -154,12 +162,12 @@ const CalendarPage = () => {
       id: crypto.randomUUID(),
       title: newEvent.title,
       date: dateStr,
-      icon: newEvent.icon,
-      reminder: newEvent.reminder || "كل العائلة",
+      icon: "calendar",
+      reminderBefore: newEvent.reminderBefore !== "none" ? newEvent.reminderBefore : undefined,
       addedBy: "أنا",
     };
     setEvents((prev) => [...prev, ev]);
-    setNewEvent({ title: "", icon: "calendar", reminder: "" });
+    setNewEvent({ title: "", reminderBefore: "1d" });
     setShowAddDialog(false);
   };
 
@@ -167,7 +175,7 @@ const CalendarPage = () => {
     addToTrash({
       type: "event",
       title: ev.title,
-      description: `${ev.date} - ${ev.reminder || ""}`,
+      description: `${ev.date}`,
       deletedBy: "أنا",
       isShared: true,
       originalData: ev,
@@ -180,21 +188,18 @@ const CalendarPage = () => {
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     touchStartXRef.current = e.clientX;
     activeSwipeRef.current = id;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   const handlePointerMove = (e: React.PointerEvent, id: string) => {
     if (activeSwipeRef.current !== id) return;
     const diff = touchStartXRef.current - e.clientX;
-    if (diff > 0) {
-      setSwipeOffset((prev) => ({ ...prev, [id]: Math.min(diff, 80) }));
-    } else {
-      setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
-    }
+    setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, 80) : 0 }));
   };
-  const handlePointerUp = (id: string) => {
+  const handlePointerUp = (e: React.PointerEvent, id: string) => {
     const offset = swipeOffset[id] || 0;
     setSwipeOffset((prev) => ({ ...prev, [id]: offset > 40 ? 80 : 0 }));
     activeSwipeRef.current = null;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   };
 
   const getMonthShort = (dateStr: string) => {
@@ -321,7 +326,7 @@ const CalendarPage = () => {
                   style={{ transform: `translateX(${-offset}px)` }}
                   onPointerDown={(e) => handlePointerDown(e, ev.id)}
                   onPointerMove={(e) => handlePointerMove(e, ev.id)}
-                  onPointerUp={() => handlePointerUp(ev.id)}
+                  onPointerUp={(e) => handlePointerUp(e, ev.id)}
                 >
                   {/* Date badge */}
                   <div className="w-14 h-14 rounded-2xl bg-primary flex flex-col items-center justify-center shrink-0">
@@ -334,8 +339,8 @@ const CalendarPage = () => {
                       <span>{getEventIcon(ev.icon)}</span>
                       <span className="truncate">{ev.title}</span>
                     </p>
-                    {ev.reminder && (
-                      <p className="text-xs text-muted-foreground mt-1">تذكير: {ev.reminder}</p>
+                    {ev.reminderBefore && (
+                      <p className="text-xs text-muted-foreground mt-1">🔔 {REMINDER_OPTIONS.find(r => r.key === ev.reminderBefore)?.label || ev.reminderBefore}</p>
                     )}
                   </div>
                   {/* Days left */}
@@ -374,7 +379,7 @@ const CalendarPage = () => {
                 <span className="text-lg">{getEventIcon(ev.icon)}</span>
                 <div className="flex-1">
                   <p className="text-sm font-bold text-foreground">{ev.title}</p>
-                  {ev.reminder && <p className="text-xs text-muted-foreground">{ev.reminder}</p>}
+                  {ev.reminderBefore && <p className="text-xs text-muted-foreground">🔔 {REMINDER_OPTIONS.find(r => r.key === ev.reminderBefore)?.label || ev.reminderBefore}</p>}
                 </div>
               </div>
             ))}
@@ -414,27 +419,18 @@ const CalendarPage = () => {
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">الأيقونة</label>
-              <div className="flex gap-2">
-                {ICON_OPTIONS.map((opt) => (
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">التذكير</label>
+              <div className="flex flex-wrap gap-2">
+                {REMINDER_OPTIONS.map((opt) => (
                   <button
                     key={opt.key}
-                    onClick={() => setNewEvent((p) => ({ ...p, icon: opt.key }))}
-                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg border-2 transition-colors ${newEvent.icon === opt.key ? "border-primary bg-primary/10" : "border-border bg-muted/30"}`}
+                    onClick={() => setNewEvent((p) => ({ ...p, reminderBefore: opt.key }))}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${newEvent.reminderBefore === opt.key ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}
                   >
                     {opt.label}
                   </button>
                 ))}
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">تذكير</label>
-              <input
-                value={newEvent.reminder}
-                onChange={(e) => setNewEvent((p) => ({ ...p, reminder: e.target.value }))}
-                placeholder="كل العائلة"
-                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
             </div>
             <button
               onClick={handleAddEvent}
