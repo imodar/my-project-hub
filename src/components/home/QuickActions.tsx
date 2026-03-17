@@ -10,8 +10,8 @@ const islamicActions = [
 
 const generalActions = [
   { icon: ShoppingCart, label: "السوق", color: "hsl(145, 40%, 42%)", path: "/" },
-  { icon: Calendar, label: "التقويم", color: "hsl(220, 60%, 50%)", path: "/" },
-  { icon: HandCoins, label: "الديون", color: "hsl(0, 60%, 55%)", path: "/" },
+  { icon: Calendar, label: "التقويم", color: "hsl(220, 60%, 50%)", path: "/calendar" },
+  { icon: HandCoins, label: "الديون", color: "hsl(0, 60%, 55%)", path: "/debts" },
 ];
 
 const QuickActions = () => {
