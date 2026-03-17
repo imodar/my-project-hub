@@ -691,8 +691,8 @@ const Debts = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-card w-full max-w-lg rounded-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto" dir="rtl">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-foreground">إضافة دين جديد</h2>
-              <button onClick={() => setShowAddForm(false)} className="p-2 rounded-full bg-muted">
+              <h2 className="text-lg font-bold text-foreground">{editingDebtId ? "تعديل الدين" : "إضافة دين جديد"}</h2>
+              <button onClick={() => { setShowAddForm(false); setEditingDebtId(null); }} className="p-2 rounded-full bg-muted">
                 <X size={18} />
               </button>
             </div>
