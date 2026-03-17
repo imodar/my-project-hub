@@ -300,7 +300,7 @@ const FamilyManagement = () => {
                   <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{
                     background: isSuper ? "hsl(var(--primary) / 0.15)" : "hsl(var(--accent) / 0.15)",
                   }}>
-                    <span className="text-lg">{ROLE_EMOJI[member.role]}</span>
+                    <RoleIcon role={member.role} size={20} className={isSuper ? "text-primary" : "text-accent-foreground"} />
                   </div>
                   <div className="flex-1 text-right">
                     <p className="text-sm font-semibold text-foreground">{member.name}</p>
