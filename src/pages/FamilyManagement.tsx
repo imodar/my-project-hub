@@ -114,29 +114,45 @@ const FamilyManagement = () => {
     setInviteCode(generateInviteCode());
   };
 
-  // Swipe handlers
+  // Swipe handlers - using refs to avoid stale closures
+  const touchStartXRef = React.useRef(0);
+  const swipeOffsetRef = React.useRef<Record<string, number>>({});
+
   const handleTouchStart = useCallback((e: React.TouchEvent, id: string) => {
-    setTouchStartX(e.touches[0].clientX);
+    touchStartXRef.current = e.touches[0].clientX;
+    // Reset any other open swipes
+    setSwipeOffset((prev) => {
+      const reset: Record<string, number> = {};
+      Object.keys(prev).forEach((k) => { reset[k] = k === id ? prev[k] : 0; });
+      return reset;
+    });
     setSwipedId(id);
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent, id: string) => {
-    const diff = e.touches[0].clientX - touchStartX;
-    // RTL: swipe right to reveal delete (positive diff)
+    const diff = touchStartXRef.current - e.touches[0].clientX;
+    // RTL layout: swipe left (negative clientX movement) reveals delete on left side
     if (diff > 0) {
-      setSwipeOffset((prev) => ({ ...prev, [id]: Math.min(diff, 80) }));
+      const offset = Math.min(diff, 80);
+      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: offset };
+      setSwipeOffset((prev) => ({ ...prev, [id]: offset }));
+    } else {
+      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: 0 };
+      setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
     }
-  }, [touchStartX]);
+  }, []);
 
   const handleTouchEnd = useCallback((id: string) => {
-    const offset = swipeOffset[id] || 0;
-    if (offset > 50) {
+    const offset = swipeOffsetRef.current[id] || 0;
+    if (offset > 40) {
       setSwipeOffset((prev) => ({ ...prev, [id]: 80 }));
+      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: 80 };
     } else {
       setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
+      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: 0 };
       setSwipedId(null);
     }
-  }, [swipeOffset]);
+  }, []);
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col" style={{
