@@ -479,13 +479,13 @@ const Debts = () => {
           onClick={() => setActiveTab("given")}
           className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === "given" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}
         >
-          💰 أعطيت
+          📋 ديون لي
         </button>
         <button
           onClick={() => setActiveTab("taken")}
           className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === "taken" ? "bg-card text-destructive shadow-sm" : "text-muted-foreground"}`}
         >
-          📥 أخذت
+          🧾 ديون عليّ
         </button>
       </div>
 
@@ -682,7 +682,7 @@ const Debts = () => {
           className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base shadow-lg flex items-center justify-center gap-2"
         >
           <Plus size={20} />
-          + إضافة دين جديد
+          إضافة دين جديد
         </button>
       </div>
 
