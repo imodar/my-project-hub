@@ -726,7 +726,7 @@ const Debts = () => {
               className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
             />
             <button onClick={handleAddDebt} className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base">
-              إضافة
+              {editingDebtId ? "حفظ التعديلات" : "إضافة"}
             </button>
           </div>
         </div>
