@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2 } from "lucide-react";
+import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+
+type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife";
 
 interface FamilyMember {
   id: string;
   name: string;
-  role: "father" | "mother" | "son" | "daughter";
+  role: FamilyRole;
+  isCreator?: boolean;
   avatar?: string;
 }
 
@@ -23,29 +26,88 @@ const ROLE_LABELS: Record<string, string> = {
   mother: "الأم",
   son: "ابن",
   daughter: "ابنة",
+  husband: "الزوج",
+  wife: "الزوجة",
 };
+
+const ROLE_EMOJI: Record<string, string> = {
+  father: "👨",
+  mother: "👩",
+  son: "👦",
+  daughter: "👧",
+  husband: "👨",
+  wife: "👩",
+};
+
+const isSupervisor = (role: FamilyRole) =>
+  role === "father" || role === "mother" || role === "husband" || role === "wife";
+
+const SWIPE_THRESHOLD = 40;
+const SWIPE_WIDTH = 72;
 
 const FamilyManagement = () => {
   const navigate = useNavigate();
-  const [members, setMembers] = useState<FamilyMember[]>([
-    { id: "1", name: "أحمد", role: "father" },
-    { id: "2", name: "فاطمة", role: "mother" },
-    { id: "3", name: "محمد", role: "son" },
-    { id: "4", name: "سارة", role: "daughter" },
-  ]);
 
+  // Creator role setup
+  const [creatorRole, setCreatorRole] = useState<FamilyRole | null>(() => {
+    const saved = localStorage.getItem("family_creator_role");
+    return saved as FamilyRole | null;
+  });
+
+  const [members, setMembers] = useState<FamilyMember[]>(() => {
+    const saved = localStorage.getItem("family_members");
+    if (saved) return JSON.parse(saved);
+    return [];
+  });
+
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [setupName, setSetupName] = useState("");
+  const [setupRole, setSetupRole] = useState<"father" | "mother" | null>(null);
+
+  // Show setup if no creator role yet
+  useEffect(() => {
+    if (!creatorRole && members.length === 0) {
+      setShowSetupDialog(true);
+    }
+  }, [creatorRole, members.length]);
+
+  // Save members
+  useEffect(() => {
+    localStorage.setItem("family_members", JSON.stringify(members));
+  }, [members]);
+
+  const handleSetupComplete = () => {
+    if (!setupRole || !setupName.trim()) return;
+    const role = setupRole;
+    setCreatorRole(role);
+    localStorage.setItem("family_creator_role", role);
+    const creator: FamilyMember = {
+      id: "creator",
+      name: setupName.trim(),
+      role,
+      isCreator: true,
+    };
+    setMembers([creator]);
+    setShowSetupDialog(false);
+    toast({ title: "تم إنشاء الأسرة بنجاح!" });
+  };
+
+  // Add member dialog
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addStep, setAddStep] = useState<"choose-type" | "enter-name" | "invite-method">("choose-type");
-  const [selectedType, setSelectedType] = useState<"son" | "daughter" | null>(null);
+  const [selectedType, setSelectedType] = useState<FamilyRole | null>(null);
   const [newName, setNewName] = useState("");
   const [inviteCode, setInviteCode] = useState(generateInviteCode);
   const [codeTimer, setCodeTimer] = useState(300);
   const [codeCopied, setCodeCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [swipedId, setSwipedId] = useState<string | null>(null);
-  const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
 
-  // Code timer countdown
+  // Swipe state
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; id: string } | null>(null);
+  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
+  const isDragging = useRef(false);
+
   useEffect(() => {
     if (!showAddDialog || addStep !== "invite-method") return;
     const interval = setInterval(() => {
@@ -62,6 +124,19 @@ const FamilyManagement = () => {
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
+  const hasSpouse = members.some((m) =>
+    m.role === "wife" || m.role === "husband" || 
+    (creatorRole === "father" && m.role === "mother") || 
+    (creatorRole === "mother" && m.role === "father")
+  );
+
+  const getSpouseRole = (): FamilyRole | null => {
+    if (hasSpouse) return null;
+    if (creatorRole === "father") return "wife";
+    if (creatorRole === "mother") return "husband";
+    return null;
+  };
+
   const handleAddMember = () => {
     if (!selectedType || !newName.trim()) return;
     const newMember: FamilyMember = {
@@ -75,8 +150,8 @@ const FamilyManagement = () => {
 
   const handleRemoveMember = (id: string) => {
     setMembers((prev) => prev.filter((m) => m.id !== id));
-    setSwipedId(null);
-    setSwipeOffset({});
+    setOpenSwipeId(null);
+    setSwipeOffsets({});
     toast({ title: "تم حذف الفرد من الأسرة" });
   };
 
@@ -113,55 +188,62 @@ const FamilyManagement = () => {
     setInviteCode(generateInviteCode());
   };
 
-  // Swipe handlers - using refs to avoid stale closures
-  const touchStartXRef = React.useRef(0);
-  const swipeOffsetRef = React.useRef<Record<string, number>>({});
-
+  // Swipe handlers
   const handleTouchStart = useCallback((e: React.TouchEvent, id: string) => {
-    touchStartXRef.current = e.touches[0].clientX;
-    // Reset any other open swipes
-    setSwipeOffset((prev) => {
-      const reset: Record<string, number> = {};
-      Object.keys(prev).forEach((k) => { reset[k] = k === id ? prev[k] : 0; });
-      return reset;
-    });
-    setSwipedId(id);
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, id };
+    isDragging.current = false;
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent, id: string) => {
-    const diff = touchStartXRef.current - e.touches[0].clientX;
-    // RTL layout: swipe left (negative clientX movement) reveals delete on left side
-    if (diff > 0) {
-      const offset = Math.min(diff, 80);
-      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: offset };
-      setSwipeOffset((prev) => ({ ...prev, [id]: offset }));
+    if (!touchStartRef.current || touchStartRef.current.id !== id) return;
+    const dx = touchStartRef.current.x - e.touches[0].clientX;
+    const dy = Math.abs(touchStartRef.current.y - e.touches[0].clientY);
+
+    // If vertical scroll is dominant, cancel swipe
+    if (!isDragging.current && dy > Math.abs(dx)) {
+      touchStartRef.current = null;
+      return;
+    }
+    isDragging.current = true;
+
+    if (dx > 0) {
+      const offset = Math.min(dx, SWIPE_WIDTH);
+      setSwipeOffsets((prev) => ({ ...prev, [id]: offset }));
     } else {
-      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: 0 };
-      setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
+      setSwipeOffsets((prev) => ({ ...prev, [id]: Math.max(0, (prev[id] || 0) + dx * 0.5) }));
     }
   }, []);
 
   const handleTouchEnd = useCallback((id: string) => {
-    const offset = swipeOffsetRef.current[id] || 0;
-    if (offset > 40) {
-      setSwipeOffset((prev) => ({ ...prev, [id]: 80 }));
-      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: 80 };
+    const offset = swipeOffsets[id] || 0;
+    if (offset > SWIPE_THRESHOLD) {
+      setSwipeOffsets((prev) => ({ ...prev, [id]: SWIPE_WIDTH }));
+      setOpenSwipeId(id);
     } else {
-      setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
-      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: 0 };
-      setSwipedId(null);
+      setSwipeOffsets((prev) => ({ ...prev, [id]: 0 }));
+      setOpenSwipeId(null);
     }
-  }, []);
+    touchStartRef.current = null;
+    isDragging.current = false;
+  }, [swipeOffsets]);
+
+  // Close open swipe on outside tap
+  const handleCardTap = useCallback((id: string) => {
+    if (openSwipeId && openSwipeId !== id) {
+      setSwipeOffsets((prev) => ({ ...prev, [openSwipeId]: 0 }));
+      setOpenSwipeId(null);
+    }
+  }, [openSwipeId]);
+
+  const spouseRole = getSpouseRole();
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col" style={{
-      background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)",
-    }}>
+    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <div />
         <h1 className="text-lg font-bold text-foreground">إدارة أفراد الأسرة</h1>
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground" style={{ background: "hsla(0,0%,0%,0.05)" }}>
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted/50">
           رجوع
           <ChevronRight size={18} />
         </button>
@@ -172,51 +254,58 @@ const FamilyManagement = () => {
         <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
         <div className="space-y-2">
           {members.map((member) => {
-            const offset = swipeOffset[member.id] || 0;
-            const isParent = member.role === "father" || member.role === "mother";
+            const offset = swipeOffsets[member.id] || 0;
+            const isSuper = isSupervisor(member.role);
+            const canSwipe = !member.isCreator;
             return (
-              <div key={member.id} className="relative overflow-hidden rounded-2xl">
-                {/* Delete button behind - positioned on the left for RTL swipe */}
-                {!isParent && (
-                  <div className="absolute inset-y-0 left-0 w-20 flex items-center justify-center rounded-2xl" style={{ background: "hsl(var(--destructive))" }}>
-                    <button onClick={() => handleRemoveMember(member.id)} className="flex flex-col items-center gap-1 text-white">
-                      <Trash2 size={18} />
-                      <span className="text-[10px]">حذف</span>
+              <div key={member.id} className="relative overflow-hidden rounded-2xl" onClick={() => handleCardTap(member.id)}>
+                {/* Delete button */}
+                {canSwipe && (
+                  <div
+                    className="absolute inset-y-0 left-0 flex items-center justify-center rounded-2xl p-1"
+                    style={{ width: `${SWIPE_WIDTH}px` }}
+                  >
+                    <button
+                      onClick={() => handleRemoveMember(member.id)}
+                      className="flex flex-col items-center justify-center gap-1 w-full h-full rounded-xl text-destructive-foreground"
+                      style={{ background: "hsl(var(--destructive))" }}
+                    >
+                      <Trash2 size={16} />
+                      <span className="text-[10px] font-semibold">حذف</span>
                     </button>
                   </div>
                 )}
 
                 {/* Card */}
                 <div
-                  className="relative flex items-center gap-3 px-4 py-3.5 transition-transform"
+                  className="relative flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl transition-transform duration-150"
                   style={{
-                    background: "hsla(0,0%,100%,0.9)",
                     boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
                     transform: `translateX(${-offset}px)`,
                   }}
-                  onTouchStart={(e) => !isParent && handleTouchStart(e, member.id)}
-                  onTouchMove={(e) => !isParent && handleTouchMove(e, member.id)}
-                  onTouchEnd={() => !isParent && handleTouchEnd(member.id)}
+                  onTouchStart={(e) => canSwipe && handleTouchStart(e, member.id)}
+                  onTouchMove={(e) => canSwipe && handleTouchMove(e, member.id)}
+                  onTouchEnd={() => canSwipe && handleTouchEnd(member.id)}
                 >
                   {/* Avatar */}
                   <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{
-                    background: isParent ? "hsl(var(--primary) / 0.15)" : "hsl(var(--accent) / 0.15)",
+                    background: isSuper ? "hsl(var(--primary) / 0.15)" : "hsl(var(--accent) / 0.15)",
                   }}>
-                    {member.avatar ? (
-                      <img src={member.avatar} alt={member.name} className="w-full h-full object-cover rounded-full" />
-                    ) : (
-                      <span className="text-sm font-bold" style={{ color: isParent ? "hsl(var(--primary))" : "hsl(var(--accent))" }}>
-                        {member.name.charAt(0)}
-                      </span>
-                    )}
+                    <span className="text-lg">{ROLE_EMOJI[member.role]}</span>
                   </div>
                   <div className="flex-1 text-right">
                     <p className="text-sm font-semibold text-foreground">{member.name}</p>
                     <p className="text-xs text-muted-foreground">{ROLE_LABELS[member.role]}</p>
                   </div>
-                  {isParent && (
-                    <span className="text-[10px] px-2 py-1 rounded-full font-semibold" style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}>
+                  {isSuper && (
+                    <span className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-semibold" style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}>
+                      <Crown size={10} />
                       مشرف
+                    </span>
+                  )}
+                  {member.isCreator && (
+                    <span className="text-[10px] px-2 py-1 rounded-full font-semibold bg-accent text-accent-foreground">
+                      المؤسس
                     </span>
                   )}
                 </div>
@@ -226,96 +315,147 @@ const FamilyManagement = () => {
         </div>
 
         {/* Add button */}
-        <button
-          onClick={() => setShowAddDialog(true)}
-          className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-sm font-semibold text-primary transition-colors active:bg-primary/10"
-          style={{
-            background: "hsl(var(--primary) / 0.08)",
-            border: "2px dashed hsl(var(--primary) / 0.3)",
-          }}
-        >
-          <Plus size={18} />
-          إضافة فرد جديد
-        </button>
+        {creatorRole && (
+          <button
+            onClick={() => setShowAddDialog(true)}
+            className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-sm font-semibold text-primary transition-colors active:bg-primary/10"
+            style={{
+              background: "hsl(var(--primary) / 0.08)",
+              border: "2px dashed hsl(var(--primary) / 0.3)",
+            }}
+          >
+            <Plus size={18} />
+            إضافة فرد جديد
+          </button>
+        )}
 
         {/* Invite section */}
-        <div className="mt-8">
-          <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">طرق الانضمام</h2>
-          <div className="space-y-3">
-            {/* QR Code */}
-            <div className="rounded-2xl p-4 text-center" style={{
-              background: "hsla(0,0%,100%,0.9)",
-              boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
-            }}>
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <QrCode size={18} className="text-primary" />
-                <span className="text-sm font-semibold text-foreground">رمز QR</span>
-              </div>
-              <div className="w-40 h-40 mx-auto rounded-2xl flex items-center justify-center mb-3" style={{
-                background: "hsl(var(--muted))",
-                border: "2px solid hsl(var(--border))",
-              }}>
-                <div className="grid grid-cols-5 gap-1">
-                  {Array.from({ length: 25 }).map((_, i) => (
-                    <div key={i} className="w-5 h-5 rounded-sm" style={{
-                      background: Math.random() > 0.4 ? "hsl(var(--foreground))" : "transparent",
-                    }} />
-                  ))}
+        {creatorRole && (
+          <div className="mt-8">
+            <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">طرق الانضمام</h2>
+            <div className="space-y-3">
+              {/* QR Code */}
+              <div className="rounded-2xl p-4 text-center bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <QrCode size={18} className="text-primary" />
+                  <span className="text-sm font-semibold text-foreground">رمز QR</span>
                 </div>
-              </div>
-              <p className="text-xs text-muted-foreground">امسح الرمز للانضمام للأسرة</p>
-            </div>
-
-            {/* Invite Code */}
-            <div className="rounded-2xl p-4" style={{
-              background: "hsla(0,0%,100%,0.9)",
-              boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
-            }}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-muted-foreground">ينتهي خلال {formatTime(codeTimer)}</span>
-                <span className="text-sm font-semibold text-foreground">كود الانضمام</span>
-              </div>
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <div className="flex gap-1.5 direction-ltr" style={{ direction: "ltr" }}>
-                  {inviteCode.split("").map((char, i) => (
-                    <div key={i} className="w-10 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-foreground" style={{
-                      background: "hsl(var(--muted))",
-                      border: "1px solid hsl(var(--border))",
-                    }}>
-                      {char}
-                    </div>
-                  ))}
+                <div className="w-40 h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 bg-muted border-2 border-border">
+                  <div className="grid grid-cols-5 gap-1">
+                    {Array.from({ length: 25 }).map((_, i) => (
+                      <div key={i} className="w-5 h-5 rounded-sm" style={{
+                        background: Math.random() > 0.4 ? "hsl(var(--foreground))" : "transparent",
+                      }} />
+                    ))}
+                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground">امسح الرمز للانضمام للأسرة</p>
               </div>
-              <button onClick={handleCopyCode} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10" style={{ background: "hsl(var(--primary) / 0.08)" }}>
-                {codeCopied ? <Check size={16} /> : <Copy size={16} />}
-                {codeCopied ? "تم النسخ" : "نسخ الكود"}
-              </button>
-            </div>
 
-            {/* Invite Link */}
-            <div className="rounded-2xl p-4" style={{
-              background: "hsla(0,0%,100%,0.9)",
-              boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
-            }}>
-              <div className="flex items-center gap-2 mb-3 justify-end">
-                <span className="text-sm font-semibold text-foreground">رابط الدعوة</span>
-                <Link2 size={18} className="text-primary" />
+              {/* Invite Code */}
+              <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs text-muted-foreground">ينتهي خلال {formatTime(codeTimer)}</span>
+                  <span className="text-sm font-semibold text-foreground">كود الانضمام</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <div className="flex gap-1.5" style={{ direction: "ltr" }}>
+                    {inviteCode.split("").map((char, i) => (
+                      <div key={i} className="w-10 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-foreground bg-muted border border-border">
+                        {char}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={handleCopyCode} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10" style={{ background: "hsl(var(--primary) / 0.08)" }}>
+                  {codeCopied ? <Check size={16} /> : <Copy size={16} />}
+                  {codeCopied ? "تم النسخ" : "نسخ الكود"}
+                </button>
               </div>
-              <p className="text-xs text-muted-foreground mb-3 text-right">أرسل رابط يُستخدم مرة واحدة للانضمام</p>
-              <div className="flex gap-2">
-                <button onClick={handleShareLink} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors active:opacity-90" style={{ background: "hsl(var(--primary))" }}>
-                  <Share2 size={16} />
-                  مشاركة الرابط
-                </button>
-                <button onClick={handleCopyLink} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10" style={{ background: "hsl(var(--primary) / 0.08)" }}>
-                  {linkCopied ? <Check size={16} /> : <Copy size={16} />}
-                </button>
+
+              {/* Invite Link */}
+              <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
+                <div className="flex items-center gap-2 mb-3 justify-end">
+                  <span className="text-sm font-semibold text-foreground">رابط الدعوة</span>
+                  <Link2 size={18} className="text-primary" />
+                </div>
+                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل رابط يُستخدم مرة واحدة للانضمام</p>
+                <div className="flex gap-2">
+                  <button onClick={handleShareLink} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-colors active:opacity-90 bg-primary">
+                    <Share2 size={16} />
+                    مشاركة الرابط
+                  </button>
+                  <button onClick={handleCopyLink} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10" style={{ background: "hsl(var(--primary) / 0.08)" }}>
+                    {linkCopied ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* Setup Dialog - First time */}
+      <Dialog open={showSetupDialog} onOpenChange={() => {}}>
+        <DialogContent className="max-w-sm rounded-3xl [&>button]:hidden" style={{ direction: "rtl" }}>
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg">إعداد الأسرة</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground text-center">اختر دورك في الأسرة لإنشاء مجموعتك العائلية</p>
+
+          <div className="space-y-4 mt-2">
+            <div>
+              <label className="text-sm font-semibold text-foreground block mb-2">اسمك</label>
+              <input
+                value={setupName}
+                onChange={(e) => setSetupName(e.target.value)}
+                placeholder="أدخل اسمك"
+                className="w-full px-4 py-3 rounded-xl text-right text-sm border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-foreground block mb-2">دورك في الأسرة</label>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSetupRole("father")}
+                  className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    setupRole === "father" ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <span className="text-3xl">👨</span>
+                  <span className="text-sm font-bold text-foreground">أب</span>
+                </button>
+                <button
+                  onClick={() => setSetupRole("mother")}
+                  className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    setupRole === "mother" ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <span className="text-3xl">👩</span>
+                  <span className="text-sm font-bold text-foreground">أم</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-muted/50 rounded-xl p-3">
+              <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                <Crown size={12} className="inline ml-1 text-primary" />
+                ستكون المشرف الرئيسي على الأسرة. يمكنك لاحقاً إضافة {setupRole === "father" ? "زوجتك" : setupRole === "mother" ? "زوجك" : "شريك/ة حياتك"} كمشرف إضافي.
+              </p>
+            </div>
+
+            <button
+              onClick={handleSetupComplete}
+              disabled={!setupRole || !setupName.trim()}
+              className="w-full py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary transition-colors disabled:opacity-40"
+            >
+              إنشاء الأسرة
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Member Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(open) => !open && resetDialog()}>
@@ -323,29 +463,56 @@ const FamilyManagement = () => {
           <DialogHeader>
             <DialogTitle className="text-center">
               {addStep === "choose-type" && "إضافة فرد جديد"}
-              {addStep === "enter-name" && `إضافة ${selectedType === "son" ? "ابن" : "ابنة"}`}
+              {addStep === "enter-name" && `إضافة ${ROLE_LABELS[selectedType || "son"]}`}
               {addStep === "invite-method" && "تم الإضافة ✓"}
             </DialogTitle>
           </DialogHeader>
 
           {addStep === "choose-type" && (
-            <div className="flex gap-3 mt-2">
-              <button
-                onClick={() => { setSelectedType("son"); setAddStep("enter-name"); }}
-                className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl transition-colors active:bg-primary/10"
-                style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.15)" }}
-              >
-                <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(200, 60%, 92%)" }}>👦</div>
-                <span className="text-sm font-bold text-foreground">ابن</span>
-              </button>
-              <button
-                onClick={() => { setSelectedType("daughter"); setAddStep("enter-name"); }}
-                className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl transition-colors active:bg-primary/10"
-                style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.15)" }}
-              >
-                <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(340, 60%, 92%)" }}>👧</div>
-                <span className="text-sm font-bold text-foreground">ابنة</span>
-              </button>
+            <div className="space-y-3 mt-2">
+              {/* Spouse option */}
+              {spouseRole && (
+                <>
+                  <p className="text-xs font-semibold text-muted-foreground px-1">شريك/ة الحياة</p>
+                  <button
+                    onClick={() => { setSelectedType(spouseRole); setAddStep("enter-name"); }}
+                    className="w-full flex items-center gap-3 p-4 rounded-2xl transition-colors active:bg-primary/10"
+                    style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.2)" }}
+                  >
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(var(--primary) / 0.15)" }}>
+                      {spouseRole === "wife" ? "👩" : "👨"}
+                    </div>
+                    <div className="text-right flex-1">
+                      <span className="text-sm font-bold text-foreground block">{ROLE_LABELS[spouseRole]}</span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Crown size={10} className="text-primary" />
+                        سيكون مشرف على الأسرة
+                      </span>
+                    </div>
+                  </button>
+                </>
+              )}
+
+              {/* Children */}
+              <p className="text-xs font-semibold text-muted-foreground px-1">الأبناء</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setSelectedType("son"); setAddStep("enter-name"); }}
+                  className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl transition-colors active:bg-primary/10"
+                  style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.15)" }}
+                >
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(200, 60%, 92%)" }}>👦</div>
+                  <span className="text-sm font-bold text-foreground">ابن</span>
+                </button>
+                <button
+                  onClick={() => { setSelectedType("daughter"); setAddStep("enter-name"); }}
+                  className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl transition-colors active:bg-primary/10"
+                  style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.15)" }}
+                >
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(340, 60%, 92%)" }}>👧</div>
+                  <span className="text-sm font-bold text-foreground">ابنة</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -356,16 +523,23 @@ const FamilyManagement = () => {
                 <input
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder={selectedType === "son" ? "اسم الابن" : "اسم الابنة"}
+                  placeholder={`اسم ${ROLE_LABELS[selectedType || "son"]}`}
                   className="w-full px-4 py-3 rounded-xl text-right text-sm border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                   autoFocus
                 />
               </div>
+              {selectedType && isSupervisor(selectedType) && (
+                <div className="bg-muted/50 rounded-xl p-3">
+                  <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                    <Crown size={10} className="text-primary" />
+                    سيحصل على صلاحيات المشرف
+                  </p>
+                </div>
+              )}
               <button
                 onClick={handleAddMember}
                 disabled={!newName.trim()}
-                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-40"
-                style={{ background: "hsl(var(--primary))" }}
+                className="w-full py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary transition-colors disabled:opacity-40"
               >
                 <UserPlus size={16} className="inline ml-2" />
                 إضافة
@@ -376,7 +550,7 @@ const FamilyManagement = () => {
           {addStep === "invite-method" && (
             <div className="space-y-3 mt-2">
               <p className="text-sm text-muted-foreground text-center">تم إضافة {newName}. يمكنك الآن إرسال دعوة للانضمام:</p>
-              <button onClick={handleShareLink} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: "hsl(var(--primary))" }}>
+              <button onClick={handleShareLink} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground bg-primary">
                 <Share2 size={16} />
                 مشاركة رابط الدعوة
               </button>
