@@ -400,17 +400,17 @@ const Debts = () => {
           const isExpanded = expandedDebt === debt.id;
 
           return (
-            <div key={debt.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+            <div key={debt.id} className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
               <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
                 <div className="flex items-start justify-between mb-2">
                   <div className="text-left space-y-0.5">
                     {debt.amounts.map((a, i) => (
-                      <p key={i} className="text-xl font-black text-foreground">{formatDebtAmount(a)}</p>
+                      <p key={i} className={`text-xl font-black ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{formatDebtAmount(a)}</p>
                     ))}
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-foreground text-base">{debt.personName}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{debt.note}</p>
+                    <p className={`font-bold text-base ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{debt.personName}</p>
+                    <p className={`text-xs mt-0.5 ${debt.isFullyPaid ? "line-through text-muted-foreground/40" : "text-muted-foreground"}`}>{debt.note}</p>
                   </div>
                 </div>
 
@@ -462,6 +462,14 @@ const Debts = () => {
                       ))}
                     </div>
                   )}
+
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => setDebts((prev) => prev.filter((d) => d.id !== debt.id))}
+                    className="w-full py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold"
+                  >
+                    🗑️ حذف هذا الدين
+                  </button>
 
                   {/* Actions */}
                   {!debt.isFullyPaid && (
