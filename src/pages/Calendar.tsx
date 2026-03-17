@@ -188,21 +188,18 @@ const CalendarPage = () => {
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     touchStartXRef.current = e.clientX;
     activeSwipeRef.current = id;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   const handlePointerMove = (e: React.PointerEvent, id: string) => {
     if (activeSwipeRef.current !== id) return;
     const diff = touchStartXRef.current - e.clientX;
-    if (diff > 0) {
-      setSwipeOffset((prev) => ({ ...prev, [id]: Math.min(diff, 80) }));
-    } else {
-      setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
-    }
+    setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, 80) : 0 }));
   };
-  const handlePointerUp = (id: string) => {
+  const handlePointerUp = (e: React.PointerEvent, id: string) => {
     const offset = swipeOffset[id] || 0;
     setSwipeOffset((prev) => ({ ...prev, [id]: offset > 40 ? 80 : 0 }));
     activeSwipeRef.current = null;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   };
 
   const getMonthShort = (dateStr: string) => {
