@@ -72,9 +72,11 @@ const Map = () => {
   const [updateInterval, setUpdateInterval] = useState(5);
   const [showSettings, setShowSettings] = useState(false);
   const [expandedList, setExpandedList] = useState(true);
+  const [members, setMembers] = useState<FamilyMember[]>(mockMembers);
+  const [myLocationEnabled, setMyLocationEnabled] = useState(true);
 
-  const visibleMembers = mockMembers.filter((m) => !m.isLocationHidden);
-  const hiddenMembers = mockMembers.filter((m) => m.isLocationHidden);
+  const visibleMembers = members.filter((m) => !m.isLocationHidden);
+  const hiddenMembers = members.filter((m) => m.isLocationHidden);
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
@@ -93,6 +95,19 @@ const Map = () => {
             <h1 className="text-lg font-bold text-white">خريطة العائلة</h1>
             <p className="text-xs text-white/70">تحديث كل {updateInterval} دقائق</p>
           </div>
+          {/* Location toggle */}
+          <button
+            onClick={() => setMyLocationEnabled(!myLocationEnabled)}
+            className="p-2 rounded-full flex items-center justify-center"
+            style={{ background: myLocationEnabled ? "hsla(145, 60%, 50%, 0.25)" : "hsla(0,0%,100%,0.12)" }}
+            title={myLocationEnabled ? "موقعك مفعّل" : "موقعك مخفي"}
+          >
+            {myLocationEnabled ? (
+              <MapPin size={18} className="text-green-300" />
+            ) : (
+              <EyeOff size={18} className="text-white/60" />
+            )}
+          </button>
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 rounded-full"
@@ -226,13 +241,13 @@ const Map = () => {
           onClick={() => setExpandedList(!expandedList)}
           className="w-full flex items-center justify-between px-4 py-3 bg-card rounded-t-2xl border border-border"
         >
-          <span className="text-sm font-bold text-foreground">أفراد العائلة ({mockMembers.length})</span>
+          <span className="text-sm font-bold text-foreground">أفراد العائلة ({members.length})</span>
           {expandedList ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
         </button>
 
         {expandedList && (
           <div className="border border-t-0 border-border rounded-b-2xl overflow-hidden">
-            {mockMembers.map((member, idx) => (
+            {members.map((member, idx) => (
               <div
                 key={member.id}
                 className={`flex items-center gap-3 px-4 py-3 bg-card ${idx < mockMembers.length - 1 ? "border-b border-border" : ""}`}
