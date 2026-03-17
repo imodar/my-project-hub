@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart } from "lucide-react";
+import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
 type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife";
+type InviteStatus = "active" | "pending";
 
 interface FamilyMember {
   id: string;
   name: string;
   role: FamilyRole;
   isCreator?: boolean;
+  isAdmin?: boolean;
+  status: InviteStatus;
   avatar?: string;
 }
 
@@ -30,7 +33,6 @@ const ROLE_LABELS: Record<string, string> = {
   wife: "الزوجة",
 };
 
-// Lucide icon components for each role
 const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: number; className?: string }) => {
   switch (role) {
     case "father":
@@ -40,7 +42,6 @@ const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: nu
     case "wife":
       return <Heart size={size} className={className} />;
     case "son":
-      return <Baby size={size} className={className} />;
     case "daughter":
       return <Baby size={size} className={className} />;
     default:
@@ -48,16 +49,23 @@ const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: nu
   }
 };
 
-const isSupervisor = (role: FamilyRole) =>
+const isParentRole = (role: FamilyRole) =>
   role === "father" || role === "mother" || role === "husband" || role === "wife";
 
 const SWIPE_THRESHOLD = 40;
-const SWIPE_WIDTH = 72;
+const SWIPE_WIDTH = 144; // wider for 2 buttons
+
+const getProfileName = (): string => {
+  // Try to get name from profile/localStorage
+  const saved = localStorage.getItem("profile_name");
+  if (saved) return saved;
+  return "أحمد"; // fallback - same as Profile page default
+};
 
 const FamilyManagement = () => {
   const navigate = useNavigate();
+  const profileName = getProfileName();
 
-  // Creator role setup
   const [creatorRole, setCreatorRole] = useState<FamilyRole | null>(() => {
     const saved = localStorage.getItem("family_creator_role");
     return saved as FamilyRole | null;
@@ -72,14 +80,17 @@ const FamilyManagement = () => {
   const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [setupRole, setSetupRole] = useState<"father" | "mother" | "son" | "daughter" | null>(null);
 
-  // Show setup if no creator role yet
+  // Approval dialog state - when someone scans QR / enters code
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [approvalName, setApprovalName] = useState("");
+  const [approvalRole, setApprovalRole] = useState<FamilyRole | null>(null);
+
   useEffect(() => {
     if (!creatorRole && members.length === 0) {
       setShowSetupDialog(true);
     }
   }, [creatorRole, members.length]);
 
-  // Save members
   useEffect(() => {
     localStorage.setItem("family_members", JSON.stringify(members));
   }, [members]);
@@ -91,9 +102,11 @@ const FamilyManagement = () => {
     localStorage.setItem("family_creator_role", role);
     const creator: FamilyMember = {
       id: "creator",
-      name: "أنا",
+      name: profileName,
       role,
       isCreator: true,
+      isAdmin: isParentRole(role),
+      status: "active",
     };
     setMembers([creator]);
     setShowSetupDialog(false);
@@ -133,8 +146,8 @@ const FamilyManagement = () => {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   const hasSpouse = members.some((m) =>
-    m.role === "wife" || m.role === "husband" || 
-    (creatorRole === "father" && m.role === "mother") || 
+    m.role === "wife" || m.role === "husband" ||
+    (creatorRole === "father" && m.role === "mother") ||
     (creatorRole === "mother" && m.role === "father")
   );
 
@@ -151,6 +164,8 @@ const FamilyManagement = () => {
       id: Date.now().toString(),
       name: newName.trim(),
       role: selectedType,
+      isAdmin: isParentRole(selectedType),
+      status: "pending",
     };
     setMembers((prev) => [...prev, newMember]);
     setAddStep("invite-method");
@@ -161,6 +176,24 @@ const FamilyManagement = () => {
     setOpenSwipeId(null);
     setSwipeOffsets({});
     toast({ title: "تم حذف الفرد من الأسرة" });
+  };
+
+  const handleToggleAdmin = (id: string) => {
+    setMembers((prev) =>
+      prev.map((m) => {
+        if (m.id !== id) return m;
+        // Parents can't lose admin
+        if (isParentRole(m.role)) {
+          toast({ title: "لا يمكن إلغاء إشراف الوالدين", variant: "destructive" });
+          return m;
+        }
+        const newAdmin = !m.isAdmin;
+        toast({ title: newAdmin ? `تم تعيين ${m.name} كمشرف` : `تم إلغاء إشراف ${m.name}` });
+        return { ...m, isAdmin: newAdmin };
+      })
+    );
+    setOpenSwipeId(null);
+    setSwipeOffsets({});
   };
 
   const handleCopyCode = () => {
@@ -196,6 +229,29 @@ const FamilyManagement = () => {
     setInviteCode(generateInviteCode());
   };
 
+  // Simulate incoming join request (for demo - triggered by button)
+  const simulateJoinRequest = () => {
+    setApprovalName("محمد");
+    setApprovalRole(null);
+    setShowApprovalDialog(true);
+  };
+
+  const handleApproveJoin = () => {
+    if (!approvalRole || !approvalName.trim()) return;
+    const newMember: FamilyMember = {
+      id: Date.now().toString(),
+      name: approvalName.trim(),
+      role: approvalRole,
+      isAdmin: isParentRole(approvalRole),
+      status: "active",
+    };
+    setMembers((prev) => [...prev, newMember]);
+    setShowApprovalDialog(false);
+    setApprovalName("");
+    setApprovalRole(null);
+    toast({ title: `تم قبول ${newMember.name} في الأسرة!` });
+  };
+
   // Swipe handlers
   const handleTouchStart = useCallback((e: React.TouchEvent, id: string) => {
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, id };
@@ -207,7 +263,6 @@ const FamilyManagement = () => {
     const dx = touchStartRef.current.x - e.touches[0].clientX;
     const dy = Math.abs(touchStartRef.current.y - e.touches[0].clientY);
 
-    // If vertical scroll is dominant, cancel swipe
     if (!isDragging.current && dy > Math.abs(dx)) {
       touchStartRef.current = null;
       return;
@@ -235,7 +290,6 @@ const FamilyManagement = () => {
     isDragging.current = false;
   }, [swipeOffsets]);
 
-  // Close open swipe on outside tap
   const handleCardTap = useCallback((id: string) => {
     if (openSwipeId && openSwipeId !== id) {
       setSwipeOffsets((prev) => ({ ...prev, [openSwipeId]: 0 }));
@@ -263,23 +317,32 @@ const FamilyManagement = () => {
         <div className="space-y-2">
           {members.map((member) => {
             const offset = swipeOffsets[member.id] || 0;
-            const isSuper = isSupervisor(member.role);
+            const memberIsAdmin = member.isAdmin || isParentRole(member.role);
             const canSwipe = !member.isCreator;
+            const isPending = member.status === "pending";
             return (
               <div key={member.id} className="relative overflow-hidden rounded-2xl" onClick={() => handleCardTap(member.id)}>
-                {/* Delete button */}
+                {/* Swipe actions - Delete + Admin */}
                 {canSwipe && (
                   <div
-                    className="absolute inset-y-0 left-0 flex items-center justify-center rounded-2xl p-1"
+                    className="absolute inset-y-0 left-0 flex items-center gap-1 p-1"
                     style={{ width: `${SWIPE_WIDTH}px` }}
                   >
                     <button
                       onClick={() => handleRemoveMember(member.id)}
-                      className="flex flex-col items-center justify-center gap-1 w-full h-full rounded-xl text-destructive-foreground"
+                      className="flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-xl text-destructive-foreground"
                       style={{ background: "hsl(var(--destructive))" }}
                     >
                       <Trash2 size={16} />
                       <span className="text-[10px] font-semibold">حذف</span>
+                    </button>
+                    <button
+                      onClick={() => handleToggleAdmin(member.id)}
+                      className="flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-xl text-primary-foreground"
+                      style={{ background: memberIsAdmin ? "hsl(var(--muted-foreground))" : "hsl(var(--primary))" }}
+                    >
+                      <Shield size={16} />
+                      <span className="text-[10px] font-semibold">{memberIsAdmin ? "إلغاء" : "مشرف"}</span>
                     </button>
                   </div>
                 )}
@@ -297,15 +360,24 @@ const FamilyManagement = () => {
                 >
                   {/* Avatar */}
                   <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{
-                    background: isSuper ? "hsl(var(--primary) / 0.15)" : "hsl(var(--accent) / 0.15)",
+                    background: memberIsAdmin ? "hsl(var(--primary) / 0.15)" : "hsl(var(--accent) / 0.15)",
+                    opacity: isPending ? 0.5 : 1,
                   }}>
-                    <RoleIcon role={member.role} size={20} className={isSuper ? "text-primary" : "text-accent-foreground"} />
+                    <RoleIcon role={member.role} size={20} className={memberIsAdmin ? "text-primary" : "text-accent-foreground"} />
                   </div>
                   <div className="flex-1 text-right">
-                    <p className="text-sm font-semibold text-foreground">{member.name}</p>
-                    <p className="text-xs text-muted-foreground">{ROLE_LABELS[member.role]}</p>
+                    <p className={`text-sm font-semibold ${isPending ? "text-muted-foreground" : "text-foreground"}`}>{member.name}</p>
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <span className="text-xs text-muted-foreground">{ROLE_LABELS[member.role]}</span>
+                      {isPending && (
+                        <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                          <Clock size={8} />
+                          بانتظار القبول
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {isSuper && (
+                  {memberIsAdmin && (
                     <span className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-semibold" style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}>
                       <Crown size={10} />
                       مشرف
@@ -357,8 +429,19 @@ const FamilyManagement = () => {
                     ))}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">امسح الرمز للانضمام للأسرة</p>
+                <p className="text-xs text-muted-foreground mb-2">امسح الرمز للانضمام للأسرة</p>
+                <p className="text-[10px] text-muted-foreground/70">عند مسح الرمز، ستظهر شاشة قبول على جهاز المشرف لاختيار دور العضو الجديد</p>
               </div>
+
+              {/* Simulate join request button (for demo) */}
+              <button
+                onClick={simulateJoinRequest}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold text-foreground bg-card transition-colors active:bg-muted"
+                style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)", border: "1px dashed hsl(var(--border))" }}
+              >
+                <UserPlus size={16} className="text-primary" />
+                محاكاة طلب انضمام (للتجربة)
+              </button>
 
               {/* Invite Code */}
               <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
@@ -375,6 +458,7 @@ const FamilyManagement = () => {
                     ))}
                   </div>
                 </div>
+                <p className="text-[10px] text-muted-foreground/70 text-center mb-2">عند إدخال الكود، ستظهر شاشة قبول على جهازك لاختيار الدور</p>
                 <button onClick={handleCopyCode} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10" style={{ background: "hsl(var(--primary) / 0.08)" }}>
                   {codeCopied ? <Check size={16} /> : <Copy size={16} />}
                   {codeCopied ? "تم النسخ" : "نسخ الكود"}
@@ -403,7 +487,7 @@ const FamilyManagement = () => {
         )}
       </div>
 
-      {/* Setup Dialog - First time */}
+      {/* Setup Dialog */}
       <Dialog open={showSetupDialog} onOpenChange={() => {}}>
         <DialogContent className="max-w-sm rounded-3xl [&>button]:hidden" style={{ direction: "rtl" }}>
           <DialogHeader>
@@ -412,7 +496,6 @@ const FamilyManagement = () => {
           <p className="text-sm text-muted-foreground text-center">اختر دورك في الأسرة لإنشاء مجموعتك العائلية</p>
 
           <div className="space-y-4 mt-2">
-
             <div>
               <label className="text-sm font-semibold text-foreground block mb-2">دورك في الأسرة</label>
               <div className="grid grid-cols-2 gap-3">
@@ -508,7 +591,6 @@ const FamilyManagement = () => {
 
           {addStep === "choose-type" && (
             <div className="space-y-3 mt-2">
-              {/* Spouse option */}
               {spouseRole && (
                 <>
                   <p className="text-xs font-semibold text-muted-foreground px-1">شريك/ة الحياة</p>
@@ -531,7 +613,6 @@ const FamilyManagement = () => {
                 </>
               )}
 
-              {/* Children */}
               <p className="text-xs font-semibold text-muted-foreground px-1">الأبناء</p>
               <div className="flex gap-3">
                 <button
@@ -570,7 +651,7 @@ const FamilyManagement = () => {
                   autoFocus
                 />
               </div>
-              {selectedType && isSupervisor(selectedType) && (
+              {selectedType && isParentRole(selectedType) && (
                 <div className="bg-muted/50 rounded-xl p-3">
                   <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
                     <Crown size={10} className="text-primary" />
@@ -578,7 +659,7 @@ const FamilyManagement = () => {
                   </p>
                 </div>
               )}
-              {selectedType && !isSupervisor(selectedType) && (
+              {selectedType && !isParentRole(selectedType) && (
                 <div className="bg-muted/50 rounded-xl p-3">
                   <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
                     <ShieldCheck size={10} className="text-primary" />
@@ -586,6 +667,12 @@ const FamilyManagement = () => {
                   </p>
                 </div>
               )}
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
+                <p className="text-xs text-amber-700 dark:text-amber-400 text-center flex items-center justify-center gap-1">
+                  <Clock size={10} />
+                  سيظهر العضو بحالة "بانتظار القبول" حتى يقبل الدعوة
+                </p>
+              </div>
               <button
                 onClick={handleAddMember}
                 disabled={!newName.trim()}
@@ -600,6 +687,12 @@ const FamilyManagement = () => {
           {addStep === "invite-method" && (
             <div className="space-y-3 mt-2">
               <p className="text-sm text-muted-foreground text-center">تم إضافة {newName}. يمكنك الآن إرسال دعوة للانضمام:</p>
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
+                <p className="text-xs text-amber-700 dark:text-amber-400 text-center flex items-center justify-center gap-1">
+                  <Clock size={10} />
+                  العضو بانتظار قبول الدعوة
+                </p>
+              </div>
               <button onClick={handleShareLink} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground bg-primary">
                 <Share2 size={16} />
                 مشاركة رابط الدعوة
@@ -613,6 +706,99 @@ const FamilyManagement = () => {
               </button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Approval Dialog - When someone scans QR or enters code */}
+      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <DialogContent className="max-w-sm rounded-3xl" style={{ direction: "rtl" }}>
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg">طلب انضمام جديد</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Notification */}
+            <div className="bg-primary/5 rounded-2xl p-4 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3" style={{ background: "hsl(var(--primary) / 0.15)" }}>
+                <UserPlus size={28} className="text-primary" />
+              </div>
+              <p className="text-sm font-semibold text-foreground mb-1">شخص يريد الانضمام لأسرتك</p>
+              <p className="text-xs text-muted-foreground">يجب أن يكون الجهازان بجانب بعضهما البعض</p>
+            </div>
+
+            {/* Choose role for new member */}
+            <div>
+              <label className="text-sm font-semibold text-foreground block mb-2">اختر دور العضو الجديد</label>
+
+              {!hasSpouse && (
+                <>
+                  <p className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1">شريك/ة الحياة</p>
+                  <div className="flex gap-2 mb-3">
+                    {(creatorRole === "father" ? ["wife"] : creatorRole === "mother" ? ["husband"] : ["husband", "wife"]).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setApprovalRole(r as FamilyRole)}
+                        className={`flex-1 flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                          approvalRole === r ? "border-primary bg-primary/10" : "border-border bg-card"
+                        }`}
+                      >
+                        <RoleIcon role={r} size={18} className={approvalRole === r ? "text-primary" : "text-muted-foreground"} />
+                        <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <p className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1">الأبناء</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setApprovalRole("son")}
+                  className={`flex-1 flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                    approvalRole === "son" ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <Baby size={18} className={approvalRole === "son" ? "text-blue-500" : "text-muted-foreground"} />
+                  <span className="text-xs font-bold text-foreground">ابن</span>
+                </button>
+                <button
+                  onClick={() => setApprovalRole("daughter")}
+                  className={`flex-1 flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                    approvalRole === "daughter" ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <Baby size={18} className={approvalRole === "daughter" ? "text-pink-500" : "text-muted-foreground"} />
+                  <span className="text-xs font-bold text-foreground">ابنة</span>
+                </button>
+              </div>
+            </div>
+
+            {approvalRole && isParentRole(approvalRole) && (
+              <div className="bg-muted/50 rounded-xl p-3">
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                  <Crown size={10} className="text-primary" />
+                  سيحصل على صلاحيات الإشراف تلقائياً
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleApproveJoin}
+                disabled={!approvalRole}
+                className="flex-1 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary transition-colors disabled:opacity-40"
+              >
+                <Check size={16} className="inline ml-1" />
+                قبول
+              </button>
+              <button
+                onClick={() => { setShowApprovalDialog(false); setApprovalRole(null); }}
+                className="flex-1 py-3 rounded-xl text-sm font-bold text-foreground bg-muted transition-colors"
+              >
+                رفض
+              </button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
