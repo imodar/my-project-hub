@@ -23,9 +23,17 @@ interface FamilyEvent {
   title: string;
   date: string; // YYYY-MM-DD
   icon: string;
-  reminder?: string;
+  reminderBefore?: string; // "1d" | "7d" | "30d" | custom
   addedBy: string;
 }
+
+const REMINDER_OPTIONS = [
+  { key: "1d", label: "قبل يوم" },
+  { key: "3d", label: "قبل ٣ أيام" },
+  { key: "7d", label: "قبل أسبوع" },
+  { key: "30d", label: "قبل شهر" },
+  { key: "none", label: "بدون تذكير" },
+];
 
 const ICONS: Record<string, any> = {
   cake: Cake,
