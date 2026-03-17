@@ -207,12 +207,6 @@ const Map = () => {
             <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
             <span className="text-foreground">غير متصل</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Shield size={11} className="text-primary" />
-            <span className="text-foreground">منطقة آمنة</span>
-          </div>
-        </div>
-      </div>
 
       {/* Family list */}
       <div className="mx-3 mt-3 mb-28">
