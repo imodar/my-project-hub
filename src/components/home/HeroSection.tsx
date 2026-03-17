@@ -28,6 +28,8 @@ const WeatherIcon = ({ icon }: { icon: string }) => {
 
 const HeroSection = () => {
   const { islamicMode } = useIslamicMode();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const mockUser = { name: "أحمد", role: "parent" as const };
   const hijriDate = "٢١ رمضان ١٤٤٧";
   const gregorianDate = "١٦ مارس ٢٠٢٦";
   const nextPrayer = "المغرب";
