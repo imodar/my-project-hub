@@ -352,7 +352,7 @@ const FamilyManagement = () => {
                   className="relative flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl transition-transform duration-150"
                   style={{
                     boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
-                    transform: `translateX(${-offset}px)`,
+                    transform: `translateX(${offset}px)`,
                   }}
                   onTouchStart={(e) => canSwipe && handleTouchStart(e, member.id)}
                   onTouchMove={(e) => canSwipe && handleTouchMove(e, member.id)}
