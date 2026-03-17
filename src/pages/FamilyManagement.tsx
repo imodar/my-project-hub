@@ -85,13 +85,13 @@ const FamilyManagement = () => {
   }, [members]);
 
   const handleSetupComplete = () => {
-    if (!setupRole || !setupName.trim()) return;
+    if (!setupRole) return;
     const role = setupRole;
     setCreatorRole(role);
     localStorage.setItem("family_creator_role", role);
     const creator: FamilyMember = {
       id: "creator",
-      name: setupName.trim(),
+      name: "أنا",
       role,
       isCreator: true,
     };
