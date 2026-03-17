@@ -326,7 +326,7 @@ const CalendarPage = () => {
                   style={{ transform: `translateX(${-offset}px)` }}
                   onPointerDown={(e) => handlePointerDown(e, ev.id)}
                   onPointerMove={(e) => handlePointerMove(e, ev.id)}
-                  onPointerUp={() => handlePointerUp(ev.id)}
+                  onPointerUp={(e) => handlePointerUp(e, ev.id)}
                 >
                   {/* Date badge */}
                   <div className="w-14 h-14 rounded-2xl bg-primary flex flex-col items-center justify-center shrink-0">
