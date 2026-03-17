@@ -104,8 +104,11 @@ const HeroSection = () => {
               <Bell size={20} className="text-white/80" />
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-400" />
             </button>
-            <button className="p-2 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-              <Settings size={20} className="text-white/80" />
+            <button onClick={() => setProfileOpen(true)} className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden" style={{
+              background: "hsla(0,0%,100%,0.15)",
+              border: "2px solid hsla(0,0%,100%,0.3)",
+            }}>
+              <span className="text-sm font-bold text-white">{mockUser.name.charAt(0)}</span>
             </button>
           </div>
         </div>
