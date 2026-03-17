@@ -259,6 +259,7 @@ const Debts = () => {
   const [newPaymentAmounts, setNewPaymentAmounts] = useState<{ amount: string; currency: CurrencyCode }[]>([{ amount: "", currency: "SAR" }]);
 
   const [postponeData, setPostponeData] = useState({ newDate: "", reason: "" });
+  const [editingDebtId, setEditingDebtId] = useState<string | null>(null);
 
   const debts = activeTab === "given" ? givenDebts : takenDebts;
   const setDebts = activeTab === "given" ? setGivenDebts : setTakenDebts;
