@@ -682,7 +682,7 @@ const Debts = () => {
           className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base shadow-lg flex items-center justify-center gap-2"
         >
           <Plus size={20} />
-          + إضافة دين جديد
+          إضافة دين جديد
         </button>
       </div>
 
