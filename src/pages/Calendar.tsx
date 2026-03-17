@@ -317,11 +317,11 @@ const CalendarPage = () => {
                 </div>
                 {/* Card */}
                 <div
-                  className="relative bg-card border border-border rounded-2xl p-4 flex items-center gap-3 transition-transform"
+                  className="relative bg-card border border-border rounded-2xl p-4 flex items-center gap-3 transition-transform touch-pan-y"
                   style={{ transform: `translateX(${-offset}px)` }}
-                  onTouchStart={(e) => handleTouchStart(e, ev.id)}
-                  onTouchMove={(e) => handleTouchMove(e, ev.id)}
-                  onTouchEnd={() => handleTouchEnd(ev.id)}
+                  onPointerDown={(e) => handlePointerDown(e, ev.id)}
+                  onPointerMove={(e) => handlePointerMove(e, ev.id)}
+                  onPointerUp={() => handlePointerUp(ev.id)}
                 >
                   {/* Date badge */}
                   <div className="w-14 h-14 rounded-2xl bg-primary flex flex-col items-center justify-center shrink-0">
