@@ -207,6 +207,8 @@ const Map = () => {
             <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
             <span className="text-foreground">غير متصل</span>
           </div>
+        </div>
+      </div>
 
       {/* Family list */}
       <div className="mx-3 mt-3 mb-28">
