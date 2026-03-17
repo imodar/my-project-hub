@@ -162,12 +162,12 @@ const CalendarPage = () => {
       id: crypto.randomUUID(),
       title: newEvent.title,
       date: dateStr,
-      icon: newEvent.icon,
-      reminder: newEvent.reminder || "كل العائلة",
+      icon: "calendar",
+      reminderBefore: newEvent.reminderBefore !== "none" ? newEvent.reminderBefore : undefined,
       addedBy: "أنا",
     };
     setEvents((prev) => [...prev, ev]);
-    setNewEvent({ title: "", icon: "calendar", reminder: "" });
+    setNewEvent({ title: "", reminderBefore: "1d" });
     setShowAddDialog(false);
   };
 
