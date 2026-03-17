@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Chat from "./pages/Chat.tsx";
 import Map from "./pages/Map.tsx";
 import Debts from "./pages/Debts.tsx";
+import FamilyManagement from "./pages/FamilyManagement.tsx";
 
 const queryClient = new QueryClient();
 
