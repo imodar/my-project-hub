@@ -158,28 +158,6 @@ const Map = () => {
           }}
         />
 
-        {/* Safe zones */}
-        {safeZones.map((zone) => (
-          <div
-            key={zone.id}
-            className="absolute"
-            style={{
-              left: `${zone.x}%`,
-              top: `${zone.y}%`,
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <div
-              className="rounded-full border-2 border-dashed flex items-center justify-center"
-              style={{
-                width: `${zone.radius * 8}px`,
-                height: `${zone.radius * 8}px`,
-                borderColor: "hsl(var(--primary) / 0.5)",
-                background: "hsl(var(--primary) / 0.06)",
-              }}
-            />
-          </div>
-        ))}
 
         {/* Members on map */}
         {visibleMembers.map((member) => (
