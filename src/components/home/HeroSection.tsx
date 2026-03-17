@@ -176,6 +176,8 @@ const HeroSection = () => {
           </div>
         )}
       </div>
+
+      <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={mockUser} />
     </div>
   );
 };

@@ -28,6 +28,7 @@ const App = () => (
             <Route path="/chat" element={<Chat />} />
             <Route path="/map" element={<Map />} />
             <Route path="/debts" element={<Debts />} />
+            <Route path="/family" element={<FamilyManagement />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
