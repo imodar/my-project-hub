@@ -387,24 +387,22 @@ const CalendarPage = () => {
                   {/* Delete */}
                   <button
                     onClick={() => { setDeleteTarget(ev); closeSwipe(ev.id); }}
-                    className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors"
+                    className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
                   >
                     <Trash2 size={16} className="text-destructive-foreground" />
                     <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
                   </button>
-                  {/* Edit */}
                   <button
                     onClick={() => openEdit(ev)}
-                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
+                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
                     style={{ background: "hsl(220, 60%, 50%)" }}
                   >
                     <Pencil size={16} className="text-white" />
                     <span className="text-[10px] text-white font-semibold">تعديل</span>
                   </button>
-                  {/* Personal reminder */}
                   <button
                     onClick={() => openPersonalReminders(ev)}
-                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
+                    className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
                     style={{ background: "hsl(35, 80%, 50%)" }}
                   >
                     {hasPersonalReminder ? <BellRing size={16} className="text-white" /> : <Bell size={16} className="text-white" />}
