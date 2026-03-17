@@ -168,6 +168,7 @@ const SwipeableDebtCard = ({
         style={{
           transform: `translateX(${swipeX}px)`,
           transition: isDraggingRef.current ? 'none' : 'transform 300ms ease-out',
+          marginLeft: swipeX > 0 ? '4px' : '0',
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -258,6 +259,7 @@ const Debts = () => {
   const [newPaymentAmounts, setNewPaymentAmounts] = useState<{ amount: string; currency: CurrencyCode }[]>([{ amount: "", currency: "SAR" }]);
 
   const [postponeData, setPostponeData] = useState({ newDate: "", reason: "" });
+  const [editingDebtId, setEditingDebtId] = useState<string | null>(null);
 
   const debts = activeTab === "given" ? givenDebts : takenDebts;
   const setDebts = activeTab === "given" ? setGivenDebts : setTakenDebts;
@@ -282,25 +284,46 @@ const Debts = () => {
     );
   };
 
+  const handleStartEdit = (debt: Debt) => {
+    setEditingDebtId(debt.id);
+    setNewDebt({ personName: debt.personName, dueDate: debt.dueDate, note: debt.note });
+    setNewDebtAmounts(debt.amounts.map((a) => ({ amount: String(a.amount), currency: a.currency })));
+    setShowAddForm(true);
+  };
+
   const handleAddDebt = () => {
     const validAmounts = newDebtAmounts.filter((a) => a.amount && Number(a.amount) > 0);
     if (!newDebt.personName || validAmounts.length === 0 || !newDebt.dueDate) return;
-    const debt: Debt = {
-      id: Date.now().toString(),
-      personName: newDebt.personName,
-      amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })),
-      date: new Date().toISOString().split("T")[0],
-      dueDate: newDebt.dueDate,
-      note: newDebt.note,
-      payments: [],
-      isFullyPaid: false,
-      isArchived: false,
-      postponements: [],
-    };
-    setDebts((prev) => [debt, ...prev]);
+
+    if (editingDebtId) {
+      // Update existing debt
+      setDebts((prev) =>
+        prev.map((d) =>
+          d.id === editingDebtId
+            ? { ...d, personName: newDebt.personName, amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })), dueDate: newDebt.dueDate, note: newDebt.note }
+            : d
+        )
+      );
+    } else {
+      // Add new debt
+      const debt: Debt = {
+        id: Date.now().toString(),
+        personName: newDebt.personName,
+        amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })),
+        date: new Date().toISOString().split("T")[0],
+        dueDate: newDebt.dueDate,
+        note: newDebt.note,
+        payments: [],
+        isFullyPaid: false,
+        isArchived: false,
+        postponements: [],
+      };
+      setDebts((prev) => [debt, ...prev]);
+    }
     setNewDebt({ personName: "", dueDate: "", note: "" });
     setNewDebtAmounts([{ amount: "", currency: "SAR" }]);
     setShowAddForm(false);
+    setEditingDebtId(null);
   };
 
   const handleAddPayment = (debtId: string) => {
@@ -478,7 +501,7 @@ const Debts = () => {
             <SwipeableDebtCard
               key={debt.id}
               onDelete={() => setDebts((prev) => prev.filter((d) => d.id !== debt.id))}
-              onEdit={() => {/* TODO: edit */}}
+              onEdit={() => handleStartEdit(debt)}
             >
               <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
                 <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
@@ -668,8 +691,8 @@ const Debts = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-card w-full max-w-lg rounded-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto" dir="rtl">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-foreground">إضافة دين جديد</h2>
-              <button onClick={() => setShowAddForm(false)} className="p-2 rounded-full bg-muted">
+              <h2 className="text-lg font-bold text-foreground">{editingDebtId ? "تعديل الدين" : "إضافة دين جديد"}</h2>
+              <button onClick={() => { setShowAddForm(false); setEditingDebtId(null); }} className="p-2 rounded-full bg-muted">
                 <X size={18} />
               </button>
             </div>
@@ -703,7 +726,7 @@ const Debts = () => {
               className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
             />
             <button onClick={handleAddDebt} className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base">
-              إضافة
+              {editingDebtId ? "حفظ التعديلات" : "إضافة"}
             </button>
           </div>
         </div>
