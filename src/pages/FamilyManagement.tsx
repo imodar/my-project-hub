@@ -531,7 +531,6 @@ const FamilyManagement = () => {
                     <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--primary) / 0.15)" }}>
                       <RoleIcon role={spouseRole} size={22} className="text-primary" />
                     </div>
-                    </div>
                     <div className="text-right flex-1">
                       <span className="text-sm font-bold text-foreground block">{ROLE_LABELS[spouseRole]}</span>
                       <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
