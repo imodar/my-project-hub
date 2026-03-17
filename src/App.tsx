@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
+import { TrashProvider } from "@/contexts/TrashContext";
 import Index from "./pages/Index.tsx";
 import Tasbih from "./pages/Tasbih.tsx";
 import Settings from "./pages/Settings.tsx";
@@ -13,30 +14,36 @@ import Map from "./pages/Map.tsx";
 import Debts from "./pages/Debts.tsx";
 import FamilyManagement from "./pages/FamilyManagement.tsx";
 import Profile from "./pages/Profile.tsx";
+import CalendarPage from "./pages/Calendar.tsx";
+import Trash from "./pages/Trash.tsx";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <IslamicModeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/tasbih" element={<Tasbih />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/map" element={<Map />} />
-            <Route path="/debts" element={<Debts />} />
-            <Route path="/family" element={<FamilyManagement />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <TrashProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/tasbih" element={<Tasbih />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/map" element={<Map />} />
+              <Route path="/debts" element={<Debts />} />
+              <Route path="/family" element={<FamilyManagement />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/trash" element={<Trash />} />
+              <Route path="/settings" element={<Settings />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </TrashProvider>
     </IslamicModeProvider>
   </QueryClientProvider>
 );
