@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown } from "lucide-react";
+import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
@@ -30,13 +30,22 @@ const ROLE_LABELS: Record<string, string> = {
   wife: "الزوجة",
 };
 
-const ROLE_EMOJI: Record<string, string> = {
-  father: "👨",
-  mother: "👩",
-  son: "👦",
-  daughter: "👧",
-  husband: "👨",
-  wife: "👩",
+// Lucide icon components for each role
+const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: number; className?: string }) => {
+  switch (role) {
+    case "father":
+    case "husband":
+      return <User size={size} className={className} />;
+    case "mother":
+    case "wife":
+      return <Heart size={size} className={className} />;
+    case "son":
+      return <Baby size={size} className={className} />;
+    case "daughter":
+      return <Baby size={size} className={className} />;
+    default:
+      return <User size={size} className={className} />;
+  }
 };
 
 const isSupervisor = (role: FamilyRole) =>
@@ -62,7 +71,7 @@ const FamilyManagement = () => {
 
   const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [setupName, setSetupName] = useState("");
-  const [setupRole, setSetupRole] = useState<"father" | "mother" | null>(null);
+  const [setupRole, setSetupRole] = useState<"father" | "mother" | "son" | "daughter" | null>(null);
 
   // Show setup if no creator role yet
   useEffect(() => {
@@ -291,7 +300,7 @@ const FamilyManagement = () => {
                   <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{
                     background: isSuper ? "hsl(var(--primary) / 0.15)" : "hsl(var(--accent) / 0.15)",
                   }}>
-                    <span className="text-lg">{ROLE_EMOJI[member.role]}</span>
+                    <RoleIcon role={member.role} size={20} className={isSuper ? "text-primary" : "text-accent-foreground"} />
                   </div>
                   <div className="flex-1 text-right">
                     <p className="text-sm font-semibold text-foreground">{member.name}</p>
@@ -417,32 +426,72 @@ const FamilyManagement = () => {
 
             <div>
               <label className="text-sm font-semibold text-foreground block mb-2">دورك في الأسرة</label>
-              <div className="flex gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setSetupRole("father")}
-                  className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
                     setupRole === "father" ? "border-primary bg-primary/10" : "border-border bg-card"
                   }`}
                 >
-                  <span className="text-3xl">👨</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--primary) / 0.15)" }}>
+                    <User size={22} className="text-primary" />
+                  </div>
                   <span className="text-sm font-bold text-foreground">أب</span>
                 </button>
                 <button
                   onClick={() => setSetupRole("mother")}
-                  className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
                     setupRole === "mother" ? "border-primary bg-primary/10" : "border-border bg-card"
                   }`}
                 >
-                  <span className="text-3xl">👩</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--primary) / 0.15)" }}>
+                    <Heart size={22} className="text-primary" />
+                  </div>
                   <span className="text-sm font-bold text-foreground">أم</span>
+                </button>
+                <button
+                  onClick={() => setSetupRole("son")}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    setupRole === "son" ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(200, 60%, 92%)" }}>
+                    <Baby size={22} className="text-blue-500" />
+                  </div>
+                  <span className="text-sm font-bold text-foreground">ابن</span>
+                </button>
+                <button
+                  onClick={() => setSetupRole("daughter")}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    setupRole === "daughter" ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(340, 60%, 92%)" }}>
+                    <Baby size={22} className="text-pink-500" />
+                  </div>
+                  <span className="text-sm font-bold text-foreground">ابنة</span>
                 </button>
               </div>
             </div>
 
             <div className="bg-muted/50 rounded-xl p-3">
               <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                <Crown size={12} className="inline ml-1 text-primary" />
-                ستكون المشرف الرئيسي على الأسرة. يمكنك لاحقاً إضافة {setupRole === "father" ? "زوجتك" : setupRole === "mother" ? "زوجك" : "شريك/ة حياتك"} كمشرف إضافي.
+                {(setupRole === "father" || setupRole === "mother") ? (
+                  <>
+                    <Crown size={12} className="inline ml-1 text-primary" />
+                    ستكون المشرف الرئيسي على الأسرة. يمكنك لاحقاً إضافة {setupRole === "father" ? "زوجتك" : "زوجك"} كمشرف إضافي.
+                  </>
+                ) : (setupRole === "son" || setupRole === "daughter") ? (
+                  <>
+                    <ShieldCheck size={12} className="inline ml-1 text-primary" />
+                    الأب والأم يحصلان على صلاحيات الإشراف بشكل افتراضي ولا يمكن إلغاء إشرافهم.
+                  </>
+                ) : (
+                  <>
+                    <Crown size={12} className="inline ml-1 text-primary" />
+                    اختر دورك لمعرفة صلاحياتك في الأسرة.
+                  </>
+                )}
               </p>
             </div>
 
@@ -479,8 +528,8 @@ const FamilyManagement = () => {
                     className="w-full flex items-center gap-3 p-4 rounded-2xl transition-colors active:bg-primary/10"
                     style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.2)" }}
                   >
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(var(--primary) / 0.15)" }}>
-                      {spouseRole === "wife" ? "👩" : "👨"}
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--primary) / 0.15)" }}>
+                      <RoleIcon role={spouseRole} size={22} className="text-primary" />
                     </div>
                     <div className="text-right flex-1">
                       <span className="text-sm font-bold text-foreground block">{ROLE_LABELS[spouseRole]}</span>
@@ -501,7 +550,9 @@ const FamilyManagement = () => {
                   className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl transition-colors active:bg-primary/10"
                   style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.15)" }}
                 >
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(200, 60%, 92%)" }}>👦</div>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "hsl(200, 60%, 92%)" }}>
+                    <Baby size={24} className="text-blue-500" />
+                  </div>
                   <span className="text-sm font-bold text-foreground">ابن</span>
                 </button>
                 <button
@@ -509,7 +560,9 @@ const FamilyManagement = () => {
                   className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl transition-colors active:bg-primary/10"
                   style={{ background: "hsl(var(--primary) / 0.06)", border: "2px solid hsl(var(--primary) / 0.15)" }}
                 >
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: "hsl(340, 60%, 92%)" }}>👧</div>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "hsl(340, 60%, 92%)" }}>
+                    <Baby size={24} className="text-pink-500" />
+                  </div>
                   <span className="text-sm font-bold text-foreground">ابنة</span>
                 </button>
               </div>
@@ -533,6 +586,14 @@ const FamilyManagement = () => {
                   <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
                     <Crown size={10} className="text-primary" />
                     سيحصل على صلاحيات المشرف
+                  </p>
+                </div>
+              )}
+              {selectedType && !isSupervisor(selectedType) && (
+                <div className="bg-muted/50 rounded-xl p-3">
+                  <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                    <ShieldCheck size={10} className="text-primary" />
+                    الأب والأم مشرفون بشكل افتراضي ولا يمكن إلغاء إشرافهم
                   </p>
                 </div>
               )}
