@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
   ChevronLeft,
+  ArrowRight,
   Plus,
   Cake,
   Plane,
