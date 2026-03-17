@@ -92,10 +92,10 @@ function daysLabel(d: number) {
 }
 
 const initialEvents: FamilyEvent[] = [
-  { id: "1", title: "عيد ميلاد نورة", date: "2026-03-15", icon: "cake", reminder: "كل العائلة", addedBy: "أم فهد" },
-  { id: "2", title: "ذكرى الزواج", date: "2026-03-22", icon: "heart", reminder: "أبو فهد وأم فهد", addedBy: "أبو فهد" },
-  { id: "3", title: "رحلة أبها", date: "2026-04-01", icon: "plane", reminder: "كل العائلة", addedBy: "فهد" },
-  { id: "4", title: "تخرج سارة", date: "2026-05-10", icon: "graduation", reminder: "كل العائلة", addedBy: "سارة" },
+  { id: "1", title: "عيد ميلاد نورة", date: "2026-03-15", icon: "cake", reminderBefore: "1d", addedBy: "أم فهد" },
+  { id: "2", title: "ذكرى الزواج", date: "2026-03-22", icon: "heart", reminderBefore: "7d", addedBy: "أبو فهد" },
+  { id: "3", title: "رحلة أبها", date: "2026-04-01", icon: "plane", reminderBefore: "3d", addedBy: "فهد" },
+  { id: "4", title: "تخرج سارة", date: "2026-05-10", icon: "graduation", reminderBefore: "30d", addedBy: "سارة" },
 ];
 
 const CalendarPage = () => {
