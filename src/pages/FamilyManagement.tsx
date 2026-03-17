@@ -589,6 +589,14 @@ const FamilyManagement = () => {
                   </p>
                 </div>
               )}
+              {selectedType && !isSupervisor(selectedType) && (
+                <div className="bg-muted/50 rounded-xl p-3">
+                  <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                    <ShieldCheck size={10} className="text-primary" />
+                    الأب والأم مشرفون بشكل افتراضي ولا يمكن إلغاء إشرافهم
+                  </p>
+                </div>
+              )}
               <button
                 onClick={handleAddMember}
                 disabled={!newName.trim()}
