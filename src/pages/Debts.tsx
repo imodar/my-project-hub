@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowRight, Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { ArrowRight, Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import BottomNav from "@/components/home/BottomNav";
@@ -104,6 +104,78 @@ const initialTaken: Debt[] = [
     postponements: [],
   },
 ];
+
+// Swipeable card component
+const SwipeableDebtCard = ({
+  children,
+  onDelete,
+  onEdit,
+}: {
+  children: React.ReactNode;
+  onDelete: () => void;
+  onEdit: () => void;
+}) => {
+  const [swipeX, setSwipeX] = useState(0);
+  const startXRef = useRef(0);
+  const isDraggingRef = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+    isDraggingRef.current = true;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDraggingRef.current) return;
+    const diff = e.touches[0].clientX - startXRef.current;
+    if (diff > 0) {
+      setSwipeX(Math.min(diff, 160));
+    } else {
+      setSwipeX(0);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    isDraggingRef.current = false;
+    setSwipeX((prev) => (prev > 80 ? 160 : 0));
+  }, []);
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Action buttons behind */}
+      <div className="absolute inset-y-0 right-0 flex" style={{ width: 160 }}>
+        <button
+          onClick={onEdit}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white"
+        >
+          <Pencil size={20} />
+          <span className="text-[10px] font-bold">تعديل</span>
+        </button>
+        <button
+          onClick={onDelete}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-white"
+        >
+          <Trash2 size={20} />
+          <span className="text-[10px] font-bold">حذف</span>
+        </button>
+      </div>
+
+      {/* Card content */}
+      <div
+        className="relative z-10"
+        style={{
+          transform: `translateX(${swipeX}px)`,
+          transition: isDraggingRef.current ? 'none' : 'transform 300ms ease-out',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => { if (swipeX > 0) setSwipeX(0); }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const formatNumber = (n: number) => n.toLocaleString("ar-SA");
 const formatDate = (d: string) => {
@@ -400,96 +472,95 @@ const Debts = () => {
           const isExpanded = expandedDebt === debt.id;
 
           return (
-            <div key={debt.id} className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
-              <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
-                <div className="flex items-start justify-between mb-2">
-                  <div className="text-left space-y-0.5">
-                    {debt.amounts.map((a, i) => (
-                      <p key={i} className={`text-xl font-black ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{formatDebtAmount(a)}</p>
-                    ))}
+            <SwipeableDebtCard
+              key={debt.id}
+              onDelete={() => setDebts((prev) => prev.filter((d) => d.id !== debt.id))}
+              onEdit={() => {/* TODO: edit */}}
+            >
+              <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
+                <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="text-left space-y-0.5">
+                      {debt.amounts.map((a, i) => (
+                        <p key={i} className={`text-xl font-black ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{formatDebtAmount(a)}</p>
+                      ))}
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-bold text-base ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{debt.personName}</p>
+                      <p className={`text-xs mt-0.5 ${debt.isFullyPaid ? "line-through text-muted-foreground/40" : "text-muted-foreground"}`}>{debt.note}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`font-bold text-base ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{debt.personName}</p>
-                    <p className={`text-xs mt-0.5 ${debt.isFullyPaid ? "line-through text-muted-foreground/40" : "text-muted-foreground"}`}>{debt.note}</p>
+
+                  <div className="mt-3">
+                    <Progress value={progress} className="h-2 bg-muted" />
+                    <div className="flex items-center justify-between mt-2">
+                      <div>{getStatusBadge(debt)}</div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {remaining.length > 0 ? `متبقي ${formatAmountsList(remaining)}` : "مُسدَّد"}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-3">
-                  <Progress value={progress} className="h-2 bg-muted" />
-                  <div className="flex items-center justify-between mt-2">
-                    <div>{getStatusBadge(debt)}</div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {remaining.length > 0 ? `متبقي ${formatAmountsList(remaining)}` : "مُسدَّد"}
-                    </p>
+                  <div className="flex justify-center mt-2">
+                    {isExpanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
                   </div>
-                </div>
+                </button>
 
-                <div className="flex justify-center mt-2">
-                  {isExpanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
-                </div>
-              </button>
-
-              {isExpanded && (
-                <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
-                  {/* Payment History */}
-                  {debt.payments.length > 0 && (
-                    <div>
-                      <p className="text-xs font-bold text-foreground mb-2">سجل الدفعات</p>
-                      <div className="space-y-1.5">
-                        {debt.payments.map((p) => (
-                          <div key={p.id} className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-3 py-2">
-                            <span className="text-muted-foreground">{formatDate(p.date)}</span>
-                            <div className="text-left">
-                              <span className="font-bold text-foreground">
-                                {p.type === "item" && p.itemDescription ? `${p.itemDescription}: ` : ""}
-                                {formatAmountsList(p.amounts)}
-                              </span>
+                {isExpanded && (
+                  <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
+                    {/* Payment History */}
+                    {debt.payments.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-foreground mb-2">سجل الدفعات</p>
+                        <div className="space-y-1.5">
+                          {debt.payments.map((p) => (
+                            <div key={p.id} className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-3 py-2">
+                              <span className="text-muted-foreground">{formatDate(p.date)}</span>
+                              <div className="text-left">
+                                <span className="font-bold text-foreground">
+                                  {p.type === "item" && p.itemDescription ? `${p.itemDescription}: ` : ""}
+                                  {formatAmountsList(p.amounts)}
+                                </span>
+                              </div>
                             </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Postponements */}
+                    {debt.postponements.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-foreground mb-2">التأجيلات</p>
+                        {debt.postponements.map((pp, i) => (
+                          <div key={i} className="text-xs bg-accent/10 rounded-lg px-3 py-2 mb-1">
+                            <span className="text-muted-foreground">أُجّل إلى {formatDate(pp.newDate)} — {pp.reason}</span>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Postponements */}
-                  {debt.postponements.length > 0 && (
-                    <div>
-                      <p className="text-xs font-bold text-foreground mb-2">التأجيلات</p>
-                      {debt.postponements.map((pp, i) => (
-                        <div key={i} className="text-xs bg-accent/10 rounded-lg px-3 py-2 mb-1">
-                          <span className="text-muted-foreground">أُجّل إلى {formatDate(pp.newDate)} — {pp.reason}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => setDebts((prev) => prev.filter((d) => d.id !== debt.id))}
-                    className="w-full py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold"
-                  >
-                    🗑️ حذف هذا الدين
-                  </button>
-
-                  {/* Actions */}
-                  {!debt.isFullyPaid && (
-                    <div className="flex flex-wrap gap-2">
-                      <button onClick={() => handleMarkFullyPaid(debt.id)} className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold">
-                        ✅ مُسدَّد بالكامل
-                      </button>
-                      <button onClick={() => {
-                        // Pre-fill payment currencies based on remaining
-                        const rem = getRemainingAmounts(debt);
-                        setNewPaymentAmounts(rem.map((r) => ({ amount: "", currency: r.currency })));
-                        setShowPaymentForm(showPaymentForm === debt.id ? null : debt.id);
-                      }} className="flex-1 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold">
-                        💵 إضافة دفعة
-                      </button>
-                      <button onClick={() => setShowPostponeForm(showPostponeForm === debt.id ? null : debt.id)} className="flex-1 py-2 rounded-xl bg-accent/20 text-accent-foreground text-xs font-bold">
-                        📅 تأجيل
-                      </button>
-                    </div>
-                  )}
+                    {/* Actions */}
+                    {!debt.isFullyPaid && (
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => handleMarkFullyPaid(debt.id)} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5">
+                          <CircleCheckBig size={15} />
+                          مُسدَّد بالكامل
+                        </button>
+                        <button onClick={() => {
+                          const rem = getRemainingAmounts(debt);
+                          setNewPaymentAmounts(rem.map((r) => ({ amount: "", currency: r.currency })));
+                          setShowPaymentForm(showPaymentForm === debt.id ? null : debt.id);
+                        }} className="flex-1 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold flex items-center justify-center gap-1.5">
+                          <HandCoins size={15} />
+                          إضافة دفعة
+                        </button>
+                        <button onClick={() => setShowPostponeForm(showPostponeForm === debt.id ? null : debt.id)} className="flex-1 py-2.5 rounded-xl bg-accent/20 text-accent-foreground text-xs font-bold flex items-center justify-center gap-1.5">
+                          <CalendarClock size={15} />
+                          تأجيل
+                        </button>
+                      </div>
+                    )}
 
                   {/* Payment Form */}
                   {showPaymentForm === debt.id && (
@@ -548,6 +619,7 @@ const Debts = () => {
                 </div>
               )}
             </div>
+            </SwipeableDebtCard>
           );
         })}
 
