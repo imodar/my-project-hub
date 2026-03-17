@@ -491,7 +491,7 @@ const CalendarPage = () => {
       </Dialog>
 
       {/* Add Event Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={showAddDialog} onOpenChange={(o) => { setShowAddDialog(o); if (!o) setSelectedDay(null); }}>
         <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle className="text-center text-base font-black">إضافة مناسبة جديدة</DialogTitle>
