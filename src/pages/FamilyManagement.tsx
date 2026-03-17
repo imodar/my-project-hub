@@ -70,7 +70,6 @@ const FamilyManagement = () => {
   });
 
   const [showSetupDialog, setShowSetupDialog] = useState(false);
-  const [setupName, setSetupName] = useState("");
   const [setupRole, setSetupRole] = useState<"father" | "mother" | "son" | "daughter" | null>(null);
 
   // Show setup if no creator role yet
