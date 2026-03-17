@@ -111,6 +111,7 @@ const Settings = () => {
               {group.items.map((item) => (
                 <button
                   key={item.label}
+                  onClick={(item as any).onClick}
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-right transition-colors active:bg-muted/50"
                 >
                   <div
