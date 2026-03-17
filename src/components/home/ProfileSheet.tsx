@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { User, Users, Settings, LogOut, ChevronLeft } from "lucide-react";
+import { User, Users, Settings, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ProfileSheetProps {
@@ -19,10 +19,10 @@ const ProfileSheet = ({ open, onOpenChange, user }: ProfileSheetProps) => {
     {
       icon: User,
       label: "ملفي الشخصي",
-      desc: "إعدادات الحساب والصورة الشخصية",
+      desc: "الاسم والصورة الشخصية",
       onClick: () => {
         onOpenChange(false);
-        navigate("/settings");
+        navigate("/profile");
       },
     },
     ...(user.role === "parent"
@@ -95,15 +95,7 @@ const ProfileSheet = ({ open, onOpenChange, user }: ProfileSheetProps) => {
             ))}
           </div>
 
-          {/* Logout */}
-          <div className="p-4">
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-destructive text-sm font-semibold transition-colors active:bg-destructive/10" style={{
-              background: "hsl(var(--destructive) / 0.05)",
-            }}>
-              <LogOut size={16} />
-              تسجيل الخروج
-            </button>
-          </div>
+          <div className="p-4" />
         </div>
       </SheetContent>
     </Sheet>

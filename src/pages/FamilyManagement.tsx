@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -43,7 +43,6 @@ const FamilyManagement = () => {
   const [codeCopied, setCodeCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [swipedId, setSwipedId] = useState<string | null>(null);
-  const [touchStartX, setTouchStartX] = useState(0);
   const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
 
   // Code timer countdown
@@ -114,29 +113,45 @@ const FamilyManagement = () => {
     setInviteCode(generateInviteCode());
   };
 
-  // Swipe handlers
+  // Swipe handlers - using refs to avoid stale closures
+  const touchStartXRef = React.useRef(0);
+  const swipeOffsetRef = React.useRef<Record<string, number>>({});
+
   const handleTouchStart = useCallback((e: React.TouchEvent, id: string) => {
-    setTouchStartX(e.touches[0].clientX);
+    touchStartXRef.current = e.touches[0].clientX;
+    // Reset any other open swipes
+    setSwipeOffset((prev) => {
+      const reset: Record<string, number> = {};
+      Object.keys(prev).forEach((k) => { reset[k] = k === id ? prev[k] : 0; });
+      return reset;
+    });
     setSwipedId(id);
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent, id: string) => {
-    const diff = e.touches[0].clientX - touchStartX;
-    // RTL: swipe right to reveal delete (positive diff)
+    const diff = touchStartXRef.current - e.touches[0].clientX;
+    // RTL layout: swipe left (negative clientX movement) reveals delete on left side
     if (diff > 0) {
-      setSwipeOffset((prev) => ({ ...prev, [id]: Math.min(diff, 80) }));
+      const offset = Math.min(diff, 80);
+      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: offset };
+      setSwipeOffset((prev) => ({ ...prev, [id]: offset }));
+    } else {
+      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: 0 };
+      setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
     }
-  }, [touchStartX]);
+  }, []);
 
   const handleTouchEnd = useCallback((id: string) => {
-    const offset = swipeOffset[id] || 0;
-    if (offset > 50) {
+    const offset = swipeOffsetRef.current[id] || 0;
+    if (offset > 40) {
       setSwipeOffset((prev) => ({ ...prev, [id]: 80 }));
+      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: 80 };
     } else {
       setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
+      swipeOffsetRef.current = { ...swipeOffsetRef.current, [id]: 0 };
       setSwipedId(null);
     }
-  }, [swipeOffset]);
+  }, []);
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col" style={{
@@ -161,9 +176,9 @@ const FamilyManagement = () => {
             const isParent = member.role === "father" || member.role === "mother";
             return (
               <div key={member.id} className="relative overflow-hidden rounded-2xl">
-                {/* Delete button behind */}
+                {/* Delete button behind - positioned on the left for RTL swipe */}
                 {!isParent && (
-                  <div className="absolute inset-y-0 right-0 w-20 flex items-center justify-center rounded-2xl" style={{ background: "hsl(var(--destructive))" }}>
+                  <div className="absolute inset-y-0 left-0 w-20 flex items-center justify-center rounded-2xl" style={{ background: "hsl(var(--destructive))" }}>
                     <button onClick={() => handleRemoveMember(member.id)} className="flex flex-col items-center gap-1 text-white">
                       <Trash2 size={18} />
                       <span className="text-[10px]">حذف</span>
@@ -177,7 +192,7 @@ const FamilyManagement = () => {
                   style={{
                     background: "hsla(0,0%,100%,0.9)",
                     boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
-                    transform: `translateX(${offset}px)`,
+                    transform: `translateX(${-offset}px)`,
                   }}
                   onTouchStart={(e) => !isParent && handleTouchStart(e, member.id)}
                   onTouchMove={(e) => !isParent && handleTouchMove(e, member.id)}
