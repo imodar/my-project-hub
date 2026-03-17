@@ -342,8 +342,8 @@ const CalendarPage = () => {
                       <span>{getEventIcon(ev.icon)}</span>
                       <span className="truncate">{ev.title}</span>
                     </p>
-                    {ev.reminder && (
-                      <p className="text-xs text-muted-foreground mt-1">تذكير: {ev.reminder}</p>
+                    {ev.reminderBefore && (
+                      <p className="text-xs text-muted-foreground mt-1">🔔 {REMINDER_OPTIONS.find(r => r.key === ev.reminderBefore)?.label || ev.reminderBefore}</p>
                     )}
                   </div>
                   {/* Days left */}
