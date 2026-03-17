@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowRight, Send, Pin, Lock, Smile, ChevronDown } from "lucide-react";
+import { ArrowRight, Send, Pin, Lock, Smile, Check, CheckCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/home/BottomNav";
+
+type MessageStatus = "sent" | "delivered" | "read";
 
 interface Message {
   id: string;
@@ -12,22 +14,34 @@ interface Message {
   pinned?: boolean;
   reactions?: { emoji: string; count: number }[];
   mention?: string;
+  status?: MessageStatus;
 }
 
 const familyMembers = ["أبي", "أمي", "أحمد", "سارة", "خالد"];
 
 const mockMessages: Message[] = [
   { id: "1", sender: "أبي", text: "السلام عليكم يا أولاد، كيف حالكم اليوم؟", time: "9:30 ص", isMe: false, reactions: [{ emoji: "❤️", count: 3 }] },
-  { id: "2", sender: "أنا", text: "وعليكم السلام يا بابا، الحمد لله بخير 😊", time: "9:32 ص", isMe: true },
+  { id: "2", sender: "أنا", text: "وعليكم السلام يا بابا، الحمد لله بخير 😊", time: "9:32 ص", isMe: true, status: "read" },
   { id: "3", sender: "أمي", text: "الغداء جاهز الساعة 2، لا تتأخروا", time: "9:35 ص", isMe: false, pinned: true, reactions: [{ emoji: "👍", count: 4 }] },
   { id: "4", sender: "سارة", text: "@أحمد لا تنسى تجيب الخبز وانت راجع", time: "9:40 ص", isMe: false, mention: "أحمد" },
   { id: "5", sender: "أحمد", text: "إن شاء الله يا سارة، في شي ثاني تبونه؟", time: "9:42 ص", isMe: false },
-  { id: "6", sender: "أنا", text: "جيب حليب لو سمحت 🥛", time: "9:43 ص", isMe: true },
+  { id: "6", sender: "أنا", text: "جيب حليب لو سمحت 🥛", time: "9:43 ص", isMe: true, status: "read" },
   { id: "7", sender: "خالد", text: "وأنا أبي شوكولاتة 😄", time: "9:45 ص", isMe: false, reactions: [{ emoji: "😂", count: 2 }] },
   { id: "8", sender: "أمي", text: "الله يعطيكم العافية، أحبكم كلكم ❤️", time: "9:50 ص", isMe: false, reactions: [{ emoji: "❤️", count: 5 }] },
 ];
 
 const emojiOptions = ["❤️", "👍", "😂", "😮", "😢", "🤲"];
+
+const StatusIcon = ({ status }: { status: MessageStatus }) => {
+  if (status === "sent") {
+    return <Check size={14} className="text-white/50" />;
+  }
+  if (status === "delivered") {
+    return <CheckCheck size={14} className="text-white/50" />;
+  }
+  // read
+  return <CheckCheck size={14} className="text-blue-400" />;
+};
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -44,16 +58,26 @@ const Chat = () => {
 
   const handleSend = () => {
     if (!newMessage.trim()) return;
+    const msgId = Date.now().toString();
     const msg: Message = {
-      id: Date.now().toString(),
+      id: msgId,
       sender: "أنا",
       text: newMessage,
       time: new Date().toLocaleTimeString("ar-SA", { hour: "numeric", minute: "2-digit", hour12: true }),
       isMe: true,
+      status: "sent",
     };
     setMessages((prev) => [...prev, msg]);
     setNewMessage("");
     setShowMentions(false);
+
+    // Simulate delivery after 1s, read after 3s
+    setTimeout(() => {
+      setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: "delivered" as MessageStatus } : m));
+    }, 1000);
+    setTimeout(() => {
+      setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: "read" as MessageStatus } : m));
+    }, 3000);
   };
 
   const handleReaction = (msgId: string, emoji: string) => {
@@ -131,7 +155,7 @@ const Chat = () => {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-36"
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-44"
         style={{ backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--muted) / 0.5), transparent 70%)" }}
       >
         {messages.map((msg) => (
@@ -164,6 +188,7 @@ const Chat = () => {
                 </p>
                 <div className={`flex items-center gap-1 mt-0.5 ${msg.isMe ? "justify-start" : "justify-end"}`}>
                   <span className={`text-[10px] ${msg.isMe ? "text-white/50" : "text-muted-foreground"}`}>{msg.time}</span>
+                  {msg.isMe && msg.status && <StatusIcon status={msg.status} />}
                 </div>
               </div>
 
@@ -217,7 +242,7 @@ const Chat = () => {
 
       {/* Mentions dropdown */}
       {showMentions && (
-        <div className="absolute bottom-28 right-4 left-4 max-w-2xl mx-auto bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="absolute bottom-36 right-4 left-4 max-w-2xl mx-auto bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
           {familyMembers.map((name) => (
             <button
               key={name}
@@ -234,11 +259,14 @@ const Chat = () => {
       )}
 
       {/* Input area */}
-      <div className="fixed bottom-20 left-0 right-0 z-40">
+      <div className="fixed bottom-24 left-0 right-0 z-40">
         <div className="max-w-2xl mx-auto px-3">
           <div className="flex items-center gap-2 p-2 rounded-2xl bg-card border border-border shadow-lg">
             <input
               ref={inputRef}
+              type="text"
+              inputMode="text"
+              enterKeyHint="send"
               value={newMessage}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
