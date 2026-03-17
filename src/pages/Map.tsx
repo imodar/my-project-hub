@@ -95,6 +95,19 @@ const Map = () => {
             <h1 className="text-lg font-bold text-white">خريطة العائلة</h1>
             <p className="text-xs text-white/70">تحديث كل {updateInterval} دقائق</p>
           </div>
+          {/* Location toggle */}
+          <button
+            onClick={() => setMyLocationEnabled(!myLocationEnabled)}
+            className="p-2 rounded-full flex items-center justify-center"
+            style={{ background: myLocationEnabled ? "hsla(145, 60%, 50%, 0.25)" : "hsla(0,0%,100%,0.12)" }}
+            title={myLocationEnabled ? "موقعك مفعّل" : "موقعك مخفي"}
+          >
+            {myLocationEnabled ? (
+              <MapPin size={18} className="text-green-300" />
+            ) : (
+              <EyeOff size={18} className="text-white/60" />
+            )}
+          </button>
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 rounded-full"
