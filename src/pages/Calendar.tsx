@@ -115,7 +115,7 @@ const CalendarPage = () => {
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newEvent, setNewEvent] = useState({ title: "", icon: "calendar", reminder: "" });
+  const [newEvent, setNewEvent] = useState({ title: "", reminderBefore: "1d" });
 
   // Swipe state
   const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
