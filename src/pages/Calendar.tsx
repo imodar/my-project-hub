@@ -422,27 +422,18 @@ const CalendarPage = () => {
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">الأيقونة</label>
-              <div className="flex gap-2">
-                {ICON_OPTIONS.map((opt) => (
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">التذكير</label>
+              <div className="flex flex-wrap gap-2">
+                {REMINDER_OPTIONS.map((opt) => (
                   <button
                     key={opt.key}
-                    onClick={() => setNewEvent((p) => ({ ...p, icon: opt.key }))}
-                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg border-2 transition-colors ${newEvent.icon === opt.key ? "border-primary bg-primary/10" : "border-border bg-muted/30"}`}
+                    onClick={() => setNewEvent((p) => ({ ...p, reminderBefore: opt.key }))}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${newEvent.reminderBefore === opt.key ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}
                   >
                     {opt.label}
                   </button>
                 ))}
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">تذكير</label>
-              <input
-                value={newEvent.reminder}
-                onChange={(e) => setNewEvent((p) => ({ ...p, reminder: e.target.value }))}
-                placeholder="كل العائلة"
-                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
             </div>
             <button
               onClick={handleAddEvent}
