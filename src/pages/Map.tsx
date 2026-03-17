@@ -158,28 +158,6 @@ const Map = () => {
           }}
         />
 
-        {/* Safe zones */}
-        {safeZones.map((zone) => (
-          <div
-            key={zone.id}
-            className="absolute"
-            style={{
-              left: `${zone.x}%`,
-              top: `${zone.y}%`,
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <div
-              className="rounded-full border-2 border-dashed flex items-center justify-center"
-              style={{
-                width: `${zone.radius * 8}px`,
-                height: `${zone.radius * 8}px`,
-                borderColor: "hsl(var(--primary) / 0.5)",
-                background: "hsl(var(--primary) / 0.06)",
-              }}
-            />
-          </div>
-        ))}
 
         {/* Members on map */}
         {visibleMembers.map((member) => (
@@ -202,7 +180,6 @@ const Map = () => {
                 color: member.isOnline ? "white" : "hsl(var(--foreground))",
               }}
             >
-              <span className="text-xs">{member.locationIcon}</span>
               <span className="text-xs font-bold">{member.name}</span>
             </div>
             {/* Arrow */}
@@ -230,10 +207,6 @@ const Map = () => {
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
             <span className="text-foreground">غير متصل</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Shield size={11} className="text-primary" />
-            <span className="text-foreground">منطقة آمنة</span>
           </div>
         </div>
       </div>
