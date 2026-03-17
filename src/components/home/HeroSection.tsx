@@ -1,6 +1,7 @@
-import { Compass, Bell, Settings, CloudSun, CloudRain, Sun, Cloud, MapPin } from "lucide-react";
+import { Compass, Bell, CloudSun, CloudRain, Sun, Cloud, MapPin } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
+import ProfileSheet from "./ProfileSheet";
 
 interface WeatherData {
   temp: number;
@@ -27,6 +28,8 @@ const WeatherIcon = ({ icon }: { icon: string }) => {
 
 const HeroSection = () => {
   const { islamicMode } = useIslamicMode();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const mockUser = { name: "أحمد", role: "parent" as const };
   const hijriDate = "٢١ رمضان ١٤٤٧";
   const gregorianDate = "١٦ مارس ٢٠٢٦";
   const nextPrayer = "المغرب";
@@ -101,8 +104,11 @@ const HeroSection = () => {
               <Bell size={20} className="text-white/80" />
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-400" />
             </button>
-            <button className="p-2 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-              <Settings size={20} className="text-white/80" />
+            <button onClick={() => setProfileOpen(true)} className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden" style={{
+              background: "hsla(0,0%,100%,0.15)",
+              border: "2px solid hsla(0,0%,100%,0.3)",
+            }}>
+              <span className="text-sm font-bold text-white">{mockUser.name.charAt(0)}</span>
             </button>
           </div>
         </div>
@@ -170,6 +176,8 @@ const HeroSection = () => {
           </div>
         )}
       </div>
+
+      <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={mockUser} />
     </div>
   );
 };

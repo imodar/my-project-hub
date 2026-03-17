@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Chat from "./pages/Chat.tsx";
 import Map from "./pages/Map.tsx";
 import Debts from "./pages/Debts.tsx";
+import FamilyManagement from "./pages/FamilyManagement.tsx";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/chat" element={<Chat />} />
             <Route path="/map" element={<Map />} />
             <Route path="/debts" element={<Debts />} />
+            <Route path="/family" element={<FamilyManagement />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
