@@ -374,9 +374,13 @@ const FamilyManagement = () => {
                     boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
                     transform: `translateX(${offset}px)`,
                   }}
-                  onTouchStart={(e) => canSwipe && handleTouchStart(e, member.id)}
-                  onTouchMove={(e) => canSwipe && handleTouchMove(e, member.id)}
-                  onTouchEnd={() => canSwipe && handleTouchEnd(member.id)}
+                  onTouchStart={(e) => canSwipe && handlePointerStart(e.touches[0].clientX, e.touches[0].clientY, member.id)}
+                  onTouchMove={(e) => canSwipe && handlePointerMove(e.touches[0].clientX, e.touches[0].clientY, member.id)}
+                  onTouchEnd={() => canSwipe && handlePointerEnd(member.id)}
+                  onMouseDown={(e) => canSwipe && handleMouseDown(e, member.id)}
+                  onMouseMove={(e) => canSwipe && handleMouseMove(e, member.id)}
+                  onMouseUp={() => canSwipe && handleMouseUp(member.id)}
+                  onMouseLeave={() => canSwipe && mouseDownRef.current && handleMouseUp(member.id)}
                 >
                   {/* Avatar */}
                   <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{
