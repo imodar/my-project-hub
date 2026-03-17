@@ -547,6 +547,7 @@ const Debts = () => {
                 </div>
               )}
             </div>
+            </SwipeableDebtCard>
           );
         })}
 
