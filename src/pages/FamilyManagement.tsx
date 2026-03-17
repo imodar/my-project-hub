@@ -260,7 +260,7 @@ const FamilyManagement = () => {
 
   const handleTouchMove = useCallback((e: React.TouchEvent, id: string) => {
     if (!touchStartRef.current || touchStartRef.current.id !== id) return;
-    const dx = touchStartRef.current.x - e.touches[0].clientX;
+    const dx = e.touches[0].clientX - touchStartRef.current.x; // positive = swipe right (RTL reveal)
     const dy = Math.abs(touchStartRef.current.y - e.touches[0].clientY);
 
     if (!isDragging.current && dy > Math.abs(dx)) {
@@ -352,7 +352,7 @@ const FamilyManagement = () => {
                   className="relative flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl transition-transform duration-150"
                   style={{
                     boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
-                    transform: `translateX(${-offset}px)`,
+                    transform: `translateX(${offset}px)`,
                   }}
                   onTouchStart={(e) => canSwipe && handleTouchStart(e, member.id)}
                   onTouchMove={(e) => canSwipe && handleTouchMove(e, member.id)}
