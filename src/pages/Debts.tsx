@@ -463,6 +463,14 @@ const Debts = () => {
                     </div>
                   )}
 
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => setDebts((prev) => prev.filter((d) => d.id !== debt.id))}
+                    className="w-full py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold"
+                  >
+                    🗑️ حذف هذا الدين
+                  </button>
+
                   {/* Actions */}
                   {!debt.isFullyPaid && (
                     <div className="flex flex-wrap gap-2">
