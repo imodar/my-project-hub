@@ -412,16 +412,6 @@ const FamilyManagement = () => {
           <p className="text-sm text-muted-foreground text-center">اختر دورك في الأسرة لإنشاء مجموعتك العائلية</p>
 
           <div className="space-y-4 mt-2">
-            <div>
-              <label className="text-sm font-semibold text-foreground block mb-2">اسمك</label>
-              <input
-                value={setupName}
-                onChange={(e) => setSetupName(e.target.value)}
-                placeholder="أدخل اسمك"
-                className="w-full px-4 py-3 rounded-xl text-right text-sm border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                autoFocus
-              />
-            </div>
 
             <div>
               <label className="text-sm font-semibold text-foreground block mb-2">دورك في الأسرة</label>
