@@ -168,6 +168,7 @@ const SwipeableDebtCard = ({
         style={{
           transform: `translateX(${swipeX}px)`,
           transition: isDraggingRef.current ? 'none' : 'transform 300ms ease-out',
+          marginLeft: swipeX > 0 ? '4px' : '0',
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
