@@ -103,6 +103,18 @@ const initialTaken: Debt[] = [
     isArchived: false,
     postponements: [],
   },
+  {
+    id: "5",
+    personName: "فهد الدوسري",
+    amounts: [{ amount: 2, currency: "GOLD_OZ" }],
+    date: "2025-01-20",
+    dueDate: "2025-06-01",
+    note: "أونصتين ذهب",
+    payments: [],
+    isFullyPaid: false,
+    isArchived: false,
+    postponements: [],
+  },
 ];
 
 // Swipeable card component
