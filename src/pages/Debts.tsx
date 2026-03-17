@@ -105,6 +105,78 @@ const initialTaken: Debt[] = [
   },
 ];
 
+// Swipeable card component
+const SwipeableDebtCard = ({
+  children,
+  onDelete,
+  onEdit,
+}: {
+  children: React.ReactNode;
+  onDelete: () => void;
+  onEdit: () => void;
+}) => {
+  const [swipeX, setSwipeX] = useState(0);
+  const startXRef = useRef(0);
+  const isDraggingRef = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+    isDraggingRef.current = true;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDraggingRef.current) return;
+    const diff = e.touches[0].clientX - startXRef.current;
+    if (diff > 0) {
+      setSwipeX(Math.min(diff, 160));
+    } else {
+      setSwipeX(0);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    isDraggingRef.current = false;
+    setSwipeX((prev) => (prev > 80 ? 160 : 0));
+  }, []);
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Action buttons behind */}
+      <div className="absolute inset-y-0 right-0 flex" style={{ width: 160 }}>
+        <button
+          onClick={onEdit}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white"
+        >
+          <Pencil size={20} />
+          <span className="text-[10px] font-bold">تعديل</span>
+        </button>
+        <button
+          onClick={onDelete}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-white"
+        >
+          <Trash2 size={20} />
+          <span className="text-[10px] font-bold">حذف</span>
+        </button>
+      </div>
+
+      {/* Card content */}
+      <div
+        className="relative z-10"
+        style={{
+          transform: `translateX(${swipeX}px)`,
+          transition: isDraggingRef.current ? 'none' : 'transform 300ms ease-out',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => { if (swipeX > 0) setSwipeX(0); }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const formatNumber = (n: number) => n.toLocaleString("ar-SA");
 const formatDate = (d: string) => {
   const date = new Date(d);
