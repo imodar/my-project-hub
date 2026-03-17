@@ -1,24 +1,44 @@
 import { useState } from "react";
-import { ArrowRight, Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X } from "lucide-react";
+import { ArrowRight, Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import BottomNav from "@/components/home/BottomNav";
 
 type PaymentType = "cash" | "item" | "installment";
 
+const CURRENCIES = [
+  { code: "SAR", label: "ريال سعودي", symbol: "ر.س" },
+  { code: "QAR", label: "ريال قطري", symbol: "ر.ق" },
+  { code: "USD", label: "دولار أمريكي", symbol: "$" },
+  { code: "EUR", label: "يورو", symbol: "€" },
+  { code: "GBP", label: "جنيه إسترليني", symbol: "£" },
+  { code: "AED", label: "درهم إماراتي", symbol: "د.إ" },
+  { code: "KWD", label: "دينار كويتي", symbol: "د.ك" },
+  { code: "GOLD_OZ", label: "أونصة ذهب", symbol: "أونصة" },
+  { code: "GOLD_G", label: "غرام ذهب", symbol: "غرام" },
+] as const;
+
+type CurrencyCode = typeof CURRENCIES[number]["code"];
+
+const getCurrencySymbol = (code: CurrencyCode) => CURRENCIES.find((c) => c.code === code)?.symbol || code;
+
+interface DebtAmount {
+  amount: number;
+  currency: CurrencyCode;
+}
+
 interface Payment {
   id: string;
-  amount: number;
+  amounts: DebtAmount[];
   date: string;
   type: PaymentType;
   itemDescription?: string;
-  itemValue?: number;
 }
 
 interface Debt {
   id: string;
   personName: string;
-  totalAmount: number;
+  amounts: DebtAmount[];
   date: string;
   dueDate: string;
   note: string;
@@ -32,11 +52,11 @@ const initialGiven: Debt[] = [
   {
     id: "1",
     personName: "خالد العمري",
-    totalAmount: 5000,
+    amounts: [{ amount: 5000, currency: "SAR" }],
     date: "2025-01-15",
     dueDate: "2025-03-28",
     note: "قرض شخصي",
-    payments: [{ id: "p1", amount: 3000, date: "2025-02-20", type: "cash" }],
+    payments: [{ id: "p1", amounts: [{ amount: 3000, currency: "SAR" }], date: "2025-02-20", type: "cash" }],
     isFullyPaid: false,
     isArchived: false,
     postponements: [],
@@ -44,11 +64,11 @@ const initialGiven: Debt[] = [
   {
     id: "2",
     personName: "محمد الغامدي",
-    totalAmount: 2500,
+    amounts: [{ amount: 2500, currency: "SAR" }],
     date: "2025-02-01",
     dueDate: "2025-03-10",
     note: "رجع عسل – قيمة 800 ر",
-    payments: [{ id: "p2", amount: 800, date: "2025-03-01", type: "item", itemDescription: "عسل", itemValue: 800 }],
+    payments: [{ id: "p2", amounts: [{ amount: 800, currency: "SAR" }], date: "2025-03-01", type: "item", itemDescription: "عسل" }],
     isFullyPaid: false,
     isArchived: false,
     postponements: [],
@@ -56,11 +76,14 @@ const initialGiven: Debt[] = [
   {
     id: "3",
     personName: "عبدالله الشمري",
-    totalAmount: 1000,
+    amounts: [{ amount: 1000, currency: "SAR" }, { amount: 100, currency: "USD" }],
     date: "2025-01-10",
     dueDate: "2025-03-15",
     note: "مصاريف مشتركة",
-    payments: [{ id: "p3", amount: 1000, date: "2025-03-15", type: "cash" }],
+    payments: [
+      { id: "p3a", amounts: [{ amount: 1000, currency: "SAR" }], date: "2025-03-10", type: "cash" },
+      { id: "p3b", amounts: [{ amount: 100, currency: "USD" }], date: "2025-03-15", type: "cash" },
+    ],
     isFullyPaid: true,
     isArchived: false,
     postponements: [],
@@ -71,11 +94,11 @@ const initialTaken: Debt[] = [
   {
     id: "4",
     personName: "سعد الحربي",
-    totalAmount: 3200,
+    amounts: [{ amount: 3200, currency: "SAR" }],
     date: "2025-02-10",
     dueDate: "2025-04-15",
     note: "سلفة شخصية",
-    payments: [{ id: "p4", amount: 1200, date: "2025-03-05", type: "cash" }],
+    payments: [{ id: "p4", amounts: [{ amount: 1200, currency: "SAR" }], date: "2025-03-05", type: "cash" }],
     isFullyPaid: false,
     isArchived: false,
     postponements: [],
@@ -88,6 +111,10 @@ const formatDate = (d: string) => {
   return date.toLocaleDateString("ar-SA", { day: "numeric", month: "long" });
 };
 
+const formatDebtAmount = (da: DebtAmount) => `${formatNumber(da.amount)} ${getCurrencySymbol(da.currency)}`;
+
+const formatAmountsList = (amounts: DebtAmount[]) => amounts.map(formatDebtAmount).join(" + ");
+
 const isOverdue = (dueDate: string, isFullyPaid: boolean) => {
   if (isFullyPaid) return false;
   return new Date(dueDate) < new Date();
@@ -96,6 +123,45 @@ const isOverdue = (dueDate: string, isFullyPaid: boolean) => {
 const getDaysUntilDue = (dueDate: string) => {
   const diff = new Date(dueDate).getTime() - new Date().getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
+};
+
+// Get paid and remaining per currency
+const getPaidByCurrency = (debt: Debt): Record<string, number> => {
+  const paid: Record<string, number> = {};
+  debt.payments.forEach((p) => {
+    p.amounts.forEach((a) => {
+      paid[a.currency] = (paid[a.currency] || 0) + a.amount;
+    });
+  });
+  return paid;
+};
+
+const getRemainingAmounts = (debt: Debt): DebtAmount[] => {
+  const paid = getPaidByCurrency(debt);
+  return debt.amounts.map((a) => ({
+    amount: Math.max(0, a.amount - (paid[a.currency] || 0)),
+    currency: a.currency,
+  })).filter((a) => a.amount > 0);
+};
+
+const getProgressForDebt = (debt: Debt): number => {
+  const totalValue = debt.amounts.reduce((s, a) => s + a.amount, 0);
+  if (totalValue === 0) return 100;
+  const paid = getPaidByCurrency(debt);
+  const paidValue = debt.amounts.reduce((s, a) => s + Math.min(a.amount, paid[a.currency] || 0), 0);
+  return (paidValue / totalValue) * 100;
+};
+
+// Summary by currency
+const getSummaryByCurrency = (debts: Debt[]): DebtAmount[] => {
+  const totals: Record<string, number> = {};
+  debts.filter((d) => !d.isArchived).forEach((d) => {
+    const remaining = getRemainingAmounts(d);
+    remaining.forEach((r) => {
+      totals[r.currency] = (totals[r.currency] || 0) + r.amount;
+    });
+  });
+  return Object.entries(totals).map(([currency, amount]) => ({ amount, currency: currency as CurrencyCode }));
 };
 
 const Debts = () => {
@@ -108,9 +174,14 @@ const Debts = () => {
   const [showPaymentForm, setShowPaymentForm] = useState<string | null>(null);
   const [showPostponeForm, setShowPostponeForm] = useState<string | null>(null);
 
-  // Add form state
-  const [newDebt, setNewDebt] = useState({ personName: "", totalAmount: "", dueDate: "", note: "" });
-  const [newPayment, setNewPayment] = useState({ amount: "", type: "cash" as PaymentType, itemDescription: "", itemValue: "" });
+  // Add form state - multi-currency
+  const [newDebt, setNewDebt] = useState({ personName: "", dueDate: "", note: "" });
+  const [newDebtAmounts, setNewDebtAmounts] = useState<{ amount: string; currency: CurrencyCode }[]>([{ amount: "", currency: "SAR" }]);
+
+  // Payment form state - multi-currency
+  const [newPayment, setNewPayment] = useState({ type: "cash" as PaymentType, itemDescription: "" });
+  const [newPaymentAmounts, setNewPaymentAmounts] = useState<{ amount: string; currency: CurrencyCode }[]>([{ amount: "", currency: "SAR" }]);
+
   const [postponeData, setPostponeData] = useState({ newDate: "", reason: "" });
 
   const debts = activeTab === "given" ? givenDebts : takenDebts;
@@ -118,29 +189,31 @@ const Debts = () => {
   const activeDebts = debts.filter((d) => !d.isArchived);
   const archivedDebts = debts.filter((d) => d.isArchived);
 
-  const totalGiven = givenDebts.filter(d => !d.isArchived).reduce((s, d) => s + d.totalAmount - d.payments.reduce((a, p) => a + (p.type === "item" ? (p.itemValue || 0) : p.amount), 0), 0);
-  const totalTaken = takenDebts.filter(d => !d.isArchived).reduce((s, d) => s + d.totalAmount - d.payments.reduce((a, p) => a + (p.type === "item" ? (p.itemValue || 0) : p.amount), 0), 0);
-
-  const getPaidAmount = (debt: Debt) => debt.payments.reduce((a, p) => a + (p.type === "item" ? (p.itemValue || 0) : p.amount), 0);
-  const getRemaining = (debt: Debt) => debt.totalAmount - getPaidAmount(debt);
-  const getProgress = (debt: Debt) => (getPaidAmount(debt) / debt.totalAmount) * 100;
+  const givenSummary = getSummaryByCurrency(givenDebts);
+  const takenSummary = getSummaryByCurrency(takenDebts);
 
   const handleMarkFullyPaid = (debtId: string) => {
     setDebts((prev) =>
-      prev.map((d) =>
-        d.id === debtId
-          ? { ...d, isFullyPaid: true, isArchived: true, payments: [...d.payments, { id: Date.now().toString(), amount: getRemaining(d), date: new Date().toISOString().split("T")[0], type: "cash" }] }
-          : d
-      )
+      prev.map((d) => {
+        if (d.id !== debtId) return d;
+        const remaining = getRemainingAmounts(d);
+        return {
+          ...d,
+          isFullyPaid: true,
+          isArchived: true,
+          payments: [...d.payments, { id: Date.now().toString(), amounts: remaining, date: new Date().toISOString().split("T")[0], type: "cash" as PaymentType }],
+        };
+      })
     );
   };
 
   const handleAddDebt = () => {
-    if (!newDebt.personName || !newDebt.totalAmount || !newDebt.dueDate) return;
+    const validAmounts = newDebtAmounts.filter((a) => a.amount && Number(a.amount) > 0);
+    if (!newDebt.personName || validAmounts.length === 0 || !newDebt.dueDate) return;
     const debt: Debt = {
       id: Date.now().toString(),
       personName: newDebt.personName,
-      totalAmount: Number(newDebt.totalAmount),
+      amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })),
       date: new Date().toISOString().split("T")[0],
       dueDate: newDebt.dueDate,
       note: newDebt.note,
@@ -150,33 +223,35 @@ const Debts = () => {
       postponements: [],
     };
     setDebts((prev) => [debt, ...prev]);
-    setNewDebt({ personName: "", totalAmount: "", dueDate: "", note: "" });
+    setNewDebt({ personName: "", dueDate: "", note: "" });
+    setNewDebtAmounts([{ amount: "", currency: "SAR" }]);
     setShowAddForm(false);
   };
 
   const handleAddPayment = (debtId: string) => {
-    if (!newPayment.amount) return;
+    const validAmounts = newPaymentAmounts.filter((a) => a.amount && Number(a.amount) > 0);
+    if (validAmounts.length === 0) return;
     const payment: Payment = {
       id: Date.now().toString(),
-      amount: Number(newPayment.amount),
+      amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })),
       date: new Date().toISOString().split("T")[0],
       type: newPayment.type,
       itemDescription: newPayment.itemDescription || undefined,
-      itemValue: newPayment.itemValue ? Number(newPayment.itemValue) : undefined,
     };
     setDebts((prev) =>
       prev.map((d) => {
         if (d.id !== debtId) return d;
         const updated = { ...d, payments: [...d.payments, payment] };
-        const remaining = getRemaining(updated);
-        if (remaining <= 0) {
+        const remaining = getRemainingAmounts(updated);
+        if (remaining.length === 0) {
           updated.isFullyPaid = true;
           updated.isArchived = true;
         }
         return updated;
       })
     );
-    setNewPayment({ amount: "", type: "cash", itemDescription: "", itemValue: "" });
+    setNewPayment({ type: "cash", itemDescription: "" });
+    setNewPaymentAmounts([{ amount: "", currency: "SAR" }]);
     setShowPaymentForm(null);
   };
 
@@ -201,6 +276,61 @@ const Debts = () => {
     return <span className="text-xs text-muted-foreground">{formatDate(debt.dueDate)}</span>;
   };
 
+  // Multi-currency amount editor component
+  const AmountEditor = ({
+    amounts,
+    setAmounts,
+  }: {
+    amounts: { amount: string; currency: CurrencyCode }[];
+    setAmounts: (a: { amount: string; currency: CurrencyCode }[]) => void;
+  }) => (
+    <div className="space-y-2">
+      {amounts.map((entry, i) => (
+        <div key={i} className="flex gap-2 items-center">
+          <input
+            type="number"
+            placeholder="المبلغ"
+            value={entry.amount}
+            onChange={(e) => {
+              const updated = [...amounts];
+              updated[i] = { ...updated[i], amount: e.target.value };
+              setAmounts(updated);
+            }}
+            className="flex-1 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+          />
+          <select
+            value={entry.currency}
+            onChange={(e) => {
+              const updated = [...amounts];
+              updated[i] = { ...updated[i], currency: e.target.value as CurrencyCode };
+              setAmounts(updated);
+            }}
+            className="w-32 rounded-xl border border-input bg-background px-2 py-2.5 text-xs"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.symbol} {c.label}</option>
+            ))}
+          </select>
+          {amounts.length > 1 && (
+            <button
+              onClick={() => setAmounts(amounts.filter((_, j) => j !== i))}
+              className="p-1.5 rounded-lg bg-destructive/10 text-destructive"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        onClick={() => setAmounts([...amounts, { amount: "", currency: "SAR" }])}
+        className="flex items-center gap-1 text-xs font-bold text-primary py-1.5"
+      >
+        <Coins size={14} />
+        + إضافة عملة أخرى
+      </button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto relative pb-32" dir="rtl">
       {/* Header */}
@@ -220,13 +350,27 @@ const Debts = () => {
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/10">
             <p className="text-xs opacity-80 mb-1">لك على الآخرين</p>
-            <p className="text-2xl font-black">{formatNumber(Math.max(totalGiven, 0))}</p>
-            <p className="text-xs opacity-60">ريال</p>
+            {givenSummary.length > 0 ? (
+              <div className="space-y-0.5">
+                {givenSummary.map((s, i) => (
+                  <p key={i} className="text-lg font-black">{formatNumber(s.amount)} <span className="text-xs opacity-70">{getCurrencySymbol(s.currency)}</span></p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-2xl font-black">0</p>
+            )}
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/10">
             <p className="text-xs opacity-80 mb-1">عليك للآخرين</p>
-            <p className="text-2xl font-black">{formatNumber(Math.max(totalTaken, 0))}</p>
-            <p className="text-xs opacity-60">ريال</p>
+            {takenSummary.length > 0 ? (
+              <div className="space-y-0.5">
+                {takenSummary.map((s, i) => (
+                  <p key={i} className="text-lg font-black">{formatNumber(s.amount)} <span className="text-xs opacity-70">{getCurrencySymbol(s.currency)}</span></p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-2xl font-black">0</p>
+            )}
           </div>
         </div>
       </div>
@@ -250,17 +394,19 @@ const Debts = () => {
       {/* Debts List */}
       <div className="px-5 mt-4 space-y-3">
         {activeDebts.map((debt) => {
-          const paid = getPaidAmount(debt);
-          const remaining = getRemaining(debt);
-          const progress = getProgress(debt);
+          const remaining = getRemainingAmounts(debt);
+          const paid = getPaidByCurrency(debt);
+          const progress = getProgressForDebt(debt);
           const isExpanded = expandedDebt === debt.id;
 
           return (
             <div key={debt.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
               <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
                 <div className="flex items-start justify-between mb-2">
-                  <div className="text-left">
-                    <p className="text-2xl font-black text-foreground">{formatNumber(debt.totalAmount)} ر</p>
+                  <div className="text-left space-y-0.5">
+                    {debt.amounts.map((a, i) => (
+                      <p key={i} className="text-xl font-black text-foreground">{formatDebtAmount(a)}</p>
+                    ))}
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-foreground text-base">{debt.personName}</p>
@@ -272,8 +418,8 @@ const Debts = () => {
                   <Progress value={progress} className="h-2 bg-muted" />
                   <div className="flex items-center justify-between mt-2">
                     <div>{getStatusBadge(debt)}</div>
-                    <p className="text-xs text-muted-foreground">
-                      سُدد {formatNumber(paid)} – متبقي {formatNumber(Math.max(remaining, 0))} ر
+                    <p className="text-[11px] text-muted-foreground">
+                      {remaining.length > 0 ? `متبقي ${formatAmountsList(remaining)}` : "مُسدَّد"}
                     </p>
                   </div>
                 </div>
@@ -293,9 +439,12 @@ const Debts = () => {
                         {debt.payments.map((p) => (
                           <div key={p.id} className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-3 py-2">
                             <span className="text-muted-foreground">{formatDate(p.date)}</span>
-                            <span className="font-bold text-foreground">
-                              {p.type === "item" ? `${p.itemDescription} (${formatNumber(p.itemValue || 0)} ر)` : `${formatNumber(p.amount)} ر`}
-                            </span>
+                            <div className="text-left">
+                              <span className="font-bold text-foreground">
+                                {p.type === "item" && p.itemDescription ? `${p.itemDescription}: ` : ""}
+                                {formatAmountsList(p.amounts)}
+                              </span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -320,7 +469,12 @@ const Debts = () => {
                       <button onClick={() => handleMarkFullyPaid(debt.id)} className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold">
                         ✅ مُسدَّد بالكامل
                       </button>
-                      <button onClick={() => setShowPaymentForm(showPaymentForm === debt.id ? null : debt.id)} className="flex-1 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold">
+                      <button onClick={() => {
+                        // Pre-fill payment currencies based on remaining
+                        const rem = getRemainingAmounts(debt);
+                        setNewPaymentAmounts(rem.map((r) => ({ amount: "", currency: r.currency })));
+                        setShowPaymentForm(showPaymentForm === debt.id ? null : debt.id);
+                      }} className="flex-1 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold">
                         💵 إضافة دفعة
                       </button>
                       <button onClick={() => setShowPostponeForm(showPostponeForm === debt.id ? null : debt.id)} className="flex-1 py-2 rounded-xl bg-accent/20 text-accent-foreground text-xs font-bold">
@@ -343,31 +497,19 @@ const Debts = () => {
                           </button>
                         ))}
                       </div>
-                      <input
-                        type="number"
-                        placeholder="المبلغ"
-                        value={newPayment.amount}
-                        onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                      />
+
                       {newPayment.type === "item" && (
-                        <>
-                          <input
-                            type="text"
-                            placeholder="وصف العرض (مثال: عسل)"
-                            value={newPayment.itemDescription}
-                            onChange={(e) => setNewPayment({ ...newPayment, itemDescription: e.target.value })}
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                          />
-                          <input
-                            type="number"
-                            placeholder="القيمة التقديرية"
-                            value={newPayment.itemValue}
-                            onChange={(e) => setNewPayment({ ...newPayment, itemValue: e.target.value })}
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                          />
-                        </>
+                        <input
+                          type="text"
+                          placeholder="وصف العرض (مثال: عسل، فضة)"
+                          value={newPayment.itemDescription}
+                          onChange={(e) => setNewPayment({ ...newPayment, itemDescription: e.target.value })}
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                        />
                       )}
+
+                      <AmountEditor amounts={newPaymentAmounts} setAmounts={setNewPaymentAmounts} />
+
                       <button onClick={() => handleAddPayment(debt.id)} className="w-full py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold">
                         تأكيد الدفعة
                       </button>
@@ -415,10 +557,10 @@ const Debts = () => {
             {archivedDebts.map((debt) => (
               <div key={debt.id} className="bg-card/50 rounded-2xl border border-border p-4 mb-2 opacity-60">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-foreground">{formatNumber(debt.totalAmount)} ر</span>
-                  <div className="text-right">
+                  <span className="text-sm font-bold text-foreground">{formatAmountsList(debt.amounts)}</span>
+                  <div className="text-right flex items-center gap-2">
                     <span className="text-sm font-bold text-foreground">{debt.personName}</span>
-                    <span className="flex items-center gap-1 text-xs text-primary mr-2"><Check size={12} /> مُسدَّد</span>
+                    <span className="flex items-center gap-1 text-xs text-primary"><Check size={12} /> مُسدَّد</span>
                   </div>
                 </div>
               </div>
@@ -428,7 +570,7 @@ const Debts = () => {
       </div>
 
       {/* Add Button */}
-      <div className="fixed bottom-24 left-0 right-0 max-w-2xl mx-auto px-5 z-20">
+      <div className="fixed bottom-28 left-0 right-0 max-w-2xl mx-auto px-5 z-20">
         <button
           onClick={() => setShowAddForm(true)}
           className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base shadow-lg flex items-center justify-center gap-2"
@@ -440,11 +582,11 @@ const Debts = () => {
 
       {/* Add Debt Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
-          <div className="bg-card w-full max-w-2xl rounded-t-3xl p-6 space-y-4" dir="rtl">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card w-full max-w-lg rounded-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto" dir="rtl">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-bold text-foreground">إضافة دين جديد</h2>
-              <button onClick={() => setShowAddForm(false)} className="p-1 rounded-full bg-muted">
+              <button onClick={() => setShowAddForm(false)} className="p-2 rounded-full bg-muted">
                 <X size={18} />
               </button>
             </div>
@@ -455,19 +597,21 @@ const Debts = () => {
               onChange={(e) => setNewDebt({ ...newDebt, personName: e.target.value })}
               className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
             />
-            <input
-              type="number"
-              placeholder="المبلغ الإجمالي"
-              value={newDebt.totalAmount}
-              onChange={(e) => setNewDebt({ ...newDebt, totalAmount: e.target.value })}
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
-            />
-            <input
-              type="date"
-              value={newDebt.dueDate}
-              onChange={(e) => setNewDebt({ ...newDebt, dueDate: e.target.value })}
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
-            />
+
+            <div>
+              <label className="text-xs font-bold text-foreground mb-2 block">المبالغ والعملات</label>
+              <AmountEditor amounts={newDebtAmounts} setAmounts={setNewDebtAmounts} />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-foreground mb-1 block">تاريخ السداد المتوقع</label>
+              <input
+                type="date"
+                value={newDebt.dueDate}
+                onChange={(e) => setNewDebt({ ...newDebt, dueDate: e.target.value })}
+                className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
+              />
+            </div>
             <input
               type="text"
               placeholder="ملاحظة (اختياري)"
