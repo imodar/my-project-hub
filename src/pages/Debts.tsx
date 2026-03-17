@@ -446,29 +446,52 @@ const Debts = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/10">
-            <p className="text-xs opacity-80 mb-1">لك على الآخرين</p>
+          {/* لك على الآخرين */}
+          <div className="relative overflow-hidden rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/20 to-emerald-700/10 backdrop-blur-md p-4">
+            <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-emerald-400/20 flex items-center justify-center">
+              <HandCoins size={16} className="text-emerald-300" />
+            </div>
+            <p className="text-[11px] font-bold opacity-90 mb-2.5 tracking-wide">💰 لك على الآخرين</p>
             {givenSummary.length > 0 ? (
-              <div className="space-y-0.5">
-                {givenSummary.map((s, i) => (
-                  <p key={i} className="text-lg font-black">{formatNumber(s.amount)} <span className="text-xs opacity-70">{getCurrencySymbol(s.currency)}</span></p>
-                ))}
+              <div className="space-y-1.5">
+                {givenSummary.map((s, i) => {
+                  const isGold = s.currency === "GOLD_OZ" || s.currency === "GOLD_G";
+                  return (
+                    <div key={i} className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 ${isGold ? 'bg-yellow-400/15 border border-yellow-400/20' : 'bg-white/10 border border-white/5'}`}>
+                      <span className="text-[10px] opacity-70">{getCurrencySymbol(s.currency)}</span>
+                      <span className={`text-base font-black tabular-nums ${isGold ? 'text-yellow-300' : ''}`}>{formatNumber(s.amount)}</span>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-2xl font-black">0</p>
+              <p className="text-2xl font-black opacity-40 text-center mt-1">—</p>
             )}
+            <p className="text-[10px] opacity-50 mt-2">{givenDebts.filter(d => !d.isArchived).length} دين نشط</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/10">
-            <p className="text-xs opacity-80 mb-1">عليك للآخرين</p>
+
+          {/* عليك للآخرين */}
+          <div className="relative overflow-hidden rounded-2xl border border-red-400/20 bg-gradient-to-br from-red-500/20 to-red-700/10 backdrop-blur-md p-4">
+            <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-red-400/20 flex items-center justify-center">
+              <CreditCard size={16} className="text-red-300" />
+            </div>
+            <p className="text-[11px] font-bold opacity-90 mb-2.5 tracking-wide">🧾 عليك للآخرين</p>
             {takenSummary.length > 0 ? (
-              <div className="space-y-0.5">
-                {takenSummary.map((s, i) => (
-                  <p key={i} className="text-lg font-black">{formatNumber(s.amount)} <span className="text-xs opacity-70">{getCurrencySymbol(s.currency)}</span></p>
-                ))}
+              <div className="space-y-1.5">
+                {takenSummary.map((s, i) => {
+                  const isGold = s.currency === "GOLD_OZ" || s.currency === "GOLD_G";
+                  return (
+                    <div key={i} className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 ${isGold ? 'bg-yellow-400/15 border border-yellow-400/20' : 'bg-white/10 border border-white/5'}`}>
+                      <span className="text-[10px] opacity-70">{getCurrencySymbol(s.currency)}</span>
+                      <span className={`text-base font-black tabular-nums ${isGold ? 'text-yellow-300' : ''}`}>{formatNumber(s.amount)}</span>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-2xl font-black">0</p>
+              <p className="text-2xl font-black opacity-40 text-center mt-1">—</p>
             )}
+            <p className="text-[10px] opacity-50 mt-2">{takenDebts.filter(d => !d.isArchived).length} دين نشط</p>
           </div>
         </div>
       </div>
