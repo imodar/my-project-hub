@@ -72,9 +72,11 @@ const Map = () => {
   const [updateInterval, setUpdateInterval] = useState(5);
   const [showSettings, setShowSettings] = useState(false);
   const [expandedList, setExpandedList] = useState(true);
+  const [members, setMembers] = useState<FamilyMember[]>(mockMembers);
+  const [myLocationEnabled, setMyLocationEnabled] = useState(true);
 
-  const visibleMembers = mockMembers.filter((m) => !m.isLocationHidden);
-  const hiddenMembers = mockMembers.filter((m) => m.isLocationHidden);
+  const visibleMembers = members.filter((m) => !m.isLocationHidden);
+  const hiddenMembers = members.filter((m) => m.isLocationHidden);
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
