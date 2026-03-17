@@ -98,15 +98,17 @@ const Map = () => {
           {/* Location toggle */}
           <button
             onClick={() => setMyLocationEnabled(!myLocationEnabled)}
-            className="p-2 rounded-full flex items-center justify-center"
+            className="px-3 py-1.5 rounded-full flex items-center gap-1.5"
             style={{ background: myLocationEnabled ? "hsla(145, 60%, 50%, 0.25)" : "hsla(0,0%,100%,0.12)" }}
-            title={myLocationEnabled ? "موقعك مفعّل" : "موقعك مخفي"}
           >
             {myLocationEnabled ? (
-              <MapPin size={18} className="text-green-300" />
+              <MapPin size={15} className="text-green-300" />
             ) : (
-              <EyeOff size={18} className="text-white/60" />
+              <EyeOff size={15} className="text-white/60" />
             )}
+            <span className={`text-[11px] font-bold ${myLocationEnabled ? "text-green-300" : "text-white/60"}`}>
+              {myLocationEnabled ? "مفعّل" : "مخفي"}
+            </span>
           </button>
           <button
             onClick={() => setShowSettings(!showSettings)}
