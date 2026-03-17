@@ -284,25 +284,46 @@ const Debts = () => {
     );
   };
 
+  const handleStartEdit = (debt: Debt) => {
+    setEditingDebtId(debt.id);
+    setNewDebt({ personName: debt.personName, dueDate: debt.dueDate, note: debt.note });
+    setNewDebtAmounts(debt.amounts.map((a) => ({ amount: String(a.amount), currency: a.currency })));
+    setShowAddForm(true);
+  };
+
   const handleAddDebt = () => {
     const validAmounts = newDebtAmounts.filter((a) => a.amount && Number(a.amount) > 0);
     if (!newDebt.personName || validAmounts.length === 0 || !newDebt.dueDate) return;
-    const debt: Debt = {
-      id: Date.now().toString(),
-      personName: newDebt.personName,
-      amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })),
-      date: new Date().toISOString().split("T")[0],
-      dueDate: newDebt.dueDate,
-      note: newDebt.note,
-      payments: [],
-      isFullyPaid: false,
-      isArchived: false,
-      postponements: [],
-    };
-    setDebts((prev) => [debt, ...prev]);
+
+    if (editingDebtId) {
+      // Update existing debt
+      setDebts((prev) =>
+        prev.map((d) =>
+          d.id === editingDebtId
+            ? { ...d, personName: newDebt.personName, amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })), dueDate: newDebt.dueDate, note: newDebt.note }
+            : d
+        )
+      );
+    } else {
+      // Add new debt
+      const debt: Debt = {
+        id: Date.now().toString(),
+        personName: newDebt.personName,
+        amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })),
+        date: new Date().toISOString().split("T")[0],
+        dueDate: newDebt.dueDate,
+        note: newDebt.note,
+        payments: [],
+        isFullyPaid: false,
+        isArchived: false,
+        postponements: [],
+      };
+      setDebts((prev) => [debt, ...prev]);
+    }
     setNewDebt({ personName: "", dueDate: "", note: "" });
     setNewDebtAmounts([{ amount: "", currency: "SAR" }]);
     setShowAddForm(false);
+    setEditingDebtId(null);
   };
 
   const handleAddPayment = (debtId: string) => {
