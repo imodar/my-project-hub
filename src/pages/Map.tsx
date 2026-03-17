@@ -180,9 +180,7 @@ const Map = () => {
                 color: member.isOnline ? "white" : "hsl(var(--foreground))",
               }}
             >
-              <span className="text-xs">{member.locationIcon}</span>
               <span className="text-xs font-bold">{member.name}</span>
-            </div>
             {/* Arrow */}
             <div className="flex justify-center -mt-1">
               <div
