@@ -176,21 +176,22 @@ const CalendarPage = () => {
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[ev.id]; return n; });
   };
 
-  // Swipe handlers
-  const handleTouchStart = (e: React.TouchEvent, id: string) => {
-    touchStartXRef.current = e.touches[0].clientX;
+  // Swipe handlers (touch + mouse for desktop)
+  const handlePointerDown = (e: React.PointerEvent, id: string) => {
+    touchStartXRef.current = e.clientX;
     activeSwipeRef.current = id;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
-  const handleTouchMove = (e: React.TouchEvent, id: string) => {
+  const handlePointerMove = (e: React.PointerEvent, id: string) => {
     if (activeSwipeRef.current !== id) return;
-    const diff = touchStartXRef.current - e.touches[0].clientX;
+    const diff = touchStartXRef.current - e.clientX;
     if (diff > 0) {
       setSwipeOffset((prev) => ({ ...prev, [id]: Math.min(diff, 80) }));
     } else {
       setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
     }
   };
-  const handleTouchEnd = (id: string) => {
+  const handlePointerUp = (id: string) => {
     const offset = swipeOffset[id] || 0;
     setSwipeOffset((prev) => ({ ...prev, [id]: offset > 40 ? 80 : 0 }));
     activeSwipeRef.current = null;
@@ -250,7 +251,7 @@ const CalendarPage = () => {
       </div>
 
       {/* Calendar Grid */}
-      <div className="px-4">
+      <div className="px-4 mt-4">
         <div className="bg-card rounded-2xl p-4 border border-border" style={{ boxShadow: "0 2px 12px hsla(0,0%,0%,0.04)" }}>
           {/* Day headers */}
           <div className="grid grid-cols-7 mb-3">
@@ -316,11 +317,11 @@ const CalendarPage = () => {
                 </div>
                 {/* Card */}
                 <div
-                  className="relative bg-card border border-border rounded-2xl p-4 flex items-center gap-3 transition-transform"
+                  className="relative bg-card border border-border rounded-2xl p-4 flex items-center gap-3 transition-transform touch-pan-y"
                   style={{ transform: `translateX(${-offset}px)` }}
-                  onTouchStart={(e) => handleTouchStart(e, ev.id)}
-                  onTouchMove={(e) => handleTouchMove(e, ev.id)}
-                  onTouchEnd={() => handleTouchEnd(ev.id)}
+                  onPointerDown={(e) => handlePointerDown(e, ev.id)}
+                  onPointerMove={(e) => handlePointerMove(e, ev.id)}
+                  onPointerUp={() => handlePointerUp(ev.id)}
                 >
                   {/* Date badge */}
                   <div className="w-14 h-14 rounded-2xl bg-primary flex flex-col items-center justify-center shrink-0">
