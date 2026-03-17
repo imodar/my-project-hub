@@ -252,16 +252,16 @@ const FamilyManagement = () => {
     toast({ title: `تم قبول ${newMember.name} في الأسرة!` });
   };
 
-  // Swipe handlers
-  const handleTouchStart = useCallback((e: React.TouchEvent, id: string) => {
-    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, id };
+  // Swipe handlers (touch + mouse)
+  const handlePointerStart = useCallback((x: number, y: number, id: string) => {
+    touchStartRef.current = { x, y, id };
     isDragging.current = false;
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent, id: string) => {
+  const handlePointerMove = useCallback((x: number, y: number, id: string) => {
     if (!touchStartRef.current || touchStartRef.current.id !== id) return;
-    const dx = e.touches[0].clientX - touchStartRef.current.x; // positive = swipe right (RTL reveal)
-    const dy = Math.abs(touchStartRef.current.y - e.touches[0].clientY);
+    const dx = x - touchStartRef.current.x;
+    const dy = Math.abs(touchStartRef.current.y - y);
 
     if (!isDragging.current && dy > Math.abs(dx)) {
       touchStartRef.current = null;
@@ -277,7 +277,7 @@ const FamilyManagement = () => {
     }
   }, []);
 
-  const handleTouchEnd = useCallback((id: string) => {
+  const handlePointerEnd = useCallback((id: string) => {
     const offset = swipeOffsets[id] || 0;
     if (offset > SWIPE_THRESHOLD) {
       setSwipeOffsets((prev) => ({ ...prev, [id]: SWIPE_WIDTH }));
@@ -289,6 +289,26 @@ const FamilyManagement = () => {
     touchStartRef.current = null;
     isDragging.current = false;
   }, [swipeOffsets]);
+
+  // Mouse drag state
+  const mouseDownRef = useRef(false);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent, id: string) => {
+    mouseDownRef.current = true;
+    handlePointerStart(e.clientX, e.clientY, id);
+  }, [handlePointerStart]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent, id: string) => {
+    if (!mouseDownRef.current) return;
+    e.preventDefault();
+    handlePointerMove(e.clientX, e.clientY, id);
+  }, [handlePointerMove]);
+
+  const handleMouseUp = useCallback((id: string) => {
+    if (!mouseDownRef.current) return;
+    mouseDownRef.current = false;
+    handlePointerEnd(id);
+  }, [handlePointerEnd]);
 
   const handleCardTap = useCallback((id: string) => {
     if (openSwipeId && openSwipeId !== id) {
