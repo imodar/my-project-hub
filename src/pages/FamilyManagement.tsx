@@ -260,7 +260,7 @@ const FamilyManagement = () => {
 
   const handleTouchMove = useCallback((e: React.TouchEvent, id: string) => {
     if (!touchStartRef.current || touchStartRef.current.id !== id) return;
-    const dx = touchStartRef.current.x - e.touches[0].clientX;
+    const dx = e.touches[0].clientX - touchStartRef.current.x; // positive = swipe right (RTL reveal)
     const dy = Math.abs(touchStartRef.current.y - e.touches[0].clientY);
 
     if (!isDragging.current && dy > Math.abs(dx)) {
