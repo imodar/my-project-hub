@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { User, Users, Settings, LogOut, ChevronLeft } from "lucide-react";
+import { User, Users, Settings, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ProfileSheetProps {

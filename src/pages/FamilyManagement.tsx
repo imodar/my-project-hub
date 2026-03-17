@@ -193,7 +193,7 @@ const FamilyManagement = () => {
                   style={{
                     background: "hsla(0,0%,100%,0.9)",
                     boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
-                    transform: `translateX(${offset}px)`,
+                    transform: `translateX(${-offset}px)`,
                   }}
                   onTouchStart={(e) => !isParent && handleTouchStart(e, member.id)}
                   onTouchMove={(e) => !isParent && handleTouchMove(e, member.id)}
