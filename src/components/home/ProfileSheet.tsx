@@ -19,10 +19,10 @@ const ProfileSheet = ({ open, onOpenChange, user }: ProfileSheetProps) => {
     {
       icon: User,
       label: "ملفي الشخصي",
-      desc: "إعدادات الحساب والصورة الشخصية",
+      desc: "الاسم والصورة الشخصية",
       onClick: () => {
         onOpenChange(false);
-        navigate("/settings");
+        navigate("/profile");
       },
     },
     ...(user.role === "parent"
