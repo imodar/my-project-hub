@@ -30,13 +30,22 @@ const ROLE_LABELS: Record<string, string> = {
   wife: "الزوجة",
 };
 
-const ROLE_EMOJI: Record<string, string> = {
-  father: "👨",
-  mother: "👩",
-  son: "👦",
-  daughter: "👧",
-  husband: "👨",
-  wife: "👩",
+// Lucide icon components for each role
+const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: number; className?: string }) => {
+  switch (role) {
+    case "father":
+    case "husband":
+      return <User size={size} className={className} />;
+    case "mother":
+    case "wife":
+      return <Heart size={size} className={className} />;
+    case "son":
+      return <Baby size={size} className={className} />;
+    case "daughter":
+      return <Baby size={size} className={className} />;
+    default:
+      return <User size={size} className={className} />;
+  }
 };
 
 const isSupervisor = (role: FamilyRole) =>
