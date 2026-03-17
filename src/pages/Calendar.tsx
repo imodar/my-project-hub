@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
   ChevronLeft,
+  ArrowRight,
   Plus,
   Cake,
   Plane,
@@ -223,18 +224,28 @@ const CalendarPage = () => {
       style={{ background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)" }}>
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4">
-        <div className="text-right">
-          <h1 className="text-xl font-black text-foreground">{ARABIC_MONTHS[currentMonth]} {toArabicNum(currentYear)}</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">رمضان ١٤٤٧ هـ</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={nextMonth} className="w-10 h-10 rounded-xl flex items-center justify-center bg-card border border-border">
-            <ChevronRight size={18} className="text-foreground" />
+      <div
+        className="sticky top-0 z-40 px-4 pt-12 pb-3"
+        style={{
+          background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate("/")} className="p-1.5 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
+            <ArrowRight size={20} className="text-white" />
           </button>
-          <button onClick={prevMonth} className="w-10 h-10 rounded-xl flex items-center justify-center bg-card border border-border">
-            <ChevronLeft size={18} className="text-foreground" />
-          </button>
+          <div className="flex-1">
+            <h1 className="text-lg font-bold text-white">تقويم العائلة</h1>
+            <p className="text-xs text-white/70">{ARABIC_MONTHS[currentMonth]} {toArabicNum(currentYear)}</p>
+          </div>
+          <div className="flex gap-1.5">
+            <button onClick={nextMonth} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "hsla(0,0%,100%,0.12)" }}>
+              <ChevronRight size={18} className="text-white" />
+            </button>
+            <button onClick={prevMonth} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "hsla(0,0%,100%,0.12)" }}>
+              <ChevronLeft size={18} className="text-white" />
+            </button>
+          </div>
         </div>
       </div>
 
