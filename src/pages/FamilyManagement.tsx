@@ -562,6 +562,7 @@ const FamilyManagement = () => {
                 >
                   <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "hsl(340, 60%, 92%)" }}>
                     <Baby size={24} className="text-pink-500" />
+                  </div>
                   <span className="text-sm font-bold text-foreground">ابنة</span>
                 </button>
               </div>
