@@ -383,7 +383,7 @@ const CalendarPage = () => {
             return (
               <div key={ev.id} className="relative overflow-hidden rounded-2xl select-none">
                 {/* 3 action buttons behind the card */}
-                <div className="absolute right-0 top-0 bottom-0 flex items-stretch rounded-2xl overflow-hidden" style={{ width: `${SWIPE_WIDTH}px` }}>
+                <div className="absolute left-0 top-0 bottom-0 flex items-stretch rounded-2xl overflow-hidden" style={{ width: `${SWIPE_WIDTH}px` }}>
                   {/* Delete */}
                   <button
                     onClick={() => { setDeleteTarget(ev); closeSwipe(ev.id); }}
