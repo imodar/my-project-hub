@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
 import { TrashProvider } from "@/contexts/TrashContext";
-import { AnimatePresence } from "framer-motion";
 import ScrollToTop from "@/components/ScrollToTop";
 import PageTransition from "@/components/PageTransition";
 import Index from "./pages/Index.tsx";
@@ -26,23 +25,21 @@ const AnimatedRoutes = () => {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait">
-      <PageTransition key={location.pathname}>
-        <Routes location={location}>
-          <Route path="/" element={<Index />} />
-          <Route path="/tasbih" element={<Tasbih />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/map" element={<Map />} />
-          <Route path="/debts" element={<Debts />} />
-          <Route path="/family" element={<FamilyManagement />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/trash" element={<Trash />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </PageTransition>
-    </AnimatePresence>
+    <PageTransition key={location.pathname}>
+      <Routes location={location}>
+        <Route path="/" element={<Index />} />
+        <Route path="/tasbih" element={<Tasbih />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/map" element={<Map />} />
+        <Route path="/debts" element={<Debts />} />
+        <Route path="/family" element={<FamilyManagement />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/trash" element={<Trash />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </PageTransition>
   );
 };
 
