@@ -248,6 +248,7 @@ const Market = () => {
       name: newListName.trim(),
       type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
       sharedWith: newListType === "family" ? newListShareMembers : undefined,
+      useDefaultCategories: newListType === "personal" ? newListUseCategories : true,
       lastUpdatedBy: "أنت",
       lastUpdatedAt: "الآن",
       items: [],
