@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { ArrowRight, Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ interface MarketList {
   name: string;
   type: "family" | "personal" | "shared";
   isDefault?: boolean;
+  useDefaultCategories?: boolean;
   sharedWith?: string[];
   items: MarketItem[];
   lastUpdatedBy: string;
@@ -114,6 +116,7 @@ const Market = () => {
   const [newListName, setNewListName] = useState("");
   const [newListType, setNewListType] = useState<"family" | "personal">("family");
   const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
+  const [newListUseCategories, setNewListUseCategories] = useState(false);
 
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
@@ -246,6 +249,7 @@ const Market = () => {
       name: newListName.trim(),
       type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
       sharedWith: newListType === "family" ? newListShareMembers : undefined,
+      useDefaultCategories: newListType === "personal" ? newListUseCategories : true,
       lastUpdatedBy: "أنت",
       lastUpdatedAt: "الآن",
       items: [],
@@ -254,8 +258,9 @@ const Market = () => {
     setActiveListId(newList.id);
     setNewListName("");
     setNewListShareMembers([]);
+    setNewListUseCategories(false);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers]);
+  }, [newListName, newListType, newListShareMembers, newListUseCategories]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
@@ -708,6 +713,15 @@ const Market = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+            {newListType === "personal" && (
+              <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">إظهار فئات التسوق الافتراضية</p>
+                  <p className="text-[11px] text-muted-foreground">خضار وفاكهة، لحوم، ألبان، مخبوزات...</p>
+                </div>
+                <Switch checked={newListUseCategories} onCheckedChange={setNewListUseCategories} />
               </div>
             )}
           </div>
