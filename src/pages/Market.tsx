@@ -244,7 +244,8 @@ const Market = () => {
     const newList: MarketList = {
       id: crypto.randomUUID(),
       name: newListName.trim(),
-      type: newListType,
+      type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
+      sharedWith: newListType === "family" ? newListShareMembers : undefined,
       lastUpdatedBy: "أنت",
       lastUpdatedAt: "الآن",
       items: [],
@@ -252,8 +253,9 @@ const Market = () => {
     setLists((prev) => [...prev, newList]);
     setActiveListId(newList.id);
     setNewListName("");
+    setNewListShareMembers([]);
     setShowAddList(false);
-  }, [newListName, newListType]);
+  }, [newListName, newListType, newListShareMembers]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
