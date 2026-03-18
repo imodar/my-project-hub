@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, MapPin, Eye, EyeOff, Shield, Clock, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import BottomNav from "@/components/home/BottomNav";
+
 
 interface FamilyMember {
   id: string;
