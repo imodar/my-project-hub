@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { ArrowRight, Plus, Search, ShoppingCart, X, Check, Users, Lock, Share2, Trash2, MoreVertical } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { ArrowRight, Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,14 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { haptic } from "@/lib/haptics";
 
-// Types
 interface MarketItem {
   id: string;
   name: string;
@@ -25,6 +28,7 @@ interface MarketList {
   id: string;
   name: string;
   type: "family" | "personal" | "shared";
+  isDefault?: boolean;
   sharedWith?: string[];
   items: MarketItem[];
   lastUpdatedBy: string;
@@ -43,14 +47,14 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; emoji: string 
 };
 
 const CATEGORIES = ["الكل", ...Object.keys(CATEGORY_COLORS)];
-
 const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
 const initialLists: MarketList[] = [
   {
     id: "1",
-    name: "قائمة السوق الأسبوعية",
+    name: "قائمة التسوق",
     type: "family",
+    isDefault: true,
     lastUpdatedBy: "أم فهد",
     lastUpdatedAt: "منذ ساعة",
     items: [
@@ -75,6 +79,8 @@ const initialLists: MarketList[] = [
   },
 ];
 
+const SWIPE_WIDTH = 140;
+
 const Market = () => {
   const navigate = useNavigate();
   const [lists, setLists] = useState<MarketList[]>(initialLists);
@@ -84,6 +90,20 @@ const Market = () => {
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+
+  // Swipe state
+  const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
+  const touchStartXRef = useRef(0);
+  const activeSwipeRef = useRef<string | null>(null);
+
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<MarketItem | null>(null);
+
+  // Edit item
+  const [editTarget, setEditTarget] = useState<MarketItem | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editQuantity, setEditQuantity] = useState("");
+  const [editCategory, setEditCategory] = useState("");
 
   // New item form
   const [newItemName, setNewItemName] = useState("");
@@ -112,21 +132,86 @@ const Market = () => {
   const completedItems = activeList?.items.filter((i) => i.checked).length || 0;
   const remainingItems = totalItems - completedItems;
 
+  // Swipe handlers
+  const closeSwipe = useCallback((id: string) => {
+    setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
+    activeSwipeRef.current = null;
+  }, []);
+
+  const handlePointerDown = (e: React.PointerEvent, id: string) => {
+    touchStartXRef.current = e.clientX;
+    activeSwipeRef.current = id;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent, id: string) => {
+    if (activeSwipeRef.current !== id) return;
+    const diff = e.clientX - touchStartXRef.current;
+    // RTL: swipe left reveals actions (negative diff)
+    setSwipeOffset((prev) => ({ ...prev, [id]: diff < 0 ? Math.max(diff, -SWIPE_WIDTH) : 0 }));
+  };
+
+  const handlePointerUp = (e: React.PointerEvent, id: string) => {
+    const offset = swipeOffset[id] || 0;
+    setSwipeOffset((prev) => ({ ...prev, [id]: offset < -60 ? -SWIPE_WIDTH : 0 }));
+    activeSwipeRef.current = null;
+    if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    }
+  };
+
   const toggleItem = useCallback((itemId: string) => {
     haptic.light();
+    setLists((prev) =>
+      prev.map((list) =>
+        list.id === activeListId
+          ? { ...list, items: list.items.map((item) => item.id === itemId ? { ...item, checked: !item.checked } : item) }
+          : list
+      )
+    );
+  }, [activeListId]);
+
+  const confirmDelete = useCallback(() => {
+    if (!deleteTarget) return;
+    haptic.medium();
+    setLists((prev) =>
+      prev.map((list) =>
+        list.id === activeListId
+          ? { ...list, items: list.items.filter((i) => i.id !== deleteTarget.id) }
+          : list
+      )
+    );
+    setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
+    setDeleteTarget(null);
+  }, [activeListId, deleteTarget]);
+
+  const openEdit = useCallback((item: MarketItem) => {
+    setEditTarget(item);
+    setEditName(item.name);
+    setEditQuantity(item.quantity);
+    setEditCategory(item.category);
+    closeSwipe(item.id);
+  }, [closeSwipe]);
+
+  const saveEdit = useCallback(() => {
+    if (!editTarget || !editName.trim()) return;
+    haptic.medium();
     setLists((prev) =>
       prev.map((list) =>
         list.id === activeListId
           ? {
               ...list,
               items: list.items.map((item) =>
-                item.id === itemId ? { ...item, checked: !item.checked } : item
+                item.id === editTarget.id
+                  ? { ...item, name: editName.trim(), quantity: editQuantity.trim() || "1", category: editCategory }
+                  : item
               ),
             }
           : list
       )
     );
-  }, [activeListId]);
+    setEditTarget(null);
+  }, [activeListId, editTarget, editName, editQuantity, editCategory]);
 
   const addItem = useCallback(() => {
     if (!newItemName.trim()) return;
@@ -151,17 +236,6 @@ const Market = () => {
     setNewItemCategory("أخرى");
     setShowAddItem(false);
   }, [activeListId, newItemName, newItemCategory, newItemQuantity]);
-
-  const deleteItem = useCallback((itemId: string) => {
-    haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: list.items.filter((i) => i.id !== itemId) }
-          : list
-      )
-    );
-  }, [activeListId]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
@@ -213,12 +287,70 @@ const Market = () => {
     }
   };
 
-  const getListLabel = (type: MarketList["type"]) => {
-    switch (type) {
-      case "family": return "عائلية";
-      case "personal": return "شخصية";
-      case "shared": return "مشتركة";
-    }
+  const renderItem = (item: MarketItem, isChecked: boolean) => {
+    const catInfo = CATEGORY_COLORS[item.category] || CATEGORY_COLORS["أخرى"];
+    const offset = swipeOffset[item.id] || 0;
+
+    return (
+      <div key={item.id} className="relative overflow-hidden rounded-2xl select-none">
+        {/* Swipe actions behind - positioned on the left (end in RTL) */}
+        <div
+          className="absolute right-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
+          style={{ width: `${SWIPE_WIDTH}px` }}
+        >
+          <button
+            onClick={() => { setDeleteTarget(item); closeSwipe(item.id); }}
+            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
+          >
+            <Trash2 size={16} className="text-destructive-foreground" />
+            <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
+          </button>
+          <button
+            onClick={() => openEdit(item)}
+            className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
+            style={{ background: "hsl(220, 60%, 50%)" }}
+          >
+            <Pencil size={16} className="text-white" />
+            <span className="text-[10px] text-white font-semibold">تعديل</span>
+          </button>
+        </div>
+
+        {/* Card */}
+        <div
+          className={`relative bg-card border border-border rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing ${isChecked ? "opacity-60" : ""}`}
+          style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
+          onPointerDown={(e) => handlePointerDown(e, item.id)}
+          onPointerMove={(e) => handlePointerMove(e, item.id)}
+          onPointerUp={(e) => handlePointerUp(e, item.id)}
+          onPointerCancel={() => closeSwipe(item.id)}
+        >
+          <button
+            onClick={() => toggleItem(item.id)}
+            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+              isChecked
+                ? "bg-primary"
+                : "border-2 border-border hover:border-primary"
+            }`}
+          >
+            {isChecked && <Check size={14} className="text-primary-foreground" />}
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className={`font-semibold text-sm text-foreground truncate ${isChecked ? "line-through" : ""}`}>
+              {item.name}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {isChecked ? item.quantity : `الكمية: ${item.quantity}`}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${catInfo.bg} ${catInfo.text}`}>
+              {item.category}
+            </span>
+            <span className="text-[10px] text-muted-foreground">{item.addedBy}</span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -286,28 +418,31 @@ const Market = () => {
             <span className="text-[10px] text-muted-foreground">
               {activeList.lastUpdatedBy} – {activeList.lastUpdatedAt}
             </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-1 rounded-lg hover:bg-muted">
-                  <MoreVertical size={16} className="text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {activeList.type !== "family" && (
-                  <DropdownMenuItem onClick={() => setShowShareDialog(true)}>
-                    <Share2 size={14} className="ml-2" />
-                    مشاركة القائمة
+            {/* Only show menu for non-default lists */}
+            {!activeList.isDefault && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-1 rounded-lg hover:bg-muted">
+                    <MoreVertical size={16} className="text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {activeList.type !== "family" && (
+                    <DropdownMenuItem onClick={() => setShowShareDialog(true)}>
+                      <Share2 size={14} className="ml-2" />
+                      مشاركة القائمة
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => deleteList(activeList.id)}
+                  >
+                    <Trash2 size={14} className="ml-2" />
+                    حذف القائمة
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => deleteList(activeList.id)}
-                >
-                  <Trash2 size={14} className="ml-2" />
-                  حذف القائمة
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       )}
@@ -354,68 +489,12 @@ const Market = () => {
 
       {/* Items list */}
       <div className="px-4 space-y-2">
-        {uncheckedItems.map((item) => {
-          const catInfo = CATEGORY_COLORS[item.category] || CATEGORY_COLORS["أخرى"];
-          return (
-            <div
-              key={item.id}
-              className="flex items-center gap-3 p-3 bg-card rounded-2xl border border-border transition-all"
-            >
-              <button
-                onClick={() => toggleItem(item.id)}
-                className="w-7 h-7 rounded-full border-2 border-border flex items-center justify-center shrink-0 transition-colors hover:border-primary"
-              >
-                {/* empty */}
-              </button>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  الكمية: {item.quantity}
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${catInfo.bg} ${catInfo.text}`}>
-                  {item.category}
-                </span>
-                <span className="text-[10px] text-muted-foreground">{item.addedBy}</span>
-              </div>
-              <button
-                onClick={() => deleteItem(item.id)}
-                className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          );
-        })}
+        {uncheckedItems.map((item) => renderItem(item, false))}
 
-        {/* Checked items */}
         {checkedItems.length > 0 && (
           <div className="pt-2">
             <p className="text-xs text-muted-foreground mb-2 font-medium">✅ تم شراؤها</p>
-            {checkedItems.map((item) => {
-              const catInfo = CATEGORY_COLORS[item.category] || CATEGORY_COLORS["أخرى"];
-              return (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 p-3 bg-card/60 rounded-2xl border border-border/50 mb-2 opacity-60"
-                >
-                  <button
-                    onClick={() => toggleItem(item.id)}
-                    className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0"
-                  >
-                    <Check size={14} className="text-primary-foreground" />
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground line-through truncate">{item.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{item.quantity}</p>
-                  </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${catInfo.bg} ${catInfo.text}`}>
-                    {item.category}
-                  </span>
-                </div>
-              );
-            })}
+            {checkedItems.map((item) => renderItem(item, true))}
           </div>
         )}
 
@@ -473,6 +552,70 @@ const Market = () => {
         </div>
       </div>
 
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف المنتج</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف "{deleteTarget?.name}"؟
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row gap-2">
+            <AlertDialogAction onClick={confirmDelete} className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
+              حذف
+            </AlertDialogAction>
+            <AlertDialogCancel className="flex-1 rounded-xl">إلغاء</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Item Dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+        <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل المنتج</DialogTitle>
+            <DialogDescription>عدّل اسم المنتج والكمية والتصنيف</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Input
+              placeholder="اسم المنتج"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="rounded-xl"
+            />
+            <Input
+              placeholder="الكمية"
+              value={editQuantity}
+              onChange={(e) => setEditQuantity(e.target.value)}
+              className="rounded-xl"
+            />
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">التصنيف</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(CATEGORY_COLORS).map(([cat, info]) => (
+                  <button
+                    key={cat}
+                    onClick={() => setEditCategory(cat)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      editCategory === cat
+                        ? "bg-primary text-primary-foreground"
+                        : `${info.bg} ${info.text} border border-border`
+                    }`}
+                  >
+                    {info.emoji} {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex-row gap-2 pt-2">
+            <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
+            <Button variant="outline" onClick={() => setEditTarget(null)} className="rounded-xl">إلغاء</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Item Dialog */}
       <Dialog open={showAddItem} onOpenChange={setShowAddItem}>
         <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
@@ -481,18 +624,8 @@ const Market = () => {
             <DialogDescription>أضف المنتج مع التصنيف والكمية</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 pt-2">
-            <Input
-              placeholder="اسم المنتج"
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              className="rounded-xl"
-            />
-            <Input
-              placeholder="الكمية (مثال: 2 كيلو)"
-              value={newItemQuantity}
-              onChange={(e) => setNewItemQuantity(e.target.value)}
-              className="rounded-xl"
-            />
+            <Input placeholder="اسم المنتج" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} className="rounded-xl" />
+            <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => setNewItemQuantity(e.target.value)} className="rounded-xl" />
             <div>
               <p className="text-xs text-muted-foreground mb-2">التصنيف</p>
               <div className="flex flex-wrap gap-2">
@@ -513,12 +646,8 @@ const Market = () => {
             </div>
           </div>
           <DialogFooter className="flex-row gap-2 pt-2">
-            <Button onClick={addItem} className="flex-1 rounded-xl">
-              إضافة
-            </Button>
-            <Button variant="outline" onClick={() => setShowAddItem(false)} className="rounded-xl">
-              إلغاء
-            </Button>
+            <Button onClick={addItem} className="flex-1 rounded-xl">إضافة</Button>
+            <Button variant="outline" onClick={() => setShowAddItem(false)} className="rounded-xl">إلغاء</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -531,47 +660,32 @@ const Market = () => {
             <DialogDescription>أنشئ قائمة تسوق جديدة</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 pt-2">
-            <Input
-              placeholder="اسم القائمة"
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-              className="rounded-xl"
-            />
+            <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
             <div>
               <p className="text-xs text-muted-foreground mb-2">نوع القائمة</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setNewListType("family")}
                   className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
-                    newListType === "family"
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-card text-muted-foreground"
+                    newListType === "family" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
                   }`}
                 >
-                  <Users size={16} />
-                  عائلية
+                  <Users size={16} /> عائلية
                 </button>
                 <button
                   onClick={() => setNewListType("personal")}
                   className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
-                    newListType === "personal"
-                      ? "border-accent bg-accent/10 text-accent"
-                      : "border-border bg-card text-muted-foreground"
+                    newListType === "personal" ? "border-accent bg-accent/10 text-accent" : "border-border bg-card text-muted-foreground"
                   }`}
                 >
-                  <Lock size={16} />
-                  شخصية
+                  <Lock size={16} /> شخصية
                 </button>
               </div>
             </div>
           </div>
           <DialogFooter className="flex-row gap-2 pt-2">
-            <Button onClick={addList} className="flex-1 rounded-xl">
-              إنشاء
-            </Button>
-            <Button variant="outline" onClick={() => setShowAddList(false)} className="rounded-xl">
-              إلغاء
-            </Button>
+            <Button onClick={addList} className="flex-1 rounded-xl">إنشاء</Button>
+            <Button variant="outline" onClick={() => setShowAddList(false)} className="rounded-xl">إلغاء</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -593,25 +707,17 @@ const Market = () => {
                   )
                 }
                 className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-all ${
-                  selectedShareMembers.includes(member)
-                    ? "border-primary bg-primary/10"
-                    : "border-border bg-card"
+                  selectedShareMembers.includes(member) ? "border-primary bg-primary/10" : "border-border bg-card"
                 }`}
               >
                 <span className="font-medium text-foreground">{member}</span>
-                {selectedShareMembers.includes(member) && (
-                  <Check size={16} className="text-primary" />
-                )}
+                {selectedShareMembers.includes(member) && <Check size={16} className="text-primary" />}
               </button>
             ))}
           </div>
           <DialogFooter className="flex-row gap-2 pt-2">
-            <Button onClick={shareList} className="flex-1 rounded-xl">
-              مشاركة
-            </Button>
-            <Button variant="outline" onClick={() => setShowShareDialog(false)} className="rounded-xl">
-              إلغاء
-            </Button>
+            <Button onClick={shareList} className="flex-1 rounded-xl">مشاركة</Button>
+            <Button variant="outline" onClick={() => setShowShareDialog(false)} className="rounded-xl">إلغاء</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
