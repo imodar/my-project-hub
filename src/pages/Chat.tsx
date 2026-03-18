@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowRight, Send, Pin, Lock, Smile, Check, CheckCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import BottomNav from "@/components/home/BottomNav";
+
 
 type MessageStatus = "sent" | "delivered" | "read";
 
