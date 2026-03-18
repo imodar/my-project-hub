@@ -1,5 +1,6 @@
 import { Home, Map, MessageCircle, Settings } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { haptic } from "@/lib/haptics";
 
 const navItems = [
   { icon: Home, label: "الرئيسية", path: "/" },
@@ -13,9 +14,9 @@ const BottomNav = () => {
   const location = useLocation();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
+    <div className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-around px-4 py-2 mx-4 mb-4 rounded-2xl" style={{
+        <div className="flex items-center justify-around px-4 py-2 mx-4 mb-3 rounded-2xl" style={{
           background: "hsla(0,0%,100%,0.92)",
           backdropFilter: "blur(16px)",
           boxShadow: "0 4px 30px hsla(0,0%,0%,0.1)",
@@ -26,7 +27,10 @@ const BottomNav = () => {
             return (
               <button
                 key={item.label}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  haptic.light();
+                  navigate(item.path);
+                }}
                 className="flex flex-col items-center gap-1 px-3 py-2 transition-transform active:scale-90"
               >
                 {isActive ? (
