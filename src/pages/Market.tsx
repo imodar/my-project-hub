@@ -147,13 +147,13 @@ const Market = () => {
   const handlePointerMove = (e: React.PointerEvent, id: string) => {
     if (activeSwipeRef.current !== id) return;
     const diff = e.clientX - touchStartXRef.current;
-    // RTL: swipe left reveals actions (negative diff)
-    setSwipeOffset((prev) => ({ ...prev, [id]: diff < 0 ? Math.max(diff, -SWIPE_WIDTH) : 0 }));
+    // RTL: swipe right reveals actions on the left side (positive diff)
+    setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, SWIPE_WIDTH) : 0 }));
   };
 
   const handlePointerUp = (e: React.PointerEvent, id: string) => {
     const offset = swipeOffset[id] || 0;
-    setSwipeOffset((prev) => ({ ...prev, [id]: offset < -60 ? -SWIPE_WIDTH : 0 }));
+    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
     activeSwipeRef.current = null;
     if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
@@ -293,9 +293,9 @@ const Market = () => {
 
     return (
       <div key={item.id} className="relative overflow-hidden rounded-2xl select-none">
-        {/* Swipe actions behind - positioned on the left (end in RTL) */}
+        {/* Swipe actions behind - positioned on the left side */}
         <div
-          className="absolute right-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
+          className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
           style={{ width: `${SWIPE_WIDTH}px` }}
         >
           <button
@@ -317,7 +317,7 @@ const Market = () => {
 
         {/* Card */}
         <div
-          className={`relative bg-card border border-border rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing ${isChecked ? "opacity-60" : ""}`}
+          className={`relative z-10 border border-border rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing ${isChecked ? "bg-card/80" : "bg-card"}`}
           style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
           onPointerDown={(e) => handlePointerDown(e, item.id)}
           onPointerMove={(e) => handlePointerMove(e, item.id)}
