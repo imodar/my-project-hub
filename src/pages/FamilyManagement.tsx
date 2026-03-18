@@ -391,15 +391,13 @@ const FamilyManagement = () => {
                   </div>
                   <div className="flex-1 text-right">
                     <p className={`text-sm font-semibold ${isPending ? "text-muted-foreground" : "text-foreground"}`}>{member.name}</p>
-                    <div className="flex items-center gap-1.5 justify-end">
-                      <span className="text-xs text-muted-foreground">{ROLE_LABELS[member.role]}</span>
-                      {isPending && (
-                        <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                          <Clock size={8} />
-                          بانتظار القبول
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-xs text-muted-foreground">{ROLE_LABELS[member.role]}</p>
+                    {isPending && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 mt-0.5">
+                        <Clock size={8} />
+                        بانتظار القبول
+                      </span>
+                    )}
                   </div>
                   {memberIsAdmin && (
                     <span className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-semibold" style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}>
