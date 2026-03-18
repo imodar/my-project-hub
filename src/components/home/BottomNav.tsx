@@ -1,5 +1,6 @@
 import { Home, Map, MessageCircle, Settings } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { haptic } from "@/lib/haptics";
 
 const navItems = [
   { icon: Home, label: "الرئيسية", path: "/" },
