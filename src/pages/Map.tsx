@@ -71,7 +71,7 @@ const Map = () => {
   const navigate = useNavigate();
   const [updateInterval, setUpdateInterval] = useState(5);
   const [showSettings, setShowSettings] = useState(false);
-  const [expandedList, setExpandedList] = useState(true);
+  
   const [members, setMembers] = useState<FamilyMember[]>(mockMembers);
   const [myLocationEnabled, setMyLocationEnabled] = useState(true);
 
