@@ -18,6 +18,7 @@ import FamilyManagement from "./pages/FamilyManagement.tsx";
 import Profile from "./pages/Profile.tsx";
 import CalendarPage from "./pages/Calendar.tsx";
 import Trash from "./pages/Trash.tsx";
+import Market from "./pages/Market.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const AnimatedRoutes = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/trash" element={<Trash />} />
+        <Route path="/market" element={<Market />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
