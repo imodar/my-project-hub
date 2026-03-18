@@ -113,6 +113,7 @@ const Market = () => {
   // New list form
   const [newListName, setNewListName] = useState("");
   const [newListType, setNewListType] = useState<"family" | "personal">("family");
+  const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
 
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
@@ -243,7 +244,8 @@ const Market = () => {
     const newList: MarketList = {
       id: crypto.randomUUID(),
       name: newListName.trim(),
-      type: newListType,
+      type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
+      sharedWith: newListType === "family" ? newListShareMembers : undefined,
       lastUpdatedBy: "أنت",
       lastUpdatedAt: "الآن",
       items: [],
@@ -251,8 +253,9 @@ const Market = () => {
     setLists((prev) => [...prev, newList]);
     setActiveListId(newList.id);
     setNewListName("");
+    setNewListShareMembers([]);
     setShowAddList(false);
-  }, [newListName, newListType]);
+  }, [newListName, newListType, newListShareMembers]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
@@ -682,6 +685,31 @@ const Market = () => {
                 </button>
               </div>
             </div>
+            {newListType === "family" && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">مشاركة مع</p>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {FAMILY_MEMBERS.map((member) => (
+                    <button
+                      key={member}
+                      onClick={() =>
+                        setNewListShareMembers((prev) =>
+                          prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                        )
+                      }
+                      className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
+                        newListShareMembers.includes(member)
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-card"
+                      }`}
+                    >
+                      <span className="font-medium text-foreground">{member}</span>
+                      {newListShareMembers.includes(member) && <Check size={14} className="text-primary" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter className="flex-row gap-2 pt-2">
             <Button onClick={addList} className="flex-1 rounded-xl">إنشاء</Button>
