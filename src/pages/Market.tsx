@@ -153,7 +153,7 @@ const Market = () => {
 
   const handlePointerUp = (e: React.PointerEvent, id: string) => {
     const offset = swipeOffset[id] || 0;
-    setSwipeOffset((prev) => ({ ...prev, [id]: offset < -60 ? -SWIPE_WIDTH : 0 }));
+    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
     activeSwipeRef.current = null;
     if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
