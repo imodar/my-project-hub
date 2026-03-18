@@ -27,7 +27,10 @@ const BottomNav = () => {
             return (
               <button
                 key={item.label}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  haptic.light();
+                  navigate(item.path);
+                }}
                 className="flex flex-col items-center gap-1 px-3 py-2 transition-transform active:scale-90"
               >
                 {isActive ? (
