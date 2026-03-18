@@ -317,7 +317,7 @@ const Market = () => {
 
         {/* Card */}
         <div
-          className={`relative bg-card border border-border rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing ${isChecked ? "opacity-60" : ""}`}
+          className={`relative z-10 border border-border rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing ${isChecked ? "bg-card/80" : "bg-card"}`}
           style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
           onPointerDown={(e) => handlePointerDown(e, item.id)}
           onPointerMove={(e) => handlePointerMove(e, item.id)}
