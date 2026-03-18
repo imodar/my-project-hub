@@ -147,8 +147,8 @@ const Market = () => {
   const handlePointerMove = (e: React.PointerEvent, id: string) => {
     if (activeSwipeRef.current !== id) return;
     const diff = e.clientX - touchStartXRef.current;
-    // RTL: swipe left reveals actions (negative diff)
-    setSwipeOffset((prev) => ({ ...prev, [id]: diff < 0 ? Math.max(diff, -SWIPE_WIDTH) : 0 }));
+    // RTL: swipe right reveals actions on the left side (positive diff)
+    setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, SWIPE_WIDTH) : 0 }));
   };
 
   const handlePointerUp = (e: React.PointerEvent, id: string) => {
