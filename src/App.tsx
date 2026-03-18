@@ -18,6 +18,7 @@ import FamilyManagement from "./pages/FamilyManagement.tsx";
 import Profile from "./pages/Profile.tsx";
 import CalendarPage from "./pages/Calendar.tsx";
 import Trash from "./pages/Trash.tsx";
+import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
           <BrowserRouter>
             <ScrollToTop />
             <AnimatedRoutes />
+            <BottomNav />
           </BrowserRouter>
         </TooltipProvider>
       </TrashProvider>

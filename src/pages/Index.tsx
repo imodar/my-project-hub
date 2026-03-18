@@ -3,7 +3,6 @@ import QuickActions from "@/components/home/QuickActions";
 import FeatureGrid from "@/components/home/FeatureGrid";
 import UpcomingEvents from "@/components/home/UpcomingEvents";
 import DailyTasks from "@/components/home/DailyTasks";
-import BottomNav from "@/components/home/BottomNav";
 import PullToRefresh from "@/components/PullToRefresh";
 
 const Index = () => {
@@ -21,7 +20,6 @@ const Index = () => {
         <UpcomingEvents />
         <DailyTasks />
       </PullToRefresh>
-      <BottomNav />
     </div>
   );
 };
