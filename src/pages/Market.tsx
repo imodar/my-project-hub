@@ -257,8 +257,9 @@ const Market = () => {
     setActiveListId(newList.id);
     setNewListName("");
     setNewListShareMembers([]);
+    setNewListUseCategories(false);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers]);
+  }, [newListName, newListType, newListShareMembers, newListUseCategories]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
