@@ -115,6 +115,7 @@ const Market = () => {
   const [newListName, setNewListName] = useState("");
   const [newListType, setNewListType] = useState<"family" | "personal">("family");
   const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
+  const [newListUseCategories, setNewListUseCategories] = useState(false);
 
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
