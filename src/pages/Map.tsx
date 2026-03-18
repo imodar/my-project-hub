@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, MapPin, Eye, EyeOff, Shield, Clock, Settings2, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, MapPin, Eye, EyeOff, Shield, Clock, Settings2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 
@@ -71,7 +71,7 @@ const Map = () => {
   const navigate = useNavigate();
   const [updateInterval, setUpdateInterval] = useState(5);
   const [showSettings, setShowSettings] = useState(false);
-  const [expandedList, setExpandedList] = useState(true);
+  
   const [members, setMembers] = useState<FamilyMember[]>(mockMembers);
   const [myLocationEnabled, setMyLocationEnabled] = useState(true);
 
@@ -213,21 +213,16 @@ const Map = () => {
 
       {/* Family list */}
       <div className="mx-3 mt-3 mb-28">
-        <button
-          onClick={() => setExpandedList(!expandedList)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-card rounded-t-2xl border border-border"
-        >
+        <div className="w-full flex items-center justify-between px-4 py-3 bg-card rounded-t-2xl border border-border">
           <span className="text-sm font-bold text-foreground">أفراد العائلة ({members.length})</span>
-          {expandedList ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
-        </button>
+        </div>
 
-        {expandedList && (
-          <div className="border border-t-0 border-border rounded-b-2xl overflow-hidden">
-            {members.map((member, idx) => (
-              <div
-                key={member.id}
-                className={`flex items-center gap-3 px-4 py-3 bg-card ${idx < mockMembers.length - 1 ? "border-b border-border" : ""}`}
-              >
+        <div className="border border-t-0 border-border rounded-b-2xl overflow-hidden">
+          {members.map((member, idx) => (
+            <div
+              key={member.id}
+              className={`flex items-center gap-3 px-4 py-3 bg-card ${idx < mockMembers.length - 1 ? "border-b border-border" : ""}`}
+            >
                 {/* Avatar */}
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
@@ -262,9 +257,8 @@ const Map = () => {
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
     </div>
