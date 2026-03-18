@@ -556,6 +556,7 @@ const Market = () => {
           >
             <Plus size={18} />
             إضافة
+          </Button>
         </div>
       </div>
 
