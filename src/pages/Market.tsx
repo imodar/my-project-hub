@@ -517,6 +517,35 @@ const Market = () => {
       {/* Floating add button */}
       <div className="fixed bottom-24 left-4 right-4 max-w-2xl mx-auto z-30">
         <div className="flex items-center gap-2">
+          <div className="flex-1 bg-card border border-border rounded-full px-4 py-2">
+            <input
+              placeholder="أضف منتجاً..."
+              className="w-full bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newItemName.trim()) {
+                  const newItem: MarketItem = {
+                    id: crypto.randomUUID(),
+                    name: newItemName.trim(),
+                    category: "أخرى",
+                    quantity: "1",
+                    addedBy: "أنت",
+                    checked: false,
+                  };
+                  setLists((prev) =>
+                    prev.map((list) =>
+                      list.id === activeListId
+                        ? { ...list, items: [...list.items, newItem], lastUpdatedBy: "أنت", lastUpdatedAt: "الآن" }
+                        : list
+                    )
+                  );
+                  setNewItemName("");
+                  haptic.medium();
+                }
+              }}
+            />
+          </div>
           <Button
             onClick={() => {
               haptic.medium();
