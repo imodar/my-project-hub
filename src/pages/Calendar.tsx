@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTrash } from "@/contexts/TrashContext";
-import BottomNav from "@/components/home/BottomNav";
+
 
 interface FamilyEvent {
   id: string;
