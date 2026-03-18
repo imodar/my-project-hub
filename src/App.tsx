@@ -41,6 +41,9 @@ const AnimatedRoutes = () => {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/trash" element={<Trash />} />
         <Route path="/market" element={<Market />} />
+        <Route path="/places" element={<Places />} />
+        <Route path="/places/add" element={<AddPlace />} />
+        <Route path="/places/edit/:id" element={<AddPlace />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

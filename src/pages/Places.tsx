@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { ArrowRight, Plus, Search, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, Phone, Link2, DollarSign, Sparkles, Coffee, UtensilsCrossed, Ferris Wheel, HelpCircle } from "lucide-react";
+import { ArrowRight, Plus, Search, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";

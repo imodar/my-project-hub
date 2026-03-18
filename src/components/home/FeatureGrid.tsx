@@ -16,7 +16,7 @@ const features = [
   { icon: ListChecks, label: "المهام", color: "hsl(160, 50%, 40%)", bg: "hsl(160, 50%, 95%)", badge: 5 },
   { icon: FolderLock, label: "الوثائق", color: "hsl(45, 60%, 45%)", bg: "hsl(45, 60%, 95%)" },
   { icon: TreePine, label: "شجرتي", color: "hsl(120, 35%, 40%)", bg: "hsl(120, 35%, 95%)" },
-  { icon: MapPin, label: "الأماكن", color: "hsl(350, 55%, 50%)", bg: "hsl(350, 55%, 95%)" },
+  { icon: MapPin, label: "الأماكن", color: "hsl(350, 55%, 50%)", bg: "hsl(350, 55%, 95%)", route: "/places" },
   { icon: Heart, label: "الزكاة", color: "hsl(43, 55%, 48%)", bg: "hsl(43, 55%, 95%)" },
 ];
 
