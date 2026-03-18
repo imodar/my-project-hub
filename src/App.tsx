@@ -38,6 +38,7 @@ const AnimatedRoutes = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/trash" element={<Trash />} />
+        <Route path="/market" element={<Market />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
