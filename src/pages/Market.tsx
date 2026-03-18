@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { ArrowRight, Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -361,8 +362,13 @@ const Market = () => {
     );
   };
 
-  return (
+    const handleRefresh = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    };
+
+    return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
+      <PullToRefresh onRefresh={handleRefresh}>
       {/* Header */}
       <div
         className="sticky top-0 z-40 px-4 pt-4 pb-3"
@@ -761,6 +767,7 @@ const Market = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </PullToRefresh>
     </div>
   );
 };
