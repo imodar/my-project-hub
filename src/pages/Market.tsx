@@ -517,17 +517,6 @@ const Market = () => {
       {/* Floating add button */}
       <div className="fixed bottom-24 left-4 right-4 max-w-2xl mx-auto z-30">
         <div className="flex items-center gap-2">
-          <Button
-            onClick={() => {
-              haptic.medium();
-              setShowAddItem(true);
-            }}
-            className="rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 px-4"
-            size="sm"
-          >
-            <Plus size={18} />
-            إضافة
-          </Button>
           <div className="flex-1 bg-card border border-border rounded-full px-4 py-2">
             <input
               placeholder="أضف منتجاً..."
@@ -557,6 +546,17 @@ const Market = () => {
               }}
             />
           </div>
+          <Button
+            onClick={() => {
+              haptic.medium();
+              setShowAddItem(true);
+            }}
+            className="rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 px-4"
+            size="sm"
+          >
+            <Plus size={18} />
+            إضافة
+          </Button>
         </div>
       </div>
 
