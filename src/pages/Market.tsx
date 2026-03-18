@@ -362,8 +362,13 @@ const Market = () => {
     );
   };
 
-  return (
+    const handleRefresh = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    };
+
+    return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
+      <PullToRefresh onRefresh={handleRefresh}>
       {/* Header */}
       <div
         className="sticky top-0 z-40 px-4 pt-4 pb-3"
