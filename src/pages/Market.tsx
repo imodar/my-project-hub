@@ -293,9 +293,9 @@ const Market = () => {
 
     return (
       <div key={item.id} className="relative overflow-hidden rounded-2xl select-none">
-        {/* Swipe actions behind - positioned on the left (end in RTL) */}
+        {/* Swipe actions behind - positioned on the left side */}
         <div
-          className="absolute right-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
+          className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
           style={{ width: `${SWIPE_WIDTH}px` }}
         >
           <button
