@@ -767,6 +767,7 @@ const Market = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </PullToRefresh>
     </div>
   );
 };
