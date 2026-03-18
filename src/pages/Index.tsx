@@ -20,7 +20,6 @@ const Index = () => {
         <UpcomingEvents />
         <DailyTasks />
       </PullToRefresh>
-      <BottomNav />
     </div>
   );
 };

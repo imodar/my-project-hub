@@ -267,7 +267,6 @@ const Map = () => {
         )}
       </div>
 
-      <BottomNav />
     </div>
   );
 };
