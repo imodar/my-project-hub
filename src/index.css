@@ -98,13 +98,4 @@
     overscroll-behavior: none;
   }
 
-  /* Active state for touch feedback */
-  button, a, [role="button"] {
-    -webkit-tap-highlight-color: transparent;
-    transition: transform 0.1s ease;
-  }
-
-  button:active, a:active, [role="button"]:active {
-    transform: scale(0.97);
-  }
 }
