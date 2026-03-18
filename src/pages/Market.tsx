@@ -690,6 +690,13 @@ const Market = () => {
                 </button>
               </div>
             </div>
+            <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">إظهار فئات التسوق الافتراضية</p>
+                <p className="text-[11px] text-muted-foreground">خضار وفاكهة، لحوم، ألبان، مخبوزات...</p>
+              </div>
+              <Switch checked={newListUseCategories} onCheckedChange={setNewListUseCategories} />
+            </div>
             {newListType === "family" && (
               <div>
                 <p className="text-xs text-muted-foreground mb-2">مشاركة مع</p>
@@ -715,13 +722,6 @@ const Market = () => {
                 </div>
               </div>
             )}
-            <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">إظهار فئات التسوق الافتراضية</p>
-                <p className="text-[11px] text-muted-foreground">خضار وفاكهة، لحوم، ألبان، مخبوزات...</p>
-              </div>
-              <Switch checked={newListUseCategories} onCheckedChange={setNewListUseCategories} />
-            </div>
           </div>
           <DialogFooter className="flex-row gap-2 pt-2">
             <Button onClick={addList} className="flex-1 rounded-xl">إنشاء</Button>
