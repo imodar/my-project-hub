@@ -19,6 +19,8 @@ import Profile from "./pages/Profile.tsx";
 import CalendarPage from "./pages/Calendar.tsx";
 import Trash from "./pages/Trash.tsx";
 import Market from "./pages/Market.tsx";
+import Places from "./pages/Places.tsx";
+import AddPlace from "./pages/AddPlace.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
