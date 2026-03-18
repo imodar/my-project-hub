@@ -767,7 +767,6 @@ const Debts = () => {
         </div>
       )}
 
-      <BottomNav />
     </div>
   );
 };

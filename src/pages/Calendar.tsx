@@ -655,7 +655,6 @@ const CalendarPage = () => {
         </DialogContent>
       </Dialog>
 
-      <BottomNav />
     </div>
   );
 };

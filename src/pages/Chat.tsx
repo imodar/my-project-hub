@@ -290,7 +290,6 @@ const Chat = () => {
         </div>
       </div>
 
-      <BottomNav />
     </div>
   );
 };
