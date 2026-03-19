@@ -417,8 +417,10 @@ const Budget = () => {
       <button
         onClick={() => {
           haptic.light();
-          const months = getAvailableMonths(budgets.map(b => b.month));
-          setNewMonth(months[0]?.value || "");
+          setBudgetType("month");
+          setNewMonthIdx(String(new Date().getMonth()));
+          setNewYear(String(new Date().getFullYear()));
+          setProjectLabel("");
           setNewIncome("");
           setShowAddMonth(true);
         }}
@@ -431,30 +433,81 @@ const Budget = () => {
         <Plus size={24} className="text-white" />
       </button>
 
-      {/* Add Month Drawer */}
+      {/* Add Budget Drawer */}
       <Drawer open={showAddMonth} onOpenChange={setShowAddMonth}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>إضافة ميزانية شهر جديد</DrawerTitle>
-            <DrawerDescription>اختر الشهر وحدد المبلغ الوارد</DrawerDescription>
+            <DrawerTitle>إضافة ميزانية جديدة</DrawerTitle>
+            <DrawerDescription>اختر نوع الميزانية وحدد المبلغ الوارد</DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1 block">الشهر</label>
-              <select
-                value={newMonth}
-                onChange={e => setNewMonth(e.target.value)}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-right"
+          <div className="px-4 space-y-4">
+            {/* Type Selection */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setBudgetType("month")}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  budgetType === "month"
+                    ? "text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+                style={budgetType === "month" ? { background: "hsl(var(--primary))" } : {}}
               >
-                {availableMonths.length === 0 ? (
-                  <option value="">لا توجد أشهر متاحة</option>
-                ) : (
-                  availableMonths.map(m => <option key={m.value} value={m.value}>{m.label}</option>)
-                )}
-              </select>
+                ميزانية شهرية
+              </button>
+              <button
+                onClick={() => setBudgetType("project")}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  budgetType === "project"
+                    ? "text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+                style={budgetType === "project" ? { background: "hsl(var(--primary))" } : {}}
+              >
+                مبلغ / مشروع
+              </button>
             </div>
+
+            {budgetType === "month" ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1 block">الشهر</label>
+                  <select
+                    value={newMonthIdx}
+                    onChange={e => setNewMonthIdx(e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-right"
+                  >
+                    {MONTH_NAMES.map((name, i) => (
+                      <option key={i} value={String(i)}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1 block">السنة</label>
+                  <select
+                    value={newYear}
+                    onChange={e => setNewYear(e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-right"
+                  >
+                    {getAvailableYears().map(y => (
+                      <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">اسم المشروع أو الوصف</label>
+                <Input
+                  placeholder="مثال: تجهيز المنزل، رحلة..."
+                  value={projectLabel}
+                  onChange={e => setProjectLabel(e.target.value)}
+                  className="text-right"
+                />
+              </div>
+            )}
+
             <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1 block">المبلغ الوارد (الراتب أو المبلغ المتاح)</label>
+              <label className="text-xs font-semibold text-muted-foreground mb-1 block">المبلغ الوارد</label>
               <Input
                 type="number"
                 placeholder="مثال: 10000"
@@ -466,7 +519,10 @@ const Budget = () => {
             </div>
           </div>
           <DrawerFooter>
-            <Button onClick={handleAddMonth} disabled={!newMonth || !newIncome}>
+            <Button
+              onClick={handleAddBudget}
+              disabled={!newIncome || (budgetType === "project" && !projectLabel.trim())}
+            >
               إضافة
             </Button>
           </DrawerFooter>
