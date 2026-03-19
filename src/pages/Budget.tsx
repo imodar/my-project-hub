@@ -209,7 +209,7 @@ const Budget = () => {
     return (
       <div className="min-h-screen bg-background pb-28" dir="rtl">
         <PageHeader
-          title={formatMonth(b.month)}
+          title={getBudgetTitle(b)}
           subtitle="تفاصيل الميزانية"
           onBack={() => setSelectedBudget(null)}
           actions={[
