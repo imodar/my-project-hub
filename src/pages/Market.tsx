@@ -489,7 +489,7 @@ const Market = () => {
       </div>
 
       {/* Items list */}
-      <div className="px-4 pt-1 space-y-2 pb-28">
+      <div className="px-4 pt-4 space-y-2 pb-28">
         {uncheckedItems.map((item) => renderItem(item, false))}
 
         {checkedItems.length > 0 && (
