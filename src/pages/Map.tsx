@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
-import { ArrowRight, MapPin, EyeOff, Shield, Settings2, ChevronUp } from "lucide-react";
+import { MapPin, EyeOff, Settings2, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import PageHeader from "@/components/PageHeader";
 import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
 
 interface FamilyMember {
