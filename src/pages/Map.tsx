@@ -229,9 +229,9 @@ const Map = () => {
           </div>
         </div>
 
-        {/* Bottom sheet overlay */}
+        {/* Bottom sheet overlay - fixed to viewport */}
         <motion.div
-          className="absolute bottom-0 left-0 right-0 z-30 bg-background rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+          className="fixed bottom-0 left-0 right-0 z-30 bg-background rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)] max-w-2xl mx-auto"
           style={{
             height: SHEET_EXPANDED,
             y: sheetY,
