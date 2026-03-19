@@ -110,6 +110,7 @@ const Budget = () => {
         month: monthStr,
         income: parseFloat(newIncome),
         expenses: [],
+        sharedWith: [...shareNames],
       };
       update([...budgets, b]);
     } else {
