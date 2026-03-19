@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Plus, Trash2, Pencil, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays } from "lucide-react";
+import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
@@ -20,9 +20,13 @@ interface ExpenseItem {
   amount: number;
 }
 
+type BudgetType = "month" | "project";
+
 interface MonthBudget {
   id: string;
-  month: string; // "2026-03"
+  type: BudgetType;
+  month: string; // "2026-03" for month type, or custom id for project
+  label?: string; // custom name for project type
   income: number;
   expenses: ExpenseItem[];
 }
@@ -33,22 +37,26 @@ const MONTH_NAMES = [
 ];
 
 const formatMonth = (m: string) => {
-  const [y, mo] = m.split("-");
-  return `${MONTH_NAMES[parseInt(mo) - 1]} ${y}`;
+  const parts = m.split("-");
+  if (parts.length !== 2) return m;
+  const [y, mo] = parts;
+  const idx = parseInt(mo) - 1;
+  if (idx < 0 || idx > 11) return m;
+  return `${MONTH_NAMES[idx]} ${y}`;
 };
 
-const getAvailableMonths = (existing: string[]) => {
-  const months: { value: string; label: string }[] = [];
-  const now = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    if (!existing.includes(val)) {
-      months.push({ value: val, label: formatMonth(val) });
-    }
-  }
-  return months;
+const getBudgetTitle = (b: MonthBudget) => {
+  if (b.type === "project") return b.label || "مشروع";
+  return formatMonth(b.month);
 };
+
+const getAvailableYears = () => {
+  const now = new Date();
+  const years: number[] = [];
+  for (let i = 0; i < 5; i++) years.push(now.getFullYear() + i);
+  return years;
+};
+
 
 const STORAGE_KEY = "budgets_data";
 
@@ -70,7 +78,10 @@ const Budget = () => {
   const [showDeleteBudget, setShowDeleteBudget] = useState<string | null>(null);
   const [showDeleteExpense, setShowDeleteExpense] = useState<{ budgetId: string; expenseId: string } | null>(null);
 
-  const [newMonth, setNewMonth] = useState("");
+  const [budgetType, setBudgetType] = useState<BudgetType>("month");
+  const [newMonthIdx, setNewMonthIdx] = useState(String(new Date().getMonth()));
+  const [newYear, setNewYear] = useState(String(new Date().getFullYear()));
+  const [projectLabel, setProjectLabel] = useState("");
   const [newIncome, setNewIncome] = useState("");
   const [expenseName, setExpenseName] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
@@ -82,19 +93,37 @@ const Budget = () => {
     saveBudgets(sorted);
   }, []);
 
-  const handleAddMonth = () => {
-    if (!newMonth || !newIncome || parseFloat(newIncome) <= 0) return;
+  const handleAddBudget = () => {
+    if (!newIncome || parseFloat(newIncome) <= 0) return;
     haptic.light();
-    const b: MonthBudget = {
-      id: Date.now().toString(),
-      month: newMonth,
-      income: parseFloat(newIncome),
-      expenses: [],
-    };
-    update([...budgets, b]);
+
+    if (budgetType === "month") {
+      const monthStr = `${newYear}-${String(parseInt(newMonthIdx) + 1).padStart(2, "0")}`;
+      if (budgets.some(b => b.month === monthStr && b.type === "month")) return;
+      const b: MonthBudget = {
+        id: Date.now().toString(),
+        type: "month",
+        month: monthStr,
+        income: parseFloat(newIncome),
+        expenses: [],
+      };
+      update([...budgets, b]);
+    } else {
+      if (!projectLabel.trim()) return;
+      const b: MonthBudget = {
+        id: Date.now().toString(),
+        type: "project",
+        month: `project-${Date.now()}`,
+        label: projectLabel.trim(),
+        income: parseFloat(newIncome),
+        expenses: [],
+      };
+      update([...budgets, b]);
+    }
+
     setShowAddMonth(false);
-    setNewMonth("");
     setNewIncome("");
+    setProjectLabel("");
   };
 
   const handleAddExpense = () => {
@@ -156,7 +185,7 @@ const Budget = () => {
   const remaining = (b: MonthBudget) => b.income - totalExpenses(b);
   const spentPercent = (b: MonthBudget) => b.income > 0 ? Math.min((totalExpenses(b) / b.income) * 100, 100) : 0;
 
-  const availableMonths = getAvailableMonths(budgets.map(b => b.month));
+  
 
   // Detail view
   if (selectedBudget) {
@@ -168,7 +197,7 @@ const Budget = () => {
     return (
       <div className="min-h-screen bg-background pb-28" dir="rtl">
         <PageHeader
-          title={formatMonth(b.month)}
+          title={getBudgetTitle(b)}
           subtitle="تفاصيل الميزانية"
           onBack={() => setSelectedBudget(null)}
           actions={[
@@ -343,11 +372,11 @@ const Budget = () => {
                   className="w-full rounded-2xl bg-card border border-border p-4 text-right active:scale-[0.98] transition-transform"
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "hsl(var(--primary) / 0.12)" }}>
-                      <CalendarDays size={20} className="text-primary" />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: b.type === "project" ? "hsl(var(--accent) / 0.15)" : "hsl(var(--primary) / 0.12)" }}>
+                      {b.type === "project" ? <FolderOpen size={20} className="text-accent-foreground" /> : <CalendarDays size={20} className="text-primary" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-foreground">{formatMonth(b.month)}</p>
+                      <p className="text-sm font-bold text-foreground">{getBudgetTitle(b)}</p>
                       <p className="text-[10px] text-muted-foreground">{b.expenses.length} بنود</p>
                     </div>
                     <button
@@ -376,8 +405,10 @@ const Budget = () => {
       <button
         onClick={() => {
           haptic.light();
-          const months = getAvailableMonths(budgets.map(b => b.month));
-          setNewMonth(months[0]?.value || "");
+          setBudgetType("month");
+          setNewMonthIdx(String(new Date().getMonth()));
+          setNewYear(String(new Date().getFullYear()));
+          setProjectLabel("");
           setNewIncome("");
           setShowAddMonth(true);
         }}
@@ -390,30 +421,81 @@ const Budget = () => {
         <Plus size={24} className="text-white" />
       </button>
 
-      {/* Add Month Drawer */}
+      {/* Add Budget Drawer */}
       <Drawer open={showAddMonth} onOpenChange={setShowAddMonth}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>إضافة ميزانية شهر جديد</DrawerTitle>
-            <DrawerDescription>اختر الشهر وحدد المبلغ الوارد</DrawerDescription>
+            <DrawerTitle>إضافة ميزانية جديدة</DrawerTitle>
+            <DrawerDescription>اختر نوع الميزانية وحدد المبلغ الوارد</DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1 block">الشهر</label>
-              <select
-                value={newMonth}
-                onChange={e => setNewMonth(e.target.value)}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-right"
+          <div className="px-4 space-y-4">
+            {/* Type Selection */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setBudgetType("month")}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  budgetType === "month"
+                    ? "text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+                style={budgetType === "month" ? { background: "hsl(var(--primary))" } : {}}
               >
-                {availableMonths.length === 0 ? (
-                  <option value="">لا توجد أشهر متاحة</option>
-                ) : (
-                  availableMonths.map(m => <option key={m.value} value={m.value}>{m.label}</option>)
-                )}
-              </select>
+                ميزانية شهرية
+              </button>
+              <button
+                onClick={() => setBudgetType("project")}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  budgetType === "project"
+                    ? "text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+                style={budgetType === "project" ? { background: "hsl(var(--primary))" } : {}}
+              >
+                مبلغ / مشروع
+              </button>
             </div>
+
+            {budgetType === "month" ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1 block">الشهر</label>
+                  <select
+                    value={newMonthIdx}
+                    onChange={e => setNewMonthIdx(e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-right"
+                  >
+                    {MONTH_NAMES.map((name, i) => (
+                      <option key={i} value={String(i)}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1 block">السنة</label>
+                  <select
+                    value={newYear}
+                    onChange={e => setNewYear(e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-right"
+                  >
+                    {getAvailableYears().map(y => (
+                      <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">اسم المشروع أو الوصف</label>
+                <Input
+                  placeholder="مثال: تجهيز المنزل، رحلة..."
+                  value={projectLabel}
+                  onChange={e => setProjectLabel(e.target.value)}
+                  className="text-right"
+                />
+              </div>
+            )}
+
             <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1 block">المبلغ الوارد (الراتب أو المبلغ المتاح)</label>
+              <label className="text-xs font-semibold text-muted-foreground mb-1 block">المبلغ الوارد</label>
               <Input
                 type="number"
                 placeholder="مثال: 10000"
@@ -425,7 +507,10 @@ const Budget = () => {
             </div>
           </div>
           <DrawerFooter>
-            <Button onClick={handleAddMonth} disabled={!newMonth || !newIncome}>
+            <Button
+              onClick={handleAddBudget}
+              disabled={!newIncome || (budgetType === "project" && !projectLabel.trim())}
+            >
               إضافة
             </Button>
           </DrawerFooter>
