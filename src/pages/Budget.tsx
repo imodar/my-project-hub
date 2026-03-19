@@ -20,9 +20,13 @@ interface ExpenseItem {
   amount: number;
 }
 
+type BudgetType = "month" | "project";
+
 interface MonthBudget {
   id: string;
-  month: string; // "2026-03"
+  type: BudgetType;
+  month: string; // "2026-03" for month type, or custom id for project
+  label?: string; // custom name for project type
   income: number;
   expenses: ExpenseItem[];
 }
