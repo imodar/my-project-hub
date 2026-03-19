@@ -470,7 +470,6 @@ const Budget = () => {
           setProjectLabel("");
           setNewIncome("");
           setShareNames([]);
-          setNewShareName("");
           setShowAddMonth(true);
         }}
         className="fixed left-4 bottom-24 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
