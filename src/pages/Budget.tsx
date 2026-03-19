@@ -37,8 +37,24 @@ const MONTH_NAMES = [
 ];
 
 const formatMonth = (m: string) => {
-  const [y, mo] = m.split("-");
-  return `${MONTH_NAMES[parseInt(mo) - 1]} ${y}`;
+  const parts = m.split("-");
+  if (parts.length !== 2) return m;
+  const [y, mo] = parts;
+  const idx = parseInt(mo) - 1;
+  if (idx < 0 || idx > 11) return m;
+  return `${MONTH_NAMES[idx]} ${y}`;
+};
+
+const getBudgetTitle = (b: MonthBudget) => {
+  if (b.type === "project") return b.label || "مشروع";
+  return formatMonth(b.month);
+};
+
+const getAvailableYears = () => {
+  const now = new Date();
+  const years: number[] = [];
+  for (let i = 0; i < 5; i++) years.push(now.getFullYear() + i);
+  return years;
 };
 
 const getAvailableMonths = (existing: string[]) => {
