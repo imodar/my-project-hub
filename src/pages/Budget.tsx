@@ -358,7 +358,11 @@ const Budget = () => {
   // List view
   return (
     <div className="min-h-screen bg-background pb-28" dir="rtl">
-      <PageHeader title="الميزانية" subtitle="تخطيط ميزانيتك الشهرية" />
+      <PageHeader title="الميزانية" subtitle="تخطيط ميزانيتك الشهرية">
+        <div className="flex items-center gap-1.5 mt-2 px-1 pb-1">
+          <span className="text-[10px] text-white/60">🔒 ميزانيتك خاصة ولا يراها أفراد العائلة إلا إذا شاركتها معهم</span>
+        </div>
+      </PageHeader>
 
       <PullToRefresh onRefresh={onRefresh}>
         <div className="px-4 mt-4 space-y-3">
