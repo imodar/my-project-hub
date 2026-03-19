@@ -57,18 +57,6 @@ const getAvailableYears = () => {
   return years;
 };
 
-const getAvailableMonths = (existing: string[]) => {
-  const months: { value: string; label: string }[] = [];
-  const now = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    if (!existing.includes(val)) {
-      months.push({ value: val, label: formatMonth(val) });
-    }
-  }
-  return months;
-};
 
 const STORAGE_KEY = "budgets_data";
 
