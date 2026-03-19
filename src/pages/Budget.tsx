@@ -1,3 +1,4 @@
+// Budget Page
 import { useState, useCallback } from "react";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
