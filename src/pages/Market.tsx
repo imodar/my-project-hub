@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -509,19 +510,22 @@ const Market = () => {
         )}
       </div>
 
-      {/* Floating add button */}
-      <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30">
-        <Button
-          onClick={() => {
-            haptic.medium();
-            setShowAddItem(true);
-          }}
-          className="w-14 h-14 rounded-full shadow-xl bg-primary text-primary-foreground hover:bg-primary/90 p-0"
-          size="icon"
-        >
-          <Plus size={24} />
-        </Button>
-      </div>
+      {/* Floating add button - portal to escape transform context */}
+      {createPortal(
+        <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30">
+          <Button
+            onClick={() => {
+              haptic.medium();
+              setShowAddItem(true);
+            }}
+            className="w-14 h-14 rounded-full shadow-xl bg-primary text-primary-foreground hover:bg-primary/90 p-0"
+            size="icon"
+          >
+            <Plus size={24} />
+          </Button>
+        </div>,
+        document.body
+      )}
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
