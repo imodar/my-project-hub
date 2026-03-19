@@ -461,15 +461,16 @@ const CalendarPage = () => {
 
       {/* ===== DIALOGS ===== */}
 
-      {/* Day Events Dialog */}
-      <Dialog open={!!selectedDay && !showAddDialog} onOpenChange={(o) => { if (!o) setSelectedDay(null); }}>
-        <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-base font-black">
+      {/* Day Events Drawer */}
+      <Drawer open={!!selectedDay && !showAddDialog} onOpenChange={(o) => { if (!o) setSelectedDay(null); }}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle className="text-center text-base font-black">
               مناسبات {selectedDay ? new Date(selectedDay).toLocaleDateString("ar-EG", { day: "numeric", month: "long" }) : ""}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 mt-2">
+            </DrawerTitle>
+            <DrawerDescription className="sr-only">قائمة مناسبات اليوم</DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-3 px-4 pb-6">
             {selectedDay && eventsForDay(selectedDay).length === 0 && (
               <p className="text-center text-sm text-muted-foreground py-4">لا توجد مناسبات في هذا اليوم</p>
             )}
@@ -494,8 +495,8 @@ const CalendarPage = () => {
               + إضافة مناسبة
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
       {/* Add Event Drawer */}
       <Drawer open={showAddDialog} onOpenChange={(o) => { setShowAddDialog(o); if (!o) setSelectedDay(null); }}>
