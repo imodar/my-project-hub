@@ -57,7 +57,7 @@ const UpcomingEvents = () => {
         {events.map((event) => (
           <div
             key={event.title}
-            className="min-w-[260px] rounded-2xl p-5 relative overflow-hidden border border-white/20"
+            className="min-w-[240px] rounded-2xl p-3.5 relative overflow-hidden border border-white/20"
             style={{ background: event.bg, boxShadow: "0 4px 20px -2px hsla(0,0%,0%,0.05)" }}
           >
             {/* Background decoration */}
