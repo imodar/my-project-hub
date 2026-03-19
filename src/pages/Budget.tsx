@@ -130,6 +130,8 @@ const Budget = () => {
     setShowAddMonth(false);
     setNewIncome("");
     setProjectLabel("");
+    setShareNames([]);
+    setNewShareName("");
   };
 
   const handleAddExpense = () => {
