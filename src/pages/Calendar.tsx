@@ -569,13 +569,13 @@ const CalendarPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Event Dialog */}
-      <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
-        <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-base font-black">تعديل المناسبة</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
+      {/* Edit Event Drawer */}
+      <Drawer open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>تعديل المناسبة</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 px-4 pb-2">
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">اسم المناسبة</label>
               <input value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))}
@@ -617,19 +617,19 @@ const CalendarPage = () => {
               حفظ التعديلات
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Personal Reminders Dialog */}
-      <Dialog open={!!reminderTarget} onOpenChange={(o) => { if (!o) setReminderTarget(null); }}>
-        <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-base font-black flex items-center justify-center gap-2">
+      {/* Personal Reminders Drawer */}
+      <Drawer open={!!reminderTarget} onOpenChange={(o) => { if (!o) setReminderTarget(null); }}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle className="flex items-center gap-2">
               <Bell size={18} className="text-amber-500" />
               تنبيهات شخصية
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 px-4 pb-2">
             <div className="text-center">
               <p className="text-sm font-bold text-foreground">{reminderTarget?.title}</p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -658,8 +658,8 @@ const CalendarPage = () => {
               {personalReminders.length > 0 ? "حفظ التنبيهات" : "إزالة التنبيهات"}
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
     </div>
   );
