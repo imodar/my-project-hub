@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
   ChevronLeft,
-  ArrowRight,
   Plus,
   Cake,
   Plane,
@@ -17,11 +16,19 @@ import {
   BellRing,
 } from "lucide-react";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import PageHeader from "@/components/PageHeader";
 import {
   AlertDialog,
   AlertDialogAction,
