@@ -525,6 +525,61 @@ const Budget = () => {
                 inputMode="decimal"
               />
             </div>
+
+            {/* Sharing */}
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-2 block">
+                <Users size={12} className="inline ml-1" />
+                مشاركة مع (اختياري)
+              </label>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  placeholder="اسم الشخص"
+                  value={newShareName}
+                  onChange={e => setNewShareName(e.target.value)}
+                  className="text-right flex-1"
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && newShareName.trim()) {
+                      e.preventDefault();
+                      setShareNames(prev => [...prev, newShareName.trim()]);
+                      setNewShareName("");
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  disabled={!newShareName.trim()}
+                  onClick={() => {
+                    if (newShareName.trim()) {
+                      setShareNames(prev => [...prev, newShareName.trim()]);
+                      setNewShareName("");
+                    }
+                  }}
+                >
+                  <UserPlus size={16} />
+                </Button>
+              </div>
+              {shareNames.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {shareNames.map((name, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary"
+                    >
+                      {name}
+                      <button onClick={() => setShareNames(prev => prev.filter((_, idx) => idx !== i))} className="hover:opacity-70">
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {shareNames.length === 0 && (
+                <p className="text-[10px] text-muted-foreground/60">🔒 ستبقى خاصة بك فقط</p>
+              )}
+            </div>
           </div>
           <DrawerFooter>
             <Button
