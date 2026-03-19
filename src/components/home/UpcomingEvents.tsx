@@ -58,7 +58,7 @@ const UpcomingEvents = () => {
           <div
             key={event.title}
             className="min-w-[240px] rounded-xl p-3 relative overflow-hidden border border-white/20"
-            style={{ background: event.bg, boxShadow: "0 4px 20px -2px hsla(0,0%,0%,0.05)" }}
+            style={{ background: event.bg, boxShadow: "0 2px 8px -2px hsla(0,0%,0%,0.03)" }}
           >
             {/* Background decoration */}
             <div className="absolute -left-3 -bottom-3 opacity-10">
