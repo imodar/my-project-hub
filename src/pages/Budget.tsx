@@ -1,6 +1,6 @@
 // Budget Page
 import { useState, useCallback } from "react";
-import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen } from "lucide-react";
+import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, X, UserPlus } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
@@ -26,10 +26,11 @@ type BudgetType = "month" | "project";
 interface MonthBudget {
   id: string;
   type: BudgetType;
-  month: string; // "2026-03" for month type, or custom id for project
-  label?: string; // custom name for project type
+  month: string;
+  label?: string;
   income: number;
   expenses: ExpenseItem[];
+  sharedWith: string[]; // names of people shared with
 }
 
 const MONTH_NAMES = [
@@ -56,6 +57,55 @@ const getAvailableYears = () => {
   const years: number[] = [];
   for (let i = 0; i < 5; i++) years.push(now.getFullYear() + i);
   return years;
+};
+
+const BudgetCard = ({ b, onSelect, onDelete, remaining, spentPercent }: {
+  b: MonthBudget;
+  onSelect: (b: MonthBudget) => void;
+  onDelete: (id: string) => void;
+  remaining: (b: MonthBudget) => number;
+  spentPercent: (b: MonthBudget) => number;
+}) => {
+  const rem = remaining(b);
+  const pct = spentPercent(b);
+  const shared = (b.sharedWith ?? []).length > 0;
+  return (
+    <button
+      onClick={() => onSelect(b)}
+      className="w-full rounded-2xl bg-card border border-border p-4 text-right active:scale-[0.98] transition-transform"
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: b.type === "project" ? "hsl(var(--accent) / 0.15)" : "hsl(var(--primary) / 0.12)" }}>
+          {b.type === "project" ? <FolderOpen size={20} className="text-accent-foreground" /> : <CalendarDays size={20} className="text-primary" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-foreground">{getBudgetTitle(b)}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] text-muted-foreground">{b.expenses.length} بنود</p>
+            {shared && (
+              <span className="text-[9px] text-primary/70 flex items-center gap-0.5">
+                <Users size={10} /> مع {b.sharedWith.join("، ")}
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={e => { e.stopPropagation(); onDelete(b.id); }}
+          className="p-1.5 rounded-full"
+          style={{ background: "hsl(var(--destructive) / 0.1)" }}
+        >
+          <Trash2 size={14} className="text-destructive" />
+        </button>
+      </div>
+      <div className="flex items-center justify-between text-xs mb-2">
+        <span className="text-muted-foreground">الوارد: <b className="text-foreground">{b.income.toLocaleString()}</b></span>
+        <span className={rem >= 0 ? "text-primary" : "text-destructive"}>
+          المتبقي: <b>{rem.toLocaleString()}</b>
+        </span>
+      </div>
+      <Progress value={pct} className="h-1.5" />
+    </button>
+  );
 };
 
 
@@ -87,6 +137,8 @@ const Budget = () => {
   const [expenseName, setExpenseName] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
   const [editIncomeVal, setEditIncomeVal] = useState("");
+  const [shareNames, setShareNames] = useState<string[]>([]);
+  const [newShareName, setNewShareName] = useState("");
 
   const update = useCallback((newBudgets: MonthBudget[]) => {
     const sorted = [...newBudgets].sort((a, b) => a.month.localeCompare(b.month));
@@ -107,6 +159,7 @@ const Budget = () => {
         month: monthStr,
         income: parseFloat(newIncome),
         expenses: [],
+        sharedWith: [...shareNames],
       };
       update([...budgets, b]);
     } else {
@@ -118,6 +171,7 @@ const Budget = () => {
         label: projectLabel.trim(),
         income: parseFloat(newIncome),
         expenses: [],
+        sharedWith: [...shareNames],
       };
       update([...budgets, b]);
     }
@@ -125,6 +179,8 @@ const Budget = () => {
     setShowAddMonth(false);
     setNewIncome("");
     setProjectLabel("");
+    setShareNames([]);
+    setNewShareName("");
   };
 
   const handleAddExpense = () => {
@@ -370,44 +426,36 @@ const Budget = () => {
             <div className="rounded-2xl bg-card border border-border p-12 text-center mt-8">
               <Wallet size={48} className="mx-auto mb-3 text-muted-foreground/30" />
               <p className="text-base font-semibold text-foreground">لا توجد ميزانيات</p>
-              <p className="text-sm text-muted-foreground mt-1">اضغط + لإضافة ميزانية شهر جديد</p>
+              <p className="text-sm text-muted-foreground mt-1">اضغط + لإضافة ميزانية جديدة</p>
             </div>
           ) : (
-            budgets.map(b => {
-              const rem = remaining(b);
-              const pct = spentPercent(b);
-              return (
-                <button
-                  key={b.id}
-                  onClick={() => setSelectedBudget(b)}
-                  className="w-full rounded-2xl bg-card border border-border p-4 text-right active:scale-[0.98] transition-transform"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: b.type === "project" ? "hsl(var(--accent) / 0.15)" : "hsl(var(--primary) / 0.12)" }}>
-                      {b.type === "project" ? <FolderOpen size={20} className="text-accent-foreground" /> : <CalendarDays size={20} className="text-primary" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-foreground">{getBudgetTitle(b)}</p>
-                      <p className="text-[10px] text-muted-foreground">{b.expenses.length} بنود</p>
-                    </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); setShowDeleteBudget(b.id); }}
-                      className="p-1.5 rounded-full"
-                      style={{ background: "hsl(var(--destructive) / 0.1)" }}
-                    >
-                      <Trash2 size={14} className="text-destructive" />
-                    </button>
+            <>
+              {/* Shared Budgets */}
+              {budgets.some(b => (b.sharedWith ?? []).length > 0) && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Users size={14} className="text-primary" />
+                    <h3 className="text-xs font-bold text-foreground">ميزانيات مشتركة</h3>
                   </div>
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="text-muted-foreground">الوارد: <b className="text-foreground">{b.income.toLocaleString()}</b></span>
-                    <span className={rem >= 0 ? "text-primary" : "text-destructive"}>
-                      المتبقي: <b>{rem.toLocaleString()}</b>
-                    </span>
+                  {budgets.filter(b => (b.sharedWith ?? []).length > 0).map(b => (
+                    <BudgetCard key={b.id} b={b} onSelect={setSelectedBudget} onDelete={setShowDeleteBudget} remaining={remaining} spentPercent={spentPercent} />
+                  ))}
+                </div>
+              )}
+
+              {/* Personal Budgets */}
+              {budgets.some(b => (b.sharedWith ?? []).length === 0) && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Wallet size={14} className="text-primary" />
+                    <h3 className="text-xs font-bold text-foreground">ميزانيات شخصية</h3>
                   </div>
-                  <Progress value={pct} className="h-1.5" />
-                </button>
-              );
-            })
+                  {budgets.filter(b => (b.sharedWith ?? []).length === 0).map(b => (
+                    <BudgetCard key={b.id} b={b} onSelect={setSelectedBudget} onDelete={setShowDeleteBudget} remaining={remaining} spentPercent={spentPercent} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </PullToRefresh>
@@ -421,6 +469,8 @@ const Budget = () => {
           setNewYear(String(new Date().getFullYear()));
           setProjectLabel("");
           setNewIncome("");
+          setShareNames([]);
+          setNewShareName("");
           setShowAddMonth(true);
         }}
         className="fixed left-4 bottom-24 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
@@ -515,6 +565,61 @@ const Budget = () => {
                 className="text-right"
                 inputMode="decimal"
               />
+            </div>
+
+            {/* Sharing */}
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-2 block">
+                <Users size={12} className="inline ml-1" />
+                مشاركة مع (اختياري)
+              </label>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  placeholder="اسم الشخص"
+                  value={newShareName}
+                  onChange={e => setNewShareName(e.target.value)}
+                  className="text-right flex-1"
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && newShareName.trim()) {
+                      e.preventDefault();
+                      setShareNames(prev => [...prev, newShareName.trim()]);
+                      setNewShareName("");
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  disabled={!newShareName.trim()}
+                  onClick={() => {
+                    if (newShareName.trim()) {
+                      setShareNames(prev => [...prev, newShareName.trim()]);
+                      setNewShareName("");
+                    }
+                  }}
+                >
+                  <UserPlus size={16} />
+                </Button>
+              </div>
+              {shareNames.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {shareNames.map((name, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary"
+                    >
+                      {name}
+                      <button onClick={() => setShareNames(prev => prev.filter((_, idx) => idx !== i))} className="hover:opacity-70">
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {shareNames.length === 0 && (
+                <p className="text-[10px] text-muted-foreground/60">🔒 ستبقى خاصة بك فقط</p>
+              )}
             </div>
           </div>
           <DrawerFooter>
