@@ -179,7 +179,7 @@ const Budget = () => {
           ]}
         />
 
-        <div className="px-4 -mt-2 space-y-4">
+        <div className="px-4 mt-4 space-y-4">
           {/* Summary Cards */}
           <div className="grid grid-cols-3 gap-3">
             <button
