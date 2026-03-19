@@ -53,8 +53,8 @@ const mockMembers: FamilyMember[] = [
 ];
 
 // Sheet positions (from top of map area)
-const SHEET_PEEK = 200; // how much sheet peeks up from bottom
-const SHEET_EXPANDED = 420; // expanded height
+const SHEET_PEEK = 220; // how much sheet peeks up from bottom
+const SHEET_EXPANDED = 520; // expanded height
 
 const Map = () => {
   const navigate = useNavigate();
@@ -260,7 +260,7 @@ const Map = () => {
           </div>
 
           {/* Members list */}
-          <div className="overflow-y-auto px-3" style={{ maxHeight: SHEET_EXPANDED - 80 }}>
+          <div className="overflow-y-auto px-3 pb-24" style={{ maxHeight: SHEET_EXPANDED - 80 }}>
             {members.map((member, idx) => (
               <button
                 key={member.id}
