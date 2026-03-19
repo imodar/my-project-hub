@@ -57,45 +57,37 @@ const UpcomingEvents = () => {
         {events.map((event) => (
           <div
             key={event.title}
-            className="min-w-[240px] rounded-2xl p-3.5 relative overflow-hidden border border-white/20"
+            className="min-w-[240px] rounded-xl p-3 relative overflow-hidden border border-white/20"
             style={{ background: event.bg, boxShadow: "0 4px 20px -2px hsla(0,0%,0%,0.05)" }}
           >
             {/* Background decoration */}
-            <div className="absolute -left-5 -bottom-5 opacity-10">
-              <event.icon size={100} style={{ color: event.color }} className="rotate-12" />
+            <div className="absolute -left-3 -bottom-3 opacity-10">
+              <event.icon size={60} style={{ color: event.color }} className="rotate-12" />
             </div>
 
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div className="flex justify-between items-start">
-                <span className="text-[10px] font-bold" style={{ color: `${event.accent}99` }}>
-                  {event.category}
-                </span>
-                <div
-                  className="text-[10px] font-bold px-2.5 py-1 rounded-full border"
-                  style={{
-                    background: `${event.accent}15`,
-                    color: event.accent,
-                    borderColor: `${event.accent}30`,
-                  }}
-                >
-                  بعد {event.daysLeft} يوم
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[9px] font-bold" style={{ color: `${event.accent}99` }}>
+                    {event.category}
+                  </span>
+                  <div
+                    className="text-[9px] font-bold px-2 py-0.5 rounded-full border"
+                    style={{
+                      background: `${event.accent}15`,
+                      color: event.accent,
+                      borderColor: `${event.accent}30`,
+                    }}
+                  >
+                    بعد {event.daysLeft} يوم
+                  </div>
                 </div>
-              </div>
-
-              <div className="mt-5">
-                <h3 className="text-xl font-extrabold leading-tight" style={{ color: event.color }}>
+                <h3 className="text-sm font-extrabold leading-tight" style={{ color: event.color }}>
                   {event.title}
                 </h3>
-                <p className="text-sm font-semibold mt-1" style={{ color: `${event.accent}B0` }}>
+                <p className="text-[11px] font-semibold mt-0.5" style={{ color: `${event.accent}B0` }}>
                   {event.date}
                 </p>
-              </div>
-
-              <div className="mt-5 pt-3 flex items-center gap-2" style={{ borderTop: `1px solid ${event.accent}15` }}>
-                <event.icon size={14} style={{ color: event.accent }} />
-                <span className="text-xs font-bold" style={{ color: `${event.accent}90` }}>
-                  تم تفعيل التذكير
-                </span>
               </div>
             </div>
           </div>
