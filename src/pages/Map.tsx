@@ -96,45 +96,25 @@ const Map = () => {
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background relative overflow-hidden" dir="rtl">
-      {/* Header */}
-      <div
-        className="sticky top-0 z-50 px-4 pt-12 pb-3 rounded-b-3xl"
-        style={{
-          background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-        }}
+      <PageHeader
+        title="خريطة العائلة"
+        subtitle={`تحديث كل ${updateInterval} دقائق`}
+        onBack={() => navigate("/")}
+        actions={[
+          {
+            icon: myLocationEnabled
+              ? <MapPin size={14} className="text-green-300" />
+              : <EyeOff size={14} className="text-white/60" />,
+            onClick: () => setMyLocationEnabled(!myLocationEnabled),
+            className: "px-3 py-1.5 flex items-center gap-2",
+            style: { background: myLocationEnabled ? "hsla(145, 60%, 50%, 0.25)" : "hsla(0,0%,100%,0.12)" },
+          },
+          {
+            icon: <Settings2 size={18} className="text-white" />,
+            onClick: () => setShowSettings(!showSettings),
+          },
+        ]}
       >
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/")} className="p-1.5 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-            <ArrowRight size={20} className="text-white" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-white">خريطة العائلة</h1>
-            <p className="text-xs text-white/70">تحديث كل {updateInterval} دقائق</p>
-          </div>
-          <button
-            onClick={() => setMyLocationEnabled(!myLocationEnabled)}
-            className="px-3 py-1.5 rounded-full flex items-center gap-2"
-            style={{ background: myLocationEnabled ? "hsla(145, 60%, 50%, 0.25)" : "hsla(0,0%,100%,0.12)" }}
-          >
-            <span className="text-[10px] text-white/50">موقعي</span>
-            {myLocationEnabled ? (
-              <MapPin size={14} className="text-green-300" />
-            ) : (
-              <EyeOff size={14} className="text-white/60" />
-            )}
-            <span className={`text-[11px] font-bold ${myLocationEnabled ? "text-green-300" : "text-white/60"}`}>
-              {myLocationEnabled ? "مفعّل" : "مخفي"}
-            </span>
-          </button>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-full"
-            style={{ background: "hsla(0,0%,100%,0.12)" }}
-          >
-            <Settings2 size={18} className="text-white" />
-          </button>
-        </div>
-
         {showSettings && (
           <div className="mt-3 p-3 rounded-xl" style={{ background: "hsla(0,0%,100%,0.1)" }}>
             <div className="flex items-center justify-between mb-2">
@@ -155,7 +135,7 @@ const Map = () => {
             </div>
           </div>
         )}
-      </div>
+      </PageHeader>
 
       {/* Map area - full width, tucked under header */}
       <div className="relative flex-1 -mt-6" style={{ minHeight: mapHeight }}>
