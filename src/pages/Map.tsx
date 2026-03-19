@@ -260,7 +260,7 @@ const Map = () => {
           </div>
 
           {/* Members list */}
-          <div className="overflow-y-auto px-3" style={{ maxHeight: SHEET_EXPANDED - 80 }}>
+          <div className="overflow-y-auto px-3 pb-24" style={{ maxHeight: SHEET_EXPANDED - 80 }}>
             {members.map((member, idx) => (
               <button
                 key={member.id}
