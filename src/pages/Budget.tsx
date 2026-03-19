@@ -26,10 +26,11 @@ type BudgetType = "month" | "project";
 interface MonthBudget {
   id: string;
   type: BudgetType;
-  month: string; // "2026-03" for month type, or custom id for project
-  label?: string; // custom name for project type
+  month: string;
+  label?: string;
   income: number;
   expenses: ExpenseItem[];
+  sharedWith: string[]; // names of people shared with
 }
 
 const MONTH_NAMES = [
