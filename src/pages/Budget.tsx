@@ -59,6 +59,55 @@ const getAvailableYears = () => {
   return years;
 };
 
+const BudgetCard = ({ b, onSelect, onDelete, remaining, spentPercent }: {
+  b: MonthBudget;
+  onSelect: (b: MonthBudget) => void;
+  onDelete: (id: string) => void;
+  remaining: (b: MonthBudget) => number;
+  spentPercent: (b: MonthBudget) => number;
+}) => {
+  const rem = remaining(b);
+  const pct = spentPercent(b);
+  const shared = (b.sharedWith ?? []).length > 0;
+  return (
+    <button
+      onClick={() => onSelect(b)}
+      className="w-full rounded-2xl bg-card border border-border p-4 text-right active:scale-[0.98] transition-transform"
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: b.type === "project" ? "hsl(var(--accent) / 0.15)" : "hsl(var(--primary) / 0.12)" }}>
+          {b.type === "project" ? <FolderOpen size={20} className="text-accent-foreground" /> : <CalendarDays size={20} className="text-primary" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-foreground">{getBudgetTitle(b)}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] text-muted-foreground">{b.expenses.length} بنود</p>
+            {shared && (
+              <span className="text-[9px] text-primary/70 flex items-center gap-0.5">
+                <Users size={10} /> مع {b.sharedWith.join("، ")}
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={e => { e.stopPropagation(); onDelete(b.id); }}
+          className="p-1.5 rounded-full"
+          style={{ background: "hsl(var(--destructive) / 0.1)" }}
+        >
+          <Trash2 size={14} className="text-destructive" />
+        </button>
+      </div>
+      <div className="flex items-center justify-between text-xs mb-2">
+        <span className="text-muted-foreground">الوارد: <b className="text-foreground">{b.income.toLocaleString()}</b></span>
+        <span className={rem >= 0 ? "text-primary" : "text-destructive"}>
+          المتبقي: <b>{rem.toLocaleString()}</b>
+        </span>
+      </div>
+      <Progress value={pct} className="h-1.5" />
+    </button>
+  );
+};
+
 
 const STORAGE_KEY = "budgets_data";
 
