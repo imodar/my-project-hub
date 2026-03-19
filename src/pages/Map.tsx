@@ -82,7 +82,7 @@ const Map = () => {
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
       {/* Header */}
       <div
-        className="sticky top-0 z-40 px-4 pt-12 pb-3"
+        className="sticky top-0 z-40 px-4 pt-12 pb-3 rounded-b-3xl"
         style={{
           background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
         }}
@@ -144,7 +144,7 @@ const Map = () => {
       </div>
 
       {/* Map area */}
-      <div className="relative mx-3 mt-3 rounded-2xl overflow-hidden border border-border" style={{ height: 360 }}>
+      <div className="relative overflow-hidden" style={{ height: 360 }}>
         {/* Grid background */}
         <div
           className="absolute inset-0"
