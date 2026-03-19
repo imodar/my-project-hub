@@ -519,12 +519,14 @@ const CalendarPage = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
                   onClick={() => setNewEvent((p) => ({ ...p, hasReminder: false, reminderBefore: [] }))}
-                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${!newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
+                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${!newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
+                  <BellOff size={16} />
                   بدون تذكير
                 </button>
                 <button type="button"
                   onClick={() => setNewEvent((p) => ({ ...p, hasReminder: true }))}
-                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
+                  className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
+                  <Bell size={16} />
                   مع تذكير
                 </button>
               </div>
