@@ -138,7 +138,8 @@ const Budget = () => {
   const [expenseAmount, setExpenseAmount] = useState("");
   const [editIncomeVal, setEditIncomeVal] = useState("");
   const [shareNames, setShareNames] = useState<string[]>([]);
-  const [newShareName, setNewShareName] = useState("");
+
+  const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
   const update = useCallback((newBudgets: MonthBudget[]) => {
     const sorted = [...newBudgets].sort((a, b) => a.month.localeCompare(b.month));
