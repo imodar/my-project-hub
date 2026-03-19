@@ -489,13 +489,15 @@ const Market = () => {
       </div>
 
       {/* Items list */}
-      <div className="px-4 space-y-2">
+      <div className="px-4 space-y-2 pb-28">
         {uncheckedItems.map((item) => renderItem(item, false))}
 
         {checkedItems.length > 0 && (
-          <div className="pt-2">
+          <div className="pt-3">
             <p className="text-xs text-muted-foreground mb-2 font-medium">✅ تم شراؤها</p>
-            {checkedItems.map((item) => renderItem(item, true))}
+            <div className="space-y-2">
+              {checkedItems.map((item) => renderItem(item, true))}
+            </div>
           </div>
         )}
 
