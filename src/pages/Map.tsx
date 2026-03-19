@@ -103,8 +103,8 @@ const Map = () => {
         actions={[
           {
             icon: myLocationEnabled
-              ? <MapPin size={14} className="text-green-300" />
-              : <EyeOff size={14} className="text-white/60" />,
+              ? <><MapPin size={14} className="text-green-300" /><span className="text-[11px] text-green-300 font-bold">موقعي مفعّل</span></>
+              : <><EyeOff size={14} className="text-white/60" /><span className="text-[11px] text-white/60 font-bold">موقعي غير مفعّل</span></>,
             onClick: () => setMyLocationEnabled(!myLocationEnabled),
             className: "px-3 py-1.5 flex items-center gap-2",
             style: { background: myLocationEnabled ? "hsla(145, 60%, 50%, 0.25)" : "hsla(0,0%,100%,0.12)" },
