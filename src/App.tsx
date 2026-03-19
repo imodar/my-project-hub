@@ -21,6 +21,7 @@ import Trash from "./pages/Trash.tsx";
 import Market from "./pages/Market.tsx";
 import Places from "./pages/Places.tsx";
 import AddPlace from "./pages/AddPlace.tsx";
+import Budget from "./pages/Budget.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const AnimatedRoutes = () => {
         <Route path="/places" element={<Places />} />
         <Route path="/places/add" element={<AddPlace />} />
         <Route path="/places/edit/:id" element={<AddPlace />} />
+        <Route path="/budget" element={<Budget />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

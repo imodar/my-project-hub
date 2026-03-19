@@ -7,7 +7,7 @@ import {
 
 const features = [
   { icon: ShoppingCart, label: "السوق", bg: "hsl(30 100% 93%)", color: "hsl(30 80% 45%)", route: "/market" },
-  { icon: Wallet, label: "الميزانية", bg: "hsl(145 40% 93%)", color: "hsl(145 45% 35%)" },
+  { icon: Wallet, label: "الميزانية", bg: "hsl(145 40% 93%)", color: "hsl(145 45% 35%)", route: "/budget" },
   { icon: Calendar, label: "التقويم", bg: "hsl(215 80% 93%)", color: "hsl(215 70% 50%)", route: "/calendar" },
   { icon: ListChecks, label: "المهام", bg: "hsl(270 50% 93%)", color: "hsl(270 50% 50%)" },
   { icon: Plane, label: "الرحلات", bg: "hsl(185 60% 92%)", color: "hsl(185 60% 38%)" },
