@@ -309,30 +309,25 @@ const CalendarPage = () => {
   for (let i = 0; i < calendarCells.length; i += 7) rows.push(calendarCells.slice(i, i + 7).reverse());
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col pb-24" dir="rtl"
-      style={{ background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)" }}>
+    <div className="min-h-screen max-w-2xl mx-auto flex flex-col pb-24 bg-background" dir="rtl">
 
-      {/* Header */}
-      <div className="sticky top-0 z-40 px-4 pt-12 pb-3"
-        style={{ background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))" }}>
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/")} className="p-1.5 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-            <ArrowRight size={20} className="text-white" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-white">تقويم العائلة</h1>
-            <p className="text-xs text-white/70">{ARABIC_MONTHS[currentMonth]} {toArabicNum(currentYear)}</p>
-          </div>
-          <div className="flex gap-1.5">
-            <button onClick={nextMonth} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-              <ChevronRight size={18} className="text-white" />
-            </button>
-            <button onClick={prevMonth} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-              <ChevronLeft size={18} className="text-white" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="تقويم العائلة"
+        subtitle={`${ARABIC_MONTHS[currentMonth]} ${toArabicNum(currentYear)}`}
+        onBack={() => navigate("/")}
+        actions={[
+          {
+            icon: <ChevronRight size={18} className="text-white" />,
+            onClick: nextMonth,
+            className: "w-9 h-9 flex items-center justify-center",
+          },
+          {
+            icon: <ChevronLeft size={18} className="text-white" />,
+            onClick: prevMonth,
+            className: "w-9 h-9 flex items-center justify-center",
+          },
+        ]}
+      />
 
       {/* Calendar Grid */}
       <div className="px-4 mt-4">
