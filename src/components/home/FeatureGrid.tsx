@@ -20,9 +20,8 @@ const FeatureGrid = () => {
   const navigate = useNavigate();
   return (
     <section className="px-5 mt-8">
-      <div className="flex items-center justify-between mb-5">
+      <div className="mb-5">
         <h2 className="text-lg font-extrabold text-foreground tracking-tight">أدوات العائلة</h2>
-        <button className="text-sm font-bold text-primary">عرض الكل</button>
       </div>
       <div className="grid grid-cols-4 gap-4">
         {features.map((feature) => (
