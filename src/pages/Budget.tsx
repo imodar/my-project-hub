@@ -1,6 +1,6 @@
 // Budget Page
 import { useState, useCallback } from "react";
-import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, X, UserPlus } from "lucide-react";
+import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, X, Check } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
@@ -138,7 +138,8 @@ const Budget = () => {
   const [expenseAmount, setExpenseAmount] = useState("");
   const [editIncomeVal, setEditIncomeVal] = useState("");
   const [shareNames, setShareNames] = useState<string[]>([]);
-  const [newShareName, setNewShareName] = useState("");
+
+  const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
   const update = useCallback((newBudgets: MonthBudget[]) => {
     const sorted = [...newBudgets].sort((a, b) => a.month.localeCompare(b.month));
@@ -180,7 +181,6 @@ const Budget = () => {
     setNewIncome("");
     setProjectLabel("");
     setShareNames([]);
-    setNewShareName("");
   };
 
   const handleAddExpense = () => {
@@ -470,7 +470,6 @@ const Budget = () => {
           setProjectLabel("");
           setNewIncome("");
           setShareNames([]);
-          setNewShareName("");
           setShowAddMonth(true);
         }}
         className="fixed left-4 bottom-24 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
@@ -573,52 +572,29 @@ const Budget = () => {
                 <Users size={12} className="inline ml-1" />
                 مشاركة مع (اختياري)
               </label>
-              <div className="flex gap-2 mb-2">
-                <Input
-                  placeholder="اسم الشخص"
-                  value={newShareName}
-                  onChange={e => setNewShareName(e.target.value)}
-                  className="text-right flex-1"
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && newShareName.trim()) {
-                      e.preventDefault();
-                      setShareNames(prev => [...prev, newShareName.trim()]);
-                      setNewShareName("");
+              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                {FAMILY_MEMBERS.map((member) => (
+                  <button
+                    key={member}
+                    type="button"
+                    onClick={() =>
+                      setShareNames((prev) =>
+                        prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                      )
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  disabled={!newShareName.trim()}
-                  onClick={() => {
-                    if (newShareName.trim()) {
-                      setShareNames(prev => [...prev, newShareName.trim()]);
-                      setNewShareName("");
-                    }
-                  }}
-                >
-                  <UserPlus size={16} />
-                </Button>
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
+                      shareNames.includes(member)
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <span className="font-medium text-foreground">{member}</span>
+                    {shareNames.includes(member) && <Check size={14} className="text-primary" />}
+                  </button>
+                ))}
               </div>
-              {shareNames.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {shareNames.map((name, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary"
-                    >
-                      {name}
-                      <button onClick={() => setShareNames(prev => prev.filter((_, idx) => idx !== i))} className="hover:opacity-70">
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
               {shareNames.length === 0 && (
-                <p className="text-[10px] text-muted-foreground/60">🔒 ستبقى خاصة بك فقط</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-2">🔒 ستبقى خاصة بك فقط</p>
               )}
             </div>
           </div>
