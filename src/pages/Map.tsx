@@ -135,14 +135,13 @@ const Map = () => {
             </div>
           </div>
         )}
+        {!myLocationEnabled && (
+          <div className="mt-3 px-3 py-2 rounded-xl bg-white/10 border border-white/15 flex items-center gap-2 text-right">
+            <EyeOff size={14} className="text-red-300 shrink-0" />
+            <p className="text-[11px] text-red-200 font-medium">سيتم إعلام الوالدين أنك قمت بإطفاء مشاركة الموقع الخاص بك</p>
+          </div>
+        )}
       </PageHeader>
-
-      {!myLocationEnabled && (
-        <div className="mx-4 mt-2 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-right">
-          <EyeOff size={14} className="text-destructive shrink-0" />
-          <p className="text-[11px] text-destructive font-medium">سيتم إعلام الوالدين أنك قمت بإطفاء مشاركة الموقع الخاص بك</p>
-        </div>
-      )}
 
       {/* Map area - full width, tucked under header */}
       <div className="relative flex-1 -mt-6" style={{ minHeight: mapHeight }}>
