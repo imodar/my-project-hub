@@ -48,7 +48,7 @@ const DailyTasks = () => {
         {tasks.map((task) => (
           <div
             key={task.name}
-            className={`bg-card border border-border/50 rounded-2xl p-4 shadow-sm flex items-start gap-4 transition-transform active:scale-[0.98] ${
+            className={`bg-card rounded-2xl p-4 shadow-sm flex items-start gap-4 transition-transform active:scale-[0.98] ${
               task.done ? "opacity-60" : ""
             }`}
           >
