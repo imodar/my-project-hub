@@ -573,14 +573,14 @@ const Market = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Item Dialog */}
-      <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
-        <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>تعديل المنتج</DialogTitle>
-            <DialogDescription>عدّل اسم المنتج والكمية والتصنيف</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
+      {/* Edit Item Drawer */}
+      <Drawer open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>تعديل المنتج</DrawerTitle>
+            <DrawerDescription>عدّل اسم المنتج والكمية والتصنيف</DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-3 px-4">
             <Input
               placeholder="اسم المنتج"
               value={editName}
@@ -612,21 +612,21 @@ const Market = () => {
               </div>
             </div>
           </div>
-          <DialogFooter className="flex-row gap-2 pt-2">
+          <DrawerFooter className="flex-row gap-2">
             <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
-            <Button variant="outline" onClick={() => setEditTarget(null)} className="rounded-xl">إلغاء</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1 rounded-xl">إلغاء</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Add Item Dialog */}
-      <Dialog open={showAddItem} onOpenChange={setShowAddItem}>
-        <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>إضافة منتج جديد</DialogTitle>
-            <DialogDescription>أضف المنتج مع التصنيف والكمية</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
+      {/* Add Item Drawer */}
+      <Drawer open={showAddItem} onOpenChange={setShowAddItem}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>إضافة منتج جديد</DrawerTitle>
+            <DrawerDescription>أضف المنتج مع التصنيف والكمية</DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-3 px-4">
             <Input placeholder="اسم المنتج" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} className="rounded-xl" />
             <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => setNewItemQuantity(e.target.value)} className="rounded-xl" />
             <div>
@@ -648,21 +648,21 @@ const Market = () => {
               </div>
             </div>
           </div>
-          <DialogFooter className="flex-row gap-2 pt-2">
+          <DrawerFooter className="flex-row gap-2">
             <Button onClick={addItem} className="flex-1 rounded-xl">إضافة</Button>
-            <Button variant="outline" onClick={() => setShowAddItem(false)} className="rounded-xl">إلغاء</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button variant="outline" onClick={() => setShowAddItem(false)} className="flex-1 rounded-xl">إلغاء</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Add List Dialog */}
-      <Dialog open={showAddList} onOpenChange={setShowAddList}>
-        <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>إنشاء قائمة جديدة</DialogTitle>
-            <DialogDescription>أنشئ قائمة تسوق جديدة</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
+      {/* Add List Drawer */}
+      <Drawer open={showAddList} onOpenChange={setShowAddList}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>إنشاء قائمة جديدة</DrawerTitle>
+            <DrawerDescription>أنشئ قائمة تسوق جديدة</DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-3 px-4">
             <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
             <div>
               <p className="text-xs text-muted-foreground mb-2">نوع القائمة</p>
@@ -718,21 +718,21 @@ const Market = () => {
               </div>
             )}
           </div>
-          <DialogFooter className="flex-row gap-2 pt-2">
+          <DrawerFooter className="flex-row gap-2">
             <Button onClick={addList} className="flex-1 rounded-xl">إنشاء</Button>
-            <Button variant="outline" onClick={() => setShowAddList(false)} className="rounded-xl">إلغاء</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button variant="outline" onClick={() => setShowAddList(false)} className="flex-1 rounded-xl">إلغاء</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Share Dialog */}
-      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-        <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>مشاركة القائمة</DialogTitle>
-            <DialogDescription>اختر أفراد العائلة لمشاركة هذه القائمة معهم</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 pt-2">
+      {/* Share Drawer */}
+      <Drawer open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>مشاركة القائمة</DrawerTitle>
+            <DrawerDescription>اختر أفراد العائلة لمشاركة هذه القائمة معهم</DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-2 px-4">
             {FAMILY_MEMBERS.map((member) => (
               <button
                 key={member}
@@ -750,12 +750,12 @@ const Market = () => {
               </button>
             ))}
           </div>
-          <DialogFooter className="flex-row gap-2 pt-2">
+          <DrawerFooter className="flex-row gap-2">
             <Button onClick={shareList} className="flex-1 rounded-xl">مشاركة</Button>
-            <Button variant="outline" onClick={() => setShowShareDialog(false)} className="rounded-xl">إلغاء</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button variant="outline" onClick={() => setShowShareDialog(false)} className="flex-1 rounded-xl">إلغاء</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
       </PullToRefresh>
     </div>
   );
