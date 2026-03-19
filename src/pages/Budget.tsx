@@ -90,7 +90,10 @@ const Budget = () => {
   const [showDeleteBudget, setShowDeleteBudget] = useState<string | null>(null);
   const [showDeleteExpense, setShowDeleteExpense] = useState<{ budgetId: string; expenseId: string } | null>(null);
 
-  const [newMonth, setNewMonth] = useState("");
+  const [budgetType, setBudgetType] = useState<BudgetType>("month");
+  const [newMonthIdx, setNewMonthIdx] = useState(String(new Date().getMonth()));
+  const [newYear, setNewYear] = useState(String(new Date().getFullYear()));
+  const [projectLabel, setProjectLabel] = useState("");
   const [newIncome, setNewIncome] = useState("");
   const [expenseName, setExpenseName] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
@@ -102,19 +105,37 @@ const Budget = () => {
     saveBudgets(sorted);
   }, []);
 
-  const handleAddMonth = () => {
-    if (!newMonth || !newIncome || parseFloat(newIncome) <= 0) return;
+  const handleAddBudget = () => {
+    if (!newIncome || parseFloat(newIncome) <= 0) return;
     haptic.light();
-    const b: MonthBudget = {
-      id: Date.now().toString(),
-      month: newMonth,
-      income: parseFloat(newIncome),
-      expenses: [],
-    };
-    update([...budgets, b]);
+
+    if (budgetType === "month") {
+      const monthStr = `${newYear}-${String(parseInt(newMonthIdx) + 1).padStart(2, "0")}`;
+      if (budgets.some(b => b.month === monthStr && b.type === "month")) return;
+      const b: MonthBudget = {
+        id: Date.now().toString(),
+        type: "month",
+        month: monthStr,
+        income: parseFloat(newIncome),
+        expenses: [],
+      };
+      update([...budgets, b]);
+    } else {
+      if (!projectLabel.trim()) return;
+      const b: MonthBudget = {
+        id: Date.now().toString(),
+        type: "project",
+        month: `project-${Date.now()}`,
+        label: projectLabel.trim(),
+        income: parseFloat(newIncome),
+        expenses: [],
+      };
+      update([...budgets, b]);
+    }
+
     setShowAddMonth(false);
-    setNewMonth("");
     setNewIncome("");
+    setProjectLabel("");
   };
 
   const handleAddExpense = () => {
