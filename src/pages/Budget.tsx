@@ -197,7 +197,7 @@ const Budget = () => {
   const remaining = (b: MonthBudget) => b.income - totalExpenses(b);
   const spentPercent = (b: MonthBudget) => b.income > 0 ? Math.min((totalExpenses(b) / b.income) * 100, 100) : 0;
 
-  const availableMonths = getAvailableMonths(budgets.map(b => b.month));
+  const availableMonths = getAvailableMonths(budgets.filter(b => b.type === "month").map(b => b.month));
 
   // Detail view
   if (selectedBudget) {
