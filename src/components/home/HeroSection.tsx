@@ -101,7 +101,7 @@ const HeroSection = () => {
       {/* Hero Card */}
       <section className="px-5 pt-8 relative overflow-visible">
         {/* Artistic Sun - positioned to break out of the card */}
-        <div className="absolute top-0 left-2 w-24 h-24 z-30 pointer-events-none">
+        <div className="absolute top-0 left-2 w-24 h-24 z-10 pointer-events-none">
           <div className="absolute inset-0 rounded-full animate-pulse" style={{
             filter: "blur(18px)",
             background: "radial-gradient(circle, rgba(255,245,158,0.7) 0%, rgba(255,164,0,0.2) 70%)"
