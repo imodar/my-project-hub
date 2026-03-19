@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
   ChevronLeft,
-  ArrowRight,
   Plus,
   Cake,
   Plane,
@@ -17,11 +16,19 @@ import {
   BellRing,
 } from "lucide-react";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import PageHeader from "@/components/PageHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -302,30 +309,25 @@ const CalendarPage = () => {
   for (let i = 0; i < calendarCells.length; i += 7) rows.push(calendarCells.slice(i, i + 7).reverse());
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col pb-24" dir="rtl"
-      style={{ background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)" }}>
+    <div className="min-h-screen max-w-2xl mx-auto flex flex-col pb-24 bg-background" dir="rtl">
 
-      {/* Header */}
-      <div className="sticky top-0 z-40 px-4 pt-12 pb-3"
-        style={{ background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))" }}>
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/")} className="p-1.5 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-            <ArrowRight size={20} className="text-white" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-white">تقويم العائلة</h1>
-            <p className="text-xs text-white/70">{ARABIC_MONTHS[currentMonth]} {toArabicNum(currentYear)}</p>
-          </div>
-          <div className="flex gap-1.5">
-            <button onClick={nextMonth} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-              <ChevronRight size={18} className="text-white" />
-            </button>
-            <button onClick={prevMonth} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-              <ChevronLeft size={18} className="text-white" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="تقويم العائلة"
+        subtitle={`${ARABIC_MONTHS[currentMonth]} ${toArabicNum(currentYear)}`}
+        onBack={() => navigate("/")}
+        actions={[
+          {
+            icon: <ChevronRight size={18} className="text-white" />,
+            onClick: nextMonth,
+            className: "w-9 h-9 flex items-center justify-center",
+          },
+          {
+            icon: <ChevronLeft size={18} className="text-white" />,
+            onClick: prevMonth,
+            className: "w-9 h-9 flex items-center justify-center",
+          },
+        ]}
+      />
 
       {/* Calendar Grid */}
       <div className="px-4 mt-4">
@@ -362,9 +364,13 @@ const CalendarPage = () => {
       <div className="mt-6 px-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-black text-foreground">المناسبات القادمة</h3>
+        </div>
+
+        {/* FAB */}
+        <div className="fixed bottom-24 left-4 z-30">
           <button onClick={() => { setSelectedDay(todayStr); setShowAddDialog(true); }}
-            className="w-10 h-10 rounded-xl flex items-center justify-center bg-card border border-border active:scale-95 transition-transform">
-            <Plus size={20} className="text-primary" />
+            className="w-14 h-14 rounded-full shadow-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors">
+            <Plus size={24} />
           </button>
         </div>
 
@@ -490,13 +496,13 @@ const CalendarPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Event Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={(o) => { setShowAddDialog(o); if (!o) setSelectedDay(null); }}>
-        <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-base font-black">إضافة مناسبة جديدة</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
+      {/* Add Event Drawer */}
+      <Drawer open={showAddDialog} onOpenChange={(o) => { setShowAddDialog(o); if (!o) setSelectedDay(null); }}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>إضافة مناسبة جديدة</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 px-4 pb-2">
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">اسم المناسبة</label>
               <input value={newEvent.title} onChange={(e) => setNewEvent((p) => ({ ...p, title: e.target.value }))}
@@ -541,8 +547,8 @@ const CalendarPage = () => {
               إضافة المناسبة
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
@@ -563,13 +569,13 @@ const CalendarPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Event Dialog */}
-      <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
-        <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-base font-black">تعديل المناسبة</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
+      {/* Edit Event Drawer */}
+      <Drawer open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>تعديل المناسبة</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 px-4 pb-2">
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">اسم المناسبة</label>
               <input value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))}
@@ -611,19 +617,19 @@ const CalendarPage = () => {
               حفظ التعديلات
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Personal Reminders Dialog */}
-      <Dialog open={!!reminderTarget} onOpenChange={(o) => { if (!o) setReminderTarget(null); }}>
-        <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-base font-black flex items-center justify-center gap-2">
+      {/* Personal Reminders Drawer */}
+      <Drawer open={!!reminderTarget} onOpenChange={(o) => { if (!o) setReminderTarget(null); }}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle className="flex items-center gap-2">
               <Bell size={18} className="text-amber-500" />
               تنبيهات شخصية
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 px-4 pb-2">
             <div className="text-center">
               <p className="text-sm font-bold text-foreground">{reminderTarget?.title}</p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -652,8 +658,8 @@ const CalendarPage = () => {
               {personalReminders.length > 0 ? "حفظ التنبيهات" : "إزالة التنبيهات"}
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
     </div>
   );
