@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef } from "react";
-import { ArrowRight, Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
+import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
+import PageHeader from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -369,31 +370,17 @@ const Market = () => {
     return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
       <PullToRefresh onRefresh={handleRefresh}>
-      {/* Header */}
-      <div
-        className="sticky top-0 z-40 px-4 pt-4 pb-3"
-        style={{
-          background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-        }}
+      <PageHeader
+        title="أغراض السوق"
+        actions={[
+          {
+            icon: <Plus size={20} className="text-white" />,
+            onClick: () => setShowAddList(true),
+          },
+        ]}
       >
-        <div className="flex items-center gap-3 mb-3">
-          <button onClick={() => navigate(-1)} className="p-1.5 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-            <ArrowRight size={20} className="text-white" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-white">أغراض السوق</h1>
-          </div>
-          <button
-            onClick={() => setShowAddList(true)}
-            className="p-1.5 rounded-full"
-            style={{ background: "hsla(0,0%,100%,0.12)" }}
-          >
-            <Plus size={20} className="text-white" />
-          </button>
-        </div>
-
         {/* Lists tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-2 pt-3 scrollbar-hide">
           {lists.map((list) => (
             <button
               key={list.id}
@@ -413,7 +400,7 @@ const Market = () => {
             </button>
           ))}
         </div>
-      </div>
+      </PageHeader>
 
       {/* Stats bar */}
       {activeList && (
