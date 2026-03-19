@@ -364,9 +364,13 @@ const CalendarPage = () => {
       <div className="mt-6 px-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-black text-foreground">المناسبات القادمة</h3>
+        </div>
+
+        {/* FAB */}
+        <div className="fixed bottom-24 left-4 z-30">
           <button onClick={() => { setSelectedDay(todayStr); setShowAddDialog(true); }}
-            className="w-10 h-10 rounded-xl flex items-center justify-center bg-card border border-border active:scale-95 transition-transform">
-            <Plus size={20} className="text-primary" />
+            className="w-14 h-14 rounded-full shadow-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors">
+            <Plus size={24} />
           </button>
         </div>
 
