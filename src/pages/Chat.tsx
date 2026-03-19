@@ -117,31 +117,25 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
-      {/* Header */}
-      <div
-        className="sticky top-0 z-40 px-4 pt-12 pb-3"
-        style={{
-          background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-        }}
+      <PageHeader
+        title="محادثة العائلة"
+        subtitle={`${familyMembers.length} أعضاء • متصل الآن`}
+        onBack={() => navigate("/")}
+        actions={[
+          {
+            icon: <span className="text-lg">👨‍👩‍👧‍👦</span>,
+            onClick: () => {},
+            style: { background: "hsla(0,0%,100%,0.15)" },
+            className: "w-10 h-10 flex items-center justify-center",
+          },
+        ]}
       >
-        <div className="flex items-center gap-3 mb-2">
-          <button onClick={() => navigate("/")} className="p-1.5 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-            <ArrowRight size={20} className="text-white" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-white">محادثة العائلة</h1>
-            <p className="text-xs text-white/70">{familyMembers.length} أعضاء • متصل الآن</p>
-          </div>
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ background: "hsla(0,0%,100%,0.15)" }}>
-            👨‍👩‍👧‍👦
-          </div>
-        </div>
         {/* Encryption label */}
-        <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg" style={{ background: "hsla(0,0%,100%,0.08)" }}>
+        <div className="flex items-center justify-center gap-1.5 py-1.5 mt-2 rounded-lg" style={{ background: "hsla(0,0%,100%,0.08)" }}>
           <Lock size={12} className="text-white/60" />
           <span className="text-[11px] text-white/60">التشفير بين جميع الأطراف مضمون</span>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Pinned messages bar */}
       {pinnedMessages.length > 0 && (
