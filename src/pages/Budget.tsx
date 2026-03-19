@@ -122,6 +122,7 @@ const Budget = () => {
         label: projectLabel.trim(),
         income: parseFloat(newIncome),
         expenses: [],
+        sharedWith: [...shareNames],
       };
       update([...budgets, b]);
     }
