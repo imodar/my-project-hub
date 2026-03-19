@@ -101,15 +101,15 @@ const HeroSection = () => {
       {/* Hero Card */}
       <section className="px-5 pt-2 relative">
         {/* Artistic Sun */}
-        <div className="absolute -top-4 left-2 w-24 h-24 z-30 pointer-events-none">
+        <div className="absolute -top-1 left-3 w-16 h-16 z-30 pointer-events-none">
           <div className="absolute inset-0 rounded-full animate-pulse" style={{
-            filter: "blur(20px)",
-            background: "radial-gradient(circle, rgba(255,245,158,1) 0%, rgba(255,164,0,0.4) 70%)"
+            filter: "blur(14px)",
+            background: "radial-gradient(circle, rgba(255,245,158,0.8) 0%, rgba(255,164,0,0.3) 70%)"
           }} />
           <div className="relative w-full h-full rounded-full shadow-lg"
             style={{
               background: "linear-gradient(135deg, hsl(48 100% 65%), hsl(30 100% 55%))",
-              border: "4px solid hsla(0,0%,100%,0.2)"
+              border: "3px solid hsla(0,0%,100%,0.2)"
             }}
           />
         </div>
