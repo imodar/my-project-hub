@@ -111,6 +111,20 @@ const HeroSection = () => {
             <Cloud size={36} />
           </div>
 
+          {/* Artistic Sun */}
+          <div className="absolute -bottom-6 left-4 w-20 h-20 z-10 pointer-events-none">
+            <div className="absolute inset-0 rounded-full animate-pulse" style={{
+              filter: "blur(16px)",
+              background: "radial-gradient(circle, rgba(255,245,158,0.7) 0%, rgba(255,164,0,0.25) 70%)"
+            }} />
+            <div className="relative w-full h-full rounded-full shadow-lg"
+              style={{
+                background: "linear-gradient(135deg, hsl(48 100% 65%), hsl(30 100% 55%))",
+                border: "3px solid hsla(0,0%,100%,0.25)"
+              }}
+            />
+          </div>
+
           <div className="relative z-20 space-y-5">
             {/* Greeting + Weather */}
             <div className="flex justify-between items-start">
