@@ -201,13 +201,19 @@ const Budget = () => {
           title={getBudgetTitle(b)}
           subtitle="تفاصيل الميزانية"
           onBack={() => setSelectedBudget(null)}
-          actions={[
-            {
-              icon: <Plus size={18} className="text-white" />,
-              onClick: () => { setExpenseName(""); setExpenseAmount(""); setShowAddExpense(true); },
-            },
-          ]}
         />
+
+        {/* FAB for adding expense */}
+        <button
+          onClick={() => { setExpenseName(""); setExpenseAmount(""); setShowAddExpense(true); }}
+          className="fixed left-4 bottom-24 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+          style={{
+            background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
+            boxShadow: "0 8px 25px hsl(var(--hero-gradient-from) / 0.4)",
+          }}
+        >
+          <Plus size={24} className="text-white" />
+        </button>
 
         <div className="px-4 mt-4 space-y-4">
           {/* Summary Cards */}
