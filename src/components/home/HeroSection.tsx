@@ -99,7 +99,7 @@ const HeroSection = () => {
       </header>
 
       {/* Hero Card */}
-      <section className="px-5 pt-4 relative">
+      <section className="px-5 pt-8 relative overflow-visible">
         {/* Artistic Sun - positioned to break out of the card */}
         <div className="absolute -top-5 left-2 w-24 h-24 z-30 pointer-events-none">
           <div className="absolute inset-0 rounded-full animate-pulse" style={{
