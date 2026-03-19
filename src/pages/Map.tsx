@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { ArrowRight, MapPin, Eye, EyeOff, Shield, Clock, Settings2 } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { ArrowRight, MapPin, EyeOff, Shield, Settings2, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
 
 interface FamilyMember {
   id: string;
@@ -15,18 +15,8 @@ interface FamilyMember {
   isLocationHidden: boolean;
   isInSafeZone: boolean;
   safeZoneName?: string;
-  // Grid position for the mock map (percentage)
   x: number;
   y: number;
-}
-
-interface SafeZone {
-  id: string;
-  name: string;
-  icon: string;
-  x: number;
-  y: number;
-  radius: number;
 }
 
 const mockMembers: FamilyMember[] = [
@@ -62,27 +52,52 @@ const mockMembers: FamilyMember[] = [
   },
 ];
 
-const safeZones: SafeZone[] = [
-  { id: "z1", name: "المنزل", icon: "🏡", x: 72, y: 42, radius: 14 },
-  { id: "z2", name: "المدرسة", icon: "🏫", x: 60, y: 25, radius: 12 },
-];
+// Sheet positions (from top of map area)
+const SHEET_PEEK = 200; // how much sheet peeks up from bottom
+const SHEET_EXPANDED = 420; // expanded height
 
 const Map = () => {
   const navigate = useNavigate();
   const [updateInterval, setUpdateInterval] = useState(5);
   const [showSettings, setShowSettings] = useState(false);
-  
-  const [members, setMembers] = useState<FamilyMember[]>(mockMembers);
+  const [members] = useState<FamilyMember[]>(mockMembers);
   const [myLocationEnabled, setMyLocationEnabled] = useState(true);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+
+  const sheetY = useMotionValue(0);
+  // 0 = peek position, negative = expanded (moved up)
+  const maxDrag = -(SHEET_EXPANDED - SHEET_PEEK);
 
   const visibleMembers = members.filter((m) => !m.isLocationHidden);
-  const hiddenMembers = members.filter((m) => m.isLocationHidden);
+
+  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+    const threshold = 50;
+    if (info.offset.y < -threshold) {
+      // Swiped up -> expand
+      animate(sheetY, maxDrag, { type: "spring", damping: 30, stiffness: 300 });
+      setIsSheetExpanded(true);
+    } else {
+      // Swiped down -> collapse
+      animate(sheetY, 0, { type: "spring", damping: 30, stiffness: 300 });
+      setIsSheetExpanded(false);
+    }
+  }, [maxDrag, sheetY]);
+
+  const handleMemberClick = (memberId: string) => {
+    setSelectedMemberId(memberId);
+    // Collapse sheet to show map
+    animate(sheetY, 0, { type: "spring", damping: 30, stiffness: 300 });
+    setIsSheetExpanded(false);
+  };
+
+  const mapHeight = "calc(100vh - 80px)"; // full screen minus header approx
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
+    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background relative overflow-hidden" dir="rtl">
       {/* Header */}
       <div
-        className="sticky top-0 z-40 px-4 pt-12 pb-3 rounded-b-3xl"
+        className="sticky top-0 z-50 px-4 pt-12 pb-3 rounded-b-3xl"
         style={{
           background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
         }}
@@ -95,7 +110,6 @@ const Map = () => {
             <h1 className="text-lg font-bold text-white">خريطة العائلة</h1>
             <p className="text-xs text-white/70">تحديث كل {updateInterval} دقائق</p>
           </div>
-          {/* Location toggle */}
           <button
             onClick={() => setMyLocationEnabled(!myLocationEnabled)}
             className="px-3 py-1.5 rounded-full flex items-center gap-2"
@@ -120,7 +134,6 @@ const Map = () => {
           </button>
         </div>
 
-        {/* Settings panel */}
         {showSettings && (
           <div className="mt-3 p-3 rounded-xl" style={{ background: "hsla(0,0%,100%,0.1)" }}>
             <div className="flex items-center justify-between mb-2">
@@ -143,8 +156,8 @@ const Map = () => {
         )}
       </div>
 
-      {/* Map area */}
-      <div className="relative overflow-hidden" style={{ height: 360 }}>
+      {/* Map area - full width, tucked under header */}
+      <div className="relative flex-1 -mt-6" style={{ minHeight: mapHeight }}>
         {/* Grid background */}
         <div
           className="absolute inset-0"
@@ -158,7 +171,6 @@ const Map = () => {
           }}
         />
 
-
         {/* Members on map */}
         {visibleMembers.map((member) => (
           <div
@@ -170,9 +182,10 @@ const Map = () => {
               transform: "translate(-50%, -100%)",
             }}
           >
-            {/* Tooltip bubble */}
             <div
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg shadow-md mb-1 whitespace-nowrap"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg shadow-md mb-1 whitespace-nowrap transition-all ${
+                selectedMemberId === member.id ? "ring-2 ring-white scale-110" : ""
+              }`}
               style={{
                 background: member.isOnline
                   ? "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))"
@@ -182,7 +195,6 @@ const Map = () => {
             >
               <span className="text-xs font-bold">{member.name}</span>
             </div>
-            {/* Arrow */}
             <div className="flex justify-center -mt-1">
               <div
                 className="w-0 h-0"
@@ -195,11 +207,18 @@ const Map = () => {
                 }}
               />
             </div>
+            {/* Selection pulse */}
+            {selectedMemberId === member.id && (
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
+                <div className="w-4 h-4 rounded-full bg-primary/30 animate-ping" />
+                <div className="w-3 h-3 rounded-full bg-primary absolute top-0.5 left-0.5" />
+              </div>
+            )}
           </div>
         ))}
 
         {/* Legend */}
-        <div className="absolute bottom-3 left-3 bg-card/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md border border-border text-xs space-y-1.5">
+        <div className="absolute top-8 left-3 bg-card/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md border border-border text-xs space-y-1.5 z-20">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
             <span className="text-foreground">متصل</span>
@@ -209,29 +228,53 @@ const Map = () => {
             <span className="text-foreground">غير متصل</span>
           </div>
         </div>
-      </div>
 
-      {/* Family list */}
-      <div className="mx-3 mt-3 mb-28">
-        <div className="w-full flex items-center justify-between px-4 py-3 bg-card rounded-t-2xl border border-border">
-          <span className="text-sm font-bold text-foreground">أفراد العائلة ({members.length})</span>
-        </div>
+        {/* Bottom sheet overlay */}
+        <motion.div
+          className="absolute bottom-0 left-0 right-0 z-30 bg-background rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+          style={{
+            height: SHEET_EXPANDED,
+            y: sheetY,
+            bottom: -(SHEET_EXPANDED - SHEET_PEEK),
+          }}
+          drag="y"
+          dragConstraints={{ top: maxDrag, bottom: 0 }}
+          dragElastic={0.1}
+          onDragEnd={handleDragEnd}
+        >
+          {/* Handle */}
+          <div className="flex flex-col items-center pt-2.5 pb-1 cursor-grab active:cursor-grabbing">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
 
-        <div className="border border-t-0 border-border rounded-b-2xl overflow-hidden">
-          {members.map((member, idx) => (
-            <div
-              key={member.id}
-              className={`flex items-center gap-3 px-4 py-3 bg-card ${idx < mockMembers.length - 1 ? "border-b border-border" : ""}`}
-            >
-                {/* Avatar */}
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-2">
+            <div>
+              <h2 className="text-base font-extrabold text-foreground">أفراد العائلة ({members.length})</h2>
+              <p className="text-xs text-muted-foreground">تتبع جميع الأعضاء</p>
+            </div>
+            <ChevronUp
+              size={20}
+              className={`text-muted-foreground transition-transform ${isSheetExpanded ? "rotate-180" : ""}`}
+            />
+          </div>
+
+          {/* Members list */}
+          <div className="overflow-y-auto px-3" style={{ maxHeight: SHEET_EXPANDED - 80 }}>
+            {members.map((member, idx) => (
+              <button
+                key={member.id}
+                onClick={() => handleMemberClick(member.id)}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-right ${
+                  selectedMemberId === member.id ? "bg-primary/10" : "active:bg-muted"
+                } ${idx < members.length - 1 ? "mb-1" : ""}`}
+              >
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-xl shrink-0"
                   style={{ background: member.emojiColor + "33" }}
                 >
                   {member.emoji}
                 </div>
-
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-foreground">{member.name}</span>
@@ -247,20 +290,18 @@ const Map = () => {
                     <span className="text-xs text-muted-foreground truncate">{member.location}</span>
                   </div>
                 </div>
-
-                {/* Status */}
                 <div className="flex flex-col items-center gap-1 shrink-0">
-                  <div className={`w-3 h-3 rounded-full ${member.isOnline ? "bg-green-500" : "bg-muted-foreground/30"}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full ${member.isOnline ? "bg-green-500" : "bg-muted-foreground/30"}`} />
                   <span className="text-[10px] text-muted-foreground">{member.lastSeen}</span>
                   {member.isLocationHidden && (
                     <EyeOff size={12} className="text-muted-foreground" />
                   )}
                 </div>
-              </div>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        </motion.div>
       </div>
-
     </div>
   );
 };
