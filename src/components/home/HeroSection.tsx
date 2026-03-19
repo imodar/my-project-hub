@@ -1,4 +1,4 @@
-import { Compass, Bell, CloudSun, CloudRain, Sun, Cloud, MapPin } from "lucide-react";
+import { Bell, Compass, Cloud, Sun, CloudRain, CloudSun, MapPin } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import ProfileSheet from "./ProfileSheet";
@@ -11,19 +11,17 @@ interface WeatherData {
 }
 
 const getGreeting = (hour: number) => {
-  if (hour >= 5 && hour < 12) return "صباح الخير ☀️";
-  if (hour >= 12 && hour < 17) return "مساء النور 🌤";
-  if (hour >= 17 && hour < 21) return "مساء الخير 🌅";
-  return "مساء الخير 🌙";
+  if (hour >= 5 && hour < 12) return "صباح الخير";
+  if (hour >= 12 && hour < 17) return "مساء النور";
+  if (hour >= 17 && hour < 21) return "مساء الخير";
+  return "مساء الخير";
 };
 
-const isNightTime = (hour: number) => hour >= 18 || hour < 6;
-
 const WeatherIcon = ({ icon }: { icon: string }) => {
-  if (icon.includes("rain")) return <CloudRain size={18} className="text-white/80" />;
-  if (icon.includes("cloud")) return <Cloud size={18} className="text-white/80" />;
-  if (icon.includes("sun") || icon.includes("clear")) return <Sun size={18} className="text-white/80" />;
-  return <CloudSun size={18} className="text-white/80" />;
+  if (icon.includes("rain")) return <CloudRain size={22} className="text-blue-200" />;
+  if (icon.includes("cloud")) return <Cloud size={22} className="text-white/80" />;
+  if (icon.includes("sun") || icon.includes("clear")) return <Sun size={22} className="text-yellow-200" />;
+  return <CloudSun size={22} className="text-white/80" />;
 };
 
 const HeroSection = () => {
@@ -31,23 +29,14 @@ const HeroSection = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const mockUser = { name: "أحمد", role: "parent" as const };
   const hijriDate = "٢١ رمضان ١٤٤٧";
-  const gregorianDate = "١٦ مارس ٢٠٢٦";
+  const gregorianDate = "١٩ مارس ٢٠٢٦";
   const nextPrayer = "المغرب";
-  const nextPrayerTime = "٦:١٢ م";
-  const qiblaDirection = "١٣٦°";
+  const nextPrayerTime = "بعد ٤٢ دقيقة";
+  const qiblaDirection = "٢٥٤° غ";
 
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentHour] = useState(() => new Date().getHours());
-
-  const isNight = useMemo(() => isNightTime(currentHour), [currentHour]);
   const greeting = useMemo(() => getGreeting(currentHour), [currentHour]);
-
-  const gradientStyle = useMemo(() => {
-    if (isNight) {
-      return "linear-gradient(135deg, hsl(240 40% 16%), hsl(270 30% 25%))";
-    }
-    return "linear-gradient(135deg, hsl(205 65% 38%), hsl(195 55% 52%))";
-  }, [isNight]);
 
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(
@@ -90,95 +79,109 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <div className="relative overflow-hidden rounded-b-[2.5rem]" style={{ background: gradientStyle }}>
-      {/* Decorative circles */}
-      <div className="absolute top-[-60px] left-[-40px] w-40 h-40 rounded-full opacity-10" style={{ background: "hsl(var(--gold))" }} />
-      <div className="absolute bottom-[-30px] right-[-20px] w-32 h-32 rounded-full opacity-[0.07]" style={{ background: "hsl(var(--gold))" }} />
+    <>
+      {/* Sticky Top Bar */}
+      <header className="sticky top-0 z-40 px-5 pt-4 pb-2 flex justify-between items-center bg-background/95 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-primary/30"
+            style={{ background: "hsl(var(--primary) / 0.1)" }}
+          >
+            <span className="text-sm font-bold text-primary">{mockUser.name.charAt(0)}</span>
+          </button>
+          <span className="text-xl font-bold text-primary tracking-tight">عائلتنا</span>
+        </div>
+        <button className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors">
+          <Bell size={22} />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive" />
+        </button>
+      </header>
 
-      <div className="relative z-10 px-5 pt-12 pb-8">
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-lg font-bold text-white/90">منظم العائلة</h1>
-          <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
-              <Bell size={20} className="text-white/80" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-400" />
-            </button>
-            <button onClick={() => setProfileOpen(true)} className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden" style={{
-              background: "hsla(0,0%,100%,0.15)",
-              border: "2px solid hsla(0,0%,100%,0.3)",
-            }}>
-              <span className="text-sm font-bold text-white">{mockUser.name.charAt(0)}</span>
-            </button>
-          </div>
+      {/* Hero Card */}
+      <section className="px-5 pt-2 relative">
+        {/* Artistic Sun */}
+        <div className="absolute -top-4 left-2 w-24 h-24 z-30 pointer-events-none">
+          <div className="absolute inset-0 rounded-full animate-pulse" style={{
+            filter: "blur(20px)",
+            background: "radial-gradient(circle, rgba(255,245,158,1) 0%, rgba(255,164,0,0.4) 70%)"
+          }} />
+          <div className="relative w-full h-full rounded-full shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, hsl(48 100% 65%), hsl(30 100% 55%))",
+              border: "4px solid hsla(0,0%,100%,0.2)"
+            }}
+          />
         </div>
 
-        {/* Greeting + Weather */}
-        <div className={`flex items-start justify-between ${islamicMode ? "mb-6" : "mb-4"}`}>
-          <div>
+        <div className="rounded-2xl p-6 relative overflow-hidden text-white shadow-xl" style={{
+          background: "linear-gradient(135deg, hsl(205 80% 60%), hsl(185 90% 55%))"
+        }}>
+          {/* Cloud decorations */}
+          <div className="absolute top-3 right-10 opacity-20">
+            <Cloud size={52} />
+          </div>
+          <div className="absolute bottom-3 left-16 opacity-15">
+            <Cloud size={36} />
+          </div>
+
+          <div className="relative z-20 space-y-5">
+            {/* Greeting + Weather */}
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight mb-1">
+                  {greeting}، {mockUser.name}
+                </h1>
+                <p className="text-white/75 font-medium text-sm">
+                  {gregorianDate} {islamicMode && `• ${hijriDate}`}
+                </p>
+                {weather && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <MapPin size={12} className="text-white/50" />
+                    <span className="text-white/50 text-xs">{weather.city}</span>
+                  </div>
+                )}
+              </div>
+              {weather && (
+                <div className="text-left pl-4">
+                  <div className="flex items-center justify-end gap-2">
+                    <WeatherIcon icon={weather.icon} />
+                    <span className="text-2xl font-bold">{weather.temp}°</span>
+                  </div>
+                  <p className="text-[11px] font-semibold text-white/70 mt-0.5">{weather.description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Qibla + Prayer Cards - Islamic mode */}
             {islamicMode && (
-              <p className="text-white/60 text-sm mb-1">{hijriDate} • {gregorianDate}</p>
-            )}
-            <h2 className="text-2xl font-bold text-white">{greeting}</h2>
-            {weather && (
-              <div className="flex items-center gap-1 mt-1">
-                <MapPin size={12} className="text-white/50" />
-                <span className="text-white/50 text-xs">{weather.city}</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 flex items-center gap-3 border border-white/10">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <Compass size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-white/60">القبلة</p>
+                    <p className="text-sm font-bold">{qiblaDirection}</p>
+                  </div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 flex items-center gap-3 border border-white/10">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <Sun size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-white/60">{nextPrayer}</p>
+                    <p className="text-sm font-bold">{nextPrayerTime}</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-          {weather && (
-            <div className="flex flex-col items-center gap-1 rounded-2xl px-3 py-2" style={{
-              background: "hsla(0,0%,100%,0.1)",
-              backdropFilter: "blur(8px)",
-            }}>
-              <WeatherIcon icon={weather.icon} />
-              <span className="text-white font-bold text-lg leading-none">{weather.temp}°</span>
-              <span className="text-white/60 text-[10px]">{weather.description}</span>
-            </div>
-          )}
         </div>
-
-        {/* Qibla Compass - Islamic mode only */}
-        {islamicMode && (
-          <div className="flex flex-col items-center mb-6">
-            <div className="relative w-28 h-28 rounded-full flex items-center justify-center" style={{
-              background: "hsla(0,0%,100%,0.08)",
-              border: "2px solid hsla(0,0%,100%,0.15)"
-            }}>
-              <div className="absolute inset-2 rounded-full flex items-center justify-center" style={{
-                background: "hsla(0,0%,100%,0.06)",
-                border: "1px solid hsla(0,0%,100%,0.1)"
-              }}>
-                <Compass size={40} className="animate-pulse-glow" style={{ color: "hsl(var(--gold))" }} />
-              </div>
-              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45" style={{
-                background: "hsl(var(--gold))"
-              }} />
-            </div>
-            <p className="text-white/50 text-xs mt-2">اتجاه القبلة</p>
-            <p className="text-white font-bold text-lg" style={{ color: "hsl(var(--gold))" }}>{qiblaDirection}</p>
-          </div>
-        )}
-
-        {/* Next Prayer - Islamic mode only */}
-        {islamicMode && (
-          <div className="rounded-2xl p-4 text-center" style={{
-            background: "hsla(0,0%,100%,0.1)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid hsla(0,0%,100%,0.15)"
-          }}>
-            <p className="text-white/50 text-xs mb-1">الصلاة القادمة</p>
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-2xl font-bold text-white">{nextPrayer}</span>
-              <span className="text-xl font-semibold" style={{ color: "hsl(var(--gold))" }}>{nextPrayerTime}</span>
-            </div>
-          </div>
-        )}
-      </div>
+      </section>
 
       <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={mockUser} />
-    </div>
+    </>
   );
 };
 
