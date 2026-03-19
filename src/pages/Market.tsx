@@ -376,19 +376,19 @@ const Market = () => {
           background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
         }}
       >
-        <div className="flex items-center justify-between mb-3">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-xl text-white/80 hover:text-white">
-            <ArrowRight size={22} />
+        <div className="flex items-center gap-3 mb-3">
+          <button onClick={() => navigate(-1)} className="p-1.5 rounded-full" style={{ background: "hsla(0,0%,100%,0.12)" }}>
+            <ArrowRight size={20} className="text-white" />
           </button>
-          <h1 className="text-lg font-bold text-white flex items-center gap-2">
-            <ShoppingCart size={22} />
-            أغراض السوق
-          </h1>
+          <div className="flex-1">
+            <h1 className="text-lg font-bold text-white">أغراض السوق</h1>
+          </div>
           <button
             onClick={() => setShowAddList(true)}
-            className="p-2 rounded-xl text-white/80 hover:text-white"
+            className="p-1.5 rounded-full"
+            style={{ background: "hsla(0,0%,100%,0.12)" }}
           >
-            <Plus size={22} />
+            <Plus size={20} className="text-white" />
           </button>
         </div>
 
