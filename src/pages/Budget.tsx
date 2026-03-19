@@ -181,7 +181,6 @@ const Budget = () => {
     setNewIncome("");
     setProjectLabel("");
     setShareNames([]);
-    setNewShareName("");
   };
 
   const handleAddExpense = () => {
