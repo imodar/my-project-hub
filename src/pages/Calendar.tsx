@@ -496,13 +496,13 @@ const CalendarPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Event Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={(o) => { setShowAddDialog(o); if (!o) setSelectedDay(null); }}>
-        <DialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-base font-black">إضافة مناسبة جديدة</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
+      {/* Add Event Drawer */}
+      <Drawer open={showAddDialog} onOpenChange={(o) => { setShowAddDialog(o); if (!o) setSelectedDay(null); }}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>إضافة مناسبة جديدة</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 px-4 pb-2">
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">اسم المناسبة</label>
               <input value={newEvent.title} onChange={(e) => setNewEvent((p) => ({ ...p, title: e.target.value }))}
@@ -547,8 +547,8 @@ const CalendarPage = () => {
               إضافة المناسبة
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
