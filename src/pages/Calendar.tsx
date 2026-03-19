@@ -445,12 +445,6 @@ const CalendarPage = () => {
           })}
         </div>
 
-        <button
-          onClick={() => { setSelectedDay(todayStr); setShowAddDialog(true); }}
-          className="w-full mt-6 py-4 rounded-2xl bg-primary text-primary-foreground font-bold text-sm active:scale-[0.98] transition-transform"
-        >
-          + إضافة مناسبة جديدة
-        </button>
       </div>
 
       {/* ===== DIALOGS ===== */}
