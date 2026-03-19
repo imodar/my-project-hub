@@ -144,7 +144,7 @@ const Map = () => {
       </div>
 
       {/* Map area */}
-      <div className="relative mx-3 mt-3 rounded-2xl overflow-hidden border border-border" style={{ height: 360 }}>
+      <div className="relative overflow-hidden" style={{ height: 360 }}>
         {/* Grid background */}
         <div
           className="absolute inset-0"
