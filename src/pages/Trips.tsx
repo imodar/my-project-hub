@@ -1080,11 +1080,11 @@ const Trips = () => {
       <PullToRefresh onRefresh={async () => {}}>
         <div className="px-5 mt-5">
           <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
-            <TabsList className="w-full grid grid-cols-2 rounded-xl h-11">
-              <TabsTrigger value="family" className="rounded-lg text-xs font-bold">
+            <TabsList className="w-full grid grid-cols-2 rounded-xl h-11 bg-muted">
+              <TabsTrigger value="family" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
                 <Users size={14} className="ml-1" /> رحلات عائلية
               </TabsTrigger>
-              <TabsTrigger value="personal" className="rounded-lg text-xs font-bold">
+              <TabsTrigger value="personal" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
                 <Plane size={14} className="ml-1" /> رحلات شخصية
               </TabsTrigger>
             </TabsList>
