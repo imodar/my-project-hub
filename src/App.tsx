@@ -23,6 +23,7 @@ import Places from "./pages/Places.tsx";
 import AddPlace from "./pages/AddPlace.tsx";
 import Budget from "./pages/Budget.tsx";
 import Tasks from "./pages/Tasks.tsx";
+import Documents from "./pages/Documents.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
