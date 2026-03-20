@@ -51,6 +51,12 @@ interface PackingItem {
   packed: boolean;
 }
 
+interface Expense {
+  id: string;
+  name: string;
+  amount: number;
+}
+
 interface Trip {
   id: string;
   name: string;
@@ -64,8 +70,7 @@ interface Trip {
   days: DayPlan[];
   suggestions: Suggestion[];
   packingList: PackingItem[];
-  accommodation: number;
-  transportation: number;
+  expenses: Expense[];
 }
 
 
