@@ -114,6 +114,7 @@ const Tasks = () => {
 
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
+  const [showListActions, setShowListActions] = useState(false);
 
   // Direct long-press drag reorder
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
