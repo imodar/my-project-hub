@@ -215,14 +215,21 @@ const Zakat = () => {
   return (
     <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
       <PageHeader title="حاسبة الزكاة" subtitle="احسب زكاتك بدقة" onBack={() => navigate("/")}>
-        <button
-          onClick={() => setShowRules(true)}
-          className="flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl text-xs font-bold"
-          style={{ background: "hsla(0,0%,100%,0.15)", color: "white" }}
-        >
-          <BookOpen size={14} />
-          أحكام الزكاة
-        </button>
+        <div className="flex items-center justify-between mt-2">
+          <button
+            onClick={() => setShowRules(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold"
+            style={{ background: "hsla(0,0%,100%,0.15)", color: "white" }}
+          >
+            <BookOpen size={14} />
+            أحكام الزكاة
+          </button>
+          {lastUpdated && (
+            <span className="text-[10px] text-white/60">
+              آخر تحديث: {new Date(lastUpdated).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+        </div>
       </PageHeader>
 
       <PullToRefresh onRefresh={async () => { setAssets(loadAssets()); }}>
