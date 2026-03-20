@@ -1,12 +1,14 @@
 import { useState, useCallback, useRef } from "react";
-import { ArrowRight, Plus, Search, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Plus, Search, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
+import PageHeader from "@/components/PageHeader";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
+  Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
+} from "@/components/ui/drawer";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -14,7 +16,6 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Switch } from "@/components/ui/switch";
 import { haptic } from "@/lib/haptics";
 
 export interface Place {
