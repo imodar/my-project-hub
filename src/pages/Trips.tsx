@@ -385,6 +385,18 @@ const Trips = () => {
     toast.success("تم إضافة العنصر");
   };
 
+  const handleAddExpense = () => {
+    if (!selectedTrip || !expenseName.trim()) return;
+    const newExp: Expense = { id: Date.now().toString(), name: expenseName, amount: Number(expenseAmount) || 0 };
+    const updated = { ...selectedTrip, expenses: [...selectedTrip.expenses, newExp] };
+    setSelectedTrip(updated);
+    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    setExpenseName("");
+    setExpenseAmount("");
+    setNewExpenseDrawer(false);
+    toast.success("تم إضافة المصروف");
+  };
+
   const togglePackingItem = (itemId: string) => {
     if (!selectedTrip) return;
     const updatedList = selectedTrip.packingList.map((p) =>
