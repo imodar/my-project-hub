@@ -383,95 +383,79 @@ const Places = () => {
 
         {/* Card */}
         <div
-          className={`relative z-10 bg-card border border-border rounded-2xl p-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing`}
+          className="relative z-10 bg-card rounded-2xl p-4 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing shadow-sm"
           style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
           onPointerDown={(e) => handlePointerDown(e, place.id)}
           onPointerMove={(e) => handlePointerMove(e, place.id)}
           onPointerUp={(e) => handlePointerUp(e, place.id)}
           onPointerCancel={() => closeSwipe(place.id)}
         >
-          <div className="flex items-start gap-3">
-            {/* Category icon */}
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0 ${catInfo.bg}`}>
+          {/* Top row: icon + name + visit toggle */}
+          <div className="flex items-center gap-3">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${catInfo.bg}`}>
               {catInfo.emoji}
             </div>
 
-            {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <h4 className={`font-bold text-sm text-foreground truncate ${place.visited ? "line-through opacity-60" : ""}`}>
+              <div className="flex items-center gap-2">
+                <h4 className={`font-bold text-[15px] text-foreground truncate ${place.visited ? "line-through opacity-50" : ""}`}>
                   {place.name}
                 </h4>
-                {place.mustVisit && (
-                  <span className="text-[10px] bg-destructive/15 text-destructive px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap">
-                    🔴 لازم نروح
+                {place.mustVisit && !place.visited && (
+                  <span className="text-[9px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                    لازم نروح!
                   </span>
                 )}
                 {place.visited && (
-                  <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap">
+                  <span className="text-[9px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
                     ✅ زرناه
                   </span>
                 )}
               </div>
-
-              {/* Location */}
               {place.location?.address && (
-                <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1">
-                  📍 {place.location.address}
-                </p>
-              )}
-
-              {/* Tags row */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {kidInfo && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                    place.kidFriendly === "yes" ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
-                    : place.kidFriendly === "partial" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
-                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                  }`}>
-                    {kidInfo.emoji} {kidInfo.label}
-                  </span>
-                )}
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
-                  {place.priceRange} {PRICE_LABELS[place.priceRange]}
-                </span>
-              </div>
-
-              {/* Note */}
-              {place.note && (
-                <p className="text-[11px] text-muted-foreground mt-1.5 italic">
-                  {place.note}
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                  {place.location.address}
                 </p>
               )}
             </div>
 
-            {/* Right side: star + visit toggle */}
-            <div className="flex flex-col items-end gap-2 shrink-0">
-              {place.mustVisit && <Star size={16} className="fill-yellow-400 text-yellow-400" />}
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); toggleVisited(place.id); }}
-                className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                  place.visited
-                    ? "bg-primary"
-                    : "border-2 border-border hover:border-primary"
-                }`}
-              >
-                {place.visited && <Check size={14} className="text-primary-foreground" />}
-              </button>
-            </div>
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); toggleVisited(place.id); }}
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                place.visited
+                  ? "bg-primary shadow-md"
+                  : "border-2 border-muted-foreground/20 hover:border-primary"
+              }`}
+            >
+              {place.visited && <Check size={15} className="text-primary-foreground" />}
+            </button>
           </div>
 
-          {/* Rating */}
-          {place.rating && (
-            <div className="flex items-center gap-1 mt-2">
-              {renderStars(place.rating)}
-              {place.note && place.visited && (
-                <span className="text-[10px] text-muted-foreground mr-1">
-                  {place.note}
-                </span>
-              )}
-            </div>
+          {/* Info chips row */}
+          <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg font-medium bg-muted/60 text-muted-foreground">
+              {place.priceRange}
+            </span>
+            <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg font-medium ${
+              place.kidFriendly === "yes" ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+              : place.kidFriendly === "partial" ? "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
+              : "bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400"
+            }`}>
+              {kidInfo.emoji} {kidInfo.label}
+            </span>
+            {place.rating && place.rating > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg font-medium bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400">
+                <Star size={10} className="fill-current" /> {place.rating}
+              </span>
+            )}
+          </div>
+
+          {/* Note */}
+          {place.note && (
+            <p className="text-[11px] text-muted-foreground mt-2.5 leading-relaxed bg-muted/40 rounded-xl px-3 py-2 italic">
+              💬 {place.note}
+            </p>
           )}
         </div>
       </div>
@@ -605,7 +589,7 @@ const Places = () => {
         </div>
 
         {/* Places list */}
-        <div className="px-4 space-y-2">
+        <div className="px-4 space-y-3">
           {unvisitedPlaces.map((place) => renderPlace(place))}
 
           {visitedPlaces.length > 0 && (
