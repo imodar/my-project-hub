@@ -739,7 +739,7 @@ const Market = () => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-      </PullToRefresh>
+    
     </div>
   );
 };
