@@ -68,11 +68,6 @@ interface Trip {
   transportation: number;
 }
 
-const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  planning: { label: "تخطيط", color: "hsl(var(--primary))", bg: "hsl(var(--primary) / 0.1)" },
-  confirmed: { label: "مؤكدة", color: "hsl(145 45% 35%)", bg: "hsl(145 40% 93%)" },
-  completed: { label: "منتهية", color: "hsl(var(--muted-foreground))", bg: "hsl(var(--muted))" },
-};
 
 const SUGGESTION_STATUS: Record<string, { label: string; icon: typeof Check; color: string }> = {
   pending: { label: "قيد الانتظار", icon: Clock, color: "hsl(43 65% 40%)" },
