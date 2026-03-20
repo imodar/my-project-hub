@@ -534,7 +534,8 @@ const Debts = () => {
             <SwipeableDebtCard
               key={debt.id}
               onDelete={() => setDebts((prev) => prev.filter((d) => d.id !== debt.id))}
-              onEdit={() => handleStartEdit(debt)}
+              onToggleReminder={() => setDebts((prev) => prev.map((d) => d.id === debt.id ? { ...d, hasReminder: !d.hasReminder } : d))}
+              hasReminder={debt.hasReminder}
             >
               <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
                 <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
