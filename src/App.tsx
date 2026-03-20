@@ -26,6 +26,7 @@ import Tasks from "./pages/Tasks.tsx";
 import Documents from "./pages/Documents.tsx";
 import Zakat from "./pages/Zakat.tsx";
 import Will from "./pages/Will.tsx";
+import Trips from "./pages/Trips.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
