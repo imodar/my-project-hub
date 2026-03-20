@@ -80,6 +80,7 @@ function useGoldPrice() {
   const [silverPricePerGram, setSilverPricePerGram] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
 
   useEffect(() => {
     const cached = localStorage.getItem("zakat_metal_prices");
@@ -89,26 +90,28 @@ function useGoldPrice() {
         if (Date.now() - parsed.ts < 3600_000) {
           setGoldPricePerGram(parsed.gold);
           setSilverPricePerGram(parsed.silver);
+          setLastUpdated(parsed.ts);
           setLoading(false);
           return;
         }
       } catch {}
     }
 
-    // Use goldapi.io free tier or fallback
     fetch("https://api.metals.dev/v1/latest?api_key=demo&currency=SAR&unit=gram")
       .then(r => r.json())
       .then(data => {
+        const now = Date.now();
         if (data.metals) {
           const gold24 = data.metals.gold;
           const silver = data.metals.silver;
           setGoldPricePerGram(gold24);
           setSilverPricePerGram(silver);
-          localStorage.setItem("zakat_metal_prices", JSON.stringify({ gold: gold24, silver, ts: Date.now() }));
+          setLastUpdated(now);
+          localStorage.setItem("zakat_metal_prices", JSON.stringify({ gold: gold24, silver, ts: now }));
         } else {
-          // Fallback approximate prices in SAR
           setGoldPricePerGram(310);
           setSilverPricePerGram(3.5);
+          setLastUpdated(now);
         }
       })
       .catch(() => {
@@ -119,7 +122,7 @@ function useGoldPrice() {
       .finally(() => setLoading(false));
   }, []);
 
-  return { goldPricePerGram, silverPricePerGram, loading, error };
+  return { goldPricePerGram, silverPricePerGram, loading, error, lastUpdated };
 }
 
 // ── Component ──
@@ -135,7 +138,7 @@ const Zakat = () => {
   const [addDate, setAddDate] = useState(new Date().toISOString().split("T")[0]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const { goldPricePerGram, silverPricePerGram, loading: priceLoading } = useGoldPrice();
+  const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
 
   const updateAssets = useCallback((newAssets: ZakatAsset[]) => {
     setAssets(newAssets);
@@ -212,14 +215,21 @@ const Zakat = () => {
   return (
     <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
       <PageHeader title="حاسبة الزكاة" subtitle="احسب زكاتك بدقة" onBack={() => navigate("/")}>
-        <button
-          onClick={() => setShowRules(true)}
-          className="flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl text-xs font-bold"
-          style={{ background: "hsla(0,0%,100%,0.15)", color: "white" }}
-        >
-          <BookOpen size={14} />
-          أحكام الزكاة
-        </button>
+        <div className="flex items-center justify-between mt-2">
+          <button
+            onClick={() => setShowRules(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold"
+            style={{ background: "hsla(0,0%,100%,0.15)", color: "white" }}
+          >
+            <BookOpen size={14} />
+            أحكام الزكاة
+          </button>
+          {lastUpdated && (
+            <span className="text-[10px] text-white/60">
+              آخر تحديث: {new Date(lastUpdated).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+        </div>
       </PageHeader>
 
       <PullToRefresh onRefresh={async () => { setAssets(loadAssets()); }}>
