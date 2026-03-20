@@ -160,6 +160,9 @@ const Places = () => {
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewWouldReturn, setReviewWouldReturn] = useState<"yes" | "no" | null>(null);
 
+  // Detail bottom sheet
+  const [detailPlace, setDetailPlace] = useState<Place | null>(null);
+
   // New list form
   const [newListName, setNewListName] = useState("");
   const [newListType, setNewListType] = useState<"family" | "personal">("family");
