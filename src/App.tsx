@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
 import { TrashProvider } from "@/contexts/TrashContext";
 import ScrollToTop from "@/components/ScrollToTop";
+import OfflineBanner from "@/components/OfflineBanner";
 import PageTransition from "@/components/PageTransition";
 import Index from "./pages/Index.tsx";
 import Tasbih from "./pages/Tasbih.tsx";
