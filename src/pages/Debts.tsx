@@ -119,6 +119,7 @@ const initialTaken: Debt[] = [
     payments: [],
     isFullyPaid: false,
     isArchived: false,
+    hasReminder: false,
     postponements: [],
   },
 ];
