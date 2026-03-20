@@ -384,6 +384,15 @@ const Zakat = () => {
                   return (
                     <SwipeableAssetCard
                       key={asset.id}
+                      onEdit={() => {
+                        setAddType(asset.type);
+                        setAddLabel(asset.label);
+                        setAddAmount(String(asset.amount));
+                        if (asset.karat) setAddKarat(asset.karat);
+                        setAddDate(asset.purchaseDate);
+                        setEditingAssetId(asset.id);
+                        setShowAdd(true);
+                      }}
                       onReminder={() => { setReminderAsset(asset.id); }}
                       onDelete={() => setDeleteConfirm(asset.id)}
                     >
