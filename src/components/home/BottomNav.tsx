@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from "react";
 import { Home, Map, MessageCircle, Settings, ShieldAlert } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { haptic } from "@/lib/haptics";
@@ -10,14 +11,117 @@ const navItems = [
   { icon: Settings, label: "الإعدادات", path: "/settings" },
 ];
 
+const SOS_HOLD_DURATION = 3000;
+
+const SOSNavButton = () => {
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
+  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTime = useRef(0);
+
+  const cleanup = useCallback(() => {
+    if (holdTimer.current) {
+      clearInterval(holdTimer.current);
+      holdTimer.current = null;
+    }
+    setIsHolding(false);
+    setHoldProgress(0);
+  }, []);
+
+  const startHold = useCallback(() => {
+    setIsHolding(true);
+    setHoldProgress(0);
+    startTime.current = Date.now();
+
+    holdTimer.current = setInterval(() => {
+      const elapsed = Date.now() - startTime.current;
+      const progress = Math.min(elapsed / SOS_HOLD_DURATION, 1);
+      setHoldProgress(progress);
+
+      if (progress >= 1) {
+        cleanup();
+        haptic.heavy();
+        window.dispatchEvent(new CustomEvent("trigger-sos"));
+      }
+    }, 30);
+  }, [cleanup]);
+
+  const cancelHold = useCallback(() => {
+    cleanup();
+  }, [cleanup]);
+
+  const circumference = 2 * Math.PI * 26;
+
+  return (
+    <button
+      key="طوارئ"
+      onTouchStart={startHold}
+      onTouchEnd={cancelHold}
+      onMouseDown={startHold}
+      onMouseUp={cancelHold}
+      onMouseLeave={cancelHold}
+      className="flex flex-col items-center gap-1 px-3 py-1 -mt-6 select-none touch-none"
+    >
+      <div className="relative w-12 h-12">
+        {/* Background circle */}
+        <div
+          className="absolute inset-0 rounded-full flex items-center justify-center transition-transform duration-100"
+          style={{
+            background: "linear-gradient(135deg, hsl(0, 72%, 51%), hsl(0, 84%, 60%))",
+            boxShadow: isHolding
+              ? "0 0 20px hsla(0, 72%, 51%, 0.6), 0 0 40px hsla(0, 72%, 51%, 0.3)"
+              : "0 4px 15px hsla(0, 72%, 51%, 0.4)",
+            transform: isHolding ? "scale(1.08)" : "scale(1)",
+          }}
+        >
+          <ShieldAlert
+            size={22}
+            className="text-white transition-transform duration-100"
+            style={{
+              transform: isHolding ? `rotate(${holdProgress * 360}deg)` : "rotate(0deg)",
+            }}
+          />
+        </div>
+
+        {/* Progress ring */}
+        {isHolding && (
+          <svg
+            className="absolute inset-[-3px] w-[calc(100%+6px)] h-[calc(100%+6px)]"
+            viewBox="0 0 56 56"
+            style={{ transform: "rotate(-90deg)" }}
+          >
+            <circle
+              cx="28" cy="28" r="26"
+              fill="none"
+              stroke="hsla(0, 0%, 100%, 0.2)"
+              strokeWidth="3"
+            />
+            <circle
+              cx="28" cy="28" r="26"
+              fill="none"
+              stroke="white"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - holdProgress)}
+              style={{ transition: "stroke-dashoffset 30ms linear" }}
+            />
+          </svg>
+        )}
+      </div>
+      <span
+        className="text-[10px] font-bold transition-colors"
+        style={{ color: isHolding ? "hsl(0, 84%, 50%)" : "hsl(0, 72%, 51%)" }}
+      >
+        طوارئ
+      </span>
+    </button>
+  );
+};
+
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const handleSOSPress = () => {
-    haptic.heavy();
-    window.dispatchEvent(new CustomEvent("trigger-sos"));
-  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
@@ -29,31 +133,11 @@ const BottomNav = () => {
           border: "1px solid hsla(0,0%,0%,0.06)",
         }}>
           {navItems.map((item) => {
-            const isActive = !(item as any).isSOS && location.pathname === item.path;
-
             if ((item as any).isSOS) {
-              return (
-                <button
-                  key={item.label}
-                  onClick={handleSOSPress}
-                  className="flex flex-col items-center gap-1 px-3 py-1 transition-transform active:scale-90 -mt-6"
-                >
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center"
-                    style={{
-                      background: "linear-gradient(135deg, hsl(0, 72%, 51%), hsl(0, 84%, 60%))",
-                      boxShadow: "0 4px 15px hsla(0, 72%, 51%, 0.4)",
-                    }}
-                  >
-                    <ShieldAlert size={22} className="text-white" />
-                  </div>
-                  <span className="text-[10px] font-bold" style={{ color: "hsl(0, 72%, 51%)" }}>
-                    {item.label}
-                  </span>
-                </button>
-              );
+              return <SOSNavButton key={item.label} />;
             }
 
+            const isActive = location.pathname === item.path;
             return (
               <button
                 key={item.label}
