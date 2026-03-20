@@ -69,7 +69,7 @@ const AddPlace = () => {
           socialLink: socialLink || undefined,
           phone: phone || undefined,
           priceRange,
-          rating: rating || undefined,
+          rating: undefined,
           kidFriendly,
           addedBy: "أنت",
           visited: false,
