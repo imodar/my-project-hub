@@ -122,11 +122,13 @@ const initialTaken: Debt[] = [
 const SwipeableDebtCard = ({
   children,
   onDelete,
-  onEdit,
+  onToggleReminder,
+  hasReminder,
 }: {
   children: React.ReactNode;
   onDelete: () => void;
-  onEdit: () => void;
+  onToggleReminder: () => void;
+  hasReminder: boolean;
 }) => {
   const [swipeX, setSwipeX] = useState(0);
   const startXRef = useRef(0);
@@ -159,11 +161,11 @@ const SwipeableDebtCard = ({
         style={{ width: 160, opacity: swipeX > 0 ? 1 : 0, pointerEvents: swipeX > 0 ? 'auto' : 'none' }}
       >
         <button
-          onClick={onEdit}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white"
+          onClick={() => { onToggleReminder(); setSwipeX(0); }}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 ${hasReminder ? 'bg-amber-500' : 'bg-primary'} text-white`}
         >
-          <Pencil size={20} />
-          <span className="text-[10px] font-bold">تعديل</span>
+          {hasReminder ? <BellOff size={20} /> : <Bell size={20} />}
+          <span className="text-[10px] font-bold">{hasReminder ? 'إلغاء تنبيه' : 'تنبيه'}</span>
         </button>
         <button
           onClick={onDelete}
