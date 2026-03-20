@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import {
   categories, allItems, TOTAL_ITEMS,
   type ChildProfile, type MonthData,
-  loadChildren, saveChildren, loadData, getMonthLabel,
+  loadChildren, saveChildren, loadData, saveData, getMonthLabel,
 } from "@/components/kids-worship/worshipData";
 import { exportWorshipPdf } from "@/components/kids-worship/exportPdf";
 import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
