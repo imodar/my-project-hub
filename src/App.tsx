@@ -24,6 +24,7 @@ import AddPlace from "./pages/AddPlace.tsx";
 import Budget from "./pages/Budget.tsx";
 import Tasks from "./pages/Tasks.tsx";
 import Documents from "./pages/Documents.tsx";
+import Zakat from "./pages/Zakat.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
