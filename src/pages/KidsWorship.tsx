@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Download, ChevronLeft, ChevronRight, Sparkles, Trophy, RotateCcw } from "lucide-react";
+import { Star, Download, Sparkles, Trophy, RotateCcw } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
 
 // ─── Category Definitions ───────────────────────────────────────
 
@@ -87,48 +88,73 @@ const TOTAL_ITEMS = allItems.length;
 
 // ─── Helpers ────────────────────────────────────────────────────
 
-const getDaysInCurrentMonth = () => {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+const getStorageKey = (year: number, month: number) => {
+  return `kids-worship-${year}-${month}`;
 };
 
-const getCurrentMonthName = () => {
-  return new Date().toLocaleDateString("ar-SA", { month: "long", year: "numeric" });
-};
-
-const getStorageKey = () => {
-  const now = new Date();
-  return `kids-worship-${now.getFullYear()}-${now.getMonth()}`;
+const getMonthLabel = (year: number, month: number) => {
+  const d = new Date(year, month, 1);
+  const greg = d.toLocaleDateString("ar", { month: "long", year: "numeric" });
+  let hijri = "";
+  try {
+    hijri = d.toLocaleDateString("ar-SA-u-ca-islamic", { month: "long", year: "numeric" });
+  } catch { /* fallback */ }
+  return hijri ? `${greg} - ${hijri}` : greg;
 };
 
 type DayData = Record<string, boolean>;
 type MonthData = Record<number, DayData>;
 
-const loadData = (): MonthData => {
+const loadData = (year: number, month: number): MonthData => {
   try {
-    const raw = localStorage.getItem(getStorageKey());
+    const raw = localStorage.getItem(getStorageKey(year, month));
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 };
 
-const saveData = (data: MonthData) => {
-  localStorage.setItem(getStorageKey(), JSON.stringify(data));
+const saveData = (year: number, month: number, data: MonthData) => {
+  localStorage.setItem(getStorageKey(year, month), JSON.stringify(data));
 };
 
 // ─── Component ──────────────────────────────────────────────────
 
 const KidsWorship = () => {
-  const [data, setData] = useState<MonthData>(loadData);
-  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [data, setData] = useState<MonthData>(() => loadData(now.getFullYear(), now.getMonth()));
+  const [selectedDay, setSelectedDay] = useState(now.getDate());
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const totalDays = getDaysInCurrentMonth();
-  const today = new Date().getDate();
+  const totalDays = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+  const today = now.getDate();
+  const isCurrentMonth = now.getFullYear() === selectedYear && now.getMonth() === selectedMonth;
 
   useEffect(() => {
-    saveData(data);
+    saveData(selectedYear, selectedMonth, data);
+  }, [data, selectedYear, selectedMonth]);
+
+  // Load data when month changes
+  const handleMonthChange = useCallback((year: number, month: number) => {
+    setSelectedYear(year);
+    setSelectedMonth(month);
+    setData(loadData(year, month));
+    const n = new Date();
+    if (n.getFullYear() === year && n.getMonth() === month) {
+      setSelectedDay(n.getDate());
+    } else {
+      setSelectedDay(1);
+    }
+  }, []);
+
+  const getDayStatus = useCallback((day: number): "full" | "partial" | "empty" => {
+    const dd = data[day] || {};
+    const done = Object.values(dd).filter(Boolean).length;
+    if (done === TOTAL_ITEMS) return "full";
+    if (done > 0) return "partial";
+    return "empty";
   }, [data]);
 
   const dayData = data[selectedDay] || {};
@@ -166,10 +192,6 @@ const KidsWorship = () => {
   // Incomplete items for motivation
   const incompleteItems = allItems.filter((item) => !dayData[item.id]);
 
-  const navigateDay = (dir: number) => {
-    const next = selectedDay + dir;
-    if (next >= 1 && next <= totalDays) setSelectedDay(next);
-  };
 
   const resetDay = () => {
     const newData = { ...data };
@@ -197,7 +219,7 @@ const KidsWorship = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `عبادات-${getCurrentMonthName()}.csv`;
+    a.download = `عبادات-${getMonthLabel(selectedYear, selectedMonth)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast({ title: "تم تصدير الجدول بنجاح ✅" });
@@ -238,7 +260,7 @@ const KidsWorship = () => {
 
       <PageHeader
         title="عبادات الأطفال"
-        subtitle={getCurrentMonthName()}
+        subtitle={getMonthLabel(selectedYear, selectedMonth)}
         actions={[
           {
             icon: <Download size={18} className="text-white" />,
@@ -296,72 +318,16 @@ const KidsWorship = () => {
         </div>
       </div>
 
-      {/* Day Selector */}
-      <div className="px-4 mt-4">
-        <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-sm border border-purple-100/40">
-          <button
-            onClick={() => navigateDay(1)}
-            disabled={selectedDay >= totalDays}
-            className="p-2 rounded-xl active:scale-95 transition-transform disabled:opacity-30"
-            style={{ background: "hsl(270 55% 94%)" }}
-          >
-            <ChevronRight size={18} style={{ color: "hsl(270 55% 50%)" }} />
-          </button>
-
-          <div className="text-center">
-            <p className="text-lg font-extrabold text-foreground">يوم {selectedDay}</p>
-            <p className="text-[11px] text-muted-foreground">
-              {selectedDay === today ? "اليوم" : `${Math.abs(selectedDay - today)} ${selectedDay < today ? "أيام مضت" : "أيام قادمة"}`}
-            </p>
-          </div>
-
-          <button
-            onClick={() => navigateDay(-1)}
-            disabled={selectedDay <= 1}
-            className="p-2 rounded-xl active:scale-95 transition-transform disabled:opacity-30"
-            style={{ background: "hsl(270 55% 94%)" }}
-          >
-            <ChevronLeft size={18} style={{ color: "hsl(270 55% 50%)" }} />
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Day Dots */}
-      <div className="px-4 mt-3 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-1.5 justify-center flex-wrap">
-          {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
-            const dd = data[d] || {};
-            const done = Object.values(dd).filter(Boolean).length;
-            const full = done === TOTAL_ITEMS;
-            const partial = done > 0 && !full;
-            return (
-              <button
-                key={d}
-                onClick={() => setSelectedDay(d)}
-                className={`w-8 h-8 rounded-full text-[10px] font-bold transition-all active:scale-90 ${
-                  d === selectedDay ? "ring-2 ring-offset-1" : ""
-                }`}
-                style={{
-                  background: full
-                    ? "hsl(40 90% 50%)"
-                    : partial
-                    ? "hsl(270 55% 88%)"
-                    : d === today
-                    ? "hsl(270 55% 94%)"
-                    : "hsl(0 0% 95%)",
-                  color: full
-                    ? "white"
-                    : d === selectedDay
-                    ? "hsl(270 55% 40%)"
-                    : "hsl(0 0% 45%)",
-                  boxShadow: d === selectedDay ? "0 0 0 2px hsl(270 55% 50%)" : "none",
-                }}
-              >
-                {d}
-              </button>
-            );
-          })}
-        </div>
+      {/* Month & Day Selector */}
+      <div className="mt-4">
+        <MonthDaySelector
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          selectedDay={selectedDay}
+          onMonthChange={handleMonthChange}
+          onDayChange={setSelectedDay}
+          dayStatus={getDayStatus}
+        />
       </div>
 
       {/* Worship Grid by Category */}
