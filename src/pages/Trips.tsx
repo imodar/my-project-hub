@@ -293,7 +293,7 @@ const Trips = () => {
     setTripStart(trip.startDate);
     setTripEnd(trip.endDate);
     setTripBudget(trip.budget.toString());
-    setTripParticipants(trip.participants.join("، "));
+    setTripParticipants([...trip.participants]);
     setNewTripDrawer(true);
   };
 
