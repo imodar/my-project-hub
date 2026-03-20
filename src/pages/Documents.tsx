@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { haptic } from "@/lib/haptics";
 
-type DocCategory = "identity" | "medical" | "vehicles" | "home" | "other";
+type DocCategory = "identity" | "medical" | "vehicles" | "home" | "passport" | "other";
 
 interface DocFile {
   id: string;
