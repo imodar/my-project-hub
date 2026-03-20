@@ -1,4 +1,4 @@
-import { Home, Map, MessageCircle, Settings } from "lucide-react";
+import { Home, Map, MessageCircle, Settings, ShieldAlert } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { haptic } from "@/lib/haptics";
 
@@ -7,6 +7,7 @@ const navItems = [
   { icon: Map, label: "الخريطة", path: "/map" },
   { icon: MessageCircle, label: "المحادثة", path: "/chat" },
   { icon: Settings, label: "الإعدادات", path: "/settings" },
+  { icon: ShieldAlert, label: "طوارئ", path: "/sos", isSOS: true },
 ];
 
 const BottomNav = () => {
