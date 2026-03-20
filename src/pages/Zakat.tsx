@@ -16,8 +16,8 @@ import {
 import { haptic } from "@/lib/haptics";
 
 // ── Swipeable Card ──
-const ACTION_WIDTH = 140;
-function SwipeableAssetCard({ onReminder, onDelete, children }: { onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
+const ACTION_WIDTH = 210;
+function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit: () => void; onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
   const isOpenRef = useRef(false);
@@ -29,7 +29,6 @@ function SwipeableAssetCard({ onReminder, onDelete, children }: { onReminder: ()
   };
   const handleTouchMove = (e: React.TouchEvent) => {
     const diff = e.touches[0].clientX - startXRef.current;
-    // RTL: swipe right reveals actions on left
     currentXRef.current = isOpenRef.current
       ? Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH + diff))
       : Math.max(0, Math.min(ACTION_WIDTH, diff));
@@ -44,6 +43,13 @@ function SwipeableAssetCard({ onReminder, onDelete, children }: { onReminder: ()
   return (
     <div className="relative overflow-hidden rounded-2xl" ref={containerRef}>
       <div className="absolute inset-y-0 left-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
+        <button
+          onClick={() => { haptic.light(); onEdit(); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-primary text-white"
+        >
+          <Pencil size={18} />
+          <span className="text-[10px] font-bold">تعديل</span>
+        </button>
         <button
           onClick={() => { haptic.light(); onReminder(); }}
           className="flex-1 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white"
