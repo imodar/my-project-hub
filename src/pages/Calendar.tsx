@@ -290,7 +290,7 @@ const CalendarPage = () => {
     }
   };
 
-  const getMonthShort = (dateStr: string) => ARABIC_MONTHS[new Date(dateStr).getMonth()].slice(0, 3);
+  const getMonthShort = (dateStr: string) => ARABIC_MONTHS[new Date(dateStr).getMonth()];
   const getEventIcon = (iconKey: string) => ICON_OPTIONS.find((o) => o.key === iconKey)?.label || "📅";
   const getReminderLabel = (value?: string[]) => {
     if (!value || value.length === 0) return null;
@@ -426,9 +426,9 @@ const CalendarPage = () => {
                   onPointerUp={(e) => handlePointerUp(e, ev.id)}
                   onPointerCancel={() => closeSwipe(ev.id)}
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-primary flex flex-col items-center justify-center shrink-0">
-                    <span className="text-lg font-black text-primary-foreground leading-none">{toArabicNum(dayNum)}</span>
-                    <span className="text-[10px] font-semibold text-primary-foreground/80 mt-0.5">{getMonthShort(ev.date)}</span>
+                  <div className="w-14 h-14 rounded-2xl bg-accent flex flex-col items-center justify-center shrink-0">
+                    <span className="text-lg font-black text-accent-foreground leading-none">{toArabicNum(dayNum)}</span>
+                    <span className="text-[10px] font-semibold text-accent-foreground/80 mt-0.5">{getMonthShort(ev.date)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
