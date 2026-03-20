@@ -325,6 +325,7 @@ const CalendarPage = () => {
         ]}
       />
 
+      <PullToRefresh>
       {/* Calendar Grid */}
       <div className="px-4 mt-4">
         <div className="bg-card rounded-2xl p-4 border border-border" style={{ boxShadow: "0 2px 12px hsla(0,0%,0%,0.04)" }}>
