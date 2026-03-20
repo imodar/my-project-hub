@@ -970,11 +970,8 @@ const Trips = () => {
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <h3 className="text-sm font-bold text-foreground">{trip.name}</h3>
-                            <Badge className="text-[10px] border-0" style={{ background: statusInfo.bg, color: statusInfo.color }}>
-                              {statusInfo.label}
-                            </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                             <MapPin size={11} /> {trip.destination}
