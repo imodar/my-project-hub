@@ -290,7 +290,7 @@ const CalendarPage = () => {
     }
   };
 
-  const getMonthShort = (dateStr: string) => ARABIC_MONTHS[new Date(dateStr).getMonth()].slice(0, 3);
+  const getMonthShort = (dateStr: string) => ARABIC_MONTHS[new Date(dateStr).getMonth()];
   const getEventIcon = (iconKey: string) => ICON_OPTIONS.find((o) => o.key === iconKey)?.label || "📅";
   const getReminderLabel = (value?: string[]) => {
     if (!value || value.length === 0) return null;
