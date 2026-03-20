@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Download, ChevronLeft, ChevronRight, Sparkles, Trophy, RotateCcw } from "lucide-react";
+import { Star, Download, Sparkles, Trophy, RotateCcw } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
 
 // ─── Category Definitions ───────────────────────────────────────
 
