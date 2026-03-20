@@ -468,23 +468,6 @@ const Trips = () => {
           </div>
         </div>
 
-        {/* Status changer */}
-        <div className="px-5 mt-4">
-          <div className="flex gap-2">
-            {(["planning", "confirmed", "completed"] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => handleChangeStatus(selectedTrip.id, s)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${
-                  selectedTrip.status === s ? "ring-2 ring-primary" : ""
-                }`}
-                style={{ background: STATUS_MAP[s].bg, color: STATUS_MAP[s].color }}
-              >
-                {STATUS_MAP[s].label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Itinerary */}
         {tripView === "itinerary" && (
