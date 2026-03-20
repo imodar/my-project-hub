@@ -18,6 +18,7 @@ const Index = () => {
         <UpcomingEvents />
         <DailyTasks />
       </PullToRefresh>
+      <SOSButton />
     </div>
   );
 };
