@@ -614,7 +614,7 @@ const Trips = () => {
                         {sug.type && <Badge variant="secondary" className="text-[10px]">{sug.type}</Badge>}
                       </div>
                     </div>
-                    <Badge className="text-[10px] border-0 shrink-0" style={{ background: `${sInfo.color}15`, color: sInfo.color }}>
+                    <Badge className="text-[10px] border-0 shrink-0" style={{ background: sInfo.color.replace(")", " / 0.12)"), color: sInfo.color }}>
                       <sInfo.icon size={10} className="ml-1" />
                       {sInfo.label}
                     </Badge>
