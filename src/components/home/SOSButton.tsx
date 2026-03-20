@@ -62,6 +62,19 @@ const SOSButton = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
   }, [contacts]);
 
+  // Listen for nav bar SOS trigger
+  useEffect(() => {
+    const handler = () => {
+      if (phase === "active") {
+        setCancelDrawer(true);
+      } else if (phase === "idle") {
+        startCountdown();
+      }
+    };
+    window.addEventListener("trigger-sos", handler);
+    return () => window.removeEventListener("trigger-sos", handler);
+  }, [phase, startCountdown]);
+
   // Cleanup timers
   useEffect(() => {
     return () => {
