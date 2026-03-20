@@ -415,7 +415,6 @@ const Trips = () => {
   // Trip detail view
   if (selectedTrip) {
     const costs = getTripCosts(selectedTrip);
-    const statusInfo = STATUS_MAP[selectedTrip.status];
     const packedCount = selectedTrip.packingList.filter((p) => p.packed).length;
 
     return (
