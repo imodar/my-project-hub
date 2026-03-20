@@ -204,6 +204,14 @@ const Trips = () => {
   const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator">("itinerary");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
+  // Load family members
+  const familyMembers: { id: string; name: string; role: string }[] = (() => {
+    try {
+      const saved = localStorage.getItem("family_members");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  })();
+
   // Drawers
   const [newTripDrawer, setNewTripDrawer] = useState(false);
   const [newActivityDrawer, setNewActivityDrawer] = useState(false);
@@ -219,7 +227,7 @@ const Trips = () => {
   const [tripStart, setTripStart] = useState("");
   const [tripEnd, setTripEnd] = useState("");
   const [tripBudget, setTripBudget] = useState("");
-  const [tripParticipants, setTripParticipants] = useState("");
+  const [tripParticipants, setTripParticipants] = useState<string[]>([]);
 
   const [activityName, setActivityName] = useState("");
   const [activityTime, setActivityTime] = useState("");
@@ -245,7 +253,7 @@ const Trips = () => {
   const filteredTrips = trips.filter((t) => t.type === activeTab);
 
   const resetTripForm = () => {
-    setTripName(""); setTripDest(""); setTripStart(""); setTripEnd(""); setTripBudget(""); setTripParticipants("");
+    setTripName(""); setTripDest(""); setTripStart(""); setTripEnd(""); setTripBudget(""); setTripParticipants([]);
     setEditingTripId(null);
   };
 
@@ -254,12 +262,12 @@ const Trips = () => {
     if (editingTripId) {
       setTrips((prev) => prev.map((t) => t.id === editingTripId ? {
         ...t, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
-        budget: Number(tripBudget) || 0, participants: tripParticipants.split("،").map((s) => s.trim()).filter(Boolean),
+        budget: Number(tripBudget) || 0, participants: tripParticipants,
       } : t));
       if (selectedTrip?.id === editingTripId) {
         setSelectedTrip((prev) => prev ? {
           ...prev, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
-          budget: Number(tripBudget) || 0, participants: tripParticipants.split("،").map((s) => s.trim()).filter(Boolean),
+          budget: Number(tripBudget) || 0, participants: tripParticipants,
         } : null);
       }
       toast.success("تم تعديل الرحلة");
@@ -267,7 +275,7 @@ const Trips = () => {
       const newTrip: Trip = {
         id: Date.now().toString(), name: tripName, destination: tripDest,
         startDate: tripStart, endDate: tripEnd,
-        participants: tripParticipants.split("،").map((s) => s.trim()).filter(Boolean),
+        participants: tripParticipants,
         budget: Number(tripBudget) || 0, status: "planning", type: activeTab as "family" | "personal",
         days: [], suggestions: [], packingList: [], accommodation: 0, transportation: 0,
       };
@@ -285,7 +293,7 @@ const Trips = () => {
     setTripStart(trip.startDate);
     setTripEnd(trip.endDate);
     setTripBudget(trip.budget.toString());
-    setTripParticipants(trip.participants.join("، "));
+    setTripParticipants([...trip.participants]);
     setNewTripDrawer(true);
   };
 
@@ -898,7 +906,32 @@ const Trips = () => {
                 </div>
               </div>
               <Input type="number" placeholder="الميزانية الإجمالية" value={tripBudget} onChange={(e) => setTripBudget(e.target.value)} dir="ltr" />
-              <Input placeholder="المشاركون (مفصولين بفاصلة ،)" value={tripParticipants} onChange={(e) => setTripParticipants(e.target.value)} />
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">المشاركون</label>
+                {familyMembers.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {familyMembers.map((m) => {
+                      const selected = tripParticipants.includes(m.name);
+                      return (
+                        <button key={m.id} type="button"
+                          onClick={() => setTripParticipants((prev) => selected ? prev.filter((n) => n !== m.name) : [...prev, m.name])}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95"
+                          style={{
+                            background: selected ? "hsl(var(--primary))" : "hsl(var(--muted))",
+                            color: selected ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))",
+                          }}
+                        >
+                          {selected && <Check size={12} />}
+                          <Users size={12} />
+                          {m.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">أضف أفراد العائلة أولاً من إدارة العائلة</p>
+                )}
+              </div>
               <Button className="w-full rounded-xl" onClick={handleSaveTrip}>
                 {editingTripId ? "حفظ التعديلات" : "إنشاء الرحلة"}
               </Button>
@@ -1020,7 +1053,32 @@ const Trips = () => {
               </div>
             </div>
             <Input type="number" placeholder="الميزانية الإجمالية" value={tripBudget} onChange={(e) => setTripBudget(e.target.value)} dir="ltr" />
-            <Input placeholder="المشاركون (مفصولين بفاصلة ،)" value={tripParticipants} onChange={(e) => setTripParticipants(e.target.value)} />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">المشاركون</label>
+              {familyMembers.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {familyMembers.map((m) => {
+                    const selected = tripParticipants.includes(m.name);
+                    return (
+                      <button key={m.id} type="button"
+                        onClick={() => setTripParticipants((prev) => selected ? prev.filter((n) => n !== m.name) : [...prev, m.name])}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95"
+                        style={{
+                          background: selected ? "hsl(var(--primary))" : "hsl(var(--muted))",
+                          color: selected ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))",
+                        }}
+                      >
+                        {selected && <Check size={12} />}
+                        <Users size={12} />
+                        {m.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">أضف أفراد العائلة أولاً من إدارة العائلة</p>
+              )}
+            </div>
             <Button className="w-full rounded-xl" onClick={handleSaveTrip}>
               {editingTripId ? "حفظ التعديلات" : "إنشاء الرحلة"}
             </Button>
