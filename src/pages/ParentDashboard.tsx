@@ -81,10 +81,10 @@ const ParentDashboard = () => {
     toast({ title: "تم حذف الطفل" });
   };
 
-  const handleExportPdf = (childId: string) => {
+  const handleExportPdf = async (childId: string) => {
     const data = childrenData[childId] || {};
     const child = children.find((c) => c.id === childId);
-    exportWorshipPdf(data, selectedYear, selectedMonth, child?.name || "", totalDays);
+    await exportWorshipPdf(data, selectedYear, selectedMonth, child?.name || "", totalDays);
     toast({ title: "تم تصدير الجدول بنجاح ✅" });
   };
 
