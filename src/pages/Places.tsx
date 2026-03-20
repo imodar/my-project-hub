@@ -202,15 +202,53 @@ const Places = () => {
   };
 
   const toggleVisited = useCallback((placeId: string) => {
+    const place = activeList?.places.find((p) => p.id === placeId);
+    if (!place) return;
     haptic.light();
+    
+    if (!place.visited) {
+      // Opening review sheet for marking as visited
+      setReviewPlace(place);
+      setReviewRating(place.rating || 0);
+      setReviewWouldReturn(null);
+    } else {
+      // Unmark as visited
+      setLists((prev) =>
+        prev.map((list) =>
+          list.id === activeListId
+            ? { ...list, places: list.places.map((p) => p.id === placeId ? { ...p, visited: false, rating: undefined } : p) }
+            : list
+        )
+      );
+    }
+  }, [activeListId, activeList]);
+
+  const confirmVisitReview = useCallback(() => {
+    if (!reviewPlace) return;
+    haptic.medium();
     setLists((prev) =>
       prev.map((list) =>
         list.id === activeListId
-          ? { ...list, places: list.places.map((p) => p.id === placeId ? { ...p, visited: !p.visited } : p) }
+          ? {
+              ...list,
+              places: list.places.map((p) =>
+                p.id === reviewPlace.id
+                  ? {
+                      ...p,
+                      visited: true,
+                      rating: reviewRating || undefined,
+                      note: reviewWouldReturn === "yes" ? (p.note ? p.note + " · نرجعله!" : "نرجعله!") : p.note,
+                    }
+                  : p
+              ),
+            }
           : list
       )
     );
-  }, [activeListId]);
+    setReviewPlace(null);
+    setReviewRating(0);
+    setReviewWouldReturn(null);
+  }, [activeListId, reviewPlace, reviewRating, reviewWouldReturn]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
