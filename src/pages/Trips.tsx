@@ -227,7 +227,7 @@ const Trips = () => {
   const [tripStart, setTripStart] = useState("");
   const [tripEnd, setTripEnd] = useState("");
   const [tripBudget, setTripBudget] = useState("");
-  const [tripParticipants, setTripParticipants] = useState("");
+  const [tripParticipants, setTripParticipants] = useState<string[]>([]);
 
   const [activityName, setActivityName] = useState("");
   const [activityTime, setActivityTime] = useState("");
