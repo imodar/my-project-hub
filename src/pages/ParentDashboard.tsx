@@ -351,6 +351,15 @@ const ParentDashboard = () => {
                   تصدير PDF
                 </Button>
               </div>
+              {/* Temporary test button */}
+              <Button
+                onClick={() => fillAllData(child.id)}
+                variant="outline"
+                size="sm"
+                className="w-full h-8 rounded-xl text-xs mt-2 border-amber-300 text-amber-700 bg-amber-50"
+              >
+                🧪 تعبئة كل الشهر (للاختبار)
+              </Button>
             </motion.div>
           );
         })}
