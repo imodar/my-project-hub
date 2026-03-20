@@ -46,7 +46,6 @@ const AddPlace = () => {
   const [phone, setPhone] = useState("");
   const [priceRange, setPriceRange] = useState<PriceRange>("$$");
   const [kidFriendly, setKidFriendly] = useState<KidFriendly>("yes");
-  const [rating, setRating] = useState(0);
   const [mustVisit, setMustVisit] = useState(false);
   const [note, setNote] = useState("");
 
