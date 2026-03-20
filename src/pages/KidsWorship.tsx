@@ -88,45 +88,49 @@ const TOTAL_ITEMS = allItems.length;
 
 // ─── Helpers ────────────────────────────────────────────────────
 
-const getDaysInCurrentMonth = () => {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+const getStorageKey = (year: number, month: number) => {
+  return `kids-worship-${year}-${month}`;
 };
 
-const getCurrentMonthName = () => {
-  return new Date().toLocaleDateString("ar-SA", { month: "long", year: "numeric" });
-};
-
-const getStorageKey = () => {
-  const now = new Date();
-  return `kids-worship-${now.getFullYear()}-${now.getMonth()}`;
+const getMonthLabel = (year: number, month: number) => {
+  const d = new Date(year, month, 1);
+  const greg = d.toLocaleDateString("ar", { month: "long", year: "numeric" });
+  let hijri = "";
+  try {
+    hijri = d.toLocaleDateString("ar-SA-u-ca-islamic", { month: "long", year: "numeric" });
+  } catch { /* fallback */ }
+  return hijri ? `${greg} - ${hijri}` : greg;
 };
 
 type DayData = Record<string, boolean>;
 type MonthData = Record<number, DayData>;
 
-const loadData = (): MonthData => {
+const loadData = (year: number, month: number): MonthData => {
   try {
-    const raw = localStorage.getItem(getStorageKey());
+    const raw = localStorage.getItem(getStorageKey(year, month));
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 };
 
-const saveData = (data: MonthData) => {
-  localStorage.setItem(getStorageKey(), JSON.stringify(data));
+const saveData = (year: number, month: number, data: MonthData) => {
+  localStorage.setItem(getStorageKey(year, month), JSON.stringify(data));
 };
 
 // ─── Component ──────────────────────────────────────────────────
 
 const KidsWorship = () => {
-  const [data, setData] = useState<MonthData>(loadData);
-  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [data, setData] = useState<MonthData>(() => loadData(now.getFullYear(), now.getMonth()));
+  const [selectedDay, setSelectedDay] = useState(now.getDate());
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const totalDays = getDaysInCurrentMonth();
-  const today = new Date().getDate();
+  const totalDays = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+  const today = now.getDate();
+  const isCurrentMonth = now.getFullYear() === selectedYear && now.getMonth() === selectedMonth;
 
   useEffect(() => {
     saveData(data);
