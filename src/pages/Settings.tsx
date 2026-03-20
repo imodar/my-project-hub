@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 const Settings = () => {
   const navigate = useNavigate();
