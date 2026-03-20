@@ -578,22 +578,6 @@ const Places = () => {
           </div>
         )}
 
-        {/* Search */}
-        {searchQuery !== "" && (
-          <div className="px-4 pt-3">
-            <div className="relative">
-              <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="ابحث عن مكان..."
-                value={searchQuery.trim()}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-9 bg-card border-border rounded-xl text-sm"
-                autoFocus
-              />
-            </div>
-          </div>
-        )}
-
         {/* Category filters */}
         <div className="px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
           {CATEGORIES.map((cat) => {
