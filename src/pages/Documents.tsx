@@ -154,6 +154,7 @@ const Documents = () => {
 
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
+  const [showListActions, setShowListActions] = useState(false);
 
   const activeList = lists.find((l) => l.id === activeListId);
 
@@ -528,28 +529,9 @@ const Documents = () => {
                 {activeList.lastUpdatedBy} – {activeList.lastUpdatedAt}
               </span>
               {!activeList.isDefault && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="p-1 rounded-lg hover:bg-muted">
-                      <MoreVertical size={16} className="text-muted-foreground" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    {activeList.type !== "family" && (
-                      <DropdownMenuItem onClick={() => setShowShareDialog(true)}>
-                        <Share2 size={14} className="ml-2" />
-                        مشاركة القائمة
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => deleteList(activeList.id)}
-                    >
-                      <Trash2 size={14} className="ml-2" />
-                      حذف القائمة
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <button className="p-1 rounded-lg hover:bg-muted" onClick={() => setShowListActions(true)}>
+                  <MoreVertical size={16} className="text-muted-foreground" />
+                </button>
               )}
             </div>
           </div>
@@ -683,6 +665,35 @@ const Documents = () => {
 
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        {/* List Actions Drawer */}
+        <Drawer open={showListActions} onOpenChange={setShowListActions}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>خيارات القائمة</DrawerTitle>
+              <DrawerDescription>{activeList?.name}</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-2 pb-4">
+              {activeList?.type !== "family" && (
+                <button
+                  onClick={() => { setShowListActions(false); setShowShareDialog(true); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <Share2 size={16} className="text-primary" />
+                  <span className="text-sm font-medium text-foreground">مشاركة القائمة</span>
+                </button>
+              )}
+              <button
+                onClick={() => { setShowListActions(false); if (activeList) deleteList(activeList.id); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors"
+              >
+                <Trash2 size={16} className="text-destructive" />
+                <span className="text-sm font-medium text-destructive">حذف القائمة</span>
+              </button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        {/* Delete Confirmation */}
           <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
             <AlertDialogHeader>
               <AlertDialogTitle>حذف المستند</AlertDialogTitle>
