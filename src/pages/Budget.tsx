@@ -252,7 +252,7 @@ const Budget = () => {
     const pct = spentPercent(b);
 
     return (
-      <div className="min-h-screen bg-background pb-28" dir="rtl">
+      <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
         <PageHeader
           title={getBudgetTitle(b)}
           subtitle="تفاصيل الميزانية"
