@@ -723,6 +723,64 @@ const Places = () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
+        {/* Visit Review Drawer */}
+        <Drawer open={!!reviewPlace} onOpenChange={(open) => { if (!open) { setReviewPlace(null); setReviewRating(0); setReviewWouldReturn(null); } }}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>✅ زرت {reviewPlace?.name}؟</DrawerTitle>
+              <DrawerDescription>قيّم تجربتك وقلنا رأيك</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-5 pb-2">
+              {/* Star Rating */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Star size={16} className="text-primary" />
+                  كيف كانت التجربة؟
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button key={s} onClick={() => setReviewRating(s === reviewRating ? 0 : s)} className="p-1">
+                      <Star size={32} className={`transition-colors ${s <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />
+                    </button>
+                  ))}
+                </div>
+                {reviewRating > 0 && (
+                  <p className="text-center text-xs text-muted-foreground">{reviewRating}/5</p>
+                )}
+              </div>
+
+              {/* Would return */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <RotateCcw size={16} className="text-primary" />
+                  نرجعله مرة ثانية؟
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setReviewWouldReturn("yes")}
+                    className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+                      reviewWouldReturn === "yes" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    👍 أكيد نرجع!
+                  </button>
+                  <button
+                    onClick={() => setReviewWouldReturn("no")}
+                    className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+                      reviewWouldReturn === "no" ? "border-destructive bg-destructive/10 text-destructive" : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    👎 لا يستاهل
+                  </button>
+                </div>
+              </div>
+            </div>
+            <DrawerFooter className="flex-row gap-2">
+              <Button onClick={confirmVisitReview} className="flex-1 rounded-xl">حفظ التقييم</Button>
+              <Button variant="outline" onClick={() => { setReviewPlace(null); setReviewRating(0); setReviewWouldReturn(null); }} className="flex-1 rounded-xl">إلغاء</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
       </PullToRefresh>
 
       {/* FAB add button */}
