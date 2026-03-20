@@ -819,7 +819,7 @@ const Tasks = () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-      </PullToRefresh>
+    </div>
     </div>
   );
 };
