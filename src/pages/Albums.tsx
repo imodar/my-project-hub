@@ -94,6 +94,13 @@ function getSavedTrips(): { id: string; name: string; type: string }[] {
   ];
 }
 
+// Check if an album's linked trip is personal (non-shared)
+function isPersonalTripAlbum(album: Album, trips: { id: string; type: string }[]): boolean {
+  if (!album.linkedTripId) return false;
+  const trip = trips.find((t) => t.id === album.linkedTripId);
+  return trip?.type === "personal";
+}
+
 // Photo placeholder component
 const PhotoThumb = ({ photo, size = "md", onClick }: { photo: Photo; size?: "sm" | "md" | "lg"; onClick?: () => void }) => {
   const sizeClasses = {
