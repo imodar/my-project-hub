@@ -25,11 +25,11 @@ const COLUMN_X: Record<string, number> = {
   duha: 625.4,
   siyam: 655.7,
   // الفروض
-  isha: 688.8,
-  maghrib: 704.3,
-  asr: 719.8,
-  dhuhr: 735.3,
-  fajr: 751.7,
+  isha: 686.8,
+  maghrib: 702.3,
+  asr: 717.8,
+  dhuhr: 733.3,
+  fajr: 749.7,
 };
 
 // ─── Row positions (PDF y-coordinates, y=0 is bottom) ────────────────────────
