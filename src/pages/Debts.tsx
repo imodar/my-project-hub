@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock } from "lucide-react";
+import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import PageHeader from "@/components/PageHeader";
@@ -46,6 +46,7 @@ interface Debt {
   payments: Payment[];
   isFullyPaid: boolean;
   isArchived: boolean;
+  hasReminder: boolean;
   postponements: { newDate: string; reason: string }[];
 }
 
@@ -60,6 +61,7 @@ const initialGiven: Debt[] = [
     payments: [{ id: "p1", amounts: [{ amount: 3000, currency: "SAR" }], date: "2025-02-20", type: "cash" }],
     isFullyPaid: false,
     isArchived: false,
+    hasReminder: false,
     postponements: [],
   },
   {
@@ -72,6 +74,7 @@ const initialGiven: Debt[] = [
     payments: [{ id: "p2", amounts: [{ amount: 800, currency: "SAR" }], date: "2025-03-01", type: "item", itemDescription: "عسل" }],
     isFullyPaid: false,
     isArchived: false,
+    hasReminder: false,
     postponements: [],
   },
   {
@@ -87,6 +90,7 @@ const initialGiven: Debt[] = [
     ],
     isFullyPaid: true,
     isArchived: false,
+    hasReminder: false,
     postponements: [],
   },
 ];
@@ -102,6 +106,7 @@ const initialTaken: Debt[] = [
     payments: [{ id: "p4", amounts: [{ amount: 1200, currency: "SAR" }], date: "2025-03-05", type: "cash" }],
     isFullyPaid: false,
     isArchived: false,
+    hasReminder: false,
     postponements: [],
   },
   {
@@ -114,6 +119,7 @@ const initialTaken: Debt[] = [
     payments: [],
     isFullyPaid: false,
     isArchived: false,
+    hasReminder: false,
     postponements: [],
   },
 ];
@@ -122,11 +128,13 @@ const initialTaken: Debt[] = [
 const SwipeableDebtCard = ({
   children,
   onDelete,
-  onEdit,
+  onToggleReminder,
+  hasReminder,
 }: {
   children: React.ReactNode;
   onDelete: () => void;
-  onEdit: () => void;
+  onToggleReminder: () => void;
+  hasReminder: boolean;
 }) => {
   const [swipeX, setSwipeX] = useState(0);
   const startXRef = useRef(0);
@@ -159,11 +167,11 @@ const SwipeableDebtCard = ({
         style={{ width: 160, opacity: swipeX > 0 ? 1 : 0, pointerEvents: swipeX > 0 ? 'auto' : 'none' }}
       >
         <button
-          onClick={onEdit}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white"
+          onClick={() => { onToggleReminder(); setSwipeX(0); }}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 ${hasReminder ? 'bg-amber-500' : 'bg-primary'} text-white`}
         >
-          <Pencil size={20} />
-          <span className="text-[10px] font-bold">تعديل</span>
+          {hasReminder ? <BellOff size={20} /> : <Bell size={20} />}
+          <span className="text-[10px] font-bold">{hasReminder ? 'إلغاء تنبيه' : 'تنبيه'}</span>
         </button>
         <button
           onClick={onDelete}
@@ -380,6 +388,7 @@ const Debts = () => {
         payments: [],
         isFullyPaid: false,
         isArchived: false,
+        hasReminder: false,
         postponements: [],
       };
       targetSetDebts((prev) => [debt, ...prev]);
@@ -525,7 +534,8 @@ const Debts = () => {
             <SwipeableDebtCard
               key={debt.id}
               onDelete={() => setDebts((prev) => prev.filter((d) => d.id !== debt.id))}
-              onEdit={() => handleStartEdit(debt)}
+              onToggleReminder={() => setDebts((prev) => prev.map((d) => d.id === debt.id ? { ...d, hasReminder: !d.hasReminder } : d))}
+              hasReminder={debt.hasReminder}
             >
               <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
                 <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
@@ -535,9 +545,12 @@ const Debts = () => {
                         <p key={i} className={`text-xl font-black ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{formatDebtAmount(a)}</p>
                       ))}
                     </div>
-                    <div className="text-right">
-                      <p className={`font-bold text-base ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{debt.personName}</p>
-                      <p className={`text-xs mt-0.5 ${debt.isFullyPaid ? "line-through text-muted-foreground/40" : "text-muted-foreground"}`}>{debt.note}</p>
+                    <div className="text-right flex items-center gap-2">
+                      {debt.hasReminder && <Bell size={14} className="text-amber-500 shrink-0" />}
+                      <div>
+                        <p className={`font-bold text-base ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{debt.personName}</p>
+                        <p className={`text-xs mt-0.5 ${debt.isFullyPaid ? "line-through text-muted-foreground/40" : "text-muted-foreground"}`}>{debt.note}</p>
+                      </div>
                     </div>
                   </div>
 
