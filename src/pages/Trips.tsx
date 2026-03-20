@@ -877,6 +877,34 @@ const Trips = () => {
             </div>
           </DrawerContent>
         </Drawer>
+
+        {/* Edit Trip Drawer (in detail view) */}
+        <Drawer open={newTripDrawer} onOpenChange={(o) => { setNewTripDrawer(o); if (!o) resetTripForm(); }}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>{editingTripId ? "تعديل الرحلة" : "رحلة جديدة"}</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-5 pb-8 space-y-4">
+              <Input placeholder="اسم الرحلة" value={tripName} onChange={(e) => setTripName(e.target.value)} />
+              <Input placeholder="الوجهة الرئيسية" value={tripDest} onChange={(e) => setTripDest(e.target.value)} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">تاريخ البداية</label>
+                  <Input type="date" value={tripStart} onChange={(e) => setTripStart(e.target.value)} dir="ltr" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">تاريخ النهاية</label>
+                  <Input type="date" value={tripEnd} onChange={(e) => setTripEnd(e.target.value)} dir="ltr" />
+                </div>
+              </div>
+              <Input type="number" placeholder="الميزانية الإجمالية" value={tripBudget} onChange={(e) => setTripBudget(e.target.value)} dir="ltr" />
+              <Input placeholder="المشاركون (مفصولين بفاصلة ،)" value={tripParticipants} onChange={(e) => setTripParticipants(e.target.value)} />
+              <Button className="w-full rounded-xl" onClick={handleSaveTrip}>
+                {editingTripId ? "حفظ التعديلات" : "إنشاء الرحلة"}
+              </Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
       </div>
     );
   }
