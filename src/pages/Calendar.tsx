@@ -364,7 +364,7 @@ const CalendarPage = () => {
         </div>
 
         {/* FAB */}
-        <div className="fixed bottom-24 left-4 z-30">
+        <div className="fixed bottom-20 right-4 z-30">
           <button onClick={() => { setSelectedDay(todayStr); setShowAddDialog(true); }}
             className="w-14 h-14 rounded-full shadow-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors">
             <Plus size={24} />
