@@ -909,6 +909,18 @@ const Trips = () => {
           </DrawerContent>
         </Drawer>
 
+        {/* Add Expense Drawer */}
+        <Drawer open={newExpenseDrawer} onOpenChange={setNewExpenseDrawer}>
+          <DrawerContent>
+            <DrawerHeader><DrawerTitle>إضافة مصروف</DrawerTitle></DrawerHeader>
+            <div className="px-5 pb-8 space-y-4">
+              <Input placeholder="اسم المصروف (إقامة، طيران، طعام...)" value={expenseName} onChange={(e) => setExpenseName(e.target.value)} />
+              <Input type="number" placeholder="المبلغ" value={expenseAmount} onChange={(e) => setExpenseAmount(e.target.value)} dir="ltr" />
+              <Button className="w-full rounded-xl" onClick={handleAddExpense}>إضافة</Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
         {/* Edit Trip Drawer (in detail view) */}
         <Drawer open={newTripDrawer} onOpenChange={(o) => { setNewTripDrawer(o); if (!o) resetTripForm(); }}>
           <DrawerContent>
