@@ -820,7 +820,6 @@ const Tasks = () => {
           </DrawerContent>
         </Drawer>
     </div>
-    </div>
   );
 };
 
