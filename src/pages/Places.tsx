@@ -430,7 +430,7 @@ const Places = () => {
       <PullToRefresh onRefresh={handleRefresh}>
         {/* Header */}
         <PageHeader
-          title="📍 قائمة الأماكن"
+          title="قائمة الأماكن"
           actions={[
             {
               icon: <Plus size={20} className="text-white" />,

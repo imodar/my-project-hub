@@ -84,7 +84,7 @@ const AddPlace = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
-      <PageHeader title={isEdit ? "✏️ تعديل المكان" : "📍 إضافة مكان جديد"} />
+      <PageHeader title={isEdit ? "تعديل المكان" : "إضافة مكان جديد"} />
 
       <div className="px-4 py-4 space-y-5">
         {/* Name */}
