@@ -413,7 +413,8 @@ const Albums = () => {
                 </button>
               ))}
             </div>
-          )}
+          );
+          })()}
         </div>
       </PullToRefresh>
 
