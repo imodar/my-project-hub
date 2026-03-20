@@ -487,8 +487,8 @@ const Zakat = () => {
       <Drawer open={showAdd} onOpenChange={setShowAdd}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>إضافة أصل جديد</DrawerTitle>
-            <DrawerDescription>أضف أصلاً لحساب زكاته تلقائياً</DrawerDescription>
+            <DrawerTitle>{editingAssetId ? "تعديل الأصل" : "إضافة أصل جديد"}</DrawerTitle>
+            <DrawerDescription>{editingAssetId ? "عدّل بيانات الأصل" : "أضف أصلاً لحساب زكاته تلقائياً"}</DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-6 space-y-4">
             {/* Type selector */}
