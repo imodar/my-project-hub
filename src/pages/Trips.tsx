@@ -267,7 +267,7 @@ const Trips = () => {
       if (selectedTrip?.id === editingTripId) {
         setSelectedTrip((prev) => prev ? {
           ...prev, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
-          budget: Number(tripBudget) || 0, participants: tripParticipants.split("،").map((s) => s.trim()).filter(Boolean),
+          budget: Number(tripBudget) || 0, participants: tripParticipants,
         } : null);
       }
       toast.success("تم تعديل الرحلة");
