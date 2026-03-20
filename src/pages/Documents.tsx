@@ -632,7 +632,7 @@ const Documents = () => {
                         const response = await fetch(previewFile.url);
                         const blob = await response.blob();
                         const shareFile = new globalThis.File([blob], previewFile.name, { type: blob.type });
-                        await navigator.share({ title: previewFile.name, files: [file] });
+                        await navigator.share({ title: previewFile.name, files: [shareFile] });
                       } catch {
                         // fallback: open in new tab
                         window.open(previewFile.url, "_blank");
