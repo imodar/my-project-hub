@@ -122,7 +122,6 @@ const Documents = () => {
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null);
-  const [previewFile, setPreviewFile] = useState<DocFile | null>(null);
 
   // Swipe state
   const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
@@ -613,57 +612,6 @@ const Documents = () => {
           document.body
         )}
 
-        {/* File Preview Overlay */}
-        {previewFile && (
-          <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center" onClick={() => setPreviewFile(null)}>
-            <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-              <button
-                onClick={(e) => { e.stopPropagation(); setPreviewFile(null); }}
-                className="p-2 rounded-full bg-white/15 backdrop-blur-sm"
-              >
-                <X size={20} className="text-white" />
-              </button>
-              <div className="flex items-center gap-2">
-                {navigator.share && (
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      try {
-                        const response = await fetch(previewFile.url);
-                        const blob = await response.blob();
-                        const shareFile = new globalThis.File([blob], previewFile.name, { type: blob.type });
-                        await navigator.share({ title: previewFile.name, files: [shareFile] });
-                      } catch {
-                        // fallback: open in new tab
-                        window.open(previewFile.url, "_blank");
-                      }
-                    }}
-                    className="p-2 rounded-full bg-white/15 backdrop-blur-sm"
-                  >
-                    <Share2 size={20} className="text-white" />
-                  </button>
-                )}
-                <a
-                  href={previewFile.url}
-                  download={previewFile.name}
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-2 rounded-full bg-white/15 backdrop-blur-sm"
-                >
-                  <Download size={20} className="text-white" />
-                </a>
-              </div>
-            </div>
-            <div className="max-w-full max-h-[80vh] overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
-              {previewFile.type === "image" ? (
-                <img src={previewFile.url} alt={previewFile.name} className="max-w-full max-h-[75vh] object-contain rounded-lg" />
-              ) : (
-                <iframe src={previewFile.url} className="w-[90vw] h-[75vh] rounded-lg bg-white" title={previewFile.name} />
-              )}
-            </div>
-            <p className="text-white/70 text-xs mt-3">{previewFile.name}</p>
-          </div>
-        )}
-
         {/* View Document Drawer */}
         <Drawer open={!!viewDoc} onOpenChange={(open) => !open && setViewDoc(null)}>
           <DrawerContent dir="rtl" className="max-h-[85vh]">
@@ -692,11 +640,7 @@ const Documents = () => {
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground font-medium">المرفقات ({viewDoc.files.length})</p>
                   {viewDoc.files.map((file) => (
-                    <button
-                      key={file.id}
-                      onClick={() => { setPreviewFile(file); haptic.light(); }}
-                      className="w-full bg-card rounded-xl p-3 flex items-center gap-3 border border-border hover:border-primary/30 transition-colors text-right"
-                    >
+                    <div key={file.id} className="w-full bg-card rounded-xl p-3 flex items-center gap-3 border border-border">
                       {file.type === "image" ? (
                         <img src={file.url} alt={file.name} className="w-12 h-12 rounded-lg object-cover" />
                       ) : (
@@ -708,11 +652,38 @@ const Documents = () => {
                         <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                         <p className="text-[10px] text-muted-foreground">{file.size}</p>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Eye size={14} className="text-muted-foreground" />
-                        {navigator.share && <Share2 size={14} className="text-muted-foreground" />}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => {
+                            haptic.light();
+                            window.open(file.url, "_blank");
+                          }}
+                          className="p-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
+                          title="فتح"
+                        >
+                          <ExternalLink size={16} className="text-primary" />
+                        </button>
+                        {navigator.share && (
+                          <button
+                            onClick={async () => {
+                              haptic.light();
+                              try {
+                                const response = await fetch(file.url);
+                                const blob = await response.blob();
+                                const shareFile = new globalThis.File([blob], file.name, { type: blob.type });
+                                await navigator.share({ title: file.name, files: [shareFile] });
+                              } catch {
+                                window.open(file.url, "_blank");
+                              }
+                            }}
+                            className="p-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
+                            title="مشاركة"
+                          >
+                            <Share2 size={16} className="text-primary" />
+                          </button>
+                        )}
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               ) : (
