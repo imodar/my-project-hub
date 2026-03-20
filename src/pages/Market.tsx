@@ -405,7 +405,7 @@ const Market = () => {
 
       {/* Stats bar */}
       {activeList && (
-        <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-card">
+        <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-primary" />
@@ -420,30 +420,10 @@ const Market = () => {
             <span className="text-[10px] text-muted-foreground">
               {activeList.lastUpdatedBy} – {activeList.lastUpdatedAt}
             </span>
-            {/* Only show menu for non-default lists */}
             {!activeList.isDefault && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="p-1 rounded-lg hover:bg-muted">
-                    <MoreVertical size={16} className="text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {activeList.type !== "family" && (
-                    <DropdownMenuItem onClick={() => setShowShareDialog(true)}>
-                      <Share2 size={14} className="ml-2" />
-                      مشاركة القائمة
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => deleteList(activeList.id)}
-                  >
-                    <Trash2 size={14} className="ml-2" />
-                    حذف القائمة
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <button className="p-1 rounded-lg hover:bg-muted" onClick={() => setShowListActions(true)}>
+                <MoreVertical size={16} className="text-muted-foreground" />
+              </button>
             )}
           </div>
         </div>

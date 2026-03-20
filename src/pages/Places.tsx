@@ -508,28 +508,12 @@ const Places = () => {
         </PageHeader>
 
 
-        {/* Stats bar */}
+        {/* List Actions */}
         {activeList && !activeList.isDefault && (
           <div className="px-4 py-2 flex items-center justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-1 rounded-lg hover:bg-muted">
-                  <MoreVertical size={16} className="text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {activeList.type !== "family" && (
-                  <DropdownMenuItem onClick={() => setShowShareDialog(true)}>
-                    <Share2 size={14} className="ml-2" />
-                    مشاركة القائمة
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem className="text-destructive" onClick={() => deleteList(activeList.id)}>
-                  <Trash2 size={14} className="ml-2" />
-                  حذف القائمة
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button className="p-1 rounded-lg hover:bg-muted" onClick={() => setShowListActions(true)}>
+              <MoreVertical size={16} className="text-muted-foreground" />
+            </button>
           </div>
         )}
 
