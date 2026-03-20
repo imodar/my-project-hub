@@ -382,11 +382,6 @@ const Trips = () => {
     setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
   };
 
-  const handleChangeStatus = (tripId: string, status: Trip["status"]) => {
-    setTrips((prev) => prev.map((t) => t.id === tripId ? { ...t, status } : t));
-    if (selectedTrip?.id === tripId) setSelectedTrip((p) => p ? { ...p, status } : null);
-    toast.success("تم تحديث الحالة");
-  };
 
   // Calculate totals
   const getTripCosts = (trip: Trip) => {
