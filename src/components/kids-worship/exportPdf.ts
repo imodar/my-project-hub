@@ -103,12 +103,12 @@ export const exportWorshipPdf = async (
       if (x === undefined) continue;
       const yOffset = nawafil.includes(itemId) ? -1 : 0;
 
-      const color = ITEM_COLORS[itemId] || [0.4, 0.4, 0.4];
+      const dy = y + yOffset;
 
       // Draw filled circle
       page.drawCircle({
         x,
-        y,
+        y: dy,
         size: CIRCLE_R,
         color: rgb(color[0], color[1], color[2]),
         opacity: 0.9,
@@ -116,15 +116,15 @@ export const exportWorshipPdf = async (
 
       // Draw checkmark (two small lines)
       page.drawLine({
-        start: { x: x - 2.5, y },
-        end: { x: x - 0.5, y: y - 2 },
+        start: { x: x - 2.5, y: dy },
+        end: { x: x - 0.5, y: dy - 2 },
         thickness: 1.2,
         color: rgb(1, 1, 1),
         opacity: 0.95,
       });
       page.drawLine({
-        start: { x: x - 0.5, y: y - 2 },
-        end: { x: x + 3, y: y + 2.5 },
+        start: { x: x - 0.5, y: dy - 2 },
+        end: { x: x + 3, y: dy + 2.5 },
         thickness: 1.2,
         color: rgb(1, 1, 1),
         opacity: 0.95,
