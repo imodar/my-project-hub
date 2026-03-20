@@ -380,66 +380,63 @@ const Zakat = () => {
                   const zakat = getZakatAmount(asset);
 
                   return (
-                    <div key={asset.id} className="rounded-2xl bg-background border border-border p-4">
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0"
-                          style={{ background: meta.bg }}
-                        >
-                          {meta.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-sm font-bold text-foreground">{asset.label}</span>
-                              <span className="text-[10px] text-muted-foreground mr-2">{meta.label}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => toggleReminder(asset.id)} className="p-1.5 rounded-lg active:bg-muted">
-                                {asset.reminder ?
-                                  <Bell size={14} className="text-amber-500" /> :
-                                  <BellOff size={14} className="text-muted-foreground" />}
-                              </button>
-                              <button onClick={() => setDeleteConfirm(asset.id)} className="p-1.5 rounded-lg active:bg-muted">
-                                <Trash2 size={14} className="text-destructive" />
-                              </button>
-                            </div>
+                    <SwipeableAssetCard
+                      key={asset.id}
+                      onReminder={() => { setReminderAsset(asset.id); }}
+                      onDelete={() => setDeleteConfirm(asset.id)}
+                    >
+                      <div className="rounded-2xl bg-background border border-border p-4">
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0"
+                            style={{ background: meta.bg }}
+                          >
+                            {meta.icon}
                           </div>
-
-                          {/* Details */}
-                          <div className="mt-2 space-y-1.5">
-                            {(asset.type === "gold" || asset.type === "silver") && (
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                <span>{asset.amount} جرام</span>
-                                {asset.karat && <span>عيار {asset.karat}</span>}
-                                <span className="font-bold text-foreground">{value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-sm font-bold text-foreground">{asset.label}</span>
+                                <span className="text-[10px] text-muted-foreground mr-2">{meta.label}</span>
                               </div>
-                            )}
-                            {(asset.type === "cash" || asset.type === "stocks" || asset.type === "funds") && (
-                              <p className="text-xs text-foreground font-bold">
-                                {value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
-                              </p>
-                            )}
-                            <p className="text-[10px] text-muted-foreground">
-                              تاريخ الاقتناء: {formatDate(asset.purchaseDate)}
-                            </p>
-                          </div>
-
-                          {/* Hawl progress */}
-                          <div className="mt-3">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] text-muted-foreground">
-                                {isDue ? "✅ حال الحول" : `متبقي ${days} يوم`}
-                              </span>
-                              <span className="text-[10px] font-bold" style={{ color: isDue ? meta.color : "hsl(var(--muted-foreground))" }}>
-                                زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
-                              </span>
+                              {asset.reminder && <Bell size={12} className="text-amber-500" />}
                             </div>
-                            <Progress value={progress} className="h-1.5" />
+
+                            {/* Details */}
+                            <div className="mt-2 space-y-1.5">
+                              {(asset.type === "gold" || asset.type === "silver") && (
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                  <span>{asset.amount} جرام</span>
+                                  {asset.karat && <span>عيار {asset.karat}</span>}
+                                  <span className="font-bold text-foreground">{value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س</span>
+                                </div>
+                              )}
+                              {(asset.type === "cash" || asset.type === "stocks" || asset.type === "funds") && (
+                                <p className="text-xs text-foreground font-bold">
+                                  {value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
+                                </p>
+                              )}
+                              <p className="text-[10px] text-muted-foreground">
+                                تاريخ الاقتناء: {formatDate(asset.purchaseDate)}
+                              </p>
+                            </div>
+
+                            {/* Hawl progress - SWAPPED: zakat on left, days on right */}
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[10px] font-bold" style={{ color: isDue ? meta.color : "hsl(var(--muted-foreground))" }}>
+                                  زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {isDue ? "✅ حال الحول" : `متبقي ${days} يوم`}
+                                </span>
+                              </div>
+                              <Progress value={progress} className="h-1.5" />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </SwipeableAssetCard>
                   );
                 })}
               </div>
