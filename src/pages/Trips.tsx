@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Plus, Plane, MapPin, Calendar, Clock, DollarSign, Users, ChevronLeft,
   Check, X, HelpCircle, GripVertical, List, Map as MapIcon,
-  PackageCheck, Calculator, Lightbulb, Trash2, Pencil, Star
+  PackageCheck, Calculator, Lightbulb, Trash2, Pencil, Star, Camera, Image
 } from "lucide-react";
 import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
