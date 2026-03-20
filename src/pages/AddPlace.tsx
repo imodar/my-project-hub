@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, MapPin, Link2, Phone, Star, DollarSign, Baby, Tag, StickyNote, Camera } from "lucide-react";
+import { MapPin, Link2, Phone, Star, DollarSign, Baby, Tag, StickyNote } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
