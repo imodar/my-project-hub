@@ -206,7 +206,7 @@ const Trips = () => {
   const [trips, setTrips] = useState<Trip[]>(INITIAL_TRIPS);
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
-  const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator">("itinerary");
+  const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album">("itinerary");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   // Load family members
