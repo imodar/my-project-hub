@@ -23,7 +23,7 @@ interface TaskItem {
   id: string;
   name: string;
   note: string;
-  priority: "high" | "medium" | "low";
+  priority: "none" | "high" | "medium" | "low";
   assignedTo: string;
   done: boolean;
 }
