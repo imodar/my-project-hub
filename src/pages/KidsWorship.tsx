@@ -192,10 +192,6 @@ const KidsWorship = () => {
   // Incomplete items for motivation
   const incompleteItems = allItems.filter((item) => !dayData[item.id]);
 
-  const navigateDay = (dir: number) => {
-    const next = selectedDay + dir;
-    if (next >= 1 && next <= totalDays) setSelectedDay(next);
-  };
 
   const resetDay = () => {
     const newData = { ...data };
