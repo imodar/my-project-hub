@@ -95,10 +95,13 @@ export const exportWorshipPdf = async (
     const y = ROW_Y[day];
     if (y === undefined) continue;
 
+    const nawafil = ["tarawih", "witr", "duha", "siyam"];
+
     for (const [itemId, done] of Object.entries(dayData)) {
       if (!done) continue;
       const x = COLUMN_X[itemId];
       if (x === undefined) continue;
+      const yOffset = nawafil.includes(itemId) ? -1 : 0;
 
       const color = ITEM_COLORS[itemId] || [0.4, 0.4, 0.4];
 
