@@ -218,6 +218,7 @@ const Trips = () => {
   })();
 
   // Drawers
+  const [newExpenseDrawer, setNewExpenseDrawer] = useState(false);
   const [newTripDrawer, setNewTripDrawer] = useState(false);
   const [newActivityDrawer, setNewActivityDrawer] = useState(false);
   const [newSuggestionDrawer, setNewSuggestionDrawer] = useState(false);
