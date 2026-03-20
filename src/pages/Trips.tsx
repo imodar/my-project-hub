@@ -530,7 +530,10 @@ const Trips = () => {
               <div key={day.id} className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
                 <div className="flex items-center justify-between p-4 border-b border-border/30">
                   <div>
-                    <span className="text-xs font-bold text-primary">اليوم {day.dayNumber}</span>
+                    <span className="text-xs font-bold text-primary">
+                      اليوم {day.dayNumber}
+                      {selectedTrip.startDate && ` — ${format(addDays(new Date(selectedTrip.startDate), day.dayNumber - 1), "EEEE d MMM", { locale: ar })}`}
+                    </span>
                     <p className="text-sm font-bold text-foreground mt-0.5">{day.city}</p>
                   </div>
                   <button
