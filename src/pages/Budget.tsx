@@ -122,7 +122,7 @@ const SwipeableCard = ({ children, onEdit, onDelete }: {
   return (
     <div ref={containerRef} className="relative overflow-hidden rounded-2xl">
       {/* Action buttons behind */}
-      <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
+      <div className="absolute inset-y-0 left-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
         {onEdit && (
           <button
             onClick={() => { closeSwipe(); onEdit(); }}
