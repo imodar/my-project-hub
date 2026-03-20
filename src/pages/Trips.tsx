@@ -68,11 +68,6 @@ interface Trip {
   transportation: number;
 }
 
-const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  planning: { label: "تخطيط", color: "hsl(var(--primary))", bg: "hsl(var(--primary) / 0.1)" },
-  confirmed: { label: "مؤكدة", color: "hsl(145 45% 35%)", bg: "hsl(145 40% 93%)" },
-  completed: { label: "منتهية", color: "hsl(var(--muted-foreground))", bg: "hsl(var(--muted))" },
-};
 
 const SUGGESTION_STATUS: Record<string, { label: string; icon: typeof Check; color: string }> = {
   pending: { label: "قيد الانتظار", icon: Clock, color: "hsl(43 65% 40%)" },
@@ -387,11 +382,6 @@ const Trips = () => {
     setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
   };
 
-  const handleChangeStatus = (tripId: string, status: Trip["status"]) => {
-    setTrips((prev) => prev.map((t) => t.id === tripId ? { ...t, status } : t));
-    if (selectedTrip?.id === tripId) setSelectedTrip((p) => p ? { ...p, status } : null);
-    toast.success("تم تحديث الحالة");
-  };
 
   // Calculate totals
   const getTripCosts = (trip: Trip) => {
@@ -425,7 +415,6 @@ const Trips = () => {
   // Trip detail view
   if (selectedTrip) {
     const costs = getTripCosts(selectedTrip);
-    const statusInfo = STATUS_MAP[selectedTrip.status];
     const packedCount = selectedTrip.packingList.filter((p) => p.packed).length;
 
     return (
@@ -442,9 +431,6 @@ const Trips = () => {
           ]}
         >
           <div className="flex items-center gap-2 mt-3 pb-1">
-            <Badge className="text-[11px] border-0" style={{ background: statusInfo.bg, color: statusInfo.color }}>
-              {statusInfo.label}
-            </Badge>
             <span className="text-white/60 text-xs">
               {selectedTrip.startDate && format(new Date(selectedTrip.startDate), "d MMM", { locale: ar })}
               {" — "}
@@ -482,23 +468,6 @@ const Trips = () => {
           </div>
         </div>
 
-        {/* Status changer */}
-        <div className="px-5 mt-4">
-          <div className="flex gap-2">
-            {(["planning", "confirmed", "completed"] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => handleChangeStatus(selectedTrip.id, s)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${
-                  selectedTrip.status === s ? "ring-2 ring-primary" : ""
-                }`}
-                style={{ background: STATUS_MAP[s].bg, color: STATUS_MAP[s].color }}
-              >
-                {STATUS_MAP[s].label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Itinerary */}
         {tripView === "itinerary" && (
@@ -988,7 +957,6 @@ const Trips = () => {
               )}
 
               {filteredTrips.map((trip) => {
-                const statusInfo = STATUS_MAP[trip.status];
                 const costs = getTripCosts(trip);
                 return (
                   <SwipeableCard
@@ -1002,11 +970,8 @@ const Trips = () => {
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <h3 className="text-sm font-bold text-foreground">{trip.name}</h3>
-                            <Badge className="text-[10px] border-0" style={{ background: statusInfo.bg, color: statusInfo.color }}>
-                              {statusInfo.label}
-                            </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                             <MapPin size={11} /> {trip.destination}
