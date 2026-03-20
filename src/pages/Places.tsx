@@ -427,7 +427,8 @@ const Places = () => {
             <div className="flex flex-col items-end gap-2 shrink-0">
               {place.mustVisit && <Star size={16} className="fill-yellow-400 text-yellow-400" />}
               <button
-                onClick={() => toggleVisited(place.id)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); toggleVisited(place.id); }}
                 className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                   place.visited
                     ? "bg-primary"
