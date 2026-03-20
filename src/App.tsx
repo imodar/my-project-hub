@@ -25,6 +25,7 @@ import Budget from "./pages/Budget.tsx";
 import Tasks from "./pages/Tasks.tsx";
 import Documents from "./pages/Documents.tsx";
 import Zakat from "./pages/Zakat.tsx";
+import Will from "./pages/Will.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const AnimatedRoutes = () => {
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/documents" element={<Documents />} />
         <Route path="/zakat" element={<Zakat />} />
+        <Route path="/will" element={<Will />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
