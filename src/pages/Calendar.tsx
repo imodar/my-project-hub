@@ -505,7 +505,7 @@ const CalendarPage = () => {
 
                   {/* Card */}
                   <div
-                    className="relative flex items-center gap-3 p-3 rounded-xl bg-muted/50 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing"
+                    className="relative flex items-center gap-3 p-3 rounded-xl bg-card transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing"
                     style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
                     onPointerDown={(e) => handlePointerDown(e, ev.id)}
                     onPointerMove={(e) => handlePointerMove(e, ev.id)}
