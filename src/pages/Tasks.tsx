@@ -457,7 +457,6 @@ const Tasks = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
-      <PullToRefresh onRefresh={handleRefresh}>
         <PageHeader
           title="المهام"
           actions={[
@@ -489,6 +488,7 @@ const Tasks = () => {
           </div>
         </PageHeader>
 
+        <PullToRefresh onRefresh={handleRefresh}>
         {/* Stats bar */}
         {activeList && (
           <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
@@ -548,6 +548,7 @@ const Tasks = () => {
             </div>
           )}
         </div>
+        </PullToRefresh>
 
         {/* FAB */}
         {createPortal(
@@ -818,7 +819,6 @@ const Tasks = () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-      </PullToRefresh>
     </div>
   );
 };
