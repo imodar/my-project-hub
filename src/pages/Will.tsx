@@ -67,7 +67,7 @@ const Will = () => {
       {/* Fixed Header */}
       <PageHeader title="الوصية" subtitle="وصيتك الشرعية محفوظة وآمنة" />
 
-      <PullToRefresh onRefresh={handleRefresh} headerFixed>
+      <PullToRefresh onRefresh={handleRefresh}>
         {/* ── Hero Hadith ── */}
         <div
           className="mx-4 mt-5 rounded-2xl p-5 text-center"

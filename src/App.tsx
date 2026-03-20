@@ -53,6 +53,7 @@ const AnimatedRoutes = () => {
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/documents" element={<Documents />} />
         <Route path="/zakat" element={<Zakat />} />
+        <Route path="/will" element={<Will />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
