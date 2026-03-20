@@ -239,9 +239,9 @@ const SOSButton = () => {
         <p className="text-white/80 text-base font-bold mt-8">جاري إرسال التنبيه...</p>
         <p className="text-white/50 text-sm mt-2">سيتم إشعار جميع أفراد العائلة</p>
         <Button
-          variant="outline"
           onClick={cancelCountdown}
-          className="mt-10 rounded-2xl px-8 h-12 text-base font-bold border-white/30 text-white hover:bg-white/10"
+          className="mt-10 rounded-2xl px-8 h-12 text-base font-bold hover:bg-white/20 active:scale-95"
+          style={{ background: "hsla(0,0%,100%,0.15)", color: "white", border: "1px solid hsla(0,0%,100%,0.3)" }}
         >
           <X size={18} /> إلغاء
         </Button>
