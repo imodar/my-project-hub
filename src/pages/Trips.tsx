@@ -491,20 +491,29 @@ const Trips = () => {
                 if (selectedTrip.id === "1") return [{ key: "album", label: "ألبوم الرحلة", icon: Camera }];
                 return [];
               })()),
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setTripView(tab.key as any)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
-                  tripView === tab.key
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                <tab.icon size={14} />
-                {tab.label}
-              </button>
-            ))}
+            ].map((tab) => {
+              const isActive = tripView === tab.key;
+              const activeColors: Record<string, string> = {
+                itinerary: "hsl(var(--primary))",
+                suggestions: "hsl(40 90% 50%)",
+                packing: "hsl(145 45% 40%)",
+                calculator: "hsl(280 50% 55%)",
+                album: "hsl(350 65% 55%)",
+              };
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setTripView(tab.key as any)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
+                    isActive ? "text-white shadow-md" : "bg-muted text-muted-foreground"
+                  }`}
+                  style={isActive ? { background: activeColors[tab.key] || "hsl(var(--primary))" } : undefined}
+                >
+                  <tab.icon size={14} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
