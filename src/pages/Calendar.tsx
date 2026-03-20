@@ -473,7 +473,8 @@ const CalendarPage = () => {
             {selectedDay && eventsForDay(selectedDay).map((ev) => {
               const rt = getReminderLabel(ev.reminderBefore);
               const hasP = ev.personalReminders && ev.personalReminders.length > 0;
-              const offset = swipeOffset[ev.id] || 0;
+              const drawerKey = `drawer_${ev.id}`;
+              const offset = swipeOffset[drawerKey] || 0;
               return (
                 <div key={ev.id} className="relative overflow-hidden rounded-2xl select-none">
                   {/* Swipe action buttons */}
