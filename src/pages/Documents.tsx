@@ -4,7 +4,7 @@ import {
   Plus, Search, FolderLock, Users, Lock, Share2, Trash2, Pencil,
   MoreVertical, Check, FileText, Image, File, Bell, Calendar,
   CreditCard, Heart, Car, Home, MoreHorizontal, Eye, Download,
-  ChevronDown, ChevronUp, BookOpen
+  ChevronDown, ChevronUp, BookOpen, ExternalLink, X
 } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
