@@ -148,6 +148,11 @@ const Places = () => {
   // Delete
   const [deleteTarget, setDeleteTarget] = useState<Place | null>(null);
 
+  // Visit review bottom sheet
+  const [reviewPlace, setReviewPlace] = useState<Place | null>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewWouldReturn, setReviewWouldReturn] = useState<"yes" | "no" | null>(null);
+
   // New list form
   const [newListName, setNewListName] = useState("");
   const [newListType, setNewListType] = useState<"family" | "personal">("family");
