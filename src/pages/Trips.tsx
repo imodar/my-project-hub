@@ -135,8 +135,10 @@ const INITIAL_TRIPS: Trip[] = [
     budget: 3000,
     status: "planning",
     type: "personal",
-    accommodation: 1200,
-    transportation: 600,
+    expenses: [
+      { id: "e4", name: "الإقامة", amount: 1200 },
+      { id: "e5", name: "المواصلات", amount: 600 },
+    ],
     days: [],
     suggestions: [],
     packingList: [],
