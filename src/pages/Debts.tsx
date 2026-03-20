@@ -388,6 +388,7 @@ const Debts = () => {
         payments: [],
         isFullyPaid: false,
         isArchived: false,
+        hasReminder: false,
         postponements: [],
       };
       targetSetDebts((prev) => [debt, ...prev]);
