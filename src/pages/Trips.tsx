@@ -768,6 +768,17 @@ const Trips = () => {
           document.body
         )}
 
+        {/* FAB for calculator */}
+        {tripView === "calculator" && createPortal(
+          <button
+            onClick={() => setNewExpenseDrawer(true)}
+            className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Plus size={24} />
+          </button>,
+          document.body
+        )}
+
         {/* Add Day Drawer */}
         <Drawer open={newDayDrawer} onOpenChange={setNewDayDrawer}>
           <DrawerContent>
