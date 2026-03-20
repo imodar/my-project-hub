@@ -253,7 +253,7 @@ const Trips = () => {
   const filteredTrips = trips.filter((t) => t.type === activeTab);
 
   const resetTripForm = () => {
-    setTripName(""); setTripDest(""); setTripStart(""); setTripEnd(""); setTripBudget(""); setTripParticipants("");
+    setTripName(""); setTripDest(""); setTripStart(""); setTripEnd(""); setTripBudget(""); setTripParticipants([]);
     setEditingTripId(null);
   };
 
