@@ -103,6 +103,7 @@ export const exportWorshipPdf = async (
       if (x === undefined) continue;
       const yOffset = nawafil.includes(itemId) ? -1 : 0;
 
+      const color = ITEM_COLORS[itemId] || [0.4, 0.4, 0.4];
       const dy = y + yOffset;
 
       // Draw filled circle
