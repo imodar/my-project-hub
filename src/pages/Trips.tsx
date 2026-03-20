@@ -395,8 +395,8 @@ const Trips = () => {
 
   // Calculate totals
   const getTripCosts = (trip: Trip) => {
-    const activitiesCost = trip.days.reduce((sum, d) => sum + d.activities.reduce((s, a) => s + a.cost, 0), 0);
-    return { activities: activitiesCost, accommodation: trip.accommodation, transportation: trip.transportation, total: activitiesCost + trip.accommodation + trip.transportation };
+    const expensesTotal = trip.expenses.reduce((sum, e) => sum + e.amount, 0);
+    return { total: expensesTotal };
   };
 
   // Drag & Drop handlers for activities
