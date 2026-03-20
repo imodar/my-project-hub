@@ -245,6 +245,7 @@ const Zakat = () => {
     setAddAmount("");
     setAddKarat(24);
     setAddDate(new Date().toISOString().split("T")[0]);
+    setEditingAssetId(null);
   };
 
   const handleDelete = (id: string) => {
