@@ -249,7 +249,7 @@ const AddPlace = () => {
       </div>
 
       {/* Save button */}
-      <div className="fixed bottom-24 left-4 right-4 max-w-2xl mx-auto z-30">
+      <div className="px-4 pb-8 pt-2 max-w-2xl mx-auto">
         <Button
           onClick={handleSave}
           disabled={!name.trim()}
