@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Search, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star } from "lucide-react";
+import { Plus, Search, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, RotateCcw } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
 import { useNavigate } from "react-router-dom";
@@ -148,6 +148,11 @@ const Places = () => {
   // Delete
   const [deleteTarget, setDeleteTarget] = useState<Place | null>(null);
 
+  // Visit review bottom sheet
+  const [reviewPlace, setReviewPlace] = useState<Place | null>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewWouldReturn, setReviewWouldReturn] = useState<"yes" | "no" | null>(null);
+
   // New list form
   const [newListName, setNewListName] = useState("");
   const [newListType, setNewListType] = useState<"family" | "personal">("family");
@@ -197,15 +202,53 @@ const Places = () => {
   };
 
   const toggleVisited = useCallback((placeId: string) => {
+    const place = activeList?.places.find((p) => p.id === placeId);
+    if (!place) return;
     haptic.light();
+    
+    if (!place.visited) {
+      // Opening review sheet for marking as visited
+      setReviewPlace(place);
+      setReviewRating(place.rating || 0);
+      setReviewWouldReturn(null);
+    } else {
+      // Unmark as visited
+      setLists((prev) =>
+        prev.map((list) =>
+          list.id === activeListId
+            ? { ...list, places: list.places.map((p) => p.id === placeId ? { ...p, visited: false, rating: undefined } : p) }
+            : list
+        )
+      );
+    }
+  }, [activeListId, activeList]);
+
+  const confirmVisitReview = useCallback(() => {
+    if (!reviewPlace) return;
+    haptic.medium();
     setLists((prev) =>
       prev.map((list) =>
         list.id === activeListId
-          ? { ...list, places: list.places.map((p) => p.id === placeId ? { ...p, visited: !p.visited } : p) }
+          ? {
+              ...list,
+              places: list.places.map((p) =>
+                p.id === reviewPlace.id
+                  ? {
+                      ...p,
+                      visited: true,
+                      rating: reviewRating || undefined,
+                      note: reviewWouldReturn === "yes" ? (p.note ? p.note + " · نرجعله!" : "نرجعله!") : p.note,
+                    }
+                  : p
+              ),
+            }
           : list
       )
     );
-  }, [activeListId]);
+    setReviewPlace(null);
+    setReviewRating(0);
+    setReviewWouldReturn(null);
+  }, [activeListId, reviewPlace, reviewRating, reviewWouldReturn]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
@@ -677,6 +720,64 @@ const Places = () => {
             <DrawerFooter className="flex-row gap-2">
               <Button onClick={shareList} className="flex-1 rounded-xl">مشاركة</Button>
               <Button variant="outline" onClick={() => setShowShareDialog(false)} className="flex-1 rounded-xl">إلغاء</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+        {/* Visit Review Drawer */}
+        <Drawer open={!!reviewPlace} onOpenChange={(open) => { if (!open) { setReviewPlace(null); setReviewRating(0); setReviewWouldReturn(null); } }}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>✅ زرت {reviewPlace?.name}؟</DrawerTitle>
+              <DrawerDescription>قيّم تجربتك وقلنا رأيك</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-5 pb-2">
+              {/* Star Rating */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Star size={16} className="text-primary" />
+                  كيف كانت التجربة؟
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button key={s} onClick={() => setReviewRating(s === reviewRating ? 0 : s)} className="p-1">
+                      <Star size={32} className={`transition-colors ${s <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />
+                    </button>
+                  ))}
+                </div>
+                {reviewRating > 0 && (
+                  <p className="text-center text-xs text-muted-foreground">{reviewRating}/5</p>
+                )}
+              </div>
+
+              {/* Would return */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <RotateCcw size={16} className="text-primary" />
+                  نرجعله مرة ثانية؟
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setReviewWouldReturn("yes")}
+                    className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+                      reviewWouldReturn === "yes" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    👍 أكيد نرجع!
+                  </button>
+                  <button
+                    onClick={() => setReviewWouldReturn("no")}
+                    className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+                      reviewWouldReturn === "no" ? "border-destructive bg-destructive/10 text-destructive" : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    👎 لا يستاهل
+                  </button>
+                </div>
+              </div>
+            </div>
+            <DrawerFooter className="flex-row gap-2">
+              <Button onClick={confirmVisitReview} className="flex-1 rounded-xl">حفظ التقييم</Button>
+              <Button variant="outline" onClick={() => { setReviewPlace(null); setReviewRating(0); setReviewWouldReturn(null); }} className="flex-1 rounded-xl">إلغاء</Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>

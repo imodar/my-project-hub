@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Link2, Phone, Star, DollarSign, Baby, Tag, StickyNote } from "lucide-react";
+import { MapPin, Link2, Phone, DollarSign, Baby, Tag, StickyNote } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,6 @@ const AddPlace = () => {
   const [phone, setPhone] = useState("");
   const [priceRange, setPriceRange] = useState<PriceRange>("$$");
   const [kidFriendly, setKidFriendly] = useState<KidFriendly>("yes");
-  const [rating, setRating] = useState(0);
   const [mustVisit, setMustVisit] = useState(false);
   const [note, setNote] = useState("");
 
@@ -70,7 +69,7 @@ const AddPlace = () => {
           socialLink: socialLink || undefined,
           phone: phone || undefined,
           priceRange,
-          rating: rating || undefined,
+          rating: undefined,
           kidFriendly,
           addedBy: "أنت",
           visited: false,
@@ -222,33 +221,6 @@ const AddPlace = () => {
                 {opt.emoji} {opt.label}
               </button>
             ))}
-          </div>
-        </div>
-
-        {/* Rating */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Star size={16} className="text-primary" />
-            التقييم
-          </label>
-          <div className="flex items-center gap-2">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <button
-                key={s}
-                onClick={() => setRating(s === rating ? 0 : s)}
-                className="p-1"
-              >
-                <Star
-                  size={28}
-                  className={`transition-colors ${
-                    s <= rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
-                  }`}
-                />
-              </button>
-            ))}
-            {rating > 0 && (
-              <span className="text-xs text-muted-foreground mr-2">{rating}/5</span>
-            )}
           </div>
         </div>
 
