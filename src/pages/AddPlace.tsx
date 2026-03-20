@@ -35,6 +35,8 @@ const KID_OPTIONS: { value: KidFriendly; label: string; emoji: string }[] = [
 const AddPlace = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id } = useParams();
+  const isEdit = !!id;
   const listId = location.state?.listId;
 
   const [name, setName] = useState("");
