@@ -137,14 +137,19 @@ const Tasks = () => {
   const completedItems = activeList?.items.filter((i) => i.done).length || 0;
   const remainingItems = totalItems - completedItems;
 
-  // Long press to enter reorder mode
-  const startLongPress = useCallback((id: string) => {
+  // Long press starts drag immediately
+  const startLongPress = useCallback((id: string, startY: number) => {
+    pointerStartYRef.current = startY;
     longPressTimerRef.current = setTimeout(() => {
       haptic.medium();
-      setReorderMode(true);
-      setDragItemId(id);
-      dragItemRef.current = id;
-    }, 500);
+      isLongPressingRef.current = true;
+      setDragActiveId(id);
+      // Snapshot all item positions
+      itemRectsRef.current.clear();
+      itemRefsMap.current.forEach((el, itemId) => {
+        itemRectsRef.current.set(itemId, el.getBoundingClientRect());
+      });
+    }, 400);
   }, []);
 
   const cancelLongPress = useCallback(() => {
@@ -154,19 +159,19 @@ const Tasks = () => {
     }
   }, []);
 
-  const handleDragOver = useCallback((id: string) => {
-    if (!dragItemRef.current || dragItemRef.current === id) return;
-    setDragOverItemId(id);
-  }, []);
-
-  const handleDrop = useCallback((targetId: string) => {
-    if (!dragItemRef.current || dragItemRef.current === targetId) return;
+  const finishDrag = useCallback((targetId: string | null) => {
+    if (!dragActiveId || !targetId || dragActiveId === targetId) {
+      setDragActiveId(null);
+      setDragOverId(null);
+      isLongPressingRef.current = false;
+      return;
+    }
     haptic.light();
     setLists((prev) =>
       prev.map((list) => {
         if (list.id !== activeListId) return list;
         const items = [...list.items];
-        const fromIdx = items.findIndex((i) => i.id === dragItemRef.current);
+        const fromIdx = items.findIndex((i) => i.id === dragActiveId);
         const toIdx = items.findIndex((i) => i.id === targetId);
         if (fromIdx === -1 || toIdx === -1) return list;
         const [moved] = items.splice(fromIdx, 1);
@@ -174,43 +179,60 @@ const Tasks = () => {
         return { ...list, items };
       })
     );
-    setDragItemId(null);
-    setDragOverItemId(null);
-    dragItemRef.current = null;
-  }, [activeListId]);
+    setDragActiveId(null);
+    setDragOverId(null);
+    isLongPressingRef.current = false;
+  }, [activeListId, dragActiveId]);
 
-  const exitReorderMode = useCallback(() => {
-    setReorderMode(false);
-    setDragItemId(null);
-    setDragOverItemId(null);
-    dragItemRef.current = null;
-  }, []);
-
-  // Swipe handlers (disabled during reorder mode)
+  // Swipe handlers
   const closeSwipe = useCallback((id: string) => {
     setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
     activeSwipeRef.current = null;
   }, []);
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
-    if (reorderMode) return;
     touchStartXRef.current = e.clientX;
     activeSwipeRef.current = id;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    startLongPress(id, e.clientY);
   };
 
   const handlePointerMove = (e: React.PointerEvent, id: string) => {
-    if (reorderMode) return;
+    // If dragging, find which item we're over
+    if (isLongPressingRef.current && dragActiveId) {
+      e.preventDefault();
+      const y = e.clientY;
+      let overItem: string | null = null;
+      itemRectsRef.current.forEach((rect, itemId) => {
+        if (y >= rect.top && y <= rect.bottom) {
+          overItem = itemId;
+        }
+      });
+      if (overItem && overItem !== dragActiveId) {
+        setDragOverId(overItem);
+      }
+      return;
+    }
+
     if (activeSwipeRef.current !== id) return;
-    const diff = e.clientX - touchStartXRef.current;
-    // Cancel long press if finger moves
-    cancelLongPress();
-    setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, SWIPE_WIDTH) : 0 }));
+    const diffX = e.clientX - touchStartXRef.current;
+    const diffY = Math.abs(e.clientY - pointerStartYRef.current);
+    // Cancel long press if finger moves horizontally (swipe) or vertically (scroll)
+    if (Math.abs(diffX) > 5 || diffY > 5) {
+      cancelLongPress();
+    }
+    setSwipeOffset((prev) => ({ ...prev, [id]: diffX > 0 ? Math.min(diffX, SWIPE_WIDTH) : 0 }));
   };
 
   const handlePointerUp = (e: React.PointerEvent, id: string) => {
     cancelLongPress();
-    if (reorderMode) return;
+    if (isLongPressingRef.current) {
+      finishDrag(dragOverId);
+      if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      }
+      return;
+    }
     const offset = swipeOffset[id] || 0;
     setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
     activeSwipeRef.current = null;
