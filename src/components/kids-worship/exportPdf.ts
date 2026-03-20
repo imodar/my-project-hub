@@ -7,8 +7,8 @@ import { type MonthData } from "./worshipData";
 
 const COLUMN_X: Record<string, number> = {
   // أعمال صالحة (from left)
-  tongue: 34.8,
-  no_tv: 88.5,
+  tongue: 36.8,
+  no_tv: 90.5,
   parents: 142.6,
   sadaqa: 196.7,
   // القرآن
