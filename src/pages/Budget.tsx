@@ -1,6 +1,6 @@
 // Budget Page
-import { useState, useCallback } from "react";
-import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, X, Check } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,9 @@ import { Button } from "@/components/ui/button";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from "@/components/ui/drawer";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { haptic } from "@/lib/haptics";
 import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
 
 interface ExpenseItem {
   id: string;
@@ -30,7 +27,7 @@ interface MonthBudget {
   label?: string;
   income: number;
   expenses: ExpenseItem[];
-  sharedWith: string[]; // names of people shared with
+  sharedWith: string[];
 }
 
 const MONTH_NAMES = [
@@ -59,10 +56,108 @@ const getAvailableYears = () => {
   return years;
 };
 
-const BudgetCard = ({ b, onSelect, onDelete, remaining, spentPercent }: {
+// Swipeable card component
+const SwipeableCard = ({ children, onEdit, onDelete }: {
+  children: React.ReactNode;
+  onEdit?: () => void;
+  onDelete: () => void;
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef(0);
+  const currentXRef = useRef(0);
+  const isSwipingRef = useRef(false);
+  const isOpenRef = useRef(false);
+
+  const SWIPE_THRESHOLD = 60;
+  const ACTION_WIDTH = onEdit ? 120 : 60;
+
+  const setTransform = (x: number) => {
+    if (containerRef.current) {
+      const content = containerRef.current.querySelector('[data-swipe-content]') as HTMLElement;
+      if (content) content.style.transform = `translateX(${x}px)`;
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+    currentXRef.current = 0;
+    isSwipingRef.current = false;
+    const content = containerRef.current?.querySelector('[data-swipe-content]') as HTMLElement;
+    if (content) content.style.transition = 'none';
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const diff = e.touches[0].clientX - startXRef.current;
+    // RTL: swipe left (negative diff) reveals actions on the left side
+    // But in RTL, we want swipe to reveal actions, so we allow negative movement
+    if (Math.abs(diff) > 10) isSwipingRef.current = true;
+
+    if (isOpenRef.current) {
+      currentXRef.current = Math.min(0, Math.max(-ACTION_WIDTH, -ACTION_WIDTH + diff));
+    } else {
+      currentXRef.current = Math.min(0, Math.max(-ACTION_WIDTH, diff));
+    }
+    setTransform(currentXRef.current);
+  };
+
+  const handleTouchEnd = () => {
+    const content = containerRef.current?.querySelector('[data-swipe-content]') as HTMLElement;
+    if (content) content.style.transition = 'transform 0.3s ease';
+
+    if (Math.abs(currentXRef.current) > SWIPE_THRESHOLD) {
+      setTransform(-ACTION_WIDTH);
+      isOpenRef.current = true;
+    } else {
+      setTransform(0);
+      isOpenRef.current = false;
+    }
+  };
+
+  const closeSwipe = () => {
+    const content = containerRef.current?.querySelector('[data-swipe-content]') as HTMLElement;
+    if (content) content.style.transition = 'transform 0.3s ease';
+    setTransform(0);
+    isOpenRef.current = false;
+  };
+
+  return (
+    <div ref={containerRef} className="relative overflow-hidden rounded-2xl">
+      {/* Action buttons behind */}
+      <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
+        {onEdit && (
+          <button
+            onClick={() => { closeSwipe(); onEdit(); }}
+            className="flex-1 flex items-center justify-center"
+            style={{ background: "hsl(var(--primary))" }}
+          >
+            <Pencil size={18} className="text-white" />
+          </button>
+        )}
+        <button
+          onClick={() => { closeSwipe(); onDelete(); }}
+          className="flex-1 flex items-center justify-center"
+          style={{ background: "hsl(var(--destructive))" }}
+        >
+          <Trash2 size={18} className="text-white" />
+        </button>
+      </div>
+      {/* Swipeable content */}
+      <div
+        data-swipe-content
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative z-10"
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const BudgetCard = ({ b, onSelect, remaining, spentPercent }: {
   b: MonthBudget;
   onSelect: (b: MonthBudget) => void;
-  onDelete: (id: string) => void;
   remaining: (b: MonthBudget) => number;
   spentPercent: (b: MonthBudget) => number;
 }) => {
@@ -89,13 +184,6 @@ const BudgetCard = ({ b, onSelect, onDelete, remaining, spentPercent }: {
             )}
           </div>
         </div>
-        <button
-          onClick={e => { e.stopPropagation(); onDelete(b.id); }}
-          className="p-1.5 rounded-full"
-          style={{ background: "hsl(var(--destructive) / 0.1)" }}
-        >
-          <Trash2 size={14} className="text-destructive" />
-        </button>
       </div>
       <div className="flex items-center justify-between text-xs mb-2">
         <span className="text-muted-foreground">الوارد: <b className="text-foreground">{b.income.toLocaleString()}</b></span>
@@ -121,6 +209,7 @@ const loadBudgets = (): MonthBudget[] => {
 const saveBudgets = (b: MonthBudget[]) => localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
 
 const Budget = () => {
+  const navigate = useNavigate();
   const [budgets, setBudgets] = useState<MonthBudget[]>(loadBudgets);
   const [selectedBudget, setSelectedBudget] = useState<MonthBudget | null>(null);
   const [showAddMonth, setShowAddMonth] = useState(false);
@@ -128,6 +217,8 @@ const Budget = () => {
   const [showEditIncome, setShowEditIncome] = useState(false);
   const [showDeleteBudget, setShowDeleteBudget] = useState<string | null>(null);
   const [showDeleteExpense, setShowDeleteExpense] = useState<{ budgetId: string; expenseId: string } | null>(null);
+  const [showEditBudget, setShowEditBudget] = useState<MonthBudget | null>(null);
+  const [showEditExpense, setShowEditExpense] = useState<{ budgetId: string; expense: ExpenseItem } | null>(null);
 
   const [budgetType, setBudgetType] = useState<BudgetType>("month");
   const [newMonthIdx, setNewMonthIdx] = useState(String(new Date().getMonth()));
@@ -138,6 +229,8 @@ const Budget = () => {
   const [expenseAmount, setExpenseAmount] = useState("");
   const [editIncomeVal, setEditIncomeVal] = useState("");
   const [shareNames, setShareNames] = useState<string[]>([]);
+  const [editExpenseName, setEditExpenseName] = useState("");
+  const [editExpenseAmount, setEditExpenseAmount] = useState("");
 
   const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
@@ -236,6 +329,43 @@ const Budget = () => {
     setShowDeleteBudget(null);
   };
 
+  const handleEditExpense = () => {
+    if (!showEditExpense || !editExpenseName.trim() || !editExpenseAmount || parseFloat(editExpenseAmount) <= 0) return;
+    haptic.light();
+    const updated = budgets.map(b =>
+      b.id === showEditExpense.budgetId
+        ? {
+            ...b,
+            expenses: b.expenses.map(e =>
+              e.id === showEditExpense.expense.id
+                ? { ...e, name: editExpenseName.trim(), amount: parseFloat(editExpenseAmount) }
+                : e
+            ),
+          }
+        : b
+    );
+    update(updated);
+    if (selectedBudget?.id === showEditExpense.budgetId) {
+      setSelectedBudget(updated.find(b => b.id === showEditExpense.budgetId)!);
+    }
+    setShowEditExpense(null);
+  };
+
+  const handleEditBudgetSave = () => {
+    if (!showEditBudget || !newIncome || parseFloat(newIncome) <= 0) return;
+    haptic.light();
+    const updated = budgets.map(b =>
+      b.id === showEditBudget.id
+        ? { ...b, income: parseFloat(newIncome), label: b.type === "project" ? projectLabel.trim() || b.label : b.label, sharedWith: [...shareNames] }
+        : b
+    );
+    update(updated);
+    setShowEditBudget(null);
+    setNewIncome("");
+    setProjectLabel("");
+    setShareNames([]);
+  };
+
   const onRefresh = useCallback(() => new Promise<void>(r => setTimeout(r, 600)), []);
 
   const totalExpenses = (b: MonthBudget) => b.expenses.reduce((s, e) => s + e.amount, 0);
@@ -317,22 +447,25 @@ const Budget = () => {
               </div>
             ) : (
               b.expenses.map((exp) => (
-                <div key={exp.id} className="rounded-2xl bg-card border border-border p-3 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "hsl(var(--destructive) / 0.1)" }}>
-                    <TrendingDown size={16} className="text-destructive" />
+                <SwipeableCard
+                  key={exp.id}
+                  onEdit={() => {
+                    setEditExpenseName(exp.name);
+                    setEditExpenseAmount(exp.amount.toString());
+                    setShowEditExpense({ budgetId: b.id, expense: exp });
+                  }}
+                  onDelete={() => setShowDeleteExpense({ budgetId: b.id, expenseId: exp.id })}
+                >
+                  <div className="rounded-2xl bg-card border border-border p-3 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "hsl(var(--destructive) / 0.1)" }}>
+                      <TrendingDown size={16} className="text-destructive" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{exp.name}</p>
+                    </div>
+                    <p className="text-sm font-bold text-destructive">{exp.amount.toLocaleString()}</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{exp.name}</p>
-                  </div>
-                  <p className="text-sm font-bold text-destructive">{exp.amount.toLocaleString()}</p>
-                  <button
-                    onClick={() => setShowDeleteExpense({ budgetId: b.id, expenseId: exp.id })}
-                    className="p-1.5 rounded-full active:scale-90 transition-transform"
-                    style={{ background: "hsl(var(--destructive) / 0.1)" }}
-                  >
-                    <Trash2 size={14} className="text-destructive" />
-                  </button>
-                </div>
+                </SwipeableCard>
               ))
             )}
           </div>
@@ -394,19 +527,54 @@ const Budget = () => {
           </DrawerContent>
         </Drawer>
 
-        {/* Delete Expense Dialog */}
-        <AlertDialog open={!!showDeleteExpense} onOpenChange={() => setShowDeleteExpense(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>حذف البند</AlertDialogTitle>
-              <AlertDialogDescription>هل تريد حذف هذا البند من المصروفات؟</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteExpense}>حذف</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Edit Expense Drawer */}
+        <Drawer open={!!showEditExpense} onOpenChange={(open) => { if (!open) setShowEditExpense(null); }}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>تعديل البند</DrawerTitle>
+              <DrawerDescription>عدّل اسم أو مبلغ البند</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-3">
+              <Input
+                placeholder="اسم البند"
+                value={editExpenseName}
+                onChange={e => setEditExpenseName(e.target.value)}
+                className="text-right"
+              />
+              <Input
+                type="number"
+                placeholder="المبلغ"
+                value={editExpenseAmount}
+                onChange={e => setEditExpenseAmount(e.target.value)}
+                className="text-right"
+                inputMode="decimal"
+              />
+            </div>
+            <DrawerFooter>
+              <Button onClick={handleEditExpense} disabled={!editExpenseName.trim() || !editExpenseAmount}>
+                حفظ
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+
+        {/* Delete Expense Drawer (bottom sheet) */}
+        <Drawer open={!!showDeleteExpense} onOpenChange={(open) => { if (!open) setShowDeleteExpense(null); }}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>حذف البند</DrawerTitle>
+              <DrawerDescription>هل تريد حذف هذا البند من المصروفات؟</DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter>
+              <Button variant="destructive" onClick={handleDeleteExpense}>
+                حذف
+              </Button>
+              <Button variant="outline" onClick={() => setShowDeleteExpense(null)}>
+                إلغاء
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
       </div>
     );
   }
@@ -414,7 +582,7 @@ const Budget = () => {
   // List view
   return (
     <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
-      <PageHeader title="الميزانية" subtitle="تخطيط ميزانيتك الشهرية">
+      <PageHeader title="الميزانية" subtitle="تخطيط ميزانيتك الشهرية" onBack={() => navigate("/")}>
         <div className="flex items-center gap-1.5 mt-2 px-1 pb-1">
           <span className="text-[10px] text-white/60">🔒 ميزانيتك خاصة ولا يراها أفراد العائلة إلا إذا شاركتها معهم</span>
         </div>
@@ -438,7 +606,18 @@ const Budget = () => {
                     <h3 className="text-xs font-bold text-foreground">ميزانيات مشتركة</h3>
                   </div>
                   {budgets.filter(b => (b.sharedWith ?? []).length > 0).map(b => (
-                    <BudgetCard key={b.id} b={b} onSelect={setSelectedBudget} onDelete={setShowDeleteBudget} remaining={remaining} spentPercent={spentPercent} />
+                    <SwipeableCard
+                      key={b.id}
+                      onEdit={() => {
+                        setShowEditBudget(b);
+                        setNewIncome(b.income.toString());
+                        setProjectLabel(b.label || "");
+                        setShareNames([...b.sharedWith]);
+                      }}
+                      onDelete={() => setShowDeleteBudget(b.id)}
+                    >
+                      <BudgetCard b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
+                    </SwipeableCard>
                   ))}
                 </div>
               )}
@@ -451,7 +630,18 @@ const Budget = () => {
                     <h3 className="text-xs font-bold text-foreground">ميزانيات شخصية</h3>
                   </div>
                   {budgets.filter(b => (b.sharedWith ?? []).length === 0).map(b => (
-                    <BudgetCard key={b.id} b={b} onSelect={setSelectedBudget} onDelete={setShowDeleteBudget} remaining={remaining} spentPercent={spentPercent} />
+                    <SwipeableCard
+                      key={b.id}
+                      onEdit={() => {
+                        setShowEditBudget(b);
+                        setNewIncome(b.income.toString());
+                        setProjectLabel(b.label || "");
+                        setShareNames([...b.sharedWith]);
+                      }}
+                      onDelete={() => setShowDeleteBudget(b.id)}
+                    >
+                      <BudgetCard b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
+                    </SwipeableCard>
                   ))}
                 </div>
               )}
@@ -609,19 +799,89 @@ const Budget = () => {
         </DrawerContent>
       </Drawer>
 
-      {/* Delete Budget Dialog */}
-      <AlertDialog open={!!showDeleteBudget} onOpenChange={() => setShowDeleteBudget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>حذف الميزانية</AlertDialogTitle>
-            <AlertDialogDescription>هل تريد حذف ميزانية هذا الشهر بالكامل؟</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteBudget}>حذف</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Edit Budget Drawer */}
+      <Drawer open={!!showEditBudget} onOpenChange={(open) => { if (!open) setShowEditBudget(null); }}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>تعديل الميزانية</DrawerTitle>
+            <DrawerDescription>عدّل تفاصيل الميزانية</DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 space-y-4">
+            {showEditBudget?.type === "project" && (
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">اسم المشروع</label>
+                <Input
+                  placeholder="اسم المشروع"
+                  value={projectLabel}
+                  onChange={e => setProjectLabel(e.target.value)}
+                  className="text-right"
+                />
+              </div>
+            )}
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1 block">المبلغ الوارد</label>
+              <Input
+                type="number"
+                placeholder="المبلغ الوارد"
+                value={newIncome}
+                onChange={e => setNewIncome(e.target.value)}
+                className="text-right"
+                inputMode="decimal"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-2 block">
+                <Users size={12} className="inline ml-1" />
+                مشاركة مع
+              </label>
+              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                {FAMILY_MEMBERS.map((member) => (
+                  <button
+                    key={member}
+                    type="button"
+                    onClick={() =>
+                      setShareNames((prev) =>
+                        prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                      )
+                    }
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
+                      shareNames.includes(member)
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <span className="font-medium text-foreground">{member}</span>
+                    {shareNames.includes(member) && <Check size={14} className="text-primary" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DrawerFooter>
+            <Button onClick={handleEditBudgetSave} disabled={!newIncome}>
+              حفظ
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Delete Budget Drawer (bottom sheet) */}
+      <Drawer open={!!showDeleteBudget} onOpenChange={(open) => { if (!open) setShowDeleteBudget(null); }}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>حذف الميزانية</DrawerTitle>
+            <DrawerDescription>هل تريد حذف ميزانية هذا الشهر بالكامل؟</DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter>
+            <Button variant="destructive" onClick={handleDeleteBudget}>
+              حذف
+            </Button>
+            <Button variant="outline" onClick={() => setShowDeleteBudget(null)}>
+              إلغاء
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
