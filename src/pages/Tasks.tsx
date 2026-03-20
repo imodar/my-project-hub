@@ -342,11 +342,13 @@ const Tasks = () => {
             )}
             <p className="text-[10px] text-muted-foreground mt-0.5">{item.assignedTo}</p>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
-              {prioInfo.emoji} {prioInfo.label}
-            </span>
-          </div>
+          {item.priority !== "none" && (
+            <div className="flex flex-col items-end gap-1">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
+                {prioInfo.emoji} {prioInfo.label}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
