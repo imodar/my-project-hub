@@ -14,7 +14,7 @@ import {
   Check, X, HelpCircle, GripVertical, List, Map as MapIcon,
   PackageCheck, Calculator, Lightbulb, Trash2, Pencil, Star
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
 
@@ -530,7 +530,10 @@ const Trips = () => {
               <div key={day.id} className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
                 <div className="flex items-center justify-between p-4 border-b border-border/30">
                   <div>
-                    <span className="text-xs font-bold text-primary">اليوم {day.dayNumber}</span>
+                    <span className="text-xs font-bold text-primary">
+                      اليوم {day.dayNumber}
+                      {selectedTrip.startDate && ` — ${format(addDays(new Date(selectedTrip.startDate), day.dayNumber - 1), "EEEE d MMM", { locale: ar })}`}
+                    </span>
                     <p className="text-sm font-bold text-foreground mt-0.5">{day.city}</p>
                   </div>
                   <button
@@ -804,24 +807,38 @@ const Trips = () => {
               <Input type="time" placeholder="الوقت" value={activityTime} onChange={(e) => setActivityTime(e.target.value)} />
               <Input placeholder="الموقع" value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} />
               <Input type="number" placeholder="التكلفة التقديرية" value={activityCost} onChange={(e) => setActivityCost(e.target.value)} dir="ltr" />
-              {selectedTrip.days.length > 1 && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">اليوم</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {selectedTrip.days.map((d) => (
-                      <button
-                        key={d.id}
-                        onClick={() => setSelectedDayId(d.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          selectedDayId === d.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        يوم {d.dayNumber}
-                      </button>
-                    ))}
+              {selectedTrip.startDate && selectedTrip.endDate && (() => {
+                const start = new Date(selectedTrip.startDate);
+                const end = new Date(selectedTrip.endDate);
+                const totalDays = differenceInDays(end, start) + 1;
+                const allDays = Array.from({ length: totalDays }, (_, i) => ({
+                  index: i,
+                  date: addDays(start, i),
+                  dayPlan: selectedTrip.days.find((d) => d.dayNumber === i + 1),
+                }));
+                return (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">اختر اليوم</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {allDays.map((d) => {
+                        const dayId = d.dayPlan?.id || `new-day-${d.index + 1}`;
+                        return (
+                          <button
+                            key={dayId}
+                            onClick={() => setSelectedDayId(dayId)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center ${
+                              selectedDayId === dayId ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            <span className="block">{format(d.date, "EEEE", { locale: ar })}</span>
+                            <span className="block text-[10px] opacity-75">{format(d.date, "d MMM", { locale: ar })}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
               <Button className="w-full rounded-xl" onClick={handleAddActivity}>إضافة</Button>
             </div>
           </DrawerContent>
