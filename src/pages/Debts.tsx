@@ -707,7 +707,7 @@ const Debts = () => {
       </div>
 
       {/* FAB with menu */}
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2">
+      <div className="fixed bottom-24 left-6 z-30 flex flex-col items-center gap-2">
         {/* FAB sub-buttons */}
         {showFabMenu && (
           <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
