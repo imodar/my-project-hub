@@ -1025,10 +1025,11 @@ const Trips = () => {
           </DrawerContent>
         </Drawer>
 
-        {/* Trip Drawer is shared — rendered once outside selectedTrip block */}
       </div>
     );
   }
+
+  const listView = (
 
   // Trip list view
   return (
