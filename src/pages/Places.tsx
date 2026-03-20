@@ -589,7 +589,7 @@ const Places = () => {
         </div>
 
         {/* Places list */}
-        <div className="px-4 space-y-2">
+        <div className="px-4 space-y-3">
           {unvisitedPlaces.map((place) => renderPlace(place))}
 
           {visitedPlaces.length > 0 && (
