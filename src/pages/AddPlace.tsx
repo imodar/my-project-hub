@@ -84,23 +84,7 @@ const AddPlace = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
-      {/* Header */}
-      <div
-        className="sticky top-0 z-40 px-4 pt-4 pb-3"
-        style={{
-          background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-xl text-white/80 hover:text-white">
-            <ArrowRight size={22} />
-          </button>
-          <h1 className="text-lg font-bold text-white flex items-center gap-2">
-            📍 إضافة مكان جديد
-          </h1>
-          <div className="w-10" />
-        </div>
-      </div>
+      <PageHeader title={isEdit ? "✏️ تعديل المكان" : "📍 إضافة مكان جديد"} />
 
       <div className="px-4 py-4 space-y-5">
         {/* Name */}
