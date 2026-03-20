@@ -170,14 +170,29 @@ const Places = () => {
 
   const activeList = lists.find((l) => l.id === activeListId);
 
+  const hasActiveFilters = filterRating > 0 || filterPrice !== "الكل" || filterKid !== "الكل" || filterMustVisit || filterVisitStatus !== "الكل" || activeCategory !== "الكل";
+
   const filteredPlaces = activeList?.places.filter((place) => {
     const matchesCat = activeCategory === "الكل" || place.category === activeCategory;
-    const matchesSearch = !searchQuery || place.name.includes(searchQuery);
-    return matchesCat && matchesSearch;
+    const matchesRating = filterRating === 0 || (place.rating && place.rating >= filterRating);
+    const matchesPrice = filterPrice === "الكل" || place.priceRange === filterPrice;
+    const matchesKid = filterKid === "الكل" || place.kidFriendly === filterKid;
+    const matchesMustVisit = !filterMustVisit || place.mustVisit;
+    const matchesVisit = filterVisitStatus === "الكل" || (filterVisitStatus === "visited" ? place.visited : !place.visited);
+    return matchesCat && matchesRating && matchesPrice && matchesKid && matchesMustVisit && matchesVisit;
   }) || [];
 
   const unvisitedPlaces = filteredPlaces.filter((p) => !p.visited);
   const visitedPlaces = filteredPlaces.filter((p) => p.visited);
+
+  const resetFilters = () => {
+    setActiveCategory("الكل");
+    setFilterRating(0);
+    setFilterPrice("الكل");
+    setFilterKid("الكل");
+    setFilterMustVisit(false);
+    setFilterVisitStatus("الكل");
+  };
 
   const totalPlaces = activeList?.places.length || 0;
 
