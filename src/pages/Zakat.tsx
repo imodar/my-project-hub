@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Plus, Coins, Info, Trash2, Bell, BellOff, ChevronDown, ChevronUp,
-  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock
+  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock, Pencil
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
