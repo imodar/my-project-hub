@@ -235,10 +235,6 @@ const Zakat = () => {
     haptic.medium();
   };
 
-  const toggleReminder = (id: string) => {
-    updateAssets(assets.map(a => a.id === id ? { ...a, reminder: !a.reminder } : a));
-    haptic.light();
-  };
 
   // Calculate values
   const getAssetValue = (asset: ZakatAsset): number => {
