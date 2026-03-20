@@ -264,7 +264,7 @@ const KidsWorship = () => {
 
       <PageHeader
         title="عبادات الأطفال"
-        subtitle={getCurrentMonthName()}
+        subtitle={getMonthLabel(selectedYear, selectedMonth)}
         actions={[
           {
             icon: <Download size={18} className="text-white" />,
