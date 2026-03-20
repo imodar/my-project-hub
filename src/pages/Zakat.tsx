@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Plus, Coins, Info, Trash2, Bell, BellOff, ChevronDown, ChevronUp,
-  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle
+  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
@@ -14,6 +14,63 @@ import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription,
 } from "@/components/ui/drawer";
 import { haptic } from "@/lib/haptics";
+
+// ── Swipeable Card ──
+const ACTION_WIDTH = 140;
+function SwipeableAssetCard({ onReminder, onDelete, children }: { onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
+  const startXRef = useRef(0);
+  const currentXRef = useRef(0);
+  const isOpenRef = useRef(false);
+  const [transform, setTransform] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const diff = e.touches[0].clientX - startXRef.current;
+    // RTL: swipe right reveals actions on left
+    currentXRef.current = isOpenRef.current
+      ? Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH + diff))
+      : Math.max(0, Math.min(ACTION_WIDTH, diff));
+    setTransform(currentXRef.current);
+  };
+  const handleTouchEnd = () => {
+    const open = currentXRef.current > ACTION_WIDTH / 2;
+    isOpenRef.current = open;
+    setTransform(open ? ACTION_WIDTH : 0);
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl" ref={containerRef}>
+      <div className="absolute inset-y-0 left-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
+        <button
+          onClick={() => { haptic.light(); onReminder(); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white"
+        >
+          <Bell size={18} />
+          <span className="text-[10px] font-bold">تذكير</span>
+        </button>
+        <button
+          onClick={() => { haptic.light(); onDelete(); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-white"
+        >
+          <Trash2 size={18} />
+          <span className="text-[10px] font-bold">حذف</span>
+        </button>
+      </div>
+      <div
+        className="relative bg-background z-10 transition-transform duration-200"
+        style={{ transform: `translateX(${transform}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 // ── Types ──
 type AssetType = "cash" | "gold" | "silver" | "stocks" | "funds";
@@ -137,6 +194,8 @@ const Zakat = () => {
   const [addKarat, setAddKarat] = useState(24);
   const [addDate, setAddDate] = useState(new Date().toISOString().split("T")[0]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [reminderAsset, setReminderAsset] = useState<string | null>(null);
+  const [customReminderDays, setCustomReminderDays] = useState("");
 
   const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
 
@@ -176,10 +235,6 @@ const Zakat = () => {
     haptic.medium();
   };
 
-  const toggleReminder = (id: string) => {
-    updateAssets(assets.map(a => a.id === id ? { ...a, reminder: !a.reminder } : a));
-    haptic.light();
-  };
 
   // Calculate values
   const getAssetValue = (asset: ZakatAsset): number => {
@@ -321,66 +376,63 @@ const Zakat = () => {
                   const zakat = getZakatAmount(asset);
 
                   return (
-                    <div key={asset.id} className="rounded-2xl bg-background border border-border p-4">
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0"
-                          style={{ background: meta.bg }}
-                        >
-                          {meta.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-sm font-bold text-foreground">{asset.label}</span>
-                              <span className="text-[10px] text-muted-foreground mr-2">{meta.label}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => toggleReminder(asset.id)} className="p-1.5 rounded-lg active:bg-muted">
-                                {asset.reminder ?
-                                  <Bell size={14} className="text-amber-500" /> :
-                                  <BellOff size={14} className="text-muted-foreground" />}
-                              </button>
-                              <button onClick={() => setDeleteConfirm(asset.id)} className="p-1.5 rounded-lg active:bg-muted">
-                                <Trash2 size={14} className="text-destructive" />
-                              </button>
-                            </div>
+                    <SwipeableAssetCard
+                      key={asset.id}
+                      onReminder={() => { setReminderAsset(asset.id); }}
+                      onDelete={() => setDeleteConfirm(asset.id)}
+                    >
+                      <div className="rounded-2xl bg-background border border-border p-4">
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0"
+                            style={{ background: meta.bg }}
+                          >
+                            {meta.icon}
                           </div>
-
-                          {/* Details */}
-                          <div className="mt-2 space-y-1.5">
-                            {(asset.type === "gold" || asset.type === "silver") && (
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                <span>{asset.amount} جرام</span>
-                                {asset.karat && <span>عيار {asset.karat}</span>}
-                                <span className="font-bold text-foreground">{value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-sm font-bold text-foreground">{asset.label}</span>
+                                <span className="text-[10px] text-muted-foreground mr-2">{meta.label}</span>
                               </div>
-                            )}
-                            {(asset.type === "cash" || asset.type === "stocks" || asset.type === "funds") && (
-                              <p className="text-xs text-foreground font-bold">
-                                {value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
-                              </p>
-                            )}
-                            <p className="text-[10px] text-muted-foreground">
-                              تاريخ الاقتناء: {formatDate(asset.purchaseDate)}
-                            </p>
-                          </div>
-
-                          {/* Hawl progress */}
-                          <div className="mt-3">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] text-muted-foreground">
-                                {isDue ? "✅ حال الحول" : `متبقي ${days} يوم`}
-                              </span>
-                              <span className="text-[10px] font-bold" style={{ color: isDue ? meta.color : "hsl(var(--muted-foreground))" }}>
-                                زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
-                              </span>
+                              {asset.reminder && <Bell size={12} className="text-amber-500" />}
                             </div>
-                            <Progress value={progress} className="h-1.5" />
+
+                            {/* Details */}
+                            <div className="mt-2 space-y-1.5">
+                              {(asset.type === "gold" || asset.type === "silver") && (
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                  <span>{asset.amount} جرام</span>
+                                  {asset.karat && <span>عيار {asset.karat}</span>}
+                                  <span className="font-bold text-foreground">{value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س</span>
+                                </div>
+                              )}
+                              {(asset.type === "cash" || asset.type === "stocks" || asset.type === "funds") && (
+                                <p className="text-xs text-foreground font-bold">
+                                  {value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
+                                </p>
+                              )}
+                              <p className="text-[10px] text-muted-foreground">
+                                تاريخ الاقتناء: {formatDate(asset.purchaseDate)}
+                              </p>
+                            </div>
+
+                            {/* Hawl progress - SWAPPED: zakat on left, days on right */}
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[10px] font-bold" style={{ color: isDue ? meta.color : "hsl(var(--muted-foreground))" }}>
+                                  زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {isDue ? "✅ حال الحول" : `متبقي ${days} يوم`}
+                                </span>
+                              </div>
+                              <Progress value={progress} className="h-1.5" />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </SwipeableAssetCard>
                   );
                 })}
               </div>
@@ -583,6 +635,83 @@ const Zakat = () => {
             <Button variant="destructive" className="flex-1 h-12 rounded-xl" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
               <Trash2 size={16} className="ml-2" />
               حذف
+            </Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+      {/* Reminder drawer */}
+      <Drawer open={!!reminderAsset} onOpenChange={(open) => { if (!open) { setReminderAsset(null); setCustomReminderDays(""); } }}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>إعداد التذكير</DrawerTitle>
+            <DrawerDescription>اختر موعد التذكير قبل حلول الحول</DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-2">
+            {[
+              { label: "قبل يوم واحد", days: 1 },
+              { label: "قبل أسبوع", days: 7 },
+              { label: "قبل شهر", days: 30 },
+            ].map((opt) => (
+              <button
+                key={opt.days}
+                onClick={() => {
+                  if (reminderAsset) {
+                    updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: true } : a));
+                    haptic.medium();
+                    setReminderAsset(null);
+                  }
+                }}
+                className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border border-border bg-background hover:bg-muted/50 active:scale-[0.98] transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <Clock size={16} className="text-amber-500" />
+                  <span className="text-sm font-bold text-foreground">{opt.label}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{opt.days} يوم</span>
+              </button>
+            ))}
+
+            <div className="pt-2">
+              <p className="text-xs font-bold text-foreground mb-2">أو اختر عدد الأيام</p>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={customReminderDays}
+                  onChange={(e) => setCustomReminderDays(e.target.value)}
+                  placeholder="عدد الأيام"
+                  className="text-right flex-1"
+                  inputMode="numeric"
+                />
+                <Button
+                  onClick={() => {
+                    if (reminderAsset && customReminderDays) {
+                      updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: true } : a));
+                      haptic.medium();
+                      setReminderAsset(null);
+                      setCustomReminderDays("");
+                    }
+                  }}
+                  disabled={!customReminderDays || Number(customReminderDays) <= 0}
+                  className="rounded-xl px-6"
+                >
+                  تأكيد
+                </Button>
+              </div>
+            </div>
+
+            <Button
+              variant="ghost"
+              className="w-full mt-2 text-muted-foreground"
+              onClick={() => {
+                if (reminderAsset) {
+                  updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: false } : a));
+                  haptic.light();
+                  setReminderAsset(null);
+                }
+              }}
+            >
+              <BellOff size={14} className="ml-2" />
+              إلغاء التذكير
             </Button>
           </div>
         </DrawerContent>
