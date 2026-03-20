@@ -404,6 +404,7 @@ const Market = () => {
         </div>
       </PageHeader>
 
+      <PullToRefresh onRefresh={handleRefresh}>
       {/* Stats bar */}
       {activeList && (
         <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
