@@ -466,9 +466,7 @@ const Places = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
-      <PullToRefresh onRefresh={handleRefresh}>
-        {/* Header */}
-        <PageHeader
+      <PageHeader
           title="قائمة الأماكن"
           actions={[
             {
@@ -507,6 +505,8 @@ const Places = () => {
             ))}
           </div>
         </PageHeader>
+
+      <PullToRefresh onRefresh={handleRefresh}>
 
 
         {/* List Actions */}
