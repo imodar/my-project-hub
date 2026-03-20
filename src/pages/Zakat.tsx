@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Plus, Coins, Info, Trash2, Bell, BellOff, ChevronDown, ChevronUp,
-  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock
+  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock, Pencil
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
@@ -16,8 +16,8 @@ import {
 import { haptic } from "@/lib/haptics";
 
 // ── Swipeable Card ──
-const ACTION_WIDTH = 140;
-function SwipeableAssetCard({ onReminder, onDelete, children }: { onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
+const ACTION_WIDTH = 210;
+function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit: () => void; onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
   const isOpenRef = useRef(false);
@@ -29,7 +29,6 @@ function SwipeableAssetCard({ onReminder, onDelete, children }: { onReminder: ()
   };
   const handleTouchMove = (e: React.TouchEvent) => {
     const diff = e.touches[0].clientX - startXRef.current;
-    // RTL: swipe right reveals actions on left
     currentXRef.current = isOpenRef.current
       ? Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH + diff))
       : Math.max(0, Math.min(ACTION_WIDTH, diff));
@@ -44,6 +43,13 @@ function SwipeableAssetCard({ onReminder, onDelete, children }: { onReminder: ()
   return (
     <div className="relative overflow-hidden rounded-2xl" ref={containerRef}>
       <div className="absolute inset-y-0 left-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
+        <button
+          onClick={() => { haptic.light(); onEdit(); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-primary text-white"
+        >
+          <Pencil size={18} />
+          <span className="text-[10px] font-bold">تعديل</span>
+        </button>
         <button
           onClick={() => { haptic.light(); onReminder(); }}
           className="flex-1 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white"
@@ -194,6 +200,7 @@ const Zakat = () => {
   const [addKarat, setAddKarat] = useState(24);
   const [addDate, setAddDate] = useState(new Date().toISOString().split("T")[0]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [reminderAsset, setReminderAsset] = useState<string | null>(null);
   const [customReminderDays, setCustomReminderDays] = useState("");
 
@@ -206,16 +213,27 @@ const Zakat = () => {
 
   const handleAdd = () => {
     if (!addAmount || Number(addAmount) <= 0) return;
-    const newAsset: ZakatAsset = {
-      id: Date.now().toString(),
-      type: addType,
-      label: addLabel || ASSET_TYPE_META[addType].label,
-      amount: Number(addAmount),
-      karat: addType === "gold" ? addKarat : undefined,
-      purchaseDate: addDate,
-      reminder: true,
-    };
-    updateAssets([...assets, newAsset]);
+    if (editingAssetId) {
+      updateAssets(assets.map(a => a.id === editingAssetId ? {
+        ...a,
+        type: addType,
+        label: addLabel || ASSET_TYPE_META[addType].label,
+        amount: Number(addAmount),
+        karat: addType === "gold" ? addKarat : undefined,
+        purchaseDate: addDate,
+      } : a));
+    } else {
+      const newAsset: ZakatAsset = {
+        id: Date.now().toString(),
+        type: addType,
+        label: addLabel || ASSET_TYPE_META[addType].label,
+        amount: Number(addAmount),
+        karat: addType === "gold" ? addKarat : undefined,
+        purchaseDate: addDate,
+        reminder: true,
+      };
+      updateAssets([...assets, newAsset]);
+    }
     setShowAdd(false);
     resetAddForm();
     haptic.medium();
@@ -227,6 +245,7 @@ const Zakat = () => {
     setAddAmount("");
     setAddKarat(24);
     setAddDate(new Date().toISOString().split("T")[0]);
+    setEditingAssetId(null);
   };
 
   const handleDelete = (id: string) => {
@@ -378,6 +397,15 @@ const Zakat = () => {
                   return (
                     <SwipeableAssetCard
                       key={asset.id}
+                      onEdit={() => {
+                        setAddType(asset.type);
+                        setAddLabel(asset.label);
+                        setAddAmount(String(asset.amount));
+                        if (asset.karat) setAddKarat(asset.karat);
+                        setAddDate(asset.purchaseDate);
+                        setEditingAssetId(asset.id);
+                        setShowAdd(true);
+                      }}
                       onReminder={() => { setReminderAsset(asset.id); }}
                       onDelete={() => setDeleteConfirm(asset.id)}
                     >
@@ -459,8 +487,8 @@ const Zakat = () => {
       <Drawer open={showAdd} onOpenChange={setShowAdd}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>إضافة أصل جديد</DrawerTitle>
-            <DrawerDescription>أضف أصلاً لحساب زكاته تلقائياً</DrawerDescription>
+            <DrawerTitle>{editingAssetId ? "تعديل الأصل" : "إضافة أصل جديد"}</DrawerTitle>
+            <DrawerDescription>{editingAssetId ? "عدّل بيانات الأصل" : "أضف أصلاً لحساب زكاته تلقائياً"}</DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-6 space-y-4">
             {/* Type selector */}
@@ -577,8 +605,8 @@ const Zakat = () => {
             </div>
 
             <Button onClick={handleAdd} className="w-full h-12 text-base font-bold rounded-xl" disabled={!addAmount || Number(addAmount) <= 0}>
-              <Plus size={18} className="ml-2" />
-              إضافة الأصل
+              {editingAssetId ? <Check size={18} className="ml-2" /> : <Plus size={18} className="ml-2" />}
+              {editingAssetId ? "حفظ التعديلات" : "إضافة الأصل"}
             </Button>
           </div>
         </DrawerContent>
