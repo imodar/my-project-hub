@@ -51,6 +51,12 @@ interface PackingItem {
   packed: boolean;
 }
 
+interface Expense {
+  id: string;
+  name: string;
+  amount: number;
+}
+
 interface Trip {
   id: string;
   name: string;
@@ -64,8 +70,7 @@ interface Trip {
   days: DayPlan[];
   suggestions: Suggestion[];
   packingList: PackingItem[];
-  accommodation: number;
-  transportation: number;
+  expenses: Expense[];
 }
 
 
@@ -87,8 +92,11 @@ const INITIAL_TRIPS: Trip[] = [
     budget: 12000,
     status: "confirmed",
     type: "family",
-    accommodation: 3500,
-    transportation: 2800,
+    expenses: [
+      { id: "e1", name: "الإقامة", amount: 3500 },
+      { id: "e2", name: "المواصلات", amount: 2800 },
+      { id: "e3", name: "تذاكر طيران", amount: 4200 },
+    ],
     days: [
       {
         id: "d1", dayNumber: 1, city: "إسطنبول — السلطان أحمد",
@@ -127,8 +135,10 @@ const INITIAL_TRIPS: Trip[] = [
     budget: 3000,
     status: "planning",
     type: "personal",
-    accommodation: 1200,
-    transportation: 600,
+    expenses: [
+      { id: "e4", name: "الإقامة", amount: 1200 },
+      { id: "e5", name: "المواصلات", amount: 600 },
+    ],
     days: [],
     suggestions: [],
     packingList: [],
@@ -208,6 +218,7 @@ const Trips = () => {
   })();
 
   // Drawers
+  const [newExpenseDrawer, setNewExpenseDrawer] = useState(false);
   const [newTripDrawer, setNewTripDrawer] = useState(false);
   const [newActivityDrawer, setNewActivityDrawer] = useState(false);
   const [newSuggestionDrawer, setNewSuggestionDrawer] = useState(false);
@@ -236,6 +247,8 @@ const Trips = () => {
   const [suggestionLocation, setSuggestionLocation] = useState("");
 
   const [packingItemName, setPackingItemName] = useState("");
+  const [expenseName, setExpenseName] = useState("");
+  const [expenseAmount, setExpenseAmount] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [dayCity, setDayCity] = useState("");
 
@@ -272,7 +285,7 @@ const Trips = () => {
         startDate: tripStart, endDate: tripEnd,
         participants: tripParticipants,
         budget: Number(tripBudget) || 0, status: "planning", type: activeTab as "family" | "personal",
-        days: [], suggestions: [], packingList: [], accommodation: 0, transportation: 0,
+        days: [], suggestions: [], packingList: [], expenses: [],
       };
       setTrips((prev) => [...prev, newTrip]);
       toast.success("تم إنشاء الرحلة");
@@ -372,6 +385,18 @@ const Trips = () => {
     toast.success("تم إضافة العنصر");
   };
 
+  const handleAddExpense = () => {
+    if (!selectedTrip || !expenseName.trim()) return;
+    const newExp: Expense = { id: Date.now().toString(), name: expenseName, amount: Number(expenseAmount) || 0 };
+    const updated = { ...selectedTrip, expenses: [...selectedTrip.expenses, newExp] };
+    setSelectedTrip(updated);
+    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    setExpenseName("");
+    setExpenseAmount("");
+    setNewExpenseDrawer(false);
+    toast.success("تم إضافة المصروف");
+  };
+
   const togglePackingItem = (itemId: string) => {
     if (!selectedTrip) return;
     const updatedList = selectedTrip.packingList.map((p) =>
@@ -385,8 +410,8 @@ const Trips = () => {
 
   // Calculate totals
   const getTripCosts = (trip: Trip) => {
-    const activitiesCost = trip.days.reduce((sum, d) => sum + d.activities.reduce((s, a) => s + a.cost, 0), 0);
-    return { activities: activitiesCost, accommodation: trip.accommodation, transportation: trip.transportation, total: activitiesCost + trip.accommodation + trip.transportation };
+    const expensesTotal = trip.expenses.reduce((sum, e) => sum + e.amount, 0);
+    return { total: expensesTotal };
   };
 
   // Drag & Drop handlers for activities
@@ -539,7 +564,7 @@ const Trips = () => {
                         </div>
                       </div>
                       {act.cost > 0 && (
-                        <span className="text-xs font-bold text-primary whitespace-nowrap">{act.cost} ر.س</span>
+                        <span className="text-xs font-bold text-primary whitespace-nowrap">{act.cost.toLocaleString()}</span>
                       )}
                     </div>
                   ))}
@@ -652,71 +677,72 @@ const Trips = () => {
         {/* Calculator */}
         {tripView === "calculator" && (
           <div className="px-5 mt-5 space-y-4">
-            <h3 className="text-sm font-bold text-foreground">حاسبة التكاليف</h3>
-            <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-sm space-y-4">
+            {/* Budget summary */}
+            <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">تكاليف الأنشطة</span>
-                <span className="text-sm font-bold text-foreground">{costs.activities} ر.س</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">الإقامة</span>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={selectedTrip.accommodation}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const updated = { ...selectedTrip, accommodation: val };
-                      setSelectedTrip(updated);
-                      setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
-                    }}
-                    className="w-24 h-8 text-xs text-left"
-                    dir="ltr"
-                  />
-                  <span className="text-xs text-muted-foreground">ر.س</span>
-                </div>
+                <span className="text-sm text-muted-foreground">الميزانية المحددة</span>
+                <span className="text-sm font-bold text-foreground">{selectedTrip.budget.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">المواصلات</span>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={selectedTrip.transportation}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const updated = { ...selectedTrip, transportation: val };
-                      setSelectedTrip(updated);
-                      setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
-                    }}
-                    className="w-24 h-8 text-xs text-left"
-                    dir="ltr"
-                  />
-                  <span className="text-xs text-muted-foreground">ر.س</span>
-                </div>
+                <span className="text-sm text-muted-foreground">إجمالي المصروفات</span>
+                <span className="text-sm font-bold text-foreground">{costs.total.toLocaleString()}</span>
               </div>
-              <div className="border-t border-border/50 pt-3 flex items-center justify-between">
-                <span className="text-sm font-bold text-foreground">المجموع</span>
-                <span className="text-base font-extrabold text-primary">{costs.total} ر.س</span>
-              </div>
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-muted-foreground">الميزانية المحددة</span>
-                <span className="text-sm font-bold text-foreground">{selectedTrip.budget} ر.س</span>
-              </div>
-              {costs.total > selectedTrip.budget && selectedTrip.budget > 0 && (
-                <div className="bg-destructive/10 rounded-xl p-3 text-center">
-                  <p className="text-xs font-bold text-destructive">
-                    ⚠ تجاوزت الميزانية بـ {costs.total - selectedTrip.budget} ر.س
-                  </p>
-                </div>
-              )}
-              {costs.total <= selectedTrip.budget && selectedTrip.budget > 0 && (
-                <div className="rounded-xl p-3 text-center" style={{ background: "hsl(145 40% 93%)" }}>
-                  <p className="text-xs font-bold" style={{ color: "hsl(145 45% 35%)" }}>
-                    ✓ ضمن الميزانية — متبقي {selectedTrip.budget - costs.total} ر.س
-                  </p>
-                </div>
+              {selectedTrip.budget > 0 && (
+                <>
+                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min((costs.total / selectedTrip.budget) * 100, 100)}%`,
+                        background: costs.total > selectedTrip.budget ? "hsl(var(--destructive))" : "hsl(var(--primary))",
+                      }}
+                    />
+                  </div>
+                  {costs.total > selectedTrip.budget ? (
+                    <div className="bg-destructive/10 rounded-xl p-3 text-center">
+                      <p className="text-xs font-bold text-destructive">
+                        ⚠ تجاوزت الميزانية بـ {(costs.total - selectedTrip.budget).toLocaleString()}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl p-3 text-center" style={{ background: "hsl(145 40% 93%)" }}>
+                      <p className="text-xs font-bold" style={{ color: "hsl(145 45% 35%)" }}>
+                        ✓ ضمن الميزانية — متبقي {(selectedTrip.budget - costs.total).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
+
+            {/* Expenses list */}
+            <h3 className="text-sm font-bold text-foreground">المصروفات</h3>
+            {selectedTrip.expenses.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                لا توجد مصروفات بعد — أضف أول مصروف
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {selectedTrip.expenses.map((exp) => (
+                  <div key={exp.id} className="bg-card rounded-xl border border-border/50 p-3 flex items-center justify-between">
+                    <span className="text-sm text-foreground">{exp.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-foreground">{exp.amount.toLocaleString()}</span>
+                      <button
+                        onClick={() => {
+                          const updated = { ...selectedTrip, expenses: selectedTrip.expenses.filter((e) => e.id !== exp.id) };
+                          setSelectedTrip(updated);
+                          setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+                        }}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -749,6 +775,17 @@ const Trips = () => {
         {tripView === "packing" && createPortal(
           <button
             onClick={() => setNewPackingDrawer(true)}
+            className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Plus size={24} />
+          </button>,
+          document.body
+        )}
+
+        {/* FAB for calculator */}
+        {tripView === "calculator" && createPortal(
+          <button
+            onClick={() => setNewExpenseDrawer(true)}
             className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
           >
             <Plus size={24} />
@@ -872,6 +909,18 @@ const Trips = () => {
           </DrawerContent>
         </Drawer>
 
+        {/* Add Expense Drawer */}
+        <Drawer open={newExpenseDrawer} onOpenChange={setNewExpenseDrawer}>
+          <DrawerContent>
+            <DrawerHeader><DrawerTitle>إضافة مصروف</DrawerTitle></DrawerHeader>
+            <div className="px-5 pb-8 space-y-4">
+              <Input placeholder="اسم المصروف (إقامة، طيران، طعام...)" value={expenseName} onChange={(e) => setExpenseName(e.target.value)} />
+              <Input type="number" placeholder="المبلغ" value={expenseAmount} onChange={(e) => setExpenseAmount(e.target.value)} dir="ltr" />
+              <Button className="w-full rounded-xl" onClick={handleAddExpense}>إضافة</Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
         {/* Edit Trip Drawer (in detail view) */}
         <Drawer open={newTripDrawer} onOpenChange={(o) => { setNewTripDrawer(o); if (!o) resetTripForm(); }}>
           <DrawerContent>
@@ -985,7 +1034,7 @@ const Trips = () => {
                           )}
                         </div>
                         <div className="text-left shrink-0">
-                          <p className="text-xs font-bold text-primary">{trip.budget > 0 ? `${trip.budget} ر.س` : ""}</p>
+                          <p className="text-xs font-bold text-primary">{trip.budget > 0 ? trip.budget.toLocaleString() : ""}</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">{trip.days.length} أيام</p>
                         </div>
                       </div>
