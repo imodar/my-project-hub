@@ -548,6 +548,7 @@ const Tasks = () => {
             </div>
           )}
         </div>
+        </PullToRefresh>
 
         {/* FAB */}
         {createPortal(
