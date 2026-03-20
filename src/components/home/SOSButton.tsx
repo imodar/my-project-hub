@@ -71,6 +71,14 @@ const SOSButton = () => {
       if (tapTimer.current) clearTimeout(tapTimer.current);
     };
   }, []);
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current) clearInterval(holdTimer.current);
+      if (countdownTimer.current) clearInterval(countdownTimer.current);
+      if (activeTimer.current) clearInterval(activeTimer.current);
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+    };
+  }, []);
 
   // Hold-to-activate (3 seconds)
   const startHold = useCallback(() => {
@@ -131,6 +139,19 @@ const SOSButton = () => {
       }
     }, 1000);
   }, []);
+
+  // Listen for nav bar SOS trigger
+  useEffect(() => {
+    const handler = () => {
+      if (phase === "active") {
+        setCancelDrawer(true);
+      } else if (phase === "idle") {
+        startCountdown();
+      }
+    };
+    window.addEventListener("trigger-sos", handler);
+    return () => window.removeEventListener("trigger-sos", handler);
+  }, [phase, startCountdown]);
 
   const cancelCountdown = useCallback(() => {
     if (countdownTimer.current) clearInterval(countdownTimer.current);
@@ -333,52 +354,9 @@ const SOSButton = () => {
     );
   }
 
-  // Main SOS button + settings
+  // Settings + drawers only (button is now in BottomNav)
   return (
     <>
-      {/* SOS Button - fixed on home screen */}
-      {createPortal(
-        <div className="fixed right-5 bottom-24 z-50 flex flex-col items-center gap-1.5" dir="rtl">
-          <button
-            onTouchStart={startHold}
-            onTouchEnd={cancelHold}
-            onMouseDown={startHold}
-            onMouseUp={cancelHold}
-            onMouseLeave={cancelHold}
-            onClick={handleTap}
-            onContextMenu={(e) => { e.preventDefault(); setSettingsDrawer(true); }}
-            className="relative w-14 h-14 rounded-2xl bg-red-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform overflow-hidden group"
-            style={{
-              boxShadow: "0 4px 20px rgba(220, 38, 38, 0.4)",
-            }}
-          >
-            {/* Hold progress ring */}
-            {phase === "holding" && (
-              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 56 56">
-                <circle
-                  cx="28" cy="28" r="24"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.3)"
-                  strokeWidth="4"
-                />
-                <circle
-                  cx="28" cy="28" r="24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 24}`}
-                  strokeDashoffset={`${2 * Math.PI * 24 * (1 - holdProgress / 100)}`}
-                  className="transition-[stroke-dashoffset] duration-100"
-                />
-              </svg>
-            )}
-            <ShieldAlert size={24} className="relative z-10" />
-          </button>
-          <span className="text-[9px] font-bold text-red-600/70">SOS</span>
-        </div>,
-        document.body
-      )}
 
       {/* Settings Drawer */}
       <Drawer open={settingsDrawer} onOpenChange={setSettingsDrawer}>

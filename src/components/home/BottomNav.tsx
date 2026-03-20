@@ -1,10 +1,11 @@
-import { Home, Map, MessageCircle, Settings } from "lucide-react";
+import { Home, Map, MessageCircle, Settings, ShieldAlert } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { haptic } from "@/lib/haptics";
 
 const navItems = [
   { icon: Home, label: "الرئيسية", path: "/" },
   { icon: Map, label: "الخريطة", path: "/map" },
+  { icon: ShieldAlert, label: "طوارئ", path: "", isSOS: true },
   { icon: MessageCircle, label: "المحادثة", path: "/chat" },
   { icon: Settings, label: "الإعدادات", path: "/settings" },
 ];
@@ -12,6 +13,11 @@ const navItems = [
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleSOSPress = () => {
+    haptic.heavy();
+    window.dispatchEvent(new CustomEvent("trigger-sos"));
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
@@ -23,7 +29,31 @@ const BottomNav = () => {
           border: "1px solid hsla(0,0%,0%,0.06)",
         }}>
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = !(item as any).isSOS && location.pathname === item.path;
+
+            if ((item as any).isSOS) {
+              return (
+                <button
+                  key={item.label}
+                  onClick={handleSOSPress}
+                  className="flex flex-col items-center gap-1 px-3 py-1 transition-transform active:scale-90 -mt-6"
+                >
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center"
+                    style={{
+                      background: "linear-gradient(135deg, hsl(0, 72%, 51%), hsl(0, 84%, 60%))",
+                      boxShadow: "0 4px 15px hsla(0, 72%, 51%, 0.4)",
+                    }}
+                  >
+                    <ShieldAlert size={22} className="text-white" />
+                  </div>
+                  <span className="text-[10px] font-bold" style={{ color: "hsl(0, 72%, 51%)" }}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            }
+
             return (
               <button
                 key={item.label}
