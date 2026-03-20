@@ -115,12 +115,14 @@ const Tasks = () => {
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
 
-  // Drag reorder state
-  const [reorderMode, setReorderMode] = useState(false);
-  const [dragItemId, setDragItemId] = useState<string | null>(null);
-  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+  // Direct long-press drag reorder
+  const [dragActiveId, setDragActiveId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dragItemRef = useRef<string | null>(null);
+  const isLongPressingRef = useRef(false);
+  const pointerStartYRef = useRef(0);
+  const itemRectsRef = useRef<Map<string, DOMRect>>(new Map());
+  const itemRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const activeList = lists.find((l) => l.id === activeListId);
 
