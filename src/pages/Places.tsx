@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Plus, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, RotateCcw, SlidersHorizontal, Baby, DollarSign } from "lucide-react";
+import { Plus, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, RotateCcw, SlidersHorizontal, Baby, DollarSign, Phone, Link2, ExternalLink } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
 import { useNavigate } from "react-router-dom";
@@ -159,6 +159,9 @@ const Places = () => {
   const [reviewPlace, setReviewPlace] = useState<Place | null>(null);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewWouldReturn, setReviewWouldReturn] = useState<"yes" | "no" | null>(null);
+
+  // Detail bottom sheet
+  const [detailPlace, setDetailPlace] = useState<Place | null>(null);
 
   // New list form
   const [newListName, setNewListName] = useState("");
@@ -624,6 +627,127 @@ const Places = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Place Detail Drawer */}
+        <Drawer open={!!detailPlace} onOpenChange={(open) => { if (!open) setDetailPlace(null); }}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <div className="flex items-center gap-3">
+                {detailPlace && (
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${CATEGORY_INFO[detailPlace.category].bg}`}>
+                    {CATEGORY_INFO[detailPlace.category].emoji}
+                  </div>
+                )}
+                <div>
+                  <DrawerTitle>{detailPlace?.name}</DrawerTitle>
+                  <DrawerDescription>{detailPlace?.location?.address || detailPlace?.category}</DrawerDescription>
+                </div>
+              </div>
+            </DrawerHeader>
+            {detailPlace && (
+              <div className="px-4 space-y-3 pb-4 max-h-[55vh] overflow-y-auto">
+                {/* Tags */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {detailPlace.mustVisit && (
+                    <span className="text-xs bg-destructive/10 text-destructive px-2.5 py-1 rounded-lg font-bold">🔴 لازم نروح!</span>
+                  )}
+                  {detailPlace.visited && (
+                    <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-lg font-bold">✅ زرناه</span>
+                  )}
+                  <span className="text-xs bg-muted px-2.5 py-1 rounded-lg font-medium text-muted-foreground">
+                    {detailPlace.priceRange} {PRICE_LABELS[detailPlace.priceRange]}
+                  </span>
+                  <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${
+                    detailPlace.kidFriendly === "yes" ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+                    : detailPlace.kidFriendly === "partial" ? "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
+                    : "bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400"
+                  }`}>
+                    {KID_LABELS[detailPlace.kidFriendly].emoji} {KID_LABELS[detailPlace.kidFriendly].label}
+                  </span>
+                </div>
+
+                {/* Rating */}
+                {detailPlace.rating && detailPlace.rating > 0 && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50">
+                    <Star size={16} className="text-yellow-500" />
+                    <span className="text-sm font-medium text-foreground">التقييم</span>
+                    <div className="flex items-center gap-0.5 mr-auto">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} size={14} className={s <= (detailPlace.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Social Link */}
+                {detailPlace.socialLink && (
+                  <a
+                    href={detailPlace.socialLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <Link2 size={16} className="text-primary shrink-0" />
+                    <span className="text-sm text-foreground flex-1 truncate">زيارة الرابط</span>
+                    <ExternalLink size={14} className="text-muted-foreground shrink-0" />
+                  </a>
+                )}
+
+                {/* Phone */}
+                {detailPlace.phone && (
+                  <a
+                    href={`tel:${detailPlace.phone}`}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <Phone size={16} className="text-primary shrink-0" />
+                    <span className="text-sm text-foreground flex-1" dir="ltr">{detailPlace.phone}</span>
+                  </a>
+                )}
+
+                {/* Location */}
+                {detailPlace.location?.address && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                    <MapPin size={16} className="text-primary shrink-0" />
+                    <span className="text-sm text-foreground">{detailPlace.location.address}</span>
+                  </div>
+                )}
+
+                {/* Note */}
+                {detailPlace.note && (
+                  <div className="p-3 rounded-xl bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1 font-semibold">💬 ملاحظة</p>
+                    <p className="text-sm text-foreground leading-relaxed">{detailPlace.note}</p>
+                  </div>
+                )}
+
+                {/* Added by */}
+                <p className="text-[11px] text-muted-foreground text-center pt-1">
+                  أضافه: {detailPlace.addedBy}
+                  {detailPlace.suggestedBy && ` · اقترحه: ${detailPlace.suggestedBy}`}
+                </p>
+              </div>
+            )}
+            <DrawerFooter className="flex-row gap-2">
+              <Button
+                onClick={() => {
+                  const place = detailPlace;
+                  setDetailPlace(null);
+                  if (place) navigate(`/places/edit/${place.id}`, { state: { place, listId: activeListId } });
+                }}
+                variant="outline"
+                className="flex-1 rounded-xl gap-2"
+              >
+                <Pencil size={14} /> تعديل
+              </Button>
+              <Button
+                onClick={() => setDetailPlace(null)}
+                className="flex-1 rounded-xl"
+              >
+                إغلاق
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
 
         {/* Filter Drawer */}
         <Drawer open={showFilters} onOpenChange={setShowFilters}>
