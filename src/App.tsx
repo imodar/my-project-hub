@@ -57,6 +57,7 @@ const AnimatedRoutes = () => {
         <Route path="/zakat" element={<Zakat />} />
         <Route path="/will" element={<Will />} />
         <Route path="/trips" element={<Trips />} />
+        <Route path="/albums" element={<Albums />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
