@@ -106,6 +106,7 @@ const initialTaken: Debt[] = [
     payments: [{ id: "p4", amounts: [{ amount: 1200, currency: "SAR" }], date: "2025-03-05", type: "cash" }],
     isFullyPaid: false,
     isArchived: false,
+    hasReminder: false,
     postponements: [],
   },
   {
