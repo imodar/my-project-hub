@@ -138,7 +138,7 @@ const Zakat = () => {
   const [addDate, setAddDate] = useState(new Date().toISOString().split("T")[0]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const { goldPricePerGram, silverPricePerGram, loading: priceLoading } = useGoldPrice();
+  const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
 
   const updateAssets = useCallback((newAssets: ZakatAsset[]) => {
     setAssets(newAssets);
