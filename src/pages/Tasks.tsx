@@ -23,7 +23,7 @@ interface TaskItem {
   id: string;
   name: string;
   note: string;
-  priority: "high" | "medium" | "low";
+  priority: "none" | "high" | "medium" | "low";
   assignedTo: string;
   done: boolean;
 }
@@ -40,6 +40,7 @@ interface TaskList {
 }
 
 const PRIORITY_INFO: Record<string, { label: string; bg: string; text: string; emoji: string }> = {
+  none: { label: "بدون", bg: "bg-muted", text: "text-muted-foreground", emoji: "" },
   high: { label: "عاجل", bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300", emoji: "🔴" },
   medium: { label: "متوسط", bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", emoji: "🟡" },
   low: { label: "عادي", bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", emoji: "🟢" },
@@ -341,11 +342,13 @@ const Tasks = () => {
             )}
             <p className="text-[10px] text-muted-foreground mt-0.5">{item.assignedTo}</p>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
-              {prioInfo.emoji} {prioInfo.label}
-            </span>
-          </div>
+          {item.priority !== "none" && (
+            <div className="flex flex-col items-end gap-1">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
+                {prioInfo.emoji} {prioInfo.label}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
