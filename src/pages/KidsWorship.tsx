@@ -223,7 +223,7 @@ const KidsWorship = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `عبادات-${getCurrentMonthName()}.csv`;
+    a.download = `عبادات-${getMonthLabel(selectedYear, selectedMonth)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast({ title: "تم تصدير الجدول بنجاح ✅" });
