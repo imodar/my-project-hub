@@ -1025,58 +1025,7 @@ const Trips = () => {
           </DrawerContent>
         </Drawer>
 
-        {/* Edit Trip Drawer (in detail view) */}
-        <Drawer open={newTripDrawer} onOpenChange={(o) => { setNewTripDrawer(o); if (!o) resetTripForm(); }}>
-          <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>{editingTripId ? "تعديل الرحلة" : "رحلة جديدة"}</DrawerTitle>
-            </DrawerHeader>
-            <div className="px-5 pb-8 space-y-4">
-              <Input placeholder="اسم الرحلة" value={tripName} onChange={(e) => setTripName(e.target.value)} />
-              <Input placeholder="الوجهة الرئيسية" value={tripDest} onChange={(e) => setTripDest(e.target.value)} />
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">تاريخ البداية</label>
-                  <Input type="date" value={tripStart} onChange={(e) => setTripStart(e.target.value)} dir="ltr" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">تاريخ النهاية</label>
-                  <Input type="date" value={tripEnd} onChange={(e) => setTripEnd(e.target.value)} dir="ltr" />
-                </div>
-              </div>
-              <Input type="number" placeholder="الميزانية الإجمالية" value={tripBudget} onChange={(e) => setTripBudget(e.target.value)} dir="ltr" />
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-2 block">المشاركون</label>
-                {familyMembers.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {familyMembers.map((m) => {
-                      const selected = tripParticipants.includes(m.name);
-                      return (
-                        <button key={m.id} type="button"
-                          onClick={() => setTripParticipants((prev) => selected ? prev.filter((n) => n !== m.name) : [...prev, m.name])}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95"
-                          style={{
-                            background: selected ? "hsl(var(--primary))" : "hsl(var(--muted))",
-                            color: selected ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))",
-                          }}
-                        >
-                          {selected && <Check size={12} />}
-                          <Users size={12} />
-                          {m.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">أضف أفراد العائلة أولاً من إدارة العائلة</p>
-                )}
-              </div>
-              <Button className="w-full rounded-xl" onClick={handleSaveTrip}>
-                {editingTripId ? "حفظ التعديلات" : "إنشاء الرحلة"}
-              </Button>
-            </div>
-          </DrawerContent>
-        </Drawer>
+        {/* Trip Drawer is shared — rendered once outside selectedTrip block */}
       </div>
     );
   }
