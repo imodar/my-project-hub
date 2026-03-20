@@ -438,7 +438,7 @@ const Debts = () => {
     return <span className="text-xs text-muted-foreground">{formatDate(debt.dueDate)}</span>;
   };
 
-  // AmountEditor moved outside component
+
 
   const SummaryItem = ({ label, icon, summary, count, colorClass }: { label: string; icon: React.ReactNode; summary: DebtAmount[]; count: number; colorClass: string }) => (
     <div className="flex-1 text-center">
