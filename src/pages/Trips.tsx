@@ -456,7 +456,7 @@ const Trips = () => {
           ]}
         >
           <div className="flex items-center gap-2 mt-3 pb-1">
-            <span className="text-white/60 text-xs">
+            <span className="text-xs font-medium" style={{ color: "hsl(var(--accent))" }}>
               {selectedTrip.startDate && format(new Date(selectedTrip.startDate), "d MMM", { locale: ar })}
               {" — "}
               {selectedTrip.endDate && format(new Date(selectedTrip.endDate), "d MMM yyyy", { locale: ar })}
@@ -491,20 +491,29 @@ const Trips = () => {
                 if (selectedTrip.id === "1") return [{ key: "album", label: "ألبوم الرحلة", icon: Camera }];
                 return [];
               })()),
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setTripView(tab.key as any)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
-                  tripView === tab.key
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                <tab.icon size={14} />
-                {tab.label}
-              </button>
-            ))}
+            ].map((tab) => {
+              const isActive = tripView === tab.key;
+              const activeColors: Record<string, string> = {
+                itinerary: "hsl(var(--primary))",
+                suggestions: "hsl(40 90% 50%)",
+                packing: "hsl(145 45% 40%)",
+                calculator: "hsl(280 50% 55%)",
+                album: "hsl(350 65% 55%)",
+              };
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setTripView(tab.key as any)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
+                    isActive ? "text-white shadow-md" : "bg-muted text-muted-foreground"
+                  }`}
+                  style={isActive ? { background: activeColors[tab.key] || "hsl(var(--primary))" } : undefined}
+                >
+                  <tab.icon size={14} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -539,7 +548,7 @@ const Trips = () => {
               <div key={day.id} className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
                 <div className="flex items-center justify-between p-4 border-b border-border/30">
                   <div>
-                    <span className="text-xs font-bold text-primary">
+                    <span className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>
                       اليوم {day.dayNumber}
                       {selectedTrip.startDate && ` — ${format(addDays(new Date(selectedTrip.startDate), day.dayNumber - 1), "EEEE d MMM", { locale: ar })}`}
                     </span>
@@ -1080,11 +1089,11 @@ const Trips = () => {
       <PullToRefresh onRefresh={async () => {}}>
         <div className="px-5 mt-5">
           <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
-            <TabsList className="w-full grid grid-cols-2 rounded-xl h-11">
-              <TabsTrigger value="family" className="rounded-lg text-xs font-bold">
+            <TabsList className="w-full grid grid-cols-2 rounded-xl h-11 bg-muted">
+              <TabsTrigger value="family" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
                 <Users size={14} className="ml-1" /> رحلات عائلية
               </TabsTrigger>
-              <TabsTrigger value="personal" className="rounded-lg text-xs font-bold">
+              <TabsTrigger value="personal" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
                 <Plane size={14} className="ml-1" /> رحلات شخصية
               </TabsTrigger>
             </TabsList>
@@ -1121,7 +1130,7 @@ const Trips = () => {
                             <MapPin size={11} /> {trip.destination}
                           </p>
                           {trip.startDate && (
-                            <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                            <p className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "hsl(145 45% 35%)" }}>
                               <Calendar size={11} />
                               {format(new Date(trip.startDate), "d MMM", { locale: ar })}
                               {trip.endDate && ` — ${format(new Date(trip.endDate), "d MMM", { locale: ar })}`}
@@ -1129,7 +1138,7 @@ const Trips = () => {
                           )}
                         </div>
                         <div className="text-left shrink-0">
-                          <p className="text-xs font-bold text-primary">{trip.budget > 0 ? trip.budget.toLocaleString() : ""}</p>
+                          <p className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>{trip.budget > 0 ? trip.budget.toLocaleString() : ""}</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">{trip.days.length} أيام</p>
                         </div>
                       </div>
