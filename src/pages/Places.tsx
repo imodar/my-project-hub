@@ -503,8 +503,11 @@ const Places = () => {
               onClick: () => setShowAddList(true),
             },
             {
-              icon: <Search size={18} className="text-white" />,
-              onClick: () => setSearchQuery(searchQuery ? "" : " "),
+              icon: <div className="relative">
+                <SlidersHorizontal size={18} className="text-white" />
+                {hasActiveFilters && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-destructive rounded-full" />}
+              </div>,
+              onClick: () => setShowFilters(true),
             },
           ]}
         >
