@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
@@ -324,6 +325,7 @@ const CalendarPage = () => {
         ]}
       />
 
+      <PullToRefresh>
       {/* Calendar Grid */}
       <div className="px-4 mt-4">
         <div className="bg-card rounded-2xl p-4 border border-border" style={{ boxShadow: "0 2px 12px hsla(0,0%,0%,0.04)" }}>
@@ -446,6 +448,8 @@ const CalendarPage = () => {
         </div>
 
       </div>
+
+      </PullToRefresh>
 
       {/* ===== DIALOGS ===== */}
 

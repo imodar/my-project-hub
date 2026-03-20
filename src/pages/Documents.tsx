@@ -484,8 +484,7 @@ const Documents = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
-      <PullToRefresh onRefresh={handleRefresh}>
-        <PageHeader
+      <PageHeader
           title="الوثائق"
           actions={[
             {
@@ -515,6 +514,8 @@ const Documents = () => {
             ))}
           </div>
         </PageHeader>
+
+      <PullToRefresh onRefresh={handleRefresh}>
 
         {/* Stats bar */}
         {activeList && (
