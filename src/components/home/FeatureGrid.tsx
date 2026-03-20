@@ -17,6 +17,7 @@ const features = [
   { icon: Camera, label: "الألبومات", bg: "hsl(290 45% 92%)", color: "hsl(290 50% 45%)", route: "/albums" },
   { icon: Scale, label: "الزكاة", bg: "hsl(160 45% 92%)", color: "hsl(160 50% 35%)", route: "/zakat" },
   { icon: ScrollText, label: "الوصية", bg: "hsl(200 45% 92%)", color: "hsl(200 50% 35%)", route: "/will" },
+  { icon: BookHeart, label: "عبادات الأطفال", bg: "hsl(320 50% 93%)", color: "hsl(320 55% 45%)", route: "/kids-worship" },
 ];
 
 const FeatureGrid = () => {

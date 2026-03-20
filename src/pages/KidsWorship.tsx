@@ -354,7 +354,7 @@ const KidsWorship = () => {
                     : d === selectedDay
                     ? "hsl(270 55% 40%)"
                     : "hsl(0 0% 45%)",
-                  ringColor: "hsl(270 55% 50%)",
+                  boxShadow: d === selectedDay ? "0 0 0 2px hsl(270 55% 50%)" : "none",
                 }}
               >
                 {d}
