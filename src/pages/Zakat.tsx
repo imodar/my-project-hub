@@ -223,7 +223,7 @@ const Zakat = () => {
       </PageHeader>
 
       <PullToRefresh onRefresh={async () => { setAssets(loadAssets()); }}>
-        <div className="px-4 -mt-6 space-y-4">
+        <div className="px-4 mt-2 space-y-4">
 
           {/* Privacy notice */}
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-primary/5 border border-primary/10">
