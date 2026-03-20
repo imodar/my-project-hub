@@ -288,7 +288,8 @@ const Trips = () => {
         id: Date.now().toString(), name: tripName, destination: tripDest,
         startDate: tripStart, endDate: tripEnd,
         participants: tripParticipants,
-        budget: Number(tripBudget) || 0, status: "planning", type: activeTab as "family" | "personal",
+        budget: Number(tripBudget) || 0, status: "planning",
+        type: tripParticipants.length > 1 ? "family" : "personal",
         days: [], suggestions: [], packingList: [], expenses: [],
       };
       setTrips((prev) => [...prev, newTrip]);
