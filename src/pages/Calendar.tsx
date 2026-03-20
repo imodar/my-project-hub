@@ -449,6 +449,8 @@ const CalendarPage = () => {
 
       </div>
 
+      </PullToRefresh>
+
       {/* ===== DIALOGS ===== */}
 
       {/* Day Events Drawer */}
