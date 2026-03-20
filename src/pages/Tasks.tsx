@@ -40,6 +40,7 @@ interface TaskList {
 }
 
 const PRIORITY_INFO: Record<string, { label: string; bg: string; text: string; emoji: string }> = {
+  none: { label: "بدون", bg: "bg-muted", text: "text-muted-foreground", emoji: "" },
   high: { label: "عاجل", bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300", emoji: "🔴" },
   medium: { label: "متوسط", bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", emoji: "🟡" },
   low: { label: "عادي", bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", emoji: "🟢" },
