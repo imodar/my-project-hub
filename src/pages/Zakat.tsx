@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Plus, Coins, Info, Trash2, Bell, BellOff, ChevronDown, ChevronUp,
-  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle
+  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
@@ -14,6 +14,63 @@ import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription,
 } from "@/components/ui/drawer";
 import { haptic } from "@/lib/haptics";
+
+// ── Swipeable Card ──
+const ACTION_WIDTH = 140;
+function SwipeableAssetCard({ onReminder, onDelete, children }: { onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
+  const startXRef = useRef(0);
+  const currentXRef = useRef(0);
+  const isOpenRef = useRef(false);
+  const [transform, setTransform] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const diff = e.touches[0].clientX - startXRef.current;
+    // RTL: swipe right reveals actions on left
+    currentXRef.current = isOpenRef.current
+      ? Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH + diff))
+      : Math.max(0, Math.min(ACTION_WIDTH, diff));
+    setTransform(currentXRef.current);
+  };
+  const handleTouchEnd = () => {
+    const open = currentXRef.current > ACTION_WIDTH / 2;
+    isOpenRef.current = open;
+    setTransform(open ? ACTION_WIDTH : 0);
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl" ref={containerRef}>
+      <div className="absolute inset-y-0 left-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
+        <button
+          onClick={() => { haptic.light(); onReminder(); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white"
+        >
+          <Bell size={18} />
+          <span className="text-[10px] font-bold">تذكير</span>
+        </button>
+        <button
+          onClick={() => { haptic.light(); onDelete(); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-white"
+        >
+          <Trash2 size={18} />
+          <span className="text-[10px] font-bold">حذف</span>
+        </button>
+      </div>
+      <div
+        className="relative bg-background z-10 transition-transform duration-200"
+        style={{ transform: `translateX(${transform}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 // ── Types ──
 type AssetType = "cash" | "gold" | "silver" | "stocks" | "funds";
