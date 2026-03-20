@@ -507,23 +507,6 @@ const Places = () => {
           </div>
         </PageHeader>
 
-        {/* Suggest banner */}
-        <div className="px-4 pt-3">
-          <button
-            onClick={suggestRandom}
-            className="w-full flex items-center justify-between p-3 rounded-2xl border border-border"
-            style={{ background: "linear-gradient(135deg, hsl(145, 40%, 92%), hsl(200, 50%, 92%))" }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🎲</span>
-              <div className="text-right">
-                <p className="text-sm font-bold text-foreground">فين نروح اليوم؟</p>
-                <p className="text-[11px] text-muted-foreground">{totalPlaces} مكان في قائمتك</p>
-              </div>
-            </div>
-            <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-primary text-primary-foreground">اقترح!</span>
-          </button>
-        </div>
 
         {/* Stats bar */}
         {activeList && !activeList.isDefault && (
