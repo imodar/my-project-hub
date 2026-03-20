@@ -371,7 +371,7 @@ const Market = () => {
 
     return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
-      <PullToRefresh onRefresh={handleRefresh}>
+      
       <PageHeader
         title="أغراض السوق"
         actions={[
@@ -404,6 +404,7 @@ const Market = () => {
         </div>
       </PageHeader>
 
+      <PullToRefresh onRefresh={handleRefresh}>
       {/* Stats bar */}
       {activeList && (
         <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
@@ -490,6 +491,7 @@ const Market = () => {
           </div>
         )}
       </div>
+      </PullToRefresh>
 
       {/* Floating add button - portal to escape transform context */}
       {createPortal(
@@ -737,7 +739,7 @@ const Market = () => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-      </PullToRefresh>
+    
     </div>
   );
 };
