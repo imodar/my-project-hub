@@ -275,7 +275,7 @@ const Trips = () => {
       const newTrip: Trip = {
         id: Date.now().toString(), name: tripName, destination: tripDest,
         startDate: tripStart, endDate: tripEnd,
-        participants: tripParticipants.split("،").map((s) => s.trim()).filter(Boolean),
+        participants: tripParticipants,
         budget: Number(tripBudget) || 0, status: "planning", type: activeTab as "family" | "personal",
         days: [], suggestions: [], packingList: [], accommodation: 0, transportation: 0,
       };
