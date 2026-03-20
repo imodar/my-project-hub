@@ -11,7 +11,7 @@ const features = [
   { icon: Calendar, label: "التقويم", bg: "hsl(215 80% 93%)", color: "hsl(215 70% 50%)", route: "/calendar" },
   { icon: ListChecks, label: "المهام", bg: "hsl(270 50% 93%)", color: "hsl(270 50% 50%)", route: "/tasks" },
   { icon: Plane, label: "الرحلات", bg: "hsl(185 60% 92%)", color: "hsl(185 60% 38%)" },
-  { icon: FolderLock, label: "الوثائق", bg: "hsl(43 60% 92%)", color: "hsl(43 65% 40%)" },
+  { icon: FolderLock, label: "الوثائق", bg: "hsl(43 60% 92%)", color: "hsl(43 65% 40%)", route: "/documents" },
   { icon: MapPin, label: "الأماكن", bg: "hsl(350 55% 93%)", color: "hsl(350 55% 50%)", route: "/places" },
   { icon: HandCoins, label: "الديون", bg: "hsl(0 50% 93%)", color: "hsl(0 60% 50%)", route: "/debts" },
 ];

@@ -49,6 +49,7 @@ const AnimatedRoutes = () => {
         <Route path="/places/edit/:id" element={<AddPlace />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/tasks" element={<Tasks />} />
+        <Route path="/documents" element={<Documents />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
