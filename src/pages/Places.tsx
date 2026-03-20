@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Search, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, RotateCcw } from "lucide-react";
+import { Plus, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, RotateCcw, SlidersHorizontal, Baby, DollarSign } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
 import { useNavigate } from "react-router-dom";
@@ -136,9 +136,16 @@ const Places = () => {
   const [lists, setLists] = useState<PlaceList[]>(initialLists);
   const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
   const [activeCategory, setActiveCategory] = useState<PlaceCategory | "الكل">("الكل");
-  const [searchQuery, setSearchQuery] = useState("");
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filter state
+  const [filterRating, setFilterRating] = useState(0);
+  const [filterPrice, setFilterPrice] = useState<PriceRange | "الكل">("الكل");
+  const [filterKid, setFilterKid] = useState<"yes" | "partial" | "no" | "الكل">("الكل");
+  const [filterMustVisit, setFilterMustVisit] = useState(false);
+  const [filterVisitStatus, setFilterVisitStatus] = useState<"الكل" | "visited" | "unvisited">("الكل");
 
   // Swipe state
   const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
@@ -163,14 +170,29 @@ const Places = () => {
 
   const activeList = lists.find((l) => l.id === activeListId);
 
+  const hasActiveFilters = filterRating > 0 || filterPrice !== "الكل" || filterKid !== "الكل" || filterMustVisit || filterVisitStatus !== "الكل" || activeCategory !== "الكل";
+
   const filteredPlaces = activeList?.places.filter((place) => {
     const matchesCat = activeCategory === "الكل" || place.category === activeCategory;
-    const matchesSearch = !searchQuery || place.name.includes(searchQuery);
-    return matchesCat && matchesSearch;
+    const matchesRating = filterRating === 0 || (place.rating && place.rating >= filterRating);
+    const matchesPrice = filterPrice === "الكل" || place.priceRange === filterPrice;
+    const matchesKid = filterKid === "الكل" || place.kidFriendly === filterKid;
+    const matchesMustVisit = !filterMustVisit || place.mustVisit;
+    const matchesVisit = filterVisitStatus === "الكل" || (filterVisitStatus === "visited" ? place.visited : !place.visited);
+    return matchesCat && matchesRating && matchesPrice && matchesKid && matchesMustVisit && matchesVisit;
   }) || [];
 
   const unvisitedPlaces = filteredPlaces.filter((p) => !p.visited);
   const visitedPlaces = filteredPlaces.filter((p) => p.visited);
+
+  const resetFilters = () => {
+    setActiveCategory("الكل");
+    setFilterRating(0);
+    setFilterPrice("الكل");
+    setFilterKid("الكل");
+    setFilterMustVisit(false);
+    setFilterVisitStatus("الكل");
+  };
 
   const totalPlaces = activeList?.places.length || 0;
 
@@ -481,8 +503,11 @@ const Places = () => {
               onClick: () => setShowAddList(true),
             },
             {
-              icon: <Search size={18} className="text-white" />,
-              onClick: () => setSearchQuery(searchQuery ? "" : " "),
+              icon: <div className="relative">
+                <SlidersHorizontal size={18} className="text-white" />
+                {hasActiveFilters && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-destructive rounded-full" />}
+              </div>,
+              onClick: () => setShowFilters(true),
             },
           ]}
         >
@@ -553,22 +578,6 @@ const Places = () => {
           </div>
         )}
 
-        {/* Search */}
-        {searchQuery !== "" && (
-          <div className="px-4 pt-3">
-            <div className="relative">
-              <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="ابحث عن مكان..."
-                value={searchQuery.trim()}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-9 bg-card border-border rounded-xl text-sm"
-                autoFocus
-              />
-            </div>
-          </div>
-        )}
-
         {/* Category filters */}
         <div className="px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
           {CATEGORIES.map((cat) => {
@@ -631,6 +640,143 @@ const Places = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Filter Drawer */}
+        <Drawer open={showFilters} onOpenChange={setShowFilters}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>فلترة الأماكن</DrawerTitle>
+              <DrawerDescription>اختر معايير الفلترة</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-5 pb-2 max-h-[60vh] overflow-y-auto">
+              {/* Category */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground">الفئة</p>
+                <div className="flex gap-2 flex-wrap">
+                  {CATEGORIES.map((cat) => {
+                    const isAll = cat === "الكل";
+                    const catInfo = !isAll ? CATEGORY_INFO[cat] : null;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`flex items-center gap-1 px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                          activeCategory === cat ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                        }`}
+                      >
+                        {isAll ? "🗺️" : catInfo?.emoji} {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Rating */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Star size={16} className="text-primary" />
+                  الحد الأدنى للتقييم
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button key={s} onClick={() => setFilterRating(s === filterRating ? 0 : s)} className="p-1">
+                      <Star size={28} className={`transition-colors ${s <= filterRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <DollarSign size={16} className="text-primary" />
+                  الفئة السعرية
+                </p>
+                <div className="grid grid-cols-5 gap-2">
+                  {([{ value: "الكل" as const, label: "الكل" }, ...([
+                    { value: "$" as PriceRange, label: "$" },
+                    { value: "$$" as PriceRange, label: "$$" },
+                    { value: "$$$" as PriceRange, label: "$$$" },
+                    { value: "$$$$" as PriceRange, label: "$$$$" },
+                  ])]).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFilterPrice(opt.value)}
+                      className={`p-2 rounded-xl border text-xs font-medium transition-all text-center ${
+                        filterPrice === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Kid Friendly */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Baby size={16} className="text-primary" />
+                  مناسب للأطفال؟
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { value: "الكل" as const, label: "الكل", emoji: "🗺️" },
+                    { value: "yes" as const, label: "نعم", emoji: "👶" },
+                    { value: "partial" as const, label: "جزئياً", emoji: "⚠️" },
+                    { value: "no" as const, label: "لا", emoji: "🚫" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFilterKid(opt.value)}
+                      className={`flex items-center justify-center gap-1 p-2 rounded-xl border text-xs font-medium transition-all ${
+                        filterKid === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                      }`}
+                    >
+                      {opt.emoji} {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Must Visit */}
+              <button
+                onClick={() => setFilterMustVisit(!filterMustVisit)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                  filterMustVisit ? "border-primary bg-primary/10" : "border-border bg-card"
+                }`}
+              >
+                <span className="text-sm font-medium text-foreground">🔴 لازم نروح فقط</span>
+                {filterMustVisit && <Check size={16} className="text-primary" />}
+              </button>
+
+              {/* Visit Status */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground">حالة الزيارة</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "الكل" as const, label: "الكل" },
+                    { value: "unvisited" as const, label: "ما زرناه" },
+                    { value: "visited" as const, label: "زرناه ✅" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFilterVisitStatus(opt.value)}
+                      className={`p-2.5 rounded-xl border text-xs font-medium transition-all text-center ${
+                        filterVisitStatus === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DrawerFooter className="flex-row gap-2">
+              <Button onClick={() => setShowFilters(false)} className="flex-1 rounded-xl">عرض النتائج</Button>
+              <Button variant="outline" onClick={() => { resetFilters(); }} className="flex-1 rounded-xl">إعادة ضبط</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
 
         {/* Add List Drawer */}
         <Drawer open={showAddList} onOpenChange={setShowAddList}>
