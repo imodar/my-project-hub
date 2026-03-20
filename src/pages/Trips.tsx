@@ -282,7 +282,7 @@ const Trips = () => {
         startDate: tripStart, endDate: tripEnd,
         participants: tripParticipants,
         budget: Number(tripBudget) || 0, status: "planning", type: activeTab as "family" | "personal",
-        days: [], suggestions: [], packingList: [], accommodation: 0, transportation: 0,
+        days: [], suggestions: [], packingList: [], expenses: [],
       };
       setTrips((prev) => [...prev, newTrip]);
       toast.success("تم إنشاء الرحلة");
