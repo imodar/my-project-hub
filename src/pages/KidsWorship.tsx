@@ -1,153 +1,53 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Download, Sparkles, Trophy, RotateCcw } from "lucide-react";
+import { Star, Sparkles, Trophy, RotateCcw, Lock, Users } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
-
-// ─── Category Definitions ───────────────────────────────────────
-
-interface WorshipItem {
-  id: string;
-  label: string;
-}
-
-interface WorshipCategory {
-  id: string;
-  label: string;
-  color: string;
-  bg: string;
-  items: WorshipItem[];
-}
-
-const categories: WorshipCategory[] = [
-  {
-    id: "salah",
-    label: "الصلاة",
-    color: "hsl(270 55% 50%)",
-    bg: "hsl(270 55% 94%)",
-    items: [
-      { id: "fajr", label: "الفجر" },
-      { id: "dhuhr", label: "الظهر" },
-      { id: "asr", label: "العصر" },
-      { id: "maghrib", label: "المغرب" },
-      { id: "isha", label: "العشاء" },
-    ],
-  },
-  {
-    id: "nawafil",
-    label: "النوافل",
-    color: "hsl(200 60% 45%)",
-    bg: "hsl(200 60% 93%)",
-    items: [
-      { id: "siyam", label: "صيام" },
-      { id: "duha", label: "الضحى" },
-      { id: "witr", label: "الوتر" },
-      { id: "tarawih", label: "التراويح" },
-    ],
-  },
-  {
-    id: "athkar",
-    label: "الأذكار",
-    color: "hsl(160 50% 38%)",
-    bg: "hsl(160 45% 92%)",
-    items: [
-      { id: "morning", label: "الصباح" },
-      { id: "evening", label: "المساء" },
-      { id: "istighfar", label: "استغفار" },
-      { id: "tahlil", label: "لا إله إلا الله" },
-    ],
-  },
-  {
-    id: "quran",
-    label: "القرآن",
-    color: "hsl(35 70% 45%)",
-    bg: "hsl(35 65% 92%)",
-    items: [
-      { id: "hifz", label: "ورد حفظ" },
-      { id: "tilawa", label: "ورد تلاوة" },
-    ],
-  },
-  {
-    id: "good_deeds",
-    label: "أعمال صالحة",
-    color: "hsl(340 55% 50%)",
-    bg: "hsl(340 50% 93%)",
-    items: [
-      { id: "sadaqa", label: "الصدقة" },
-      { id: "parents", label: "بر الوالدين" },
-      { id: "no_tv", label: "مقاطعة الشاشات" },
-      { id: "tongue", label: "إمساك اللسان" },
-    ],
-  },
-];
-
-const allItems = categories.flatMap((c) => c.items);
-const TOTAL_ITEMS = allItems.length;
-
-// ─── Helpers ────────────────────────────────────────────────────
-
-const getStorageKey = (year: number, month: number) => {
-  return `kids-worship-${year}-${month}`;
-};
-
-const getMonthLabel = (year: number, month: number) => {
-  const d = new Date(year, month, 1);
-  const greg = d.toLocaleDateString("ar", { month: "long", year: "numeric" });
-  let hijri = "";
-  try {
-    hijri = d.toLocaleDateString("ar-SA-u-ca-islamic", { month: "long", year: "numeric" });
-  } catch { /* fallback */ }
-  return hijri ? `${greg} - ${hijri}` : greg;
-};
-
-type DayData = Record<string, boolean>;
-type MonthData = Record<number, DayData>;
-
-const loadData = (year: number, month: number): MonthData => {
-  try {
-    const raw = localStorage.getItem(getStorageKey(year, month));
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-};
-
-const saveData = (year: number, month: number, data: MonthData) => {
-  localStorage.setItem(getStorageKey(year, month), JSON.stringify(data));
-};
-
-// ─── Component ──────────────────────────────────────────────────
+import {
+  categories, allItems, TOTAL_ITEMS,
+  type MonthData, type ChildProfile,
+  loadData, saveData, getMonthLabel, loadChildren,
+} from "@/components/kids-worship/worshipData";
 
 const KidsWorship = () => {
+  const navigate = useNavigate();
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
-  const [data, setData] = useState<MonthData>(() => loadData(now.getFullYear(), now.getMonth()));
+  
+  // Load children and default to first child
+  const children = loadChildren();
+  const [activeChildId, setActiveChildId] = useState(children[0]?.id || "default");
+  
+  const [data, setData] = useState<MonthData>(() => loadData(activeChildId, now.getFullYear(), now.getMonth()));
   const [selectedDay, setSelectedDay] = useState(now.getDate());
   const [showConfetti, setShowConfetti] = useState(false);
 
   const totalDays = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-  const today = now.getDate();
   const isCurrentMonth = now.getFullYear() === selectedYear && now.getMonth() === selectedMonth;
+  const isToday = isCurrentMonth && selectedDay === now.getDate();
+  
+  // Child can only edit today's data
+  const canEdit = isToday;
 
   useEffect(() => {
-    saveData(selectedYear, selectedMonth, data);
-  }, [data, selectedYear, selectedMonth]);
+    saveData(activeChildId, selectedYear, selectedMonth, data);
+  }, [data, activeChildId, selectedYear, selectedMonth]);
 
-  // Load data when month changes
   const handleMonthChange = useCallback((year: number, month: number) => {
     setSelectedYear(year);
     setSelectedMonth(month);
-    setData(loadData(year, month));
+    setData(loadData(activeChildId, year, month));
     const n = new Date();
     if (n.getFullYear() === year && n.getMonth() === month) {
       setSelectedDay(n.getDate());
     } else {
       setSelectedDay(1);
     }
-  }, []);
+  }, [activeChildId]);
 
   const getDayStatus = useCallback((day: number): "full" | "partial" | "empty" => {
     const dd = data[day] || {};
@@ -160,26 +60,25 @@ const KidsWorship = () => {
   const dayData = data[selectedDay] || {};
 
   const toggleItem = (itemId: string) => {
+    if (!canEdit) {
+      toast({ title: "⏰ لا يمكن التعديل على أيام سابقة", description: "اطلب من أهلك التعديل" });
+      return;
+    }
     const newDayData = { ...dayData, [itemId]: !dayData[itemId] };
     const newData = { ...data, [selectedDay]: newDayData };
     setData(newData);
 
-    // Check if all items are done
     const doneCount = Object.values(newDayData).filter(Boolean).length;
     if (doneCount === TOTAL_ITEMS && !dayData[itemId]) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2500);
-      toast({
-        title: "🎉 ما شاء الله!",
-        description: "أكملت جميع العبادات اليوم! بارك الله فيك",
-      });
+      toast({ title: "🎉 ما شاء الله!", description: "أكملت جميع العبادات اليوم! بارك الله فيك" });
     }
   };
 
   const doneCount = Object.values(dayData).filter(Boolean).length;
   const progress = TOTAL_ITEMS > 0 ? (doneCount / TOTAL_ITEMS) * 100 : 0;
 
-  // Stars: count days where all items completed
   const totalStars = useMemo(() => {
     let stars = 0;
     for (let d = 1; d <= totalDays; d++) {
@@ -189,41 +88,20 @@ const KidsWorship = () => {
     return stars;
   }, [data, totalDays]);
 
-  // Incomplete items for motivation
   const incompleteItems = allItems.filter((item) => !dayData[item.id]);
 
-
   const resetDay = () => {
+    if (!canEdit) {
+      toast({ title: "⏰ لا يمكن التعديل على أيام سابقة" });
+      return;
+    }
     const newData = { ...data };
     delete newData[selectedDay];
     setData(newData);
     toast({ title: "تم إعادة تعيين اليوم" });
   };
 
-  const handleExport = () => {
-    // Build CSV
-    const headers = ["اليوم", ...allItems.map((i) => i.label)];
-    const rows = [headers.join(",")];
-    for (let d = 1; d <= totalDays; d++) {
-      const dd = data[d] || {};
-      const row = [
-        `يوم ${d}`,
-        ...allItems.map((i) => (dd[i.id] ? "✓" : "")),
-      ];
-      rows.push(row.join(","));
-    }
-    const bom = "\uFEFF";
-    const blob = new Blob([bom + rows.join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `عبادات-${getMonthLabel(selectedYear, selectedMonth)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "تم تصدير الجدول بنجاح ✅" });
-  };
+  const activeChild = children.find(c => c.id === activeChildId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 pb-28" dir="rtl">
@@ -240,9 +118,7 @@ const KidsWorship = () => {
               <motion.div
                 key={i}
                 className="absolute text-2xl"
-                initial={{
-                  x: 0, y: 0, scale: 0, rotate: 0,
-                }}
+                initial={{ x: 0, y: 0, scale: 0, rotate: 0 }}
                 animate={{
                   x: (Math.random() - 0.5) * 300,
                   y: (Math.random() - 0.5) * 400,
@@ -259,12 +135,12 @@ const KidsWorship = () => {
       </AnimatePresence>
 
       <PageHeader
-        title="عبادات الأطفال"
+        title={`عبادات ${activeChild?.name || "الطفل"}`}
         subtitle={getMonthLabel(selectedYear, selectedMonth)}
         actions={[
           {
-            icon: <Download size={18} className="text-white" />,
-            onClick: handleExport,
+            icon: <Users size={18} className="text-white" />,
+            onClick: () => navigate("/parent-dashboard"),
           },
           {
             icon: <RotateCcw size={18} className="text-white" />,
@@ -273,8 +149,32 @@ const KidsWorship = () => {
         ]}
       />
 
+      {/* Child selector (if multiple children) */}
+      {children.length > 1 && (
+        <div className="px-4 -mt-1 mb-2">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+            {children.map((child) => (
+              <button
+                key={child.id}
+                onClick={() => {
+                  setActiveChildId(child.id);
+                  setData(loadData(child.id, selectedYear, selectedMonth));
+                }}
+                className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+                  child.id === activeChildId
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-white/70 text-muted-foreground border border-border/40"
+                }`}
+              >
+                {child.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Stars & Progress Summary */}
-      <div className="px-4 -mt-1">
+      <div className="px-4 mt-1">
         <div className="bg-white rounded-2xl p-4 shadow-md border border-purple-100/50">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -284,6 +184,9 @@ const KidsWorship = () => {
               </span>
             </div>
             <div className="flex items-center gap-1.5">
+              {!canEdit && (
+                <Lock size={14} className="text-muted-foreground" />
+              )}
               <Sparkles size={16} style={{ color: "hsl(270 55% 50%)" }} />
               <span className="text-xs font-semibold text-muted-foreground">
                 {doneCount}/{TOTAL_ITEMS}
@@ -291,7 +194,6 @@ const KidsWorship = () => {
             </div>
           </div>
 
-          {/* Progress bar */}
           <div className="h-3 rounded-full bg-purple-100 overflow-hidden">
             <motion.div
               className="h-full rounded-full"
@@ -318,6 +220,18 @@ const KidsWorship = () => {
         </div>
       </div>
 
+      {/* Day locked notice */}
+      {!canEdit && (
+        <div className="px-4 mt-3">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 flex items-center gap-2">
+            <Lock size={14} className="text-amber-600 shrink-0" />
+            <p className="text-[11px] font-semibold text-amber-700">
+              هذا اليوم مقفل - يمكنك فقط تعبئة اليوم الحالي. اطلب من أهلك للتعديل.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Month & Day Selector */}
       <div className="mt-4">
         <MonthDaySelector
@@ -341,33 +255,17 @@ const KidsWorship = () => {
             className="bg-white rounded-2xl overflow-hidden shadow-sm border"
             style={{ borderColor: `${cat.color}22` }}
           >
-            {/* Category Header */}
-            <div
-              className="px-4 py-2.5 flex items-center gap-2"
-              style={{ background: cat.bg }}
-            >
-              <div
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ background: cat.color }}
-              />
-              <h3
-                className="text-sm font-extrabold"
-                style={{ color: cat.color }}
-              >
-                {cat.label}
-              </h3>
+            <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: cat.bg }}>
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: cat.color }} />
+              <h3 className="text-sm font-extrabold" style={{ color: cat.color }}>{cat.label}</h3>
               <span
                 className="text-[10px] font-semibold mr-auto px-2 py-0.5 rounded-full"
-                style={{
-                  background: `${cat.color}18`,
-                  color: cat.color,
-                }}
+                style={{ background: `${cat.color}18`, color: cat.color }}
               >
                 {cat.items.filter((i) => dayData[i.id]).length}/{cat.items.length}
               </span>
             </div>
 
-            {/* Items */}
             <div className="p-3 flex flex-wrap gap-2">
               {cat.items.map((item) => {
                 const done = !!dayData[item.id];
@@ -375,8 +273,8 @@ const KidsWorship = () => {
                   <motion.button
                     key={item.id}
                     onClick={() => toggleItem(item.id)}
-                    whileTap={{ scale: 0.92 }}
-                    className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl transition-all"
+                    whileTap={{ scale: canEdit ? 0.92 : 1 }}
+                    className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl transition-all ${!canEdit ? "opacity-75" : ""}`}
                     style={{
                       background: done ? cat.bg : "hsl(0 0% 97%)",
                       border: `1.5px solid ${done ? cat.color : "hsl(0 0% 90%)"}`,
@@ -401,13 +299,7 @@ const KidsWorship = () => {
                         </motion.span>
                       )}
                     </motion.div>
-                    <span
-                      className="text-xs font-bold"
-                      style={{
-                        color: done ? cat.color : "hsl(0 0% 40%)",
-                        textDecoration: done ? "none" : "none",
-                      }}
-                    >
+                    <span className="text-xs font-bold" style={{ color: done ? cat.color : "hsl(0 0% 40%)" }}>
                       {item.label}
                     </span>
                   </motion.button>
@@ -419,28 +311,16 @@ const KidsWorship = () => {
       </div>
 
       {/* Incomplete Items Motivation */}
-      {incompleteItems.length > 0 && incompleteItems.length < TOTAL_ITEMS && (
+      {canEdit && incompleteItems.length > 0 && incompleteItems.length < TOTAL_ITEMS && (
         <div className="px-4 mt-5">
-          <div
-            className="rounded-2xl p-4 border"
-            style={{
-              background: "hsl(35 80% 96%)",
-              borderColor: "hsl(35 60% 85%)",
-            }}
-          >
+          <div className="rounded-2xl p-4 border" style={{ background: "hsl(35 80% 96%)", borderColor: "hsl(35 60% 85%)" }}>
             <p className="text-xs font-bold mb-2" style={{ color: "hsl(35 70% 40%)" }}>
               💪 باقيلك شوي! ما عملت:
             </p>
             <div className="flex flex-wrap gap-1.5">
               {incompleteItems.map((item) => (
-                <span
-                  key={item.id}
-                  className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
-                  style={{
-                    background: "hsl(35 70% 90%)",
-                    color: "hsl(35 60% 35%)",
-                  }}
-                >
+                <span key={item.id} className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                  style={{ background: "hsl(35 70% 90%)", color: "hsl(35 60% 35%)" }}>
                   {item.label}
                 </span>
               ))}
@@ -462,32 +342,26 @@ const KidsWorship = () => {
               <p className="text-[10px] font-semibold text-muted-foreground">أيام كاملة</p>
             </div>
             <div className="text-center p-3 rounded-xl" style={{ background: "hsl(160 45% 93%)" }}>
-              <p className="text-xl font-black" style={{ color: "hsl(160 50% 38%)" }}>
-                {Object.keys(data).length}
-              </p>
+              <p className="text-xl font-black" style={{ color: "hsl(160 50% 38%)" }}>{Object.keys(data).length}</p>
               <p className="text-[10px] font-semibold text-muted-foreground">أيام نشطة</p>
             </div>
             <div className="text-center p-3 rounded-xl" style={{ background: "hsl(35 65% 93%)" }}>
-              <p className="text-xl font-black" style={{ color: "hsl(35 70% 45%)" }}>
-                {totalDays - Object.keys(data).length}
-              </p>
+              <p className="text-xl font-black" style={{ color: "hsl(35 70% 45%)" }}>{totalDays - Object.keys(data).length}</p>
               <p className="text-[10px] font-semibold text-muted-foreground">أيام متبقية</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Export Button */}
+      {/* Parent Dashboard Link */}
       <div className="px-4 mb-8">
         <Button
-          onClick={handleExport}
-          className="w-full h-12 rounded-2xl text-sm font-bold gap-2"
-          style={{
-            background: "linear-gradient(135deg, hsl(270 55% 50%), hsl(340 55% 50%))",
-          }}
+          onClick={() => navigate("/parent-dashboard")}
+          variant="outline"
+          className="w-full h-12 rounded-2xl text-sm font-bold gap-2 border-purple-200"
         >
-          <Download size={18} />
-          تصدير الجدول
+          <Users size={18} />
+          لوحة تحكم الأبوين
         </Button>
       </div>
     </div>
