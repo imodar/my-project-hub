@@ -570,17 +570,6 @@ const Places = () => {
           )}
         </div>
 
-        {/* Floating add button */}
-        <div className="fixed bottom-24 left-4 right-4 max-w-2xl mx-auto z-30">
-          <Button
-            onClick={() => navigate("/places/add", { state: { listId: activeListId } })}
-            className="w-full rounded-2xl shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-sm font-bold gap-2"
-          >
-            <Plus size={18} />
-            أضف مكان جديد
-          </Button>
-        </div>
-
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
@@ -599,14 +588,14 @@ const Places = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Add List Dialog */}
-        <Dialog open={showAddList} onOpenChange={setShowAddList}>
-          <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-            <DialogHeader>
-              <DialogTitle>إنشاء قائمة جديدة</DialogTitle>
-              <DialogDescription>أنشئ قائمة أماكن جديدة</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 pt-2">
+        {/* Add List Drawer */}
+        <Drawer open={showAddList} onOpenChange={setShowAddList}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>إنشاء قائمة جديدة</DrawerTitle>
+              <DrawerDescription>أنشئ قائمة أماكن جديدة</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-3">
               <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
               <div>
                 <p className="text-xs text-muted-foreground mb-2">نوع القائمة</p>
@@ -653,21 +642,21 @@ const Places = () => {
                 </div>
               )}
             </div>
-            <DialogFooter className="flex-row gap-2 pt-2">
+            <DrawerFooter className="flex-row gap-2">
               <Button onClick={addList} className="flex-1 rounded-xl">إنشاء</Button>
-              <Button variant="outline" onClick={() => setShowAddList(false)} className="rounded-xl">إلغاء</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <Button variant="outline" onClick={() => setShowAddList(false)} className="flex-1 rounded-xl">إلغاء</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
 
-        {/* Share Dialog */}
-        <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-          <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-            <DialogHeader>
-              <DialogTitle>مشاركة القائمة</DialogTitle>
-              <DialogDescription>اختر أفراد العائلة لمشاركة هذه القائمة معهم</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2 pt-2">
+        {/* Share Drawer */}
+        <Drawer open={showShareDialog} onOpenChange={setShowShareDialog}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>مشاركة القائمة</DrawerTitle>
+              <DrawerDescription>اختر أفراد العائلة لمشاركة هذه القائمة معهم</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-2">
               {FAMILY_MEMBERS.map((member) => (
                 <button
                   key={member}
@@ -685,13 +674,24 @@ const Places = () => {
                 </button>
               ))}
             </div>
-            <DialogFooter className="flex-row gap-2 pt-2">
+            <DrawerFooter className="flex-row gap-2">
               <Button onClick={shareList} className="flex-1 rounded-xl">مشاركة</Button>
-              <Button variant="outline" onClick={() => setShowShareDialog(false)} className="rounded-xl">إلغاء</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <Button variant="outline" onClick={() => setShowShareDialog(false)} className="flex-1 rounded-xl">إلغاء</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
       </PullToRefresh>
+
+      {/* FAB add button */}
+      {createPortal(
+        <button
+          onClick={() => navigate("/places/add", { state: { listId: activeListId } })}
+          className="fixed bottom-28 left-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 active:scale-95 transition-transform"
+        >
+          <Plus size={24} />
+        </button>,
+        document.body
+      )}
     </div>
   );
 };
