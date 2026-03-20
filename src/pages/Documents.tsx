@@ -122,6 +122,7 @@ const Documents = () => {
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null);
+  const [previewFile, setPreviewFile] = useState<DocFile | null>(null);
 
   // Swipe state
   const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
