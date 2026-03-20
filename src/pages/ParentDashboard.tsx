@@ -88,6 +88,19 @@ const ParentDashboard = () => {
     toast({ title: "تم تصدير الجدول بنجاح ✅" });
   };
 
+  // Temporary: fill all days for testing PDF alignment
+  const fillAllData = (childId: string) => {
+    const items = allItems.map(i => i.id);
+    const fullData: MonthData = {};
+    for (let day = 1; day <= totalDays; day++) {
+      fullData[day] = {};
+      items.forEach(id => { fullData[day][id] = true; });
+    }
+    saveData(childId, selectedYear, selectedMonth, fullData);
+    // Force refresh
+    window.location.reload();
+  };
+
   const openChildEditor = (childId: string) => {
     setSelectedChild(childId);
     setEditingData(childrenData[childId] || {});
@@ -338,6 +351,15 @@ const ParentDashboard = () => {
                   تصدير PDF
                 </Button>
               </div>
+              {/* Temporary test button */}
+              <Button
+                onClick={() => fillAllData(child.id)}
+                variant="outline"
+                size="sm"
+                className="w-full h-8 rounded-xl text-xs mt-2 border-amber-300 text-amber-700 bg-amber-50"
+              >
+                🧪 تعبئة كل الشهر (للاختبار)
+              </Button>
             </motion.div>
           );
         })}
