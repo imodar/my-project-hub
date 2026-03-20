@@ -957,7 +957,6 @@ const Trips = () => {
               )}
 
               {filteredTrips.map((trip) => {
-                const statusInfo = STATUS_MAP[trip.status];
                 const costs = getTripCosts(trip);
                 return (
                   <SwipeableCard
