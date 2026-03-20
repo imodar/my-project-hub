@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Plus, Plane, MapPin, Calendar, Clock, DollarSign, Users, ChevronLeft,
   Check, X, HelpCircle, GripVertical, List, Map as MapIcon,
-  PackageCheck, Calculator, Lightbulb, Trash2, Pencil, Star
+  PackageCheck, Calculator, Lightbulb, Trash2, Pencil, Star, Camera, Image
 } from "lucide-react";
 import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -206,7 +206,7 @@ const Trips = () => {
   const [trips, setTrips] = useState<Trip[]>(INITIAL_TRIPS);
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
-  const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator">("itinerary");
+  const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album">("itinerary");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   // Load family members
@@ -476,6 +476,21 @@ const Trips = () => {
               { key: "suggestions", label: "المقترحات", icon: Lightbulb },
               { key: "packing", label: "التجهيزات", icon: PackageCheck },
               { key: "calculator", label: "التكاليف", icon: Calculator },
+              ...((() => {
+                // Check if there's an album linked to this trip
+                try {
+                  const storedAlbums = localStorage.getItem("family-albums");
+                  if (storedAlbums) {
+                    const albums = JSON.parse(storedAlbums);
+                    if (albums.some((a: any) => a.linkedTripId === selectedTrip.id)) {
+                      return [{ key: "album", label: "ألبوم الرحلة", icon: Camera }];
+                    }
+                  }
+                } catch {}
+                // Also check default data
+                if (selectedTrip.id === "1") return [{ key: "album", label: "ألبوم الرحلة", icon: Camera }];
+                return [];
+              })()),
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -792,6 +807,86 @@ const Trips = () => {
           </button>,
           document.body
         )}
+
+        {/* Album view */}
+        {tripView === "album" && (() => {
+          // Get album photos for this trip
+          let albumPhotos: { id: string; url: string; date: string; caption?: string }[] = [];
+          let albumName = "";
+          try {
+            const storedAlbums = localStorage.getItem("family-albums");
+            if (storedAlbums) {
+              const albums = JSON.parse(storedAlbums);
+              const linked = albums.find((a: any) => a.linkedTripId === selectedTrip.id);
+              if (linked) {
+                albumPhotos = linked.photos || [];
+                albumName = linked.name;
+              }
+            }
+          } catch {}
+          // Fallback for demo
+          if (albumPhotos.length === 0 && selectedTrip.id === "1") {
+            albumPhotos = [
+              { id: "tp1", url: "", date: "2026-04-15", caption: "وصول إسطنبول" },
+              { id: "tp2", url: "", date: "2026-04-15", caption: "آيا صوفيا" },
+              { id: "tp3", url: "", date: "2026-04-16", caption: "برج غلطة" },
+              { id: "tp4", url: "", date: "2026-04-16", caption: "شارع الاستقلال" },
+              { id: "tp5", url: "", date: "2026-04-17", caption: "البازار الكبير" },
+            ];
+            albumName = "رحلة إسطنبول";
+          }
+
+          return (
+            <div className="px-5 mt-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-extrabold text-foreground">ألبوم الرحلة</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-primary font-bold"
+                  onClick={() => navigate("/albums")}
+                >
+                  عرض الكل
+                </Button>
+              </div>
+
+              {albumPhotos.length === 0 ? (
+                <div className="flex flex-col items-center py-12">
+                  <Image size={32} className="text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground text-sm font-bold">لا توجد صور</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {albumPhotos.map((photo) => {
+                    const hue = (photo.id.charCodeAt(photo.id.length - 1) * 47) % 360;
+                    return (
+                      <div
+                        key={photo.id}
+                        className="aspect-square rounded-xl overflow-hidden relative"
+                        style={{
+                          background: photo.url
+                            ? `url(${photo.url}) center/cover`
+                            : `linear-gradient(135deg, hsl(${hue} 40% 75%), hsl(${(hue + 40) % 360} 50% 65%))`,
+                        }}
+                      >
+                        {!photo.url && (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Camera size={20} className="text-white/40" />
+                          </div>
+                        )}
+                        {photo.caption && (
+                          <div className="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/50 to-transparent">
+                            <span className="text-[9px] text-white/90 font-medium">{photo.caption}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Add Day Drawer */}
         <Drawer open={newDayDrawer} onOpenChange={setNewDayDrawer}>
