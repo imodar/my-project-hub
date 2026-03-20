@@ -88,6 +88,19 @@ const ParentDashboard = () => {
     toast({ title: "تم تصدير الجدول بنجاح ✅" });
   };
 
+  // Temporary: fill all days for testing PDF alignment
+  const fillAllData = (childId: string) => {
+    const items = allItems.map(i => i.id);
+    const fullData: MonthData = {};
+    for (let day = 1; day <= totalDays; day++) {
+      fullData[day] = {};
+      items.forEach(id => { fullData[day][id] = true; });
+    }
+    saveData(childId, selectedYear, selectedMonth, fullData);
+    // Force refresh
+    window.location.reload();
+  };
+
   const openChildEditor = (childId: string) => {
     setSelectedChild(childId);
     setEditingData(childrenData[childId] || {});
