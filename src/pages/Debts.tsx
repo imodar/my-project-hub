@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
@@ -707,42 +708,45 @@ const Debts = () => {
       </div>
 
       {/* FAB with menu */}
-      <div className="fixed bottom-24 left-4 z-30 flex flex-col items-center gap-2">
-        {/* FAB sub-buttons */}
-        {showFabMenu && (
-          <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-            <button
-              onClick={() => {
-                setAddFormType("given");
-                setShowAddForm(true);
-                setShowFabMenu(false);
-              }}
-              className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-3 rounded-2xl shadow-lg text-sm font-bold whitespace-nowrap"
-            >
-              <HandCoins size={18} />
-              دين لي
-            </button>
-            <button
-              onClick={() => {
-                setAddFormType("taken");
-                setShowAddForm(true);
-                setShowFabMenu(false);
-              }}
-              className="flex items-center gap-2 bg-red-500 text-white px-5 py-3 rounded-2xl shadow-lg text-sm font-bold whitespace-nowrap"
-            >
-              <CreditCard size={18} />
-              دين عليّ
-            </button>
-          </div>
-        )}
-        <button
-          onClick={() => setShowFabMenu(!showFabMenu)}
-          className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center transition-transform active:scale-95"
-          style={{ boxShadow: '0 6px 24px hsla(209, 100%, 31%, 0.35)' }}
-        >
-          <Plus size={26} className={`transition-transform duration-200 ${showFabMenu ? 'rotate-45' : ''}`} />
-        </button>
-      </div>
+      {createPortal(
+        <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30 flex flex-col items-center gap-2">
+          {/* FAB sub-buttons */}
+          {showFabMenu && (
+            <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <button
+                onClick={() => {
+                  setAddFormType("given");
+                  setShowAddForm(true);
+                  setShowFabMenu(false);
+                }}
+                className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-3 rounded-2xl shadow-lg text-sm font-bold whitespace-nowrap"
+              >
+                <HandCoins size={18} />
+                دين لي
+              </button>
+              <button
+                onClick={() => {
+                  setAddFormType("taken");
+                  setShowAddForm(true);
+                  setShowFabMenu(false);
+                }}
+                className="flex items-center gap-2 bg-red-500 text-white px-5 py-3 rounded-2xl shadow-lg text-sm font-bold whitespace-nowrap"
+              >
+                <CreditCard size={18} />
+                دين عليّ
+              </button>
+            </div>
+          )}
+          <button
+            onClick={() => setShowFabMenu(!showFabMenu)}
+            className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center transition-transform active:scale-95"
+            style={{ boxShadow: '0 6px 24px hsla(209, 100%, 31%, 0.35)' }}
+          >
+            <Plus size={26} className={`transition-transform duration-200 ${showFabMenu ? 'rotate-45' : ''}`} />
+          </button>
+        </div>,
+        document.body
+      )}
 
       {/* Click outside to close FAB menu */}
       {showFabMenu && (
