@@ -204,6 +204,14 @@ const Trips = () => {
   const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator">("itinerary");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
+  // Load family members
+  const familyMembers: { id: string; name: string; role: string }[] = (() => {
+    try {
+      const saved = localStorage.getItem("family_members");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  })();
+
   // Drawers
   const [newTripDrawer, setNewTripDrawer] = useState(false);
   const [newActivityDrawer, setNewActivityDrawer] = useState(false);
