@@ -194,6 +194,8 @@ const Zakat = () => {
   const [addKarat, setAddKarat] = useState(24);
   const [addDate, setAddDate] = useState(new Date().toISOString().split("T")[0]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [reminderAsset, setReminderAsset] = useState<string | null>(null);
+  const [customReminderDays, setCustomReminderDays] = useState("");
 
   const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
 
