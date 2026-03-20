@@ -88,14 +88,13 @@ const SwipeableCard = ({ children, onEdit, onDelete }: {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     const diff = e.touches[0].clientX - startXRef.current;
-    // RTL: swipe left (negative diff) reveals actions on the left side
-    // But in RTL, we want swipe to reveal actions, so we allow negative movement
+    // RTL: swipe right (positive diff) reveals actions on the left side
     if (Math.abs(diff) > 10) isSwipingRef.current = true;
 
     if (isOpenRef.current) {
-      currentXRef.current = Math.min(0, Math.max(-ACTION_WIDTH, -ACTION_WIDTH + diff));
+      currentXRef.current = Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH + diff));
     } else {
-      currentXRef.current = Math.min(0, Math.max(-ACTION_WIDTH, diff));
+      currentXRef.current = Math.max(0, Math.min(ACTION_WIDTH, diff));
     }
     setTransform(currentXRef.current);
   };
@@ -104,8 +103,8 @@ const SwipeableCard = ({ children, onEdit, onDelete }: {
     const content = containerRef.current?.querySelector('[data-swipe-content]') as HTMLElement;
     if (content) content.style.transition = 'transform 0.3s ease';
 
-    if (Math.abs(currentXRef.current) > SWIPE_THRESHOLD) {
-      setTransform(-ACTION_WIDTH);
+    if (currentXRef.current > SWIPE_THRESHOLD) {
+      setTransform(ACTION_WIDTH);
       isOpenRef.current = true;
     } else {
       setTransform(0);
