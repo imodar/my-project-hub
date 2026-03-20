@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ShoppingCart, Calendar, HandCoins, Wallet,
   Image, Plane, FileText, ListChecks,
-  FolderLock, TreePine, MapPin, Heart
+  FolderLock, TreePine, MapPin, Heart, Scale
 } from "lucide-react";
 
 const features = [
@@ -14,6 +14,7 @@ const features = [
   { icon: FolderLock, label: "الوثائق", bg: "hsl(43 60% 92%)", color: "hsl(43 65% 40%)", route: "/documents" },
   { icon: MapPin, label: "الأماكن", bg: "hsl(350 55% 93%)", color: "hsl(350 55% 50%)", route: "/places" },
   { icon: HandCoins, label: "الديون", bg: "hsl(0 50% 93%)", color: "hsl(0 60% 50%)", route: "/debts" },
+  { icon: Scale, label: "الزكاة", bg: "hsl(160 45% 92%)", color: "hsl(160 50% 35%)", route: "/zakat" },
 ];
 
 const FeatureGrid = () => {
