@@ -566,6 +566,34 @@ const Tasks = () => {
           document.body
         )}
 
+        {/* List Actions Drawer */}
+        <Drawer open={showListActions} onOpenChange={setShowListActions}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader>
+              <DrawerTitle>خيارات القائمة</DrawerTitle>
+              <DrawerDescription>{activeList?.name}</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-2 pb-4">
+              {activeList?.type !== "family" && (
+                <button
+                  onClick={() => { setShowListActions(false); setShowShareDialog(true); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <Share2 size={16} className="text-primary" />
+                  <span className="text-sm font-medium text-foreground">مشاركة القائمة</span>
+                </button>
+              )}
+              <button
+                onClick={() => { setShowListActions(false); if (activeList) deleteList(activeList.id); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors"
+              >
+                <Trash2 size={16} className="text-destructive" />
+                <span className="text-sm font-medium text-destructive">حذف القائمة</span>
+              </button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
