@@ -449,6 +449,11 @@ const Places = () => {
               {place.visited && <Check size={14} className="text-primary-foreground" />}
             </button>
           </div>
+          {place.note && (
+            <p className="text-[11px] text-muted-foreground mt-2 truncate italic">
+              💬 {place.note}
+            </p>
+          )}
         </div>
       </div>
     );
