@@ -731,7 +731,6 @@ const Trips = () => {
             )}
           </div>
         )}
-        )}
 
         {/* FAB for itinerary */}
         {tripView === "itinerary" && selectedTrip.days.length > 0 && createPortal(
