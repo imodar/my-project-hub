@@ -224,33 +224,6 @@ const AddPlace = () => {
           </div>
         </div>
 
-        {/* Rating */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Star size={16} className="text-primary" />
-            التقييم
-          </label>
-          <div className="flex items-center gap-2">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <button
-                key={s}
-                onClick={() => setRating(s === rating ? 0 : s)}
-                className="p-1"
-              >
-                <Star
-                  size={28}
-                  className={`transition-colors ${
-                    s <= rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
-                  }`}
-                />
-              </button>
-            ))}
-            {rating > 0 && (
-              <span className="text-xs text-muted-foreground mr-2">{rating}/5</span>
-            )}
-          </div>
-        </div>
-
         {/* Must Visit */}
         <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
           <div>
