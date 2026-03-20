@@ -641,6 +641,143 @@ const Places = () => {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Filter Drawer */}
+        <Drawer open={showFilters} onOpenChange={setShowFilters}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>فلترة الأماكن</DrawerTitle>
+              <DrawerDescription>اختر معايير الفلترة</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-5 pb-2 max-h-[60vh] overflow-y-auto">
+              {/* Category */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground">الفئة</p>
+                <div className="flex gap-2 flex-wrap">
+                  {CATEGORIES.map((cat) => {
+                    const isAll = cat === "الكل";
+                    const catInfo = !isAll ? CATEGORY_INFO[cat] : null;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`flex items-center gap-1 px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                          activeCategory === cat ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                        }`}
+                      >
+                        {isAll ? "🗺️" : catInfo?.emoji} {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Rating */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Star size={16} className="text-primary" />
+                  الحد الأدنى للتقييم
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button key={s} onClick={() => setFilterRating(s === filterRating ? 0 : s)} className="p-1">
+                      <Star size={28} className={`transition-colors ${s <= filterRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <DollarSign size={16} className="text-primary" />
+                  الفئة السعرية
+                </p>
+                <div className="grid grid-cols-5 gap-2">
+                  {([{ value: "الكل" as const, label: "الكل" }, ...([
+                    { value: "$" as PriceRange, label: "$" },
+                    { value: "$$" as PriceRange, label: "$$" },
+                    { value: "$$$" as PriceRange, label: "$$$" },
+                    { value: "$$$$" as PriceRange, label: "$$$$" },
+                  ])]).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFilterPrice(opt.value)}
+                      className={`p-2 rounded-xl border text-xs font-medium transition-all text-center ${
+                        filterPrice === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Kid Friendly */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Baby size={16} className="text-primary" />
+                  مناسب للأطفال؟
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { value: "الكل" as const, label: "الكل", emoji: "🗺️" },
+                    { value: "yes" as const, label: "نعم", emoji: "👶" },
+                    { value: "partial" as const, label: "جزئياً", emoji: "⚠️" },
+                    { value: "no" as const, label: "لا", emoji: "🚫" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFilterKid(opt.value)}
+                      className={`flex items-center justify-center gap-1 p-2 rounded-xl border text-xs font-medium transition-all ${
+                        filterKid === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                      }`}
+                    >
+                      {opt.emoji} {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Must Visit */}
+              <button
+                onClick={() => setFilterMustVisit(!filterMustVisit)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                  filterMustVisit ? "border-primary bg-primary/10" : "border-border bg-card"
+                }`}
+              >
+                <span className="text-sm font-medium text-foreground">🔴 لازم نروح فقط</span>
+                {filterMustVisit && <Check size={16} className="text-primary" />}
+              </button>
+
+              {/* Visit Status */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground">حالة الزيارة</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "الكل" as const, label: "الكل" },
+                    { value: "unvisited" as const, label: "ما زرناه" },
+                    { value: "visited" as const, label: "زرناه ✅" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFilterVisitStatus(opt.value)}
+                      className={`p-2.5 rounded-xl border text-xs font-medium transition-all text-center ${
+                        filterVisitStatus === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DrawerFooter className="flex-row gap-2">
+              <Button onClick={() => setShowFilters(false)} className="flex-1 rounded-xl">عرض النتائج</Button>
+              <Button variant="outline" onClick={() => { resetFilters(); }} className="flex-1 rounded-xl">إعادة ضبط</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+
         {/* Add List Drawer */}
         <Drawer open={showAddList} onOpenChange={setShowAddList}>
           <DrawerContent dir="rtl">
