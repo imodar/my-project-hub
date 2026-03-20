@@ -20,10 +20,10 @@ const COLUMN_X: Record<string, number> = {
   evening: 467.4,
   morning: 522.0,
   // النوافل
-  tarawih: 564.7,
-  witr: 595.0,
-  duha: 625.4,
-  siyam: 655.7,
+  tarawih: 565.7,
+  witr: 596.0,
+  duha: 626.4,
+  siyam: 656.7,
   // الفروض
   isha: 686.8,
   maghrib: 702.3,
@@ -95,17 +95,21 @@ export const exportWorshipPdf = async (
     const y = ROW_Y[day];
     if (y === undefined) continue;
 
+    const nawafil = ["tarawih", "witr", "duha", "siyam"];
+
     for (const [itemId, done] of Object.entries(dayData)) {
       if (!done) continue;
       const x = COLUMN_X[itemId];
       if (x === undefined) continue;
+      const yOffset = nawafil.includes(itemId) ? -1 : 0;
 
       const color = ITEM_COLORS[itemId] || [0.4, 0.4, 0.4];
+      const dy = y + yOffset;
 
       // Draw filled circle
       page.drawCircle({
         x,
-        y,
+        y: dy,
         size: CIRCLE_R,
         color: rgb(color[0], color[1], color[2]),
         opacity: 0.9,
@@ -113,15 +117,15 @@ export const exportWorshipPdf = async (
 
       // Draw checkmark (two small lines)
       page.drawLine({
-        start: { x: x - 2.5, y },
-        end: { x: x - 0.5, y: y - 2 },
+        start: { x: x - 2.5, y: dy },
+        end: { x: x - 0.5, y: dy - 2 },
         thickness: 1.2,
         color: rgb(1, 1, 1),
         opacity: 0.95,
       });
       page.drawLine({
-        start: { x: x - 0.5, y: y - 2 },
-        end: { x: x + 3, y: y + 2.5 },
+        start: { x: x - 0.5, y: dy - 2 },
+        end: { x: x + 3, y: dy + 2.5 },
         thickness: 1.2,
         color: rgb(1, 1, 1),
         opacity: 0.95,
