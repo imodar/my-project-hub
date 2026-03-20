@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, Calendar, Flag } from "lucide-react";
+import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, GripVertical } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
@@ -115,6 +115,13 @@ const Tasks = () => {
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
 
+  // Drag reorder state
+  const [reorderMode, setReorderMode] = useState(false);
+  const [dragItemId, setDragItemId] = useState<string | null>(null);
+  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragItemRef = useRef<string | null>(null);
+
   const activeList = lists.find((l) => l.id === activeListId);
 
   const filteredItems = activeList?.items.filter((item) => {
@@ -128,25 +135,80 @@ const Tasks = () => {
   const completedItems = activeList?.items.filter((i) => i.done).length || 0;
   const remainingItems = totalItems - completedItems;
 
-  // Swipe handlers
+  // Long press to enter reorder mode
+  const startLongPress = useCallback((id: string) => {
+    longPressTimerRef.current = setTimeout(() => {
+      haptic.medium();
+      setReorderMode(true);
+      setDragItemId(id);
+      dragItemRef.current = id;
+    }, 500);
+  }, []);
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleDragOver = useCallback((id: string) => {
+    if (!dragItemRef.current || dragItemRef.current === id) return;
+    setDragOverItemId(id);
+  }, []);
+
+  const handleDrop = useCallback((targetId: string) => {
+    if (!dragItemRef.current || dragItemRef.current === targetId) return;
+    haptic.light();
+    setLists((prev) =>
+      prev.map((list) => {
+        if (list.id !== activeListId) return list;
+        const items = [...list.items];
+        const fromIdx = items.findIndex((i) => i.id === dragItemRef.current);
+        const toIdx = items.findIndex((i) => i.id === targetId);
+        if (fromIdx === -1 || toIdx === -1) return list;
+        const [moved] = items.splice(fromIdx, 1);
+        items.splice(toIdx, 0, moved);
+        return { ...list, items };
+      })
+    );
+    setDragItemId(null);
+    setDragOverItemId(null);
+    dragItemRef.current = null;
+  }, [activeListId]);
+
+  const exitReorderMode = useCallback(() => {
+    setReorderMode(false);
+    setDragItemId(null);
+    setDragOverItemId(null);
+    dragItemRef.current = null;
+  }, []);
+
+  // Swipe handlers (disabled during reorder mode)
   const closeSwipe = useCallback((id: string) => {
     setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
     activeSwipeRef.current = null;
   }, []);
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
+    if (reorderMode) return;
     touchStartXRef.current = e.clientX;
     activeSwipeRef.current = id;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent, id: string) => {
+    if (reorderMode) return;
     if (activeSwipeRef.current !== id) return;
     const diff = e.clientX - touchStartXRef.current;
+    // Cancel long press if finger moves
+    cancelLongPress();
     setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, SWIPE_WIDTH) : 0 }));
   };
 
   const handlePointerUp = (e: React.PointerEvent, id: string) => {
+    cancelLongPress();
+    if (reorderMode) return;
     const offset = swipeOffset[id] || 0;
     setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
     activeSwipeRef.current = null;
@@ -288,43 +350,79 @@ const Tasks = () => {
 
   const renderItem = (item: TaskItem, isDone: boolean) => {
     const prioInfo = PRIORITY_INFO[item.priority];
-    const offset = swipeOffset[item.id] || 0;
+    const offset = reorderMode ? 0 : (swipeOffset[item.id] || 0);
+    const isDragging = dragItemId === item.id;
+    const isDragOver = dragOverItemId === item.id;
 
     return (
-      <div key={item.id} className="relative overflow-hidden rounded-2xl select-none">
+      <div
+        key={item.id}
+        className={`relative overflow-hidden rounded-2xl select-none transition-all duration-200 ${
+          isDragging ? "opacity-50 scale-95" : ""
+        } ${isDragOver ? "border-2 border-primary border-dashed" : ""}`}
+        draggable={reorderMode}
+        onDragStart={() => { dragItemRef.current = item.id; setDragItemId(item.id); }}
+        onDragOver={(e) => { e.preventDefault(); handleDragOver(item.id); }}
+        onDragEnter={(e) => { e.preventDefault(); handleDragOver(item.id); }}
+        onDragLeave={() => setDragOverItemId(null)}
+        onDrop={(e) => { e.preventDefault(); handleDrop(item.id); }}
+        onDragEnd={() => { setDragItemId(null); setDragOverItemId(null); dragItemRef.current = null; }}
+      >
         {/* Swipe actions behind */}
-        <div
-          className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
-          style={{ width: `${SWIPE_WIDTH}px` }}
-        >
-          <button
-            onClick={() => { setDeleteTarget(item); closeSwipe(item.id); }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
+        {!reorderMode && (
+          <div
+            className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
+            style={{ width: `${SWIPE_WIDTH}px` }}
           >
-            <Trash2 size={16} className="text-destructive-foreground" />
-            <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
-          </button>
-          <button
-            onClick={() => openEdit(item)}
-            className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
-            style={{ background: "hsl(220, 60%, 50%)" }}
-          >
-            <Pencil size={16} className="text-white" />
-            <span className="text-[10px] text-white font-semibold">تعديل</span>
-          </button>
-        </div>
+            <button
+              onClick={() => { setDeleteTarget(item); closeSwipe(item.id); }}
+              className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
+            >
+              <Trash2 size={16} className="text-destructive-foreground" />
+              <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
+            </button>
+            <button
+              onClick={() => openEdit(item)}
+              className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
+              style={{ background: "hsl(220, 60%, 50%)" }}
+            >
+              <Pencil size={16} className="text-white" />
+              <span className="text-[10px] text-white font-semibold">تعديل</span>
+            </button>
+          </div>
+        )}
 
         {/* Card */}
         <div
-          className="relative z-10 bg-card rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing"
-          style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
-          onPointerDown={(e) => handlePointerDown(e, item.id)}
-          onPointerMove={(e) => handlePointerMove(e, item.id)}
-          onPointerUp={(e) => handlePointerUp(e, item.id)}
-          onPointerCancel={() => closeSwipe(item.id)}
+          className="relative z-10 bg-card rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out"
+          style={{ transform: `translateX(${offset}px)`, touchAction: reorderMode ? "none" : "pan-y" }}
+          onPointerDown={(e) => {
+            if (!reorderMode) {
+              startLongPress(item.id);
+              handlePointerDown(e, item.id);
+            }
+          }}
+          onPointerMove={(e) => {
+            if (!reorderMode) {
+              handlePointerMove(e, item.id);
+            }
+          }}
+          onPointerUp={(e) => {
+            cancelLongPress();
+            if (!reorderMode) {
+              handlePointerUp(e, item.id);
+            }
+          }}
+          onPointerCancel={() => { cancelLongPress(); closeSwipe(item.id); }}
         >
+          {/* Drag handle in reorder mode */}
+          {reorderMode && (
+            <div className="cursor-grab active:cursor-grabbing text-muted-foreground">
+              <GripVertical size={18} />
+            </div>
+          )}
           <button
-            onClick={() => toggleItem(item.id)}
+            onClick={() => !reorderMode && toggleItem(item.id)}
             className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
               isDone
                 ? "bg-primary"
@@ -450,11 +548,21 @@ const Tasks = () => {
           </div>
         </div>
 
+        {/* Reorder mode banner */}
+        {reorderMode && (
+          <div className="px-4 py-2 flex items-center justify-between bg-primary/10 border-b border-primary/20">
+            <p className="text-xs font-semibold text-primary">🔀 وضع إعادة الترتيب — اسحب العناصر لتغيير ترتيبها</p>
+            <Button size="sm" variant="outline" onClick={exitReorderMode} className="text-xs rounded-xl h-7 px-3">
+              تم
+            </Button>
+          </div>
+        )}
+
         {/* Items list */}
         <div className="px-4 pt-4 space-y-2 pb-4">
           {pendingItems.map((item) => renderItem(item, false))}
 
-          {doneItems.length > 0 && (
+          {!reorderMode && doneItems.length > 0 && (
             <div className="pt-3">
               <p className="text-xs text-muted-foreground mb-2 font-medium">✅ مكتملة</p>
               <div className="space-y-2">
