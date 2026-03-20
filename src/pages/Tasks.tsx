@@ -490,7 +490,7 @@ const Tasks = () => {
 
         {/* Stats bar */}
         {activeList && (
-          <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-card">
+          <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-primary" />
