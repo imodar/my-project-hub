@@ -473,13 +473,14 @@ const CalendarPage = () => {
             {selectedDay && eventsForDay(selectedDay).map((ev) => {
               const rt = getReminderLabel(ev.reminderBefore);
               const hasP = ev.personalReminders && ev.personalReminders.length > 0;
-              const offset = swipeOffset[ev.id] || 0;
+              const drawerKey = `drawer_${ev.id}`;
+              const offset = swipeOffset[drawerKey] || 0;
               return (
                 <div key={ev.id} className="relative overflow-hidden rounded-2xl select-none">
                   {/* Swipe action buttons */}
                   <div className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1" style={{ width: `${SWIPE_WIDTH}px` }}>
                     <button
-                      onClick={() => { setDeleteTarget(ev); closeSwipe(ev.id); }}
+                      onClick={() => { setDeleteTarget(ev); closeSwipe(drawerKey); }}
                       className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
                     >
                       <Trash2 size={16} className="text-destructive-foreground" />
@@ -507,10 +508,10 @@ const CalendarPage = () => {
                   <div
                     className="relative flex items-center gap-3 p-3 rounded-xl bg-card transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing"
                     style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
-                    onPointerDown={(e) => handlePointerDown(e, ev.id)}
-                    onPointerMove={(e) => handlePointerMove(e, ev.id)}
-                    onPointerUp={(e) => handlePointerUp(e, ev.id)}
-                    onPointerCancel={() => closeSwipe(ev.id)}
+                    onPointerDown={(e) => handlePointerDown(e, drawerKey)}
+                    onPointerMove={(e) => handlePointerMove(e, drawerKey)}
+                    onPointerUp={(e) => handlePointerUp(e, drawerKey)}
+                    onPointerCancel={() => closeSwipe(drawerKey)}
                   >
                     <span className="text-lg">{getEventIcon(ev.icon)}</span>
                     <div className="flex-1">
