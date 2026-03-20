@@ -46,6 +46,7 @@ interface Debt {
   payments: Payment[];
   isFullyPaid: boolean;
   isArchived: boolean;
+  hasReminder: boolean;
   postponements: { newDate: string; reason: string }[];
 }
 
