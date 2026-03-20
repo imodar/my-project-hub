@@ -663,72 +663,74 @@ const Trips = () => {
         {/* Calculator */}
         {tripView === "calculator" && (
           <div className="px-5 mt-5 space-y-4">
-            <h3 className="text-sm font-bold text-foreground">حاسبة التكاليف</h3>
-            <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-sm space-y-4">
+            {/* Budget summary */}
+            <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">تكاليف الأنشطة</span>
-                <span className="text-sm font-bold text-foreground">{costs.activities} ر.س</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">الإقامة</span>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={selectedTrip.accommodation}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const updated = { ...selectedTrip, accommodation: val };
-                      setSelectedTrip(updated);
-                      setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
-                    }}
-                    className="w-24 h-8 text-xs text-left"
-                    dir="ltr"
-                  />
-                  <span className="text-xs text-muted-foreground">ر.س</span>
-                </div>
+                <span className="text-sm text-muted-foreground">الميزانية المحددة</span>
+                <span className="text-sm font-bold text-foreground">{selectedTrip.budget.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">المواصلات</span>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={selectedTrip.transportation}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const updated = { ...selectedTrip, transportation: val };
-                      setSelectedTrip(updated);
-                      setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
-                    }}
-                    className="w-24 h-8 text-xs text-left"
-                    dir="ltr"
-                  />
-                  <span className="text-xs text-muted-foreground">ر.س</span>
-                </div>
+                <span className="text-sm text-muted-foreground">إجمالي المصروفات</span>
+                <span className="text-sm font-bold text-foreground">{costs.total.toLocaleString()}</span>
               </div>
-              <div className="border-t border-border/50 pt-3 flex items-center justify-between">
-                <span className="text-sm font-bold text-foreground">المجموع</span>
-                <span className="text-base font-extrabold text-primary">{costs.total} ر.س</span>
-              </div>
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-muted-foreground">الميزانية المحددة</span>
-                <span className="text-sm font-bold text-foreground">{selectedTrip.budget} ر.س</span>
-              </div>
-              {costs.total > selectedTrip.budget && selectedTrip.budget > 0 && (
-                <div className="bg-destructive/10 rounded-xl p-3 text-center">
-                  <p className="text-xs font-bold text-destructive">
-                    ⚠ تجاوزت الميزانية بـ {costs.total - selectedTrip.budget} ر.س
-                  </p>
-                </div>
-              )}
-              {costs.total <= selectedTrip.budget && selectedTrip.budget > 0 && (
-                <div className="rounded-xl p-3 text-center" style={{ background: "hsl(145 40% 93%)" }}>
-                  <p className="text-xs font-bold" style={{ color: "hsl(145 45% 35%)" }}>
-                    ✓ ضمن الميزانية — متبقي {selectedTrip.budget - costs.total} ر.س
-                  </p>
-                </div>
+              {selectedTrip.budget > 0 && (
+                <>
+                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min((costs.total / selectedTrip.budget) * 100, 100)}%`,
+                        background: costs.total > selectedTrip.budget ? "hsl(var(--destructive))" : "hsl(var(--primary))",
+                      }}
+                    />
+                  </div>
+                  {costs.total > selectedTrip.budget ? (
+                    <div className="bg-destructive/10 rounded-xl p-3 text-center">
+                      <p className="text-xs font-bold text-destructive">
+                        ⚠ تجاوزت الميزانية بـ {(costs.total - selectedTrip.budget).toLocaleString()}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl p-3 text-center" style={{ background: "hsl(145 40% 93%)" }}>
+                      <p className="text-xs font-bold" style={{ color: "hsl(145 45% 35%)" }}>
+                        ✓ ضمن الميزانية — متبقي {(selectedTrip.budget - costs.total).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
+
+            {/* Expenses list */}
+            <h3 className="text-sm font-bold text-foreground">المصروفات</h3>
+            {selectedTrip.expenses.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                لا توجد مصروفات بعد — أضف أول مصروف
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {selectedTrip.expenses.map((exp) => (
+                  <div key={exp.id} className="bg-card rounded-xl border border-border/50 p-3 flex items-center justify-between">
+                    <span className="text-sm text-foreground">{exp.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-foreground">{exp.amount.toLocaleString()}</span>
+                      <button
+                        onClick={() => {
+                          const updated = { ...selectedTrip, expenses: selectedTrip.expenses.filter((e) => e.id !== exp.id) };
+                          setSelectedTrip(updated);
+                          setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+                        }}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        )}
         )}
 
         {/* FAB for itinerary */}
