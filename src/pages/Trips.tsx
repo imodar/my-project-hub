@@ -92,8 +92,11 @@ const INITIAL_TRIPS: Trip[] = [
     budget: 12000,
     status: "confirmed",
     type: "family",
-    accommodation: 3500,
-    transportation: 2800,
+    expenses: [
+      { id: "e1", name: "الإقامة", amount: 3500 },
+      { id: "e2", name: "المواصلات", amount: 2800 },
+      { id: "e3", name: "تذاكر طيران", amount: 4200 },
+    ],
     days: [
       {
         id: "d1", dayNumber: 1, city: "إسطنبول — السلطان أحمد",
