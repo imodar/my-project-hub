@@ -643,6 +643,83 @@ const Zakat = () => {
           </div>
         </DrawerContent>
       </Drawer>
+      {/* Reminder drawer */}
+      <Drawer open={!!reminderAsset} onOpenChange={(open) => { if (!open) { setReminderAsset(null); setCustomReminderDays(""); } }}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>إعداد التذكير</DrawerTitle>
+            <DrawerDescription>اختر موعد التذكير قبل حلول الحول</DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-2">
+            {[
+              { label: "قبل يوم واحد", days: 1 },
+              { label: "قبل أسبوع", days: 7 },
+              { label: "قبل شهر", days: 30 },
+            ].map((opt) => (
+              <button
+                key={opt.days}
+                onClick={() => {
+                  if (reminderAsset) {
+                    updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: true } : a));
+                    haptic.medium();
+                    setReminderAsset(null);
+                  }
+                }}
+                className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl border border-border bg-background hover:bg-muted/50 active:scale-[0.98] transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <Clock size={16} className="text-amber-500" />
+                  <span className="text-sm font-bold text-foreground">{opt.label}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{opt.days} يوم</span>
+              </button>
+            ))}
+
+            <div className="pt-2">
+              <p className="text-xs font-bold text-foreground mb-2">أو اختر عدد الأيام</p>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={customReminderDays}
+                  onChange={(e) => setCustomReminderDays(e.target.value)}
+                  placeholder="عدد الأيام"
+                  className="text-right flex-1"
+                  inputMode="numeric"
+                />
+                <Button
+                  onClick={() => {
+                    if (reminderAsset && customReminderDays) {
+                      updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: true } : a));
+                      haptic.medium();
+                      setReminderAsset(null);
+                      setCustomReminderDays("");
+                    }
+                  }}
+                  disabled={!customReminderDays || Number(customReminderDays) <= 0}
+                  className="rounded-xl px-6"
+                >
+                  تأكيد
+                </Button>
+              </div>
+            </div>
+
+            <Button
+              variant="ghost"
+              className="w-full mt-2 text-muted-foreground"
+              onClick={() => {
+                if (reminderAsset) {
+                  updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: false } : a));
+                  haptic.light();
+                  setReminderAsset(null);
+                }
+              }}
+            >
+              <BellOff size={14} className="ml-2" />
+              إلغاء التذكير
+            </Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
