@@ -1121,7 +1121,7 @@ const Trips = () => {
                             <MapPin size={11} /> {trip.destination}
                           </p>
                           {trip.startDate && (
-                            <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                            <p className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "hsl(145 45% 35%)" }}>
                               <Calendar size={11} />
                               {format(new Date(trip.startDate), "d MMM", { locale: ar })}
                               {trip.endDate && ` — ${format(new Date(trip.endDate), "d MMM", { locale: ar })}`}
