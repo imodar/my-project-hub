@@ -63,6 +63,7 @@ const CATEGORIES: Record<DocCategory, { label: string; icon: typeof CreditCard; 
   medical: { label: "طبي", icon: Heart, bg: "bg-red-100 dark:bg-red-900/30", color: "text-red-600 dark:text-red-300" },
   vehicles: { label: "مركبات", icon: Car, bg: "bg-amber-100 dark:bg-amber-900/30", color: "text-amber-600 dark:text-amber-300" },
   home: { label: "منزل", icon: Home, bg: "bg-emerald-100 dark:bg-emerald-900/30", color: "text-emerald-600 dark:text-emerald-300" },
+  passport: { label: "جوازات سفر", icon: BookOpen, bg: "bg-indigo-100 dark:bg-indigo-900/30", color: "text-indigo-600 dark:text-indigo-300" },
   other: { label: "أخرى", icon: File, bg: "bg-muted", color: "text-muted-foreground" },
 };
 
