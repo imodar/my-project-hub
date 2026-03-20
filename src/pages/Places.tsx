@@ -463,15 +463,6 @@ const Places = () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   };
 
-  // Random suggestion
-  const suggestRandom = () => {
-    const unvisited = activeList?.places.filter((p) => !p.visited) || [];
-    if (unvisited.length === 0) return;
-    const random = unvisited[Math.floor(Math.random() * unvisited.length)];
-    haptic.medium();
-    alert(`💡 اقتراح اليوم: ${random.name}`);
-  };
-
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
       <PullToRefresh onRefresh={handleRefresh}>
