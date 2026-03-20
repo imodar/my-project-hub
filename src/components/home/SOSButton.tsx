@@ -140,6 +140,19 @@ const SOSButton = () => {
     }, 1000);
   }, []);
 
+  // Listen for nav bar SOS trigger
+  useEffect(() => {
+    const handler = () => {
+      if (phase === "active") {
+        setCancelDrawer(true);
+      } else if (phase === "idle") {
+        startCountdown();
+      }
+    };
+    window.addEventListener("trigger-sos", handler);
+    return () => window.removeEventListener("trigger-sos", handler);
+  }, [phase, startCountdown]);
+
   const cancelCountdown = useCallback(() => {
     if (countdownTimer.current) clearInterval(countdownTimer.current);
     setPhase("idle");
