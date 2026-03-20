@@ -456,7 +456,7 @@ const Trips = () => {
           ]}
         >
           <div className="flex items-center gap-2 mt-3 pb-1">
-            <span className="text-white/60 text-xs">
+            <span className="text-xs font-medium" style={{ color: "hsl(var(--accent))" }}>
               {selectedTrip.startDate && format(new Date(selectedTrip.startDate), "d MMM", { locale: ar })}
               {" — "}
               {selectedTrip.endDate && format(new Date(selectedTrip.endDate), "d MMM yyyy", { locale: ar })}
