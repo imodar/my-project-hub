@@ -605,8 +605,8 @@ const Zakat = () => {
             </div>
 
             <Button onClick={handleAdd} className="w-full h-12 text-base font-bold rounded-xl" disabled={!addAmount || Number(addAmount) <= 0}>
-              <Plus size={18} className="ml-2" />
-              إضافة الأصل
+              {editingAssetId ? <Check size={18} className="ml-2" /> : <Plus size={18} className="ml-2" />}
+              {editingAssetId ? "حفظ التعديلات" : "إضافة الأصل"}
             </Button>
           </div>
         </DrawerContent>
