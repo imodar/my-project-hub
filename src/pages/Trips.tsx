@@ -247,6 +247,8 @@ const Trips = () => {
   const [suggestionLocation, setSuggestionLocation] = useState("");
 
   const [packingItemName, setPackingItemName] = useState("");
+  const [expenseName, setExpenseName] = useState("");
+  const [expenseAmount, setExpenseAmount] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [dayCity, setDayCity] = useState("");
 
