@@ -213,16 +213,27 @@ const Zakat = () => {
 
   const handleAdd = () => {
     if (!addAmount || Number(addAmount) <= 0) return;
-    const newAsset: ZakatAsset = {
-      id: Date.now().toString(),
-      type: addType,
-      label: addLabel || ASSET_TYPE_META[addType].label,
-      amount: Number(addAmount),
-      karat: addType === "gold" ? addKarat : undefined,
-      purchaseDate: addDate,
-      reminder: true,
-    };
-    updateAssets([...assets, newAsset]);
+    if (editingAssetId) {
+      updateAssets(assets.map(a => a.id === editingAssetId ? {
+        ...a,
+        type: addType,
+        label: addLabel || ASSET_TYPE_META[addType].label,
+        amount: Number(addAmount),
+        karat: addType === "gold" ? addKarat : undefined,
+        purchaseDate: addDate,
+      } : a));
+    } else {
+      const newAsset: ZakatAsset = {
+        id: Date.now().toString(),
+        type: addType,
+        label: addLabel || ASSET_TYPE_META[addType].label,
+        amount: Number(addAmount),
+        karat: addType === "gold" ? addKarat : undefined,
+        purchaseDate: addDate,
+        reminder: true,
+      };
+      updateAssets([...assets, newAsset]);
+    }
     setShowAdd(false);
     resetAddForm();
     haptic.medium();
