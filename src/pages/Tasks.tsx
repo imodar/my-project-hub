@@ -374,26 +374,20 @@ const Tasks = () => {
 
   const renderItem = (item: TaskItem, isDone: boolean) => {
     const prioInfo = PRIORITY_INFO[item.priority];
-    const offset = reorderMode ? 0 : (swipeOffset[item.id] || 0);
-    const isDragging = dragItemId === item.id;
-    const isDragOver = dragOverItemId === item.id;
+    const offset = dragActiveId ? 0 : (swipeOffset[item.id] || 0);
+    const isDragging = dragActiveId === item.id;
+    const isDragOverThis = dragOverId === item.id;
 
     return (
       <div
         key={item.id}
+        ref={(el) => { if (el) itemRefsMap.current.set(item.id, el); }}
         className={`relative overflow-hidden rounded-2xl select-none transition-all duration-200 ${
-          isDragging ? "opacity-50 scale-95" : ""
-        } ${isDragOver ? "border-2 border-primary border-dashed" : ""}`}
-        draggable={reorderMode}
-        onDragStart={() => { dragItemRef.current = item.id; setDragItemId(item.id); }}
-        onDragOver={(e) => { e.preventDefault(); handleDragOver(item.id); }}
-        onDragEnter={(e) => { e.preventDefault(); handleDragOver(item.id); }}
-        onDragLeave={() => setDragOverItemId(null)}
-        onDrop={(e) => { e.preventDefault(); handleDrop(item.id); }}
-        onDragEnd={() => { setDragItemId(null); setDragOverItemId(null); dragItemRef.current = null; }}
+          isDragging ? "opacity-50 scale-95 shadow-lg ring-2 ring-primary" : ""
+        } ${isDragOverThis ? "border-2 border-primary border-dashed" : ""}`}
       >
         {/* Swipe actions behind */}
-        {!reorderMode && (
+        {!dragActiveId && (
           <div
             className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
             style={{ width: `${SWIPE_WIDTH}px` }}
@@ -419,34 +413,14 @@ const Tasks = () => {
         {/* Card */}
         <div
           className="relative z-10 bg-card rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out"
-          style={{ transform: `translateX(${offset}px)`, touchAction: reorderMode ? "none" : "pan-y" }}
-          onPointerDown={(e) => {
-            if (!reorderMode) {
-              startLongPress(item.id);
-              handlePointerDown(e, item.id);
-            }
-          }}
-          onPointerMove={(e) => {
-            if (!reorderMode) {
-              handlePointerMove(e, item.id);
-            }
-          }}
-          onPointerUp={(e) => {
-            cancelLongPress();
-            if (!reorderMode) {
-              handlePointerUp(e, item.id);
-            }
-          }}
-          onPointerCancel={() => { cancelLongPress(); closeSwipe(item.id); }}
+          style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
+          onPointerDown={(e) => handlePointerDown(e, item.id)}
+          onPointerMove={(e) => handlePointerMove(e, item.id)}
+          onPointerUp={(e) => handlePointerUp(e, item.id)}
+          onPointerCancel={() => { cancelLongPress(); closeSwipe(item.id); setDragActiveId(null); setDragOverId(null); isLongPressingRef.current = false; }}
         >
-          {/* Drag handle in reorder mode */}
-          {reorderMode && (
-            <div className="cursor-grab active:cursor-grabbing text-muted-foreground">
-              <GripVertical size={18} />
-            </div>
-          )}
           <button
-            onClick={() => !reorderMode && toggleItem(item.id)}
+            onClick={() => !dragActiveId && toggleItem(item.id)}
             className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
               isDone
                 ? "bg-primary"
