@@ -115,6 +115,13 @@ const Tasks = () => {
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
 
+  // Drag reorder state
+  const [reorderMode, setReorderMode] = useState(false);
+  const [dragItemId, setDragItemId] = useState<string | null>(null);
+  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragItemRef = useRef<string | null>(null);
+
   const activeList = lists.find((l) => l.id === activeListId);
 
   const filteredItems = activeList?.items.filter((item) => {
