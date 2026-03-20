@@ -136,9 +136,16 @@ const Places = () => {
   const [lists, setLists] = useState<PlaceList[]>(initialLists);
   const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
   const [activeCategory, setActiveCategory] = useState<PlaceCategory | "الكل">("الكل");
-  const [searchQuery, setSearchQuery] = useState("");
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filter state
+  const [filterRating, setFilterRating] = useState(0);
+  const [filterPrice, setFilterPrice] = useState<PriceRange | "الكل">("الكل");
+  const [filterKid, setFilterKid] = useState<"yes" | "partial" | "no" | "الكل">("الكل");
+  const [filterMustVisit, setFilterMustVisit] = useState(false);
+  const [filterVisitStatus, setFilterVisitStatus] = useState<"الكل" | "visited" | "unvisited">("الكل");
 
   // Swipe state
   const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
