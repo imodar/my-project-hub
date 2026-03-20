@@ -20,10 +20,10 @@ const COLUMN_X: Record<string, number> = {
   evening: 467.4,
   morning: 522.0,
   // النوافل
-  tarawih: 564.7,
-  witr: 595.0,
-  duha: 625.4,
-  siyam: 655.7,
+  tarawih: 565.7,
+  witr: 596.0,
+  duha: 626.4,
+  siyam: 656.7,
   // الفروض
   isha: 686.8,
   maghrib: 702.3,
