@@ -8,28 +8,28 @@ import { type MonthData } from "./worshipData";
 const COLUMN_X: Record<string, number> = {
   // أعمال صالحة (from left)
   tongue: 34.5,
-  no_tv: 73.6,
-  parents: 112.6,
-  sadaqa: 151.7,
+  no_tv: 88.5,
+  parents: 142.8,
+  sadaqa: 197.1,
   // القرآن
-  tilawa: 190.7,
-  hifz: 229.8,
+  tilawa: 251.0,
+  hifz: 305.0,
   // الأذكار
-  tahlil: 268.8,
-  istighfar: 307.9,
-  evening: 346.9,
-  morning: 386.0,
+  tahlil: 359.3,
+  istighfar: 413.5,
+  evening: 467.5,
+  morning: 521.5,
   // النوافل
-  tarawih: 425.1,
-  witr: 464.1,
-  duha: 503.2,
-  siyam: 542.2,
+  tarawih: 564.2,
+  witr: 595.0,
+  duha: 625.2,
+  siyam: 655.6,
   // الفروض
-  isha: 581.3,
-  maghrib: 620.3,
-  asr: 659.4,
-  dhuhr: 698.4,
-  fajr: 737.5,
+  isha: 680.4,
+  maghrib: 699.1,
+  asr: 717.8,
+  dhuhr: 736.5,
+  fajr: 755.2,
 };
 
 // ─── Row positions (PDF y-coordinates, y=0 is bottom) ────────────────────────
