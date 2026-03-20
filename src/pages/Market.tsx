@@ -123,6 +123,7 @@ const Market = () => {
 
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
+  const [showListActions, setShowListActions] = useState(false);
 
   const activeList = lists.find((l) => l.id === activeListId);
 
