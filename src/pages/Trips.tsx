@@ -1034,7 +1034,7 @@ const Trips = () => {
                           )}
                         </div>
                         <div className="text-left shrink-0">
-                          <p className="text-xs font-bold text-primary">{trip.budget > 0 ? `${trip.budget} ر.س` : ""}</p>
+                          <p className="text-xs font-bold text-primary">{trip.budget > 0 ? trip.budget.toLocaleString() : ""}</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">{trip.days.length} أيام</p>
                         </div>
                       </div>
