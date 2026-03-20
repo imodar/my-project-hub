@@ -548,11 +548,21 @@ const Tasks = () => {
           </div>
         </div>
 
+        {/* Reorder mode banner */}
+        {reorderMode && (
+          <div className="px-4 py-2 flex items-center justify-between bg-primary/10 border-b border-primary/20">
+            <p className="text-xs font-semibold text-primary">🔀 وضع إعادة الترتيب — اسحب العناصر لتغيير ترتيبها</p>
+            <Button size="sm" variant="outline" onClick={exitReorderMode} className="text-xs rounded-xl h-7 px-3">
+              تم
+            </Button>
+          </div>
+        )}
+
         {/* Items list */}
         <div className="px-4 pt-4 space-y-2 pb-4">
           {pendingItems.map((item) => renderItem(item, false))}
 
-          {doneItems.length > 0 && (
+          {!reorderMode && doneItems.length > 0 && (
             <div className="pt-3">
               <p className="text-xs text-muted-foreground mb-2 font-medium">✅ مكتملة</p>
               <div className="space-y-2">
