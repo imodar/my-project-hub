@@ -545,9 +545,12 @@ const Debts = () => {
                         <p key={i} className={`text-xl font-black ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{formatDebtAmount(a)}</p>
                       ))}
                     </div>
-                    <div className="text-right">
-                      <p className={`font-bold text-base ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{debt.personName}</p>
-                      <p className={`text-xs mt-0.5 ${debt.isFullyPaid ? "line-through text-muted-foreground/40" : "text-muted-foreground"}`}>{debt.note}</p>
+                    <div className="text-right flex items-center gap-2">
+                      {debt.hasReminder && <Bell size={14} className="text-amber-500 shrink-0" />}
+                      <div>
+                        <p className={`font-bold text-base ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{debt.personName}</p>
+                        <p className={`text-xs mt-0.5 ${debt.isFullyPaid ? "line-through text-muted-foreground/40" : "text-muted-foreground"}`}>{debt.note}</p>
+                      </div>
                     </div>
                   </div>
 
