@@ -28,6 +28,7 @@ import Zakat from "./pages/Zakat.tsx";
 import Will from "./pages/Will.tsx";
 import Trips from "./pages/Trips.tsx";
 import Albums from "./pages/Albums.tsx";
+import KidsWorship from "./pages/KidsWorship.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const AnimatedRoutes = () => {
         <Route path="/will" element={<Will />} />
         <Route path="/trips" element={<Trips />} />
         <Route path="/albums" element={<Albums />} />
+        <Route path="/kids-worship" element={<KidsWorship />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
