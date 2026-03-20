@@ -135,25 +135,80 @@ const Tasks = () => {
   const completedItems = activeList?.items.filter((i) => i.done).length || 0;
   const remainingItems = totalItems - completedItems;
 
-  // Swipe handlers
+  // Long press to enter reorder mode
+  const startLongPress = useCallback((id: string) => {
+    longPressTimerRef.current = setTimeout(() => {
+      haptic.medium();
+      setReorderMode(true);
+      setDragItemId(id);
+      dragItemRef.current = id;
+    }, 500);
+  }, []);
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleDragOver = useCallback((id: string) => {
+    if (!dragItemRef.current || dragItemRef.current === id) return;
+    setDragOverItemId(id);
+  }, []);
+
+  const handleDrop = useCallback((targetId: string) => {
+    if (!dragItemRef.current || dragItemRef.current === targetId) return;
+    haptic.light();
+    setLists((prev) =>
+      prev.map((list) => {
+        if (list.id !== activeListId) return list;
+        const items = [...list.items];
+        const fromIdx = items.findIndex((i) => i.id === dragItemRef.current);
+        const toIdx = items.findIndex((i) => i.id === targetId);
+        if (fromIdx === -1 || toIdx === -1) return list;
+        const [moved] = items.splice(fromIdx, 1);
+        items.splice(toIdx, 0, moved);
+        return { ...list, items };
+      })
+    );
+    setDragItemId(null);
+    setDragOverItemId(null);
+    dragItemRef.current = null;
+  }, [activeListId]);
+
+  const exitReorderMode = useCallback(() => {
+    setReorderMode(false);
+    setDragItemId(null);
+    setDragOverItemId(null);
+    dragItemRef.current = null;
+  }, []);
+
+  // Swipe handlers (disabled during reorder mode)
   const closeSwipe = useCallback((id: string) => {
     setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
     activeSwipeRef.current = null;
   }, []);
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
+    if (reorderMode) return;
     touchStartXRef.current = e.clientX;
     activeSwipeRef.current = id;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent, id: string) => {
+    if (reorderMode) return;
     if (activeSwipeRef.current !== id) return;
     const diff = e.clientX - touchStartXRef.current;
+    // Cancel long press if finger moves
+    cancelLongPress();
     setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, SWIPE_WIDTH) : 0 }));
   };
 
   const handlePointerUp = (e: React.PointerEvent, id: string) => {
+    cancelLongPress();
+    if (reorderMode) return;
     const offset = swipeOffset[id] || 0;
     setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
     activeSwipeRef.current = null;
