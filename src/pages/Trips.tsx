@@ -431,9 +431,6 @@ const Trips = () => {
           ]}
         >
           <div className="flex items-center gap-2 mt-3 pb-1">
-            <Badge className="text-[11px] border-0" style={{ background: statusInfo.bg, color: statusInfo.color }}>
-              {statusInfo.label}
-            </Badge>
             <span className="text-white/60 text-xs">
               {selectedTrip.startDate && format(new Date(selectedTrip.startDate), "d MMM", { locale: ar })}
               {" — "}
