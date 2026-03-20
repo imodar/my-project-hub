@@ -473,15 +473,53 @@ const CalendarPage = () => {
             {selectedDay && eventsForDay(selectedDay).map((ev) => {
               const rt = getReminderLabel(ev.reminderBefore);
               const hasP = ev.personalReminders && ev.personalReminders.length > 0;
+              const offset = swipeOffset[ev.id] || 0;
               return (
-                <div key={ev.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                  <span className="text-lg">{getEventIcon(ev.icon)}</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                      {ev.title}
-                      {hasP && <BellRing size={13} className="text-amber-500" />}
-                    </p>
-                    {rt && <p className="text-xs text-muted-foreground">🔔 {rt}</p>}
+                <div key={ev.id} className="relative overflow-hidden rounded-2xl select-none">
+                  {/* Swipe action buttons */}
+                  <div className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1" style={{ width: `${SWIPE_WIDTH}px` }}>
+                    <button
+                      onClick={() => { setDeleteTarget(ev); closeSwipe(ev.id); }}
+                      className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
+                    >
+                      <Trash2 size={16} className="text-destructive-foreground" />
+                      <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
+                    </button>
+                    <button
+                      onClick={() => { openEdit(ev); setSelectedDay(null); }}
+                      className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
+                      style={{ background: "hsl(220, 60%, 50%)" }}
+                    >
+                      <Pencil size={16} className="text-white" />
+                      <span className="text-[10px] text-white font-semibold">تعديل</span>
+                    </button>
+                    <button
+                      onClick={() => { openPersonalReminders(ev); setSelectedDay(null); }}
+                      className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
+                      style={{ background: "hsl(35, 80%, 50%)" }}
+                    >
+                      {hasP ? <BellRing size={16} className="text-white" /> : <Bell size={16} className="text-white" />}
+                      <span className="text-[10px] text-white font-semibold">تنبيه</span>
+                    </button>
+                  </div>
+
+                  {/* Card */}
+                  <div
+                    className="relative flex items-center gap-3 p-3 rounded-xl bg-muted/50 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing"
+                    style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
+                    onPointerDown={(e) => handlePointerDown(e, ev.id)}
+                    onPointerMove={(e) => handlePointerMove(e, ev.id)}
+                    onPointerUp={(e) => handlePointerUp(e, ev.id)}
+                    onPointerCancel={() => closeSwipe(ev.id)}
+                  >
+                    <span className="text-lg">{getEventIcon(ev.icon)}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                        {ev.title}
+                        {hasP && <BellRing size={13} className="text-amber-500" />}
+                      </p>
+                      {rt && <p className="text-xs text-muted-foreground">🔔 {rt}</p>}
+                    </div>
                   </div>
                 </div>
               );
