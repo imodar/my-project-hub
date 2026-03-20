@@ -480,7 +480,7 @@ const CalendarPage = () => {
                   {/* Swipe action buttons */}
                   <div className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1" style={{ width: `${SWIPE_WIDTH}px` }}>
                     <button
-                      onClick={() => { setDeleteTarget(ev); closeSwipe(ev.id); }}
+                      onClick={() => { setDeleteTarget(ev); closeSwipe(drawerKey); }}
                       className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
                     >
                       <Trash2 size={16} className="text-destructive-foreground" />
