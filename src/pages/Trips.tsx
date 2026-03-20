@@ -564,7 +564,7 @@ const Trips = () => {
                         </div>
                       </div>
                       {act.cost > 0 && (
-                        <span className="text-xs font-bold text-primary whitespace-nowrap">{act.cost} ر.س</span>
+                        <span className="text-xs font-bold text-primary whitespace-nowrap">{act.cost.toLocaleString()}</span>
                       )}
                     </div>
                   ))}
