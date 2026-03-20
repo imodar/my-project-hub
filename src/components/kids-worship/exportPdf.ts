@@ -1,185 +1,141 @@
-import jsPDF from "jspdf";
-import { categories, allItems, type MonthData, getMonthLabel } from "./worshipData";
+import { PDFDocument, rgb } from "pdf-lib";
+import { type MonthData } from "./worshipData";
 
-// Category colors matching the PDF design
-const CAT_COLORS: Record<string, { header: string; headerText: string }> = {
-  salah: { header: "#E8D5F5", headerText: "#7B2FB5" },
-  nawafil: { header: "#D5E8F5", headerText: "#2B7CB5" },
-  athkar: { header: "#D5F0E5", headerText: "#2B8B60" },
-  quran: { header: "#F5ECD5", headerText: "#B58B2B" },
-  good_deeds: { header: "#F5D5E5", headerText: "#B52B70" },
+// ─── Column positions (PDF x-coordinates, left to right in the template) ─────
+// The template is RTL - leftmost columns are "أعمال صالحة", rightmost are "الفروض"
+// Item IDs mapped to their x-center in PDF coordinate space
+
+const COLUMN_X: Record<string, number> = {
+  // أعمال صالحة (from left)
+  tongue: 34.5,
+  no_tv: 73.6,
+  parents: 112.6,
+  sadaqa: 151.7,
+  // القرآن
+  tilawa: 190.7,
+  hifz: 229.8,
+  // الأذكار
+  tahlil: 268.8,
+  istighfar: 307.9,
+  evening: 346.9,
+  morning: 386.0,
+  // النوافل
+  tarawih: 425.1,
+  witr: 464.1,
+  duha: 503.2,
+  siyam: 542.2,
+  // الفروض
+  isha: 581.3,
+  maghrib: 620.3,
+  asr: 659.4,
+  dhuhr: 698.4,
+  fajr: 737.5,
 };
 
-export const exportWorshipPdf = (
+// ─── Row positions (PDF y-coordinates, y=0 is bottom) ────────────────────────
+// Day 1 is at the top of the table (highest y), Day 30 at the bottom (lowest y)
+
+const ROW_Y: Record<number, number> = {
+  1: 437.1, 2: 422.3, 3: 407.5, 4: 392.7, 5: 377.9,
+  6: 363.1, 7: 348.3, 8: 333.5, 9: 318.7, 10: 303.9,
+  11: 289.1, 12: 274.3, 13: 259.5, 14: 244.7, 15: 229.9,
+  16: 215.1, 17: 200.3, 18: 185.5, 19: 170.7, 20: 155.9,
+  21: 141.1, 22: 126.3, 23: 111.5, 24: 96.7, 25: 81.9,
+  26: 67.1, 27: 52.3, 28: 37.5, 29: 22.7, 30: 7.9,
+};
+
+// Circle radius
+const CIRCLE_R = 5;
+
+// Category colors for filled circles
+const ITEM_COLORS: Record<string, [number, number, number]> = {
+  // الفروض - purple
+  fajr: [0.48, 0.18, 0.71],
+  dhuhr: [0.48, 0.18, 0.71],
+  asr: [0.48, 0.18, 0.71],
+  maghrib: [0.48, 0.18, 0.71],
+  isha: [0.48, 0.18, 0.71],
+  // النوافل - blue
+  siyam: [0.17, 0.48, 0.71],
+  duha: [0.17, 0.48, 0.71],
+  witr: [0.17, 0.48, 0.71],
+  tarawih: [0.17, 0.48, 0.71],
+  // الأذكار - green
+  morning: [0.17, 0.55, 0.37],
+  evening: [0.17, 0.55, 0.37],
+  istighfar: [0.17, 0.55, 0.37],
+  tahlil: [0.17, 0.55, 0.37],
+  // القرآن - gold
+  hifz: [0.71, 0.55, 0.17],
+  tilawa: [0.71, 0.55, 0.17],
+  // أعمال صالحة - pink
+  sadaqa: [0.71, 0.17, 0.44],
+  parents: [0.71, 0.17, 0.44],
+  no_tv: [0.71, 0.17, 0.44],
+  tongue: [0.71, 0.17, 0.44],
+};
+
+export const exportWorshipPdf = async (
   data: MonthData,
-  year: number,
-  month: number,
+  _year: number,
+  _month: number,
   childName: string,
   totalDays: number
 ) => {
-  // Landscape A4
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const pageW = 297;
-  const pageH = 210;
-  
-  // Register and embed a basic font that supports Arabic
-  // jsPDF doesn't natively support Arabic well, so we'll use canvas rendering
-  
-  const marginX = 5;
-  const marginY = 5;
-  const tableW = pageW - marginX * 2;
-  const headerH = 22;
-  const subHeaderH = 14;
-  const rowH = 5.2;
-  const dayColW = 22;
-  const itemCount = allItems.length;
-  const cellW = (tableW - dayColW) / itemCount;
+  // Load the template PDF
+  const templateUrl = "/worship-template.pdf";
+  const templateBytes = await fetch(templateUrl).then((r) => r.arrayBuffer());
+  const pdfDoc = await PDFDocument.load(templateBytes);
 
-  // Background
-  doc.setFillColor(255, 240, 248);
-  doc.rect(0, 0, pageW, pageH, "F");
+  const page = pdfDoc.getPages()[0];
 
-  // Title bar
-  doc.setFillColor(236, 143, 186);
-  doc.roundedRect(marginX, marginY, tableW, headerH, 4, 4, "F");
-  
-  // Title text - use built-in font with manual positioning
-  doc.setFontSize(16);
-  doc.setTextColor(255, 255, 255);
-  const title = `${childName} - ${getMonthLabel(year, month)}`;
-  // Draw from right side (RTL)
-  doc.text(title, pageW - marginX - 8, marginY + 14, { align: "right" });
-  
-  doc.setFontSize(10);
-  doc.text("Worship Tracker", marginX + 8, marginY + 14);
+  // Draw filled circles for completed items
+  for (let day = 1; day <= Math.min(totalDays, 30); day++) {
+    const dayData = data[day] || {};
+    const y = ROW_Y[day];
+    if (y === undefined) continue;
 
-  const tableTop = marginY + headerH + 2;
+    for (const [itemId, done] of Object.entries(dayData)) {
+      if (!done) continue;
+      const x = COLUMN_X[itemId];
+      if (x === undefined) continue;
 
-  // Category headers
-  let colX = marginX;
-  // Day column header
-  doc.setFillColor(240, 240, 245);
-  doc.rect(colX, tableTop, dayColW, subHeaderH * 2, "F");
-  doc.setFontSize(7);
-  doc.setTextColor(100, 100, 100);
-  doc.text("Day", colX + dayColW / 2, tableTop + subHeaderH, { align: "center" });
-  
-  colX = marginX + dayColW;
+      const color = ITEM_COLORS[itemId] || [0.4, 0.4, 0.4];
 
-  // Draw category group headers
-  categories.forEach((cat) => {
-    const catW = cellW * cat.items.length;
-    const colors = CAT_COLORS[cat.id] || { header: "#E0E0E0", headerText: "#333" };
-    
-    // Category header
-    const [hr, hg, hb] = hexToRgb(colors.header);
-    doc.setFillColor(hr, hg, hb);
-    doc.rect(colX, tableTop, catW, subHeaderH, "F");
-    
-    const [tr, tg, tb] = hexToRgb(colors.headerText);
-    doc.setTextColor(tr, tg, tb);
-    doc.setFontSize(8);
-    doc.text(cat.label, colX + catW / 2, tableTop + 9, { align: "center" });
-    
-    // Sub-headers (item names)
-    cat.items.forEach((item, idx) => {
-      const ix = colX + idx * cellW;
-    doc.setFillColor(hr, hg, hb);
-    doc.rect(ix, tableTop + subHeaderH, cellW, subHeaderH, "F");
-      doc.setTextColor(tr, tg, tb);
-      doc.setFontSize(5.5);
-      doc.text(item.label, ix + cellW / 2, tableTop + subHeaderH + 9, { align: "center" });
-    });
-    
-    colX += catW;
-  });
+      // Draw filled circle
+      page.drawCircle({
+        x,
+        y,
+        size: CIRCLE_R,
+        color: rgb(color[0], color[1], color[2]),
+        opacity: 0.9,
+      });
 
-  // Grid rows
-  const gridTop = tableTop + subHeaderH * 2;
-  
-  for (let d = 1; d <= totalDays; d++) {
-    const y = gridTop + (d - 1) * rowH;
-    
-    if (y + rowH > pageH - 5) break; // don't overflow page
-    
-    // Alternating row background
-    if (d % 10 === 0) {
-      doc.setFillColor(255, 230, 240);
-    } else if (d % 2 === 0) {
-      doc.setFillColor(252, 248, 255);
-    } else {
-      doc.setFillColor(255, 255, 255);
+      // Draw checkmark (two small lines)
+      page.drawLine({
+        start: { x: x - 2.5, y },
+        end: { x: x - 0.5, y: y - 2 },
+        thickness: 1.2,
+        color: rgb(1, 1, 1),
+        opacity: 0.95,
+      });
+      page.drawLine({
+        start: { x: x - 0.5, y: y - 2 },
+        end: { x: x + 3, y: y + 2.5 },
+        thickness: 1.2,
+        color: rgb(1, 1, 1),
+        opacity: 0.95,
+      });
     }
-    doc.rect(marginX, y, tableW, rowH, "F");
-    
-    // Day label
-    doc.setFontSize(6);
-    doc.setTextColor(120, 80, 140);
-    doc.text(`${d}`, marginX + dayColW / 2, y + rowH * 0.7, { align: "center" });
-    
-    // Circles for each item
-    const dd = data[d] || {};
-    let ix = marginX + dayColW;
-    
-    allItems.forEach((item) => {
-      const cx = ix + cellW / 2;
-      const cy = y + rowH / 2;
-      const r = Math.min(cellW, rowH) * 0.3;
-      
-      const catId = categories.find(c => c.items.some(i => i.id === item.id))?.id || "";
-      const colors = CAT_COLORS[catId] || { header: "#E0E0E0", headerText: "#333" };
-      
-      if (dd[item.id]) {
-        // Filled circle
-        const [fr, fg, fb] = hexToRgb(colors.headerText);
-        doc.setFillColor(fr, fg, fb);
-        doc.circle(cx, cy, r, "F");
-        // Checkmark
-        doc.setDrawColor(255, 255, 255);
-        doc.setLineWidth(0.3);
-        doc.line(cx - r * 0.4, cy, cx - r * 0.1, cy + r * 0.35);
-        doc.line(cx - r * 0.1, cy + r * 0.35, cx + r * 0.4, cy - r * 0.3);
-      } else {
-        // Empty circle
-        const [er, eg, eb] = hexToRgb(colors.header);
-        doc.setDrawColor(er, eg, eb);
-        doc.setLineWidth(0.3);
-        doc.circle(cx, cy, r, "S");
-      }
-      
-      ix += cellW;
-    });
-    
-    // Row border
-    doc.setDrawColor(230, 220, 235);
-    doc.setLineWidth(0.1);
-    doc.line(marginX, y + rowH, marginX + tableW, y + rowH);
   }
 
-  // Grid column lines
-  doc.setDrawColor(230, 220, 235);
-  doc.setLineWidth(0.1);
-  let lx = marginX + dayColW;
-  for (let i = 0; i <= itemCount; i++) {
-    doc.line(lx, tableTop, lx, gridTop + totalDays * rowH);
-    lx += cellW;
-  }
-  
-  // Outer border
-  doc.setDrawColor(200, 180, 210);
-  doc.setLineWidth(0.3);
-  doc.rect(marginX, tableTop, tableW, subHeaderH * 2 + totalDays * rowH);
-
-  // Save
-  const monthLabel = getMonthLabel(year, month);
-  doc.save(`${childName}-${monthLabel}.pdf`);
+  // Save and download
+  const pdfBytes = await pdfDoc.save();
+  const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `عبادات-${childName}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
 };
-
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace("#", "");
-  return [
-    parseInt(h.substring(0, 2), 16),
-    parseInt(h.substring(2, 4), 16),
-    parseInt(h.substring(4, 6), 16),
-  ];
-}
