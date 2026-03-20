@@ -556,9 +556,11 @@ const Trips = () => {
                   </div>
                   <button
                     onClick={() => { setSelectedDayId(day.id); setNewActivityDrawer(true); }}
-                    className="p-1.5 rounded-lg bg-primary/10"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                    style={{ background: "hsl(var(--accent) / 0.15)", color: "hsl(var(--accent))" }}
                   >
-                    <Plus size={14} className="text-primary" />
+                    <Plus size={14} />
+                    <span>نشاط</span>
                   </button>
                 </div>
                 <div className="divide-y divide-border/20">
