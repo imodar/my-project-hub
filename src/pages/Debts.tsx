@@ -74,6 +74,7 @@ const initialGiven: Debt[] = [
     payments: [{ id: "p2", amounts: [{ amount: 800, currency: "SAR" }], date: "2025-03-01", type: "item", itemDescription: "عسل" }],
     isFullyPaid: false,
     isArchived: false,
+    hasReminder: false,
     postponements: [],
   },
   {
