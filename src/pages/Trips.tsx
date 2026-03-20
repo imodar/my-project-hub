@@ -476,6 +476,21 @@ const Trips = () => {
               { key: "suggestions", label: "المقترحات", icon: Lightbulb },
               { key: "packing", label: "التجهيزات", icon: PackageCheck },
               { key: "calculator", label: "التكاليف", icon: Calculator },
+              ...((() => {
+                // Check if there's an album linked to this trip
+                try {
+                  const storedAlbums = localStorage.getItem("family-albums");
+                  if (storedAlbums) {
+                    const albums = JSON.parse(storedAlbums);
+                    if (albums.some((a: any) => a.linkedTripId === selectedTrip.id)) {
+                      return [{ key: "album", label: "ألبوم الرحلة", icon: Camera }];
+                    }
+                  }
+                } catch {}
+                // Also check default data
+                if (selectedTrip.id === "1") return [{ key: "album", label: "ألبوم الرحلة", icon: Camera }];
+                return [];
+              })()),
             ].map((tab) => (
               <button
                 key={tab.key}
