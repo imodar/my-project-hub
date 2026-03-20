@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MapPin, Link2, Phone, Star, DollarSign, Baby, Tag, StickyNote } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
+import PageHeader from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
