@@ -133,7 +133,28 @@ const KidsWorship = () => {
   const isCurrentMonth = now.getFullYear() === selectedYear && now.getMonth() === selectedMonth;
 
   useEffect(() => {
-    saveData(data);
+    saveData(selectedYear, selectedMonth, data);
+  }, [data, selectedYear, selectedMonth]);
+
+  // Load data when month changes
+  const handleMonthChange = useCallback((year: number, month: number) => {
+    setSelectedYear(year);
+    setSelectedMonth(month);
+    setData(loadData(year, month));
+    const n = new Date();
+    if (n.getFullYear() === year && n.getMonth() === month) {
+      setSelectedDay(n.getDate());
+    } else {
+      setSelectedDay(1);
+    }
+  }, []);
+
+  const getDayStatus = useCallback((day: number): "full" | "partial" | "empty" => {
+    const dd = data[day] || {};
+    const done = Object.values(dd).filter(Boolean).length;
+    if (done === TOTAL_ITEMS) return "full";
+    if (done > 0) return "partial";
+    return "empty";
   }, [data]);
 
   const dayData = data[selectedDay] || {};
