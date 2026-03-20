@@ -473,7 +473,9 @@ const Trips = () => {
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
             {[
               { key: "itinerary", label: "خط السير", icon: List },
-              { key: "suggestions", label: "المقترحات", icon: Lightbulb },
+              ...(selectedTrip.type === "family" || selectedTrip.participants.length > 1
+                ? [{ key: "suggestions", label: "المقترحات", icon: Lightbulb }]
+                : []),
               { key: "packing", label: "التجهيزات", icon: PackageCheck },
               { key: "calculator", label: "التكاليف", icon: Calculator },
               ...((() => {
