@@ -268,17 +268,21 @@ const Trips = () => {
   const handleSaveTrip = () => {
     if (!tripName.trim() || !tripDest.trim()) return;
     if (editingTripId) {
+      const newType = tripParticipants.length > 1 ? "family" : "personal";
       setTrips((prev) => prev.map((t) => t.id === editingTripId ? {
         ...t, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
-        budget: Number(tripBudget) || 0, participants: tripParticipants,
+        budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
       } : t));
       if (selectedTrip?.id === editingTripId) {
         setSelectedTrip((prev) => prev ? {
           ...prev, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
-          budget: Number(tripBudget) || 0, participants: tripParticipants,
+          budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
         } : null);
       }
-      toast.success("تم تعديل الرحلة");
+      toast.success(newType !== trips.find(t => t.id === editingTripId)?.type
+        ? newType === "family" ? "تم تحويل الرحلة إلى عائلية" : "تم تحويل الرحلة إلى شخصية"
+        : "تم تعديل الرحلة"
+      );
     } else {
       const newTrip: Trip = {
         id: Date.now().toString(), name: tripName, destination: tripDest,
