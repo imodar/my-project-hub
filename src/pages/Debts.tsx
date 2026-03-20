@@ -249,6 +249,60 @@ const getSummaryByCurrency = (debts: Debt[]): DebtAmount[] => {
   return Object.entries(totals).map(([currency, amount]) => ({ amount, currency: currency as CurrencyCode }));
 };
 
+const AmountEditor = ({
+  amounts,
+  setAmounts,
+}: {
+  amounts: { amount: string; currency: CurrencyCode }[];
+  setAmounts: (a: { amount: string; currency: CurrencyCode }[]) => void;
+}) => (
+  <div className="space-y-2">
+    {amounts.map((entry, i) => (
+      <div key={i} className="flex gap-2 items-center">
+        <input
+          type="number"
+          placeholder="المبلغ"
+          value={entry.amount}
+          onChange={(e) => {
+            const updated = [...amounts];
+            updated[i] = { ...updated[i], amount: e.target.value };
+            setAmounts(updated);
+          }}
+          className="flex-1 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+        />
+        <select
+          value={entry.currency}
+          onChange={(e) => {
+            const updated = [...amounts];
+            updated[i] = { ...updated[i], currency: e.target.value as CurrencyCode };
+            setAmounts(updated);
+          }}
+          className="w-32 rounded-xl border border-input bg-background px-2 py-2.5 text-xs"
+        >
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>{c.symbol} {c.label}</option>
+          ))}
+        </select>
+        {amounts.length > 1 && (
+          <button
+            onClick={() => setAmounts(amounts.filter((_, j) => j !== i))}
+            className="p-1.5 rounded-lg bg-destructive/10 text-destructive"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+    ))}
+    <button
+      onClick={() => setAmounts([...amounts, { amount: "", currency: "SAR" }])}
+      className="flex items-center gap-1 text-xs font-bold text-primary py-1.5"
+    >
+      <Coins size={14} />
+      + إضافة عملة أخرى
+    </button>
+  </div>
+);
+
 const Debts = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"given" | "taken">("given");
@@ -384,59 +438,7 @@ const Debts = () => {
     return <span className="text-xs text-muted-foreground">{formatDate(debt.dueDate)}</span>;
   };
 
-  const AmountEditor = ({
-    amounts,
-    setAmounts,
-  }: {
-    amounts: { amount: string; currency: CurrencyCode }[];
-    setAmounts: (a: { amount: string; currency: CurrencyCode }[]) => void;
-  }) => (
-    <div className="space-y-2">
-      {amounts.map((entry, i) => (
-        <div key={i} className="flex gap-2 items-center">
-          <input
-            type="number"
-            placeholder="المبلغ"
-            value={entry.amount}
-            onChange={(e) => {
-              const updated = [...amounts];
-              updated[i] = { ...updated[i], amount: e.target.value };
-              setAmounts(updated);
-            }}
-            className="flex-1 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
-          />
-          <select
-            value={entry.currency}
-            onChange={(e) => {
-              const updated = [...amounts];
-              updated[i] = { ...updated[i], currency: e.target.value as CurrencyCode };
-              setAmounts(updated);
-            }}
-            className="w-32 rounded-xl border border-input bg-background px-2 py-2.5 text-xs"
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>{c.symbol} {c.label}</option>
-            ))}
-          </select>
-          {amounts.length > 1 && (
-            <button
-              onClick={() => setAmounts(amounts.filter((_, j) => j !== i))}
-              className="p-1.5 rounded-lg bg-destructive/10 text-destructive"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      ))}
-      <button
-        onClick={() => setAmounts([...amounts, { amount: "", currency: "SAR" }])}
-        className="flex items-center gap-1 text-xs font-bold text-primary py-1.5"
-      >
-        <Coins size={14} />
-        + إضافة عملة أخرى
-      </button>
-    </div>
-  );
+
 
   const SummaryItem = ({ label, icon, summary, count, colorClass }: { label: string; icon: React.ReactNode; summary: DebtAmount[]; count: number; colorClass: string }) => (
     <div className="flex-1 text-center">
