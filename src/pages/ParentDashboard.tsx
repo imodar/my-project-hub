@@ -100,9 +100,10 @@ const ParentDashboard = () => {
     const newDayData = { ...dayData, [itemId]: !dayData[itemId] };
     const newData = { ...editingData, [selectedDay]: newDayData };
     setEditingData(newData);
-    // Save immediately
-    const { saveData: save } = require("@/components/kids-worship/worshipData");
-    save(selectedChild, selectedYear, selectedMonth, newData);
+    // Save immediately using imported function
+    import("@/components/kids-worship/worshipData").then(({ saveData: save }) => {
+      save(selectedChild, selectedYear, selectedMonth, newData);
+    });
   };
 
   const getDayStatus = (day: number): "full" | "partial" | "empty" => {

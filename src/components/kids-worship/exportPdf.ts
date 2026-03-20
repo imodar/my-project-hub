@@ -84,9 +84,8 @@ export const exportWorshipPdf = (
     // Sub-headers (item names)
     cat.items.forEach((item, idx) => {
       const ix = colX + idx * cellW;
-      doc.setFillColor(hr, hg, hb);
-      doc.setGlobalAlpha?.(0.5);
-      doc.rect(ix, tableTop + subHeaderH, cellW, subHeaderH, "F");
+    doc.setFillColor(hr, hg, hb);
+    doc.rect(ix, tableTop + subHeaderH, cellW, subHeaderH, "F");
       doc.setTextColor(tr, tg, tb);
       doc.setFontSize(5.5);
       doc.text(item.label, ix + cellW / 2, tableTop + subHeaderH + 9, { align: "center" });
