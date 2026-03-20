@@ -1,12 +1,14 @@
 import { useState, useCallback, useRef } from "react";
-import { ArrowRight, Plus, Search, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Plus, Search, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
+import PageHeader from "@/components/PageHeader";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
+  Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
+} from "@/components/ui/drawer";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -14,7 +16,6 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Switch } from "@/components/ui/switch";
 import { haptic } from "@/lib/haptics";
 
 export interface Place {
@@ -428,31 +429,21 @@ const Places = () => {
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
       <PullToRefresh onRefresh={handleRefresh}>
         {/* Header */}
-        <div
-          className="sticky top-0 z-40 px-4 pt-4 pb-3"
-          style={{
-            background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-          }}
+        <PageHeader
+          title="📍 قائمة الأماكن"
+          actions={[
+            {
+              icon: <Plus size={20} className="text-white" />,
+              onClick: () => setShowAddList(true),
+            },
+            {
+              icon: <Search size={18} className="text-white" />,
+              onClick: () => setSearchQuery(searchQuery ? "" : " "),
+            },
+          ]}
         >
-          <div className="flex items-center justify-between mb-3">
-            <button onClick={() => navigate(-1)} className="p-2 rounded-xl text-white/80 hover:text-white">
-              <ArrowRight size={22} />
-            </button>
-            <h1 className="text-lg font-bold text-white flex items-center gap-2">
-              📍 قائمة الأماكن
-            </h1>
-            <div className="flex items-center gap-1">
-              <button onClick={() => setShowAddList(true)} className="p-2 rounded-xl text-white/80 hover:text-white">
-                <Plus size={22} />
-              </button>
-              <button onClick={() => setSearchQuery(searchQuery ? "" : " ")} className="p-2 rounded-xl text-white/80 hover:text-white">
-                <Search size={20} />
-              </button>
-            </div>
-          </div>
-
           {/* Lists tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 pt-2 scrollbar-hide">
             {lists.map((list) => (
               <button
                 key={list.id}
@@ -473,7 +464,7 @@ const Places = () => {
               </button>
             ))}
           </div>
-        </div>
+        </PageHeader>
 
         {/* Suggest banner */}
         <div className="px-4 pt-3">
@@ -579,17 +570,6 @@ const Places = () => {
           )}
         </div>
 
-        {/* Floating add button */}
-        <div className="fixed bottom-24 left-4 right-4 max-w-2xl mx-auto z-30">
-          <Button
-            onClick={() => navigate("/places/add", { state: { listId: activeListId } })}
-            className="w-full rounded-2xl shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-sm font-bold gap-2"
-          >
-            <Plus size={18} />
-            أضف مكان جديد
-          </Button>
-        </div>
-
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
@@ -608,14 +588,14 @@ const Places = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Add List Dialog */}
-        <Dialog open={showAddList} onOpenChange={setShowAddList}>
-          <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-            <DialogHeader>
-              <DialogTitle>إنشاء قائمة جديدة</DialogTitle>
-              <DialogDescription>أنشئ قائمة أماكن جديدة</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 pt-2">
+        {/* Add List Drawer */}
+        <Drawer open={showAddList} onOpenChange={setShowAddList}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>إنشاء قائمة جديدة</DrawerTitle>
+              <DrawerDescription>أنشئ قائمة أماكن جديدة</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-3">
               <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
               <div>
                 <p className="text-xs text-muted-foreground mb-2">نوع القائمة</p>
@@ -662,21 +642,21 @@ const Places = () => {
                 </div>
               )}
             </div>
-            <DialogFooter className="flex-row gap-2 pt-2">
+            <DrawerFooter className="flex-row gap-2">
               <Button onClick={addList} className="flex-1 rounded-xl">إنشاء</Button>
-              <Button variant="outline" onClick={() => setShowAddList(false)} className="rounded-xl">إلغاء</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <Button variant="outline" onClick={() => setShowAddList(false)} className="flex-1 rounded-xl">إلغاء</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
 
-        {/* Share Dialog */}
-        <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-          <DialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-            <DialogHeader>
-              <DialogTitle>مشاركة القائمة</DialogTitle>
-              <DialogDescription>اختر أفراد العائلة لمشاركة هذه القائمة معهم</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2 pt-2">
+        {/* Share Drawer */}
+        <Drawer open={showShareDialog} onOpenChange={setShowShareDialog}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>مشاركة القائمة</DrawerTitle>
+              <DrawerDescription>اختر أفراد العائلة لمشاركة هذه القائمة معهم</DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 space-y-2">
               {FAMILY_MEMBERS.map((member) => (
                 <button
                   key={member}
@@ -694,13 +674,24 @@ const Places = () => {
                 </button>
               ))}
             </div>
-            <DialogFooter className="flex-row gap-2 pt-2">
+            <DrawerFooter className="flex-row gap-2">
               <Button onClick={shareList} className="flex-1 rounded-xl">مشاركة</Button>
-              <Button variant="outline" onClick={() => setShowShareDialog(false)} className="rounded-xl">إلغاء</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <Button variant="outline" onClick={() => setShowShareDialog(false)} className="flex-1 rounded-xl">إلغاء</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
       </PullToRefresh>
+
+      {/* FAB add button */}
+      {createPortal(
+        <button
+          onClick={() => navigate("/places/add", { state: { listId: activeListId } })}
+          className="fixed bottom-28 left-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 active:scale-95 transition-transform"
+        >
+          <Plus size={24} />
+        </button>,
+        document.body
+      )}
     </div>
   );
 };
