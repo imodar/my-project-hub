@@ -3,6 +3,7 @@ import FeatureGrid from "@/components/home/FeatureGrid";
 import UpcomingEvents from "@/components/home/UpcomingEvents";
 import DailyTasks from "@/components/home/DailyTasks";
 import PullToRefresh from "@/components/PullToRefresh";
+import SOSButton from "@/components/home/SOSButton";
 
 const Index = () => {
   const handleRefresh = async () => {
@@ -17,6 +18,7 @@ const Index = () => {
         <UpcomingEvents />
         <DailyTasks />
       </PullToRefresh>
+      <SOSButton />
     </div>
   );
 };
