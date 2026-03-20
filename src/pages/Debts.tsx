@@ -90,6 +90,7 @@ const initialGiven: Debt[] = [
     ],
     isFullyPaid: true,
     isArchived: false,
+    hasReminder: false,
     postponements: [],
   },
 ];
