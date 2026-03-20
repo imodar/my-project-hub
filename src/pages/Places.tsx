@@ -429,31 +429,21 @@ const Places = () => {
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
       <PullToRefresh onRefresh={handleRefresh}>
         {/* Header */}
-        <div
-          className="sticky top-0 z-40 px-4 pt-4 pb-3"
-          style={{
-            background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-          }}
+        <PageHeader
+          title="📍 قائمة الأماكن"
+          actions={[
+            {
+              icon: <Plus size={20} className="text-white" />,
+              onClick: () => setShowAddList(true),
+            },
+            {
+              icon: <Search size={18} className="text-white" />,
+              onClick: () => setSearchQuery(searchQuery ? "" : " "),
+            },
+          ]}
         >
-          <div className="flex items-center justify-between mb-3">
-            <button onClick={() => navigate(-1)} className="p-2 rounded-xl text-white/80 hover:text-white">
-              <ArrowRight size={22} />
-            </button>
-            <h1 className="text-lg font-bold text-white flex items-center gap-2">
-              📍 قائمة الأماكن
-            </h1>
-            <div className="flex items-center gap-1">
-              <button onClick={() => setShowAddList(true)} className="p-2 rounded-xl text-white/80 hover:text-white">
-                <Plus size={22} />
-              </button>
-              <button onClick={() => setSearchQuery(searchQuery ? "" : " ")} className="p-2 rounded-xl text-white/80 hover:text-white">
-                <Search size={20} />
-              </button>
-            </div>
-          </div>
-
           {/* Lists tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 pt-2 scrollbar-hide">
             {lists.map((list) => (
               <button
                 key={list.id}
@@ -474,7 +464,7 @@ const Places = () => {
               </button>
             ))}
           </div>
-        </div>
+        </PageHeader>
 
         {/* Suggest banner */}
         <div className="px-4 pt-3">
