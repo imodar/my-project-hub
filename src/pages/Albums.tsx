@@ -345,8 +345,10 @@ const Albums = () => {
         <PageHeader title="الألبومات" subtitle="صور العائلة وذكرياتها" onBack={() => navigate(-1)} />
 
         <div className="px-5 mt-6">
-          {/* Albums grid — masonry-like */}
-          {albums.length === 0 ? (
+          {/* Albums grid — masonry-like, filtered to hide personal trip albums */}
+          {(() => {
+            const visibleAlbums = albums.filter((a) => !isPersonalTripAlbum(a, trips));
+            return visibleAlbums.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 px-8">
               <div
                 className="w-20 h-20 rounded-3xl flex items-center justify-center mb-4"
@@ -361,7 +363,7 @@ const Albums = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {albums.map((album, i) => (
+              {visibleAlbums.map((album, i) => (
                 <button
                   key={album.id}
                   onClick={() => setSelectedAlbum(album)}
