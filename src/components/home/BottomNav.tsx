@@ -36,8 +36,8 @@ const BottomNav = () => {
                 {isActive ? (
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center -mt-5"
                     style={{
-                      background: "linear-gradient(135deg, hsl(240, 40%, 20%), hsl(270, 30%, 30%))",
-                      boxShadow: "0 4px 15px hsla(260, 40%, 25%, 0.4)",
+                      background: "linear-gradient(135deg, hsl(217, 100%, 21%), hsl(209, 100%, 31%))",
+                      boxShadow: "0 4px 15px hsla(209, 100%, 31%, 0.4)",
                     }}
                   >
                     <item.icon size={22} className="text-white" />
