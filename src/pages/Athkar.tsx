@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { ArrowRight, Check, RotateCcw, ChevronLeft } from "lucide-react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { ArrowRight, Check, RotateCcw, ChevronLeft, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { athkarSections, AthkarSection, Thikr } from "@/data/athkarData";
