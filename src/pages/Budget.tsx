@@ -325,6 +325,7 @@ const Budget = () => {
       id: Date.now().toString(),
       name: expenseName.trim(),
       amount: parseFloat(expenseAmount),
+      date: expenseDate ? expenseDate.toISOString().split("T")[0] : undefined,
     };
     const updated = budgets.map(b =>
       b.id === selectedBudget.id ? { ...b, expenses: [...b.expenses, expense] } : b
@@ -335,6 +336,7 @@ const Budget = () => {
     setShowAddExpense(false);
     setExpenseName("");
     setExpenseAmount("");
+    setExpenseDate(undefined);
   };
 
   const handleEditIncome = () => {
