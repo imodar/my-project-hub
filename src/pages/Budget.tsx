@@ -1,6 +1,6 @@
 // Budget Page
-import { useState, useCallback, useRef } from "react";
-import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
 import { useUserRole } from "@/contexts/UserRoleContext";
@@ -12,6 +12,7 @@ import {
 import { haptic } from "@/lib/haptics";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
+import { loadBudgets as loadBudgetsFromStorage, saveBudgets as saveBudgetsToStorage, syncBudgetToTrip, loadTrips } from "@/lib/tripBudgetSync";
 
 interface ExpenseItem {
   id: string;
@@ -19,7 +20,7 @@ interface ExpenseItem {
   amount: number;
 }
 
-type BudgetType = "month" | "project";
+type BudgetType = "month" | "project" | "trip";
 
 interface MonthBudget {
   id: string;
@@ -29,6 +30,7 @@ interface MonthBudget {
   income: number;
   expenses: ExpenseItem[];
   sharedWith: string[];
+  tripId?: string;
 }
 
 const MONTH_NAMES = [
@@ -46,6 +48,7 @@ const formatMonth = (m: string) => {
 };
 
 const getBudgetTitle = (b: MonthBudget) => {
+  if (b.type === "trip") return `✈️ ${b.label || "رحلة"}`;
   if (b.type === "project") return b.label || "مشروع";
   return formatMonth(b.month);
 };
@@ -170,13 +173,18 @@ const BudgetCard = ({ b, onSelect, remaining, spentPercent }: {
       className="w-full rounded-2xl bg-card border border-border p-4 text-right active:scale-[0.98] transition-transform"
     >
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: b.type === "project" ? "hsl(var(--accent) / 0.15)" : "hsl(var(--primary) / 0.12)" }}>
-          {b.type === "project" ? <FolderOpen size={20} className="text-accent-foreground" /> : <CalendarDays size={20} className="text-primary" />}
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: b.type === "trip" ? "hsl(215 70% 50% / 0.15)" : b.type === "project" ? "hsl(var(--accent) / 0.15)" : "hsl(var(--primary) / 0.12)" }}>
+          {b.type === "trip" ? <Plane size={20} style={{ color: "hsl(215 70% 50%)" }} /> : b.type === "project" ? <FolderOpen size={20} className="text-accent-foreground" /> : <CalendarDays size={20} className="text-primary" />}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-foreground">{getBudgetTitle(b)}</p>
           <div className="flex items-center gap-2">
             <p className="text-[10px] text-muted-foreground">{b.expenses.length} بنود</p>
+            {b.type === "trip" && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "hsl(215 70% 50% / 0.12)", color: "hsl(215 70% 50%)" }}>
+                منشأة تلقائياً من الرحلة
+              </span>
+            )}
             {shared && (
               <span className="text-[9px] text-primary/70 flex items-center gap-0.5">
                 <Users size={10} /> مع {b.sharedWith.join("، ")}
@@ -208,10 +216,31 @@ const loadBudgets = (): MonthBudget[] => {
 
 const saveBudgets = (b: MonthBudget[]) => localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
 
+// Merge trip budgets from trips_data into budgets
+const mergeWithTripBudgets = (budgets: MonthBudget[]): MonthBudget[] => {
+  const trips = loadTrips();
+  const tripBudgets: MonthBudget[] = trips.map((trip: any) => {
+    const existing = budgets.find(b => b.tripId === trip.id);
+    return {
+      id: existing?.id || `trip-budget-${trip.id}`,
+      type: "trip" as BudgetType,
+      month: `trip-${trip.id}`,
+      label: trip.name,
+      income: trip.budget || 0,
+      expenses: (trip.expenses || []).map((e: any) => ({ id: e.id, name: e.name, amount: e.amount })),
+      sharedWith: [],
+      tripId: trip.id,
+    };
+  });
+  // Keep non-trip budgets + fresh trip budgets
+  const nonTripBudgets = budgets.filter(b => b.type !== "trip");
+  return [...nonTripBudgets, ...tripBudgets];
+};
+
 const Budget = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [budgets, setBudgets] = useState<MonthBudget[]>(loadBudgets);
+  const [budgets, setBudgets] = useState<MonthBudget[]>(() => mergeWithTripBudgets(loadBudgets()));
   const [selectedBudget, setSelectedBudget] = useState<MonthBudget | null>(null);
   const [showAddMonth, setShowAddMonth] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -239,6 +268,10 @@ const Budget = () => {
     const sorted = [...newBudgets].sort((a, b) => a.month.localeCompare(b.month));
     setBudgets(sorted);
     saveBudgets(sorted);
+    // Sync trip budgets back to trips localStorage
+    sorted.filter(b => b.type === "trip" && b.tripId).forEach(b => {
+      syncBudgetToTrip(b.tripId!, b.expenses, b.income);
+    });
   }, []);
 
   const handleAddBudget = () => {
@@ -386,7 +419,7 @@ const Budget = () => {
       <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
         <PageHeader
           title={getBudgetTitle(b)}
-          subtitle="تفاصيل الميزانية"
+          subtitle={b.type === "trip" ? "ميزانية رحلة — تُدار تلقائياً" : "تفاصيل الميزانية"}
           onBack={() => setSelectedBudget(null)}
         />
 
@@ -599,14 +632,28 @@ const Budget = () => {
             </div>
           ) : (
             <>
+              {/* Trip Budgets */}
+              {budgets.some(b => b.type === "trip") && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Plane size={14} style={{ color: "hsl(215 70% 50%)" }} />
+                    <h3 className="text-xs font-bold text-foreground">ميزانيات الرحلات</h3>
+                    <span className="text-[9px] text-muted-foreground">(تُدار تلقائياً)</span>
+                  </div>
+                  {budgets.filter(b => b.type === "trip").map(b => (
+                    <BudgetCard key={b.id} b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
+                  ))}
+                </div>
+              )}
+
               {/* Shared Budgets */}
-              {budgets.some(b => (b.sharedWith ?? []).length > 0) && (
+              {budgets.some(b => b.type !== "trip" && (b.sharedWith ?? []).length > 0) && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 px-1">
                     <Users size={14} className="text-primary" />
                     <h3 className="text-xs font-bold text-foreground">ميزانيات مشتركة</h3>
                   </div>
-                  {budgets.filter(b => (b.sharedWith ?? []).length > 0).map(b => (
+                  {budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length > 0).map(b => (
                     <SwipeableCard
                       key={b.id}
                       onEdit={() => {
@@ -624,13 +671,13 @@ const Budget = () => {
               )}
 
               {/* Personal Budgets */}
-              {budgets.some(b => (b.sharedWith ?? []).length === 0) && (
+              {budgets.some(b => b.type !== "trip" && (b.sharedWith ?? []).length === 0) && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 px-1">
                     <Wallet size={14} className="text-primary" />
                     <h3 className="text-xs font-bold text-foreground">ميزانيات شخصية</h3>
                   </div>
-                  {budgets.filter(b => (b.sharedWith ?? []).length === 0).map(b => (
+                  {budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length === 0).map(b => (
                     <SwipeableCard
                       key={b.id}
                       onEdit={() => {

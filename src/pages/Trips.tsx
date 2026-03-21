@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import PageHeader from "@/components/PageHeader";
@@ -18,6 +18,7 @@ import {
 import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
+import { saveTrips as saveTripsToStorage, syncTripToBudget, removeTripBudget } from "@/lib/tripBudgetSync";
 
 // Types
 interface Activity {
@@ -229,7 +230,32 @@ function SwipeableCard({ onEdit, onDelete, children }: {
 
 const Trips = () => {
   const navigate = useNavigate();
-  const [trips, setTrips] = useState<Trip[]>(INITIAL_TRIPS);
+  const [trips, setTripsState] = useState<Trip[]>(() => {
+    try {
+      const saved = localStorage.getItem("trips_data");
+      return saved ? JSON.parse(saved) : INITIAL_TRIPS;
+    } catch { return INITIAL_TRIPS; }
+  });
+
+  // Wrapper to persist trips and sync budgets
+  const setTrips: typeof setTripsState = useCallback((updater) => {
+    setTripsState((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      saveTripsToStorage(next);
+      return next;
+    });
+  }, []);
+  // Save initial trips to localStorage and sync budgets on mount
+  useEffect(() => {
+    saveTripsToStorage(trips);
+    trips.forEach(t => {
+      if (t.expenses.length > 0 || t.budget > 0) {
+        syncTripToBudget({ id: t.id, name: t.name, budget: t.budget, expenses: t.expenses });
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album" | "documents">("itinerary");
@@ -304,6 +330,7 @@ const Trips = () => {
     if (!tripName.trim() || !tripDest.trim()) return;
     if (editingTripId) {
       const newType = tripParticipants.length > 1 ? "family" : "personal";
+      const existingTrip = trips.find(t => t.id === editingTripId);
       setTrips((prev) => prev.map((t) => t.id === editingTripId ? {
         ...t, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
         budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
@@ -314,7 +341,11 @@ const Trips = () => {
           budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
         } : null);
       }
-      toast.success(newType !== trips.find(t => t.id === editingTripId)?.type
+      // Sync budget with updated trip info
+      if (existingTrip) {
+        syncTripToBudget({ id: editingTripId, name: tripName, budget: Number(tripBudget) || 0, expenses: existingTrip.expenses });
+      }
+      toast.success(newType !== existingTrip?.type
         ? newType === "family" ? "تم تحويل الرحلة إلى عائلية" : "تم تحويل الرحلة إلى شخصية"
         : "تم تعديل الرحلة"
       );
@@ -328,6 +359,8 @@ const Trips = () => {
         days: [], suggestions: [], packingList: [], expenses: [], documents: [],
       };
       setTrips((prev) => [...prev, newTrip]);
+      // Create trip budget entry
+      syncTripToBudget({ id: newTrip.id, name: newTrip.name, budget: newTrip.budget, expenses: [] });
       toast.success("تم إنشاء الرحلة");
     }
     resetTripForm();
@@ -347,6 +380,7 @@ const Trips = () => {
 
   const handleDeleteTrip = () => {
     if (!deleteTarget) return;
+    removeTripBudget(deleteTarget);
     setTrips((prev) => prev.filter((t) => t.id !== deleteTarget));
     if (selectedTrip?.id === deleteTarget) setSelectedTrip(null);
     setDeleteTarget(null);
@@ -431,6 +465,7 @@ const Trips = () => {
     const updated = { ...selectedTrip, expenses: [...selectedTrip.expenses, newExp] };
     setSelectedTrip(updated);
     setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    syncTripToBudget({ id: updated.id, name: updated.name, budget: updated.budget, expenses: updated.expenses });
     setExpenseName("");
     setExpenseAmount("");
     setNewExpenseDrawer(false);
@@ -857,6 +892,7 @@ const Trips = () => {
                           const updated = { ...selectedTrip, expenses: selectedTrip.expenses.filter((e) => e.id !== exp.id) };
                           setSelectedTrip(updated);
                           setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+                          syncTripToBudget({ id: updated.id, name: updated.name, budget: updated.budget, expenses: updated.expenses });
                         }}
                         className="text-muted-foreground hover:text-destructive transition-colors"
                       >
