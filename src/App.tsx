@@ -9,6 +9,7 @@ import { TrashProvider } from "@/contexts/TrashContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import OfflineBanner from "@/components/OfflineBanner";
 import PageTransition from "@/components/PageTransition";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index.tsx";
 import Tasbih from "./pages/Tasbih.tsx";
 import Settings from "./pages/Settings.tsx";
@@ -35,7 +36,18 @@ import ParentDashboard from "./pages/ParentDashboard.tsx";
 import Athkar from "./pages/Athkar.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount) => navigator.onLine && failureCount < 2,
+      networkMode: "offlineFirst",
+      staleTime: 5 * 60 * 1000,
+    },
+    mutations: {
+      networkMode: "offlineFirst",
+    },
+  },
+});
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -74,24 +86,26 @@ const AnimatedRoutes = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <UserRoleProvider>
-      <IslamicModeProvider>
-        <TrashProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <OfflineBanner />
-              <ScrollToTop />
-              <AnimatedRoutes />
-              <BottomNav />
-            </BrowserRouter>
-          </TooltipProvider>
-        </TrashProvider>
-      </IslamicModeProvider>
-    </UserRoleProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <UserRoleProvider>
+        <IslamicModeProvider>
+          <TrashProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <OfflineBanner />
+                <ScrollToTop />
+                <AnimatedRoutes />
+                <BottomNav />
+              </BrowserRouter>
+            </TooltipProvider>
+          </TrashProvider>
+        </IslamicModeProvider>
+      </UserRoleProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
