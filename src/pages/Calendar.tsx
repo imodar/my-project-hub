@@ -26,16 +26,6 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import PageHeader from "@/components/PageHeader";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTrash } from "@/contexts/TrashContext";
 
@@ -590,23 +580,32 @@ const CalendarPage = () => {
       </Drawer>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
-        <AlertDialogContent className="rounded-2xl max-w-sm mx-auto" dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-center font-black">تأكيد الحذف</AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
+      <Drawer open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DrawerContent onClick={(e) => e.stopPropagation()}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center font-black">تأكيد الحذف</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-5 pb-6 space-y-4" dir="rtl">
+            <p className="text-center text-sm text-muted-foreground">
               هل أنت متأكد من حذف مناسبة "{deleteTarget?.title}"؟ سيتم نقلها إلى سلة المحذوفات.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex gap-2 sm:flex-row-reverse">
-            <AlertDialogAction onClick={confirmDelete}
-              className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl font-bold">
-              حذف
-            </AlertDialogAction>
-            <AlertDialogCancel className="flex-1 rounded-xl font-bold">إلغاء</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              >
+                حذف
+              </button>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-3 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* Edit Event Drawer */}
       <Drawer open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
