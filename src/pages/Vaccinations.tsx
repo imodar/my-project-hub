@@ -1,15 +1,19 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowRight, Plus, Baby, Check, Clock, AlertTriangle, User, Syringe, Trash2 } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import PageHeader from "@/components/PageHeader";
 import {
   Child,
+  VaccineNote,
+  ReminderSettings,
   vaccineSchedule,
   getTotalVaccines,
   getChildAge,
@@ -22,7 +26,14 @@ const STORAGE_KEY = "family-vaccinations-children";
 const loadChildren = (): Child[] => {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    const parsed = JSON.parse(data);
+    // Migrate old data without new fields
+    return parsed.map((c: any) => ({
+      ...c,
+      vaccineNotes: c.vaccineNotes || [],
+      reminderSettings: c.reminderSettings || { beforeDay: true, beforeWeek: true, beforeMonth: true },
+    }));
   } catch {
     return [];
   }
@@ -33,13 +44,24 @@ const saveChildren = (children: Child[]) => {
 };
 
 const Vaccinations = () => {
-  const navigate = useNavigate();
   const [children, setChildren] = useState<Child[]>(loadChildren);
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const [showEditSheet, setShowEditSheet] = useState(false);
+  const [editingChild, setEditingChild] = useState<Child | null>(null);
+  const [showReminderSheet, setShowReminderSheet] = useState(false);
+  const [reminderChild, setReminderChild] = useState<Child | null>(null);
+  const [showNoteSheet, setShowNoteSheet] = useState(false);
+  const [noteVaccineId, setNoteVaccineId] = useState("");
+  const [noteText, setNoteText] = useState("");
   const [newName, setNewName] = useState("");
   const [newGender, setNewGender] = useState<"male" | "female">("male");
   const [newBirthDate, setNewBirthDate] = useState("");
+
+  // Swipe state
+  const [swipedChildId, setSwipedChildId] = useState<string | null>(null);
+  const touchStartX = useRef(0);
+  const touchCurrentX = useRef(0);
 
   useEffect(() => {
     saveChildren(children);
@@ -53,14 +75,8 @@ const Vaccinations = () => {
   }, [children]);
 
   const handleAddChild = () => {
-    if (!newName.trim()) {
-      toast.error("يرجى إدخال اسم الطفل");
-      return;
-    }
-    if (!newBirthDate) {
-      toast.error("يرجى إدخال تاريخ الميلاد");
-      return;
-    }
+    if (!newName.trim()) { toast.error("يرجى إدخال اسم الطفل"); return; }
+    if (!newBirthDate) { toast.error("يرجى إدخال تاريخ الميلاد"); return; }
 
     const child: Child = {
       id: crypto.randomUUID(),
@@ -68,6 +84,8 @@ const Vaccinations = () => {
       gender: newGender,
       birthDate: newBirthDate,
       completedVaccines: [],
+      vaccineNotes: [],
+      reminderSettings: { beforeDay: true, beforeWeek: true, beforeMonth: true },
     };
 
     setChildren((prev) => [...prev, child]);
@@ -76,6 +94,38 @@ const Vaccinations = () => {
     setNewBirthDate("");
     setShowAddSheet(false);
     toast.success(`تمت إضافة ${child.name}`);
+  };
+
+  const handleEditChild = () => {
+    if (!editingChild) return;
+    if (!newName.trim()) { toast.error("يرجى إدخال اسم الطفل"); return; }
+    if (!newBirthDate) { toast.error("يرجى إدخال تاريخ الميلاد"); return; }
+
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id === editingChild.id
+          ? { ...c, name: newName.trim(), gender: newGender, birthDate: newBirthDate }
+          : c
+      )
+    );
+    setShowEditSheet(false);
+    setEditingChild(null);
+    setSwipedChildId(null);
+    toast.success("تم تحديث بيانات الطفل");
+  };
+
+  const openEditSheet = (child: Child) => {
+    setEditingChild(child);
+    setNewName(child.name);
+    setNewGender(child.gender);
+    setNewBirthDate(child.birthDate);
+    setShowEditSheet(true);
+  };
+
+  const openReminderFromSwipe = (child: Child) => {
+    setReminderChild(child);
+    setShowReminderSheet(true);
+    setSwipedChildId(null);
   };
 
   const toggleVaccine = (childId: string, vaccineId: string) => {
@@ -90,31 +140,65 @@ const Vaccinations = () => {
     );
   };
 
-  const deleteChild = (childId: string) => {
-    setChildren((prev) => prev.filter((c) => c.id !== childId));
-    setSelectedChild(null);
-    toast.success("تم حذف الطفل");
+  const updateReminderSettings = (childId: string, settings: ReminderSettings) => {
+    setChildren((prev) =>
+      prev.map((c) => (c.id === childId ? { ...c, reminderSettings: settings } : c))
+    );
+  };
+
+  const saveVaccineNote = () => {
+    if (!selectedChild || !noteVaccineId) return;
+    setChildren((prev) =>
+      prev.map((c) => {
+        if (c.id !== selectedChild.id) return c;
+        const notes = c.vaccineNotes.filter((n) => n.vaccineId !== noteVaccineId);
+        if (noteText.trim()) notes.push({ vaccineId: noteVaccineId, note: noteText.trim() });
+        return { ...c, vaccineNotes: notes };
+      })
+    );
+    setShowNoteSheet(false);
+    toast.success("تم حفظ الملاحظة");
+  };
+
+  const getVaccineNote = (child: Child, vaccineId: string): string => {
+    return child.vaccineNotes.find((n) => n.vaccineId === vaccineId)?.note || "";
+  };
+
+  const openNoteSheet = (vaccineId: string) => {
+    if (!selectedChild) return;
+    setNoteVaccineId(vaccineId);
+    setNoteText(getVaccineNote(selectedChild, vaccineId));
+    setShowNoteSheet(true);
+  };
+
+  // Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent, childId: string) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchCurrentX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchCurrentX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (childId: string) => {
+    const diff = touchStartX.current - touchCurrentX.current;
+    // RTL: swipe left reveals actions (positive diff in LTR = swipe left)
+    if (Math.abs(diff) > 60) {
+      setSwipedChildId(diff > 0 ? childId : null);
+    }
   };
 
   const totalVaccines = getTotalVaccines();
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border/50">
-        <div className="flex items-center justify-between px-5 py-4">
-          <button onClick={() => navigate(-1)} className="p-2 -m-2 rounded-xl active:bg-accent">
-            <ArrowRight className="w-6 h-6 text-foreground" />
-          </button>
-          <h1 className="text-lg font-bold text-foreground">لقاحات الأطفال</h1>
-          <button
-            onClick={() => setShowAddSheet(true)}
-            className="p-2 -m-2 rounded-xl active:bg-accent"
-          >
-            <Plus className="w-6 h-6 text-primary" />
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="لقاحات الأطفال"
+        actions={[
+          { icon: <Plus size={20} className="text-white" />, onClick: () => setShowAddSheet(true) },
+        ]}
+      />
 
       {/* Children list */}
       <div className="px-5 mt-6 space-y-4">
@@ -135,166 +219,221 @@ const Vaccinations = () => {
             const completedCount = child.completedVaccines.length;
             const progress = Math.round((completedCount / totalVaccines) * 100);
             const dueVaccines = getNextDueVaccines(child.birthDate, child.completedVaccines);
+            const isSwiped = swipedChildId === child.id;
 
             return (
-              <button
-                key={child.id}
-                onClick={() => setSelectedChild(child)}
-                className="w-full bg-card rounded-2xl p-4 border border-border/50 text-right active:scale-[0.98] transition-transform"
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      child.gender === "male"
-                        ? "bg-blue-100 dark:bg-blue-900/30"
-                        : "bg-pink-100 dark:bg-pink-900/30"
-                    }`}
+              <div key={child.id} className="relative overflow-hidden rounded-2xl">
+                {/* Swipe actions behind */}
+                <div className="absolute inset-y-0 left-0 flex items-center gap-2 px-3 z-0">
+                  <button
+                    onClick={() => openEditSheet(child)}
+                    className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center"
                   >
-                    <Baby
-                      className={`w-6 h-6 ${
-                        child.gender === "male" ? "text-blue-500" : "text-pink-500"
+                    <Pencil className="w-5 h-5 text-white" />
+                  </button>
+                  <button
+                    onClick={() => openReminderFromSwipe(child)}
+                    className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center"
+                  >
+                    <Bell className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+
+                {/* Card */}
+                <button
+                  onClick={() => { if (!isSwiped) setSelectedChild(child); else setSwipedChildId(null); }}
+                  onTouchStart={(e) => handleTouchStart(e, child.id)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={() => handleTouchEnd(child.id)}
+                  className={`w-full bg-card rounded-2xl p-4 border border-border/50 text-right active:scale-[0.98] transition-transform relative z-10 ${
+                    isSwiped ? "-translate-x-28" : "translate-x-0"
+                  } transition-transform duration-200`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        child.gender === "male"
+                          ? "bg-blue-100 dark:bg-blue-900/30"
+                          : "bg-pink-100 dark:bg-pink-900/30"
                       }`}
-                    />
+                    >
+                      <Baby
+                        className={`w-6 h-6 ${
+                          child.gender === "male" ? "text-blue-500" : "text-pink-500"
+                        }`}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-foreground">{child.name}</h3>
+                      <p className="text-xs text-muted-foreground">{getChildAge(child.birthDate)}</p>
+                    </div>
+                    {dueVaccines.length > 0 && (
+                      <Badge variant="destructive" className="gap-1 text-xs">
+                        <AlertTriangle className="w-3 h-3" />
+                        {dueVaccines.length} مستحق
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-foreground">{child.name}</h3>
-                    <p className="text-xs text-muted-foreground">{getChildAge(child.birthDate)}</p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{completedCount} من {totalVaccines} لقاح</span>
+                      <span>{progress}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
                   </div>
-                  {dueVaccines.length > 0 && (
-                    <Badge variant="destructive" className="gap-1 text-xs">
-                      <AlertTriangle className="w-3 h-3" />
-                      {dueVaccines.length} مستحق
-                    </Badge>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{completedCount} من {totalVaccines} لقاح</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <Progress value={progress} className="h-2" />
-                </div>
-              </button>
+                </button>
+              </div>
             );
           })
         )}
       </div>
 
-      {/* Add Child Sheet */}
-      <Sheet open={showAddSheet} onOpenChange={setShowAddSheet}>
-        <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh]">
-          <SheetHeader>
-            <SheetTitle className="text-center">إضافة طفل جديد</SheetTitle>
-          </SheetHeader>
-          <div className="space-y-5 mt-6 px-1">
+      {/* Add Child Drawer */}
+      <Drawer open={showAddSheet} onOpenChange={setShowAddSheet}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle className="text-center">إضافة طفل جديد</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-5 px-5 pb-8">
             <div className="space-y-2">
               <Label className="text-right block">اسم الطفل</Label>
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="أدخل اسم الطفل"
-                className="text-right"
-              />
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="أدخل اسم الطفل" className="text-right" />
             </div>
-
             <div className="space-y-2">
               <Label className="text-right block">الجنس</Label>
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setNewGender("male")}
-                  className={`p-3 rounded-xl border-2 text-center font-medium transition-colors ${
-                    newGender === "male"
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600"
-                      : "border-border text-muted-foreground"
-                  }`}
-                >
-                  👦 ذكر
-                </button>
-                <button
-                  onClick={() => setNewGender("female")}
-                  className={`p-3 rounded-xl border-2 text-center font-medium transition-colors ${
-                    newGender === "female"
-                      ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600"
-                      : "border-border text-muted-foreground"
-                  }`}
-                >
-                  👧 أنثى
-                </button>
+                <button onClick={() => setNewGender("male")} className={`p-3 rounded-xl border-2 text-center font-medium transition-colors ${newGender === "male" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600" : "border-border text-muted-foreground"}`}>👦 ذكر</button>
+                <button onClick={() => setNewGender("female")} className={`p-3 rounded-xl border-2 text-center font-medium transition-colors ${newGender === "female" ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600" : "border-border text-muted-foreground"}`}>👧 أنثى</button>
               </div>
             </div>
-
             <div className="space-y-2">
               <Label className="text-right block">تاريخ الميلاد</Label>
-              <Input
-                type="date"
-                value={newBirthDate}
-                onChange={(e) => setNewBirthDate(e.target.value)}
-                max={new Date().toISOString().split("T")[0]}
-                className="text-right"
-              />
+              <Input type="date" value={newBirthDate} onChange={(e) => setNewBirthDate(e.target.value)} max={new Date().toISOString().split("T")[0]} className="text-right" />
             </div>
-
-            <Button onClick={handleAddChild} className="w-full h-12 text-base font-bold">
-              إضافة الطفل
-            </Button>
+            <Button onClick={handleAddChild} className="w-full h-12 text-base font-bold">إضافة الطفل</Button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Child Vaccine Detail Sheet */}
-      <Sheet open={!!selectedChild} onOpenChange={(open) => !open && setSelectedChild(null)}>
-        <SheetContent side="bottom" className="rounded-t-3xl max-h-[90vh] overflow-y-auto">
+      {/* Edit Child Drawer */}
+      <Drawer open={showEditSheet} onOpenChange={(open) => { setShowEditSheet(open); if (!open) setEditingChild(null); }}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle className="text-center">تعديل بيانات الطفل</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-5 px-5 pb-8">
+            <div className="space-y-2">
+              <Label className="text-right block">اسم الطفل</Label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="أدخل اسم الطفل" className="text-right" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-right block">الجنس</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setNewGender("male")} className={`p-3 rounded-xl border-2 text-center font-medium transition-colors ${newGender === "male" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600" : "border-border text-muted-foreground"}`}>👦 ذكر</button>
+                <button onClick={() => setNewGender("female")} className={`p-3 rounded-xl border-2 text-center font-medium transition-colors ${newGender === "female" ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600" : "border-border text-muted-foreground"}`}>👧 أنثى</button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-right block">تاريخ الميلاد</Label>
+              <Input type="date" value={newBirthDate} onChange={(e) => setNewBirthDate(e.target.value)} max={new Date().toISOString().split("T")[0]} className="text-right" />
+            </div>
+            <Button onClick={handleEditChild} className="w-full h-12 text-base font-bold">حفظ التعديلات</Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Reminder Settings Drawer */}
+      <Drawer open={showReminderSheet} onOpenChange={(open) => { setShowReminderSheet(open); if (!open) setReminderChild(null); }}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle className="text-center">
+              إعدادات التنبيهات {reminderChild ? `- ${reminderChild.name}` : ""}
+            </DrawerTitle>
+          </DrawerHeader>
+          {reminderChild && (
+            <div className="space-y-4 px-5 pb-8">
+              <p className="text-sm text-muted-foreground text-right">سيتم تذكيرك بجميع لقاحات {reminderChild.name} المستحقة</p>
+              {[
+                { key: "beforeDay" as const, label: "قبل يوم واحد" },
+                { key: "beforeWeek" as const, label: "قبل أسبوع" },
+                { key: "beforeMonth" as const, label: "قبل شهر" },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/50">
+                  <Switch
+                    checked={reminderChild.reminderSettings[item.key]}
+                    onCheckedChange={(checked) => {
+                      const newSettings = { ...reminderChild.reminderSettings, [item.key]: checked };
+                      updateReminderSettings(reminderChild.id, newSettings);
+                      setReminderChild({ ...reminderChild, reminderSettings: newSettings });
+                    }}
+                  />
+                  <span className="font-medium text-foreground">{item.label}</span>
+                </div>
+              ))}
+              <Button
+                onClick={() => {
+                  setShowReminderSheet(false);
+                  toast.success("تم حفظ إعدادات التنبيهات");
+                }}
+                className="w-full h-12 text-base font-bold"
+              >
+                حفظ
+              </Button>
+            </div>
+          )}
+        </DrawerContent>
+      </Drawer>
+
+      {/* Child Vaccine Detail Drawer */}
+      <Drawer open={!!selectedChild} onOpenChange={(open) => !open && setSelectedChild(null)}>
+        <DrawerContent className="max-h-[90vh] overflow-y-auto">
           {selectedChild && (
             <>
-              <SheetHeader>
+              <DrawerHeader>
                 <div className="flex items-center justify-between">
                   <button
-                    onClick={() => deleteChild(selectedChild.id)}
-                    className="p-2 rounded-lg text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      setReminderChild(selectedChild);
+                      setShowReminderSheet(true);
+                    }}
+                    className="p-2 rounded-lg text-amber-500 hover:bg-amber-500/10"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Bell className="w-5 h-5" />
                   </button>
-                  <SheetTitle className="text-center flex-1">
+                  <DrawerTitle className="text-center flex-1">
                     جدول لقاحات {selectedChild.name}
-                  </SheetTitle>
+                  </DrawerTitle>
                   <div className="w-9" />
                 </div>
-              </SheetHeader>
+              </DrawerHeader>
 
               {/* Summary */}
-              <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/10">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">
-                    العمر: {getChildAge(selectedChild.birthDate)}
-                  </span>
-                  <span className="text-sm font-bold text-primary">
-                    {selectedChild.completedVaccines.length}/{totalVaccines}
-                  </span>
+              <div className="px-5">
+                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">
+                      العمر: {getChildAge(selectedChild.birthDate)}
+                    </span>
+                    <span className="text-sm font-bold text-primary">
+                      {selectedChild.completedVaccines.length}/{totalVaccines}
+                    </span>
+                  </div>
+                  <Progress
+                    value={Math.round((selectedChild.completedVaccines.length / totalVaccines) * 100)}
+                    className="h-2.5"
+                  />
                 </div>
-                <Progress
-                  value={Math.round(
-                    (selectedChild.completedVaccines.length / totalVaccines) * 100
-                  )}
-                  className="h-2.5"
-                />
               </div>
 
               {/* Vaccine schedule */}
-              <Accordion type="multiple" className="mt-4">
+              <Accordion type="multiple" className="mt-4 px-5 pb-8">
                 {vaccineSchedule.map((group) => {
                   const childAgeDays = Math.floor(
-                    (new Date().getTime() - new Date(selectedChild.birthDate).getTime()) /
-                      (1000 * 60 * 60 * 24)
+                    (new Date().getTime() - new Date(selectedChild.birthDate).getTime()) / (1000 * 60 * 60 * 24)
                   );
                   const isDue = childAgeDays >= group.vaccines[0].ageDays;
-                  const allCompleted = group.vaccines.every((v) =>
-                    selectedChild.completedVaccines.includes(v.id)
-                  );
-                  const someCompleted =
-                    !allCompleted &&
-                    group.vaccines.some((v) =>
-                      selectedChild.completedVaccines.includes(v.id)
-                    );
+                  const allCompleted = group.vaccines.every((v) => selectedChild.completedVaccines.includes(v.id));
+                  const someCompleted = !allCompleted && group.vaccines.some((v) => selectedChild.completedVaccines.includes(v.id));
 
                   return (
                     <AccordionItem key={group.id} value={group.id} className="border-b-0 mb-2">
@@ -302,93 +441,54 @@ const Vaccinations = () => {
                         <div className="flex items-center gap-3 flex-1 text-right">
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                              allCompleted
-                                ? "bg-green-100 dark:bg-green-900/30"
-                                : isDue && !allCompleted
-                                ? "bg-amber-100 dark:bg-amber-900/30"
-                                : "bg-muted"
+                              allCompleted ? "bg-green-100 dark:bg-green-900/30" : isDue && !allCompleted ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
                             }`}
                           >
-                            {allCompleted ? (
-                              <Check className="w-4 h-4 text-green-600" />
-                            ) : isDue ? (
-                              <Clock className="w-4 h-4 text-amber-600" />
-                            ) : (
-                              <Clock className="w-4 h-4 text-muted-foreground" />
-                            )}
+                            {allCompleted ? <Check className="w-4 h-4 text-green-600" /> : isDue ? <Clock className="w-4 h-4 text-amber-600" /> : <Clock className="w-4 h-4 text-muted-foreground" />}
                           </div>
                           <div className="flex-1">
                             <span className="font-bold text-sm">{group.title}</span>
-                            {someCompleted && (
-                              <span className="text-xs text-muted-foreground mr-2">
-                                (جزئي)
-                              </span>
-                            )}
+                            {someCompleted && <span className="text-xs text-muted-foreground mr-2">(جزئي)</span>}
                           </div>
                           <span className="text-xs text-muted-foreground">
-                            {group.vaccines.filter((v) =>
-                              selectedChild.completedVaccines.includes(v.id)
-                            ).length}
-                            /{group.vaccines.length}
+                            {group.vaccines.filter((v) => selectedChild.completedVaccines.includes(v.id)).length}/{group.vaccines.length}
                           </span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="pt-2 pb-0">
                         <div className="space-y-2 pr-4">
                           {group.vaccines.map((vaccine) => {
-                            const isCompleted =
-                              selectedChild.completedVaccines.includes(vaccine.id);
-                            const isOverdue =
-                              isDue && !isCompleted;
+                            const isCompleted = selectedChild.completedVaccines.includes(vaccine.id);
+                            const isOverdue = isDue && !isCompleted;
+                            const hasNote = !!getVaccineNote(selectedChild, vaccine.id);
 
                             return (
-                              <button
-                                key={vaccine.id}
-                                onClick={() =>
-                                  toggleVaccine(selectedChild.id, vaccine.id)
-                                }
-                                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-right ${
-                                  isCompleted
-                                    ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
-                                    : isOverdue
-                                    ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800"
-                                    : "bg-card border-border/50"
-                                }`}
-                              >
-                                <div
-                                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                    isCompleted
-                                      ? "bg-green-500 border-green-500"
-                                      : "border-border"
-                                  }`}
+                              <div key={vaccine.id} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-right ${
+                                isCompleted ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : isOverdue ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800" : "bg-card border-border/50"
+                              }`}>
+                                <button
+                                  onClick={() => toggleVaccine(selectedChild.id, vaccine.id)}
+                                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isCompleted ? "bg-green-500 border-green-500" : "border-border"}`}
                                 >
-                                  {isCompleted && (
-                                    <Check className="w-3.5 h-3.5 text-white" />
+                                  {isCompleted && <Check className="w-3.5 h-3.5 text-white" />}
+                                </button>
+                                <div className="flex-1 min-w-0" onClick={() => toggleVaccine(selectedChild.id, vaccine.id)}>
+                                  <p className={`text-sm font-medium ${isCompleted ? "line-through text-muted-foreground" : "text-foreground"}`}>{vaccine.name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{vaccine.description}</p>
+                                  {hasNote && (
+                                    <p className="text-xs text-primary mt-1 truncate">📝 {getVaccineNote(selectedChild, vaccine.id)}</p>
                                   )}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p
-                                    className={`text-sm font-medium ${
-                                      isCompleted
-                                        ? "line-through text-muted-foreground"
-                                        : "text-foreground"
-                                    }`}
-                                  >
-                                    {vaccine.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {vaccine.description}
-                                  </p>
-                                </div>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); openNoteSheet(vaccine.id); }}
+                                  className={`p-1.5 rounded-lg shrink-0 ${hasNote ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-accent"}`}
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                </button>
                                 {isOverdue && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-amber-600 border-amber-300 text-[10px] shrink-0"
-                                  >
-                                    مستحق
-                                  </Badge>
+                                  <Badge variant="outline" className="text-amber-600 border-amber-300 text-[10px] shrink-0">مستحق</Badge>
                                 )}
-                              </button>
+                              </div>
                             );
                           })}
                         </div>
@@ -399,8 +499,37 @@ const Vaccinations = () => {
               </Accordion>
             </>
           )}
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Note Drawer */}
+      <Drawer open={showNoteSheet} onOpenChange={setShowNoteSheet}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle className="text-center">ملاحظة على اللقاح</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 px-5 pb-8">
+            <Textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="أضف ملاحظة (مثل: تم أخذ اللقاح في مستشفى ...)"
+              className="text-right min-h-[100px]"
+            />
+            <div className="flex gap-3">
+              <Button onClick={saveVaccineNote} className="flex-1 h-12 font-bold">حفظ</Button>
+              {noteText && (
+                <Button
+                  variant="outline"
+                  onClick={() => { setNoteText(""); saveVaccineNote(); }}
+                  className="h-12 text-destructive border-destructive/30"
+                >
+                  حذف
+                </Button>
+              )}
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

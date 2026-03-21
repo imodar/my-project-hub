@@ -15,12 +15,25 @@ export interface VaccineGroup {
   vaccines: Vaccine[];
 }
 
+export interface VaccineNote {
+  vaccineId: string;
+  note: string;
+}
+
+export interface ReminderSettings {
+  beforeDay: boolean;
+  beforeWeek: boolean;
+  beforeMonth: boolean;
+}
+
 export interface Child {
   id: string;
   name: string;
   gender: "male" | "female";
   birthDate: string; // ISO date
   completedVaccines: string[]; // vaccine IDs
+  vaccineNotes: VaccineNote[];
+  reminderSettings: ReminderSettings;
 }
 
 // Standard WHO childhood vaccination schedule
