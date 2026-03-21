@@ -60,8 +60,9 @@ const Vaccinations = () => {
 
   // Swipe state
   const [swipedChildId, setSwipedChildId] = useState<string | null>(null);
-  const touchStartX = useRef(0);
-  const touchCurrentX = useRef(0);
+  const swipeRef = useRef<{ startX: number; startY: number; swiping: boolean; childId: string | null }>({
+    startX: 0, startY: 0, swiping: false, childId: null,
+  });
 
   useEffect(() => {
     saveChildren(children);
