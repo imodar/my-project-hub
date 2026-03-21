@@ -240,7 +240,7 @@ const SwipeableRow = ({ children, onDelete, onEdit, onReminder }: {
 };
 
 // ─── Main Component ───
-const Cars = () => {
+const Vehicle = () => {
   const navigate = useNavigate();
   const [cars, setCars] = useState<CarData[]>(loadCars);
   const [selectedCar, setSelectedCar] = useState<CarData | null>(null);
