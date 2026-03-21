@@ -311,6 +311,16 @@ const Athkar = () => {
           </button>
           <h1 className="text-lg font-bold text-white">الأذكار والأدعية</h1>
         </div>
+        {/* Quranic verse */}
+        <div className="mt-3 px-2 py-2 rounded-2xl" style={{ background: "hsla(0,0%,100%,0.08)" }}>
+          <p
+            className="text-center text-white/90 leading-[2.2]"
+            style={{ fontFamily: "'Amiri Quran', serif", fontSize: "1.05rem" }}
+          >
+            ﴿وَالذَّاكِرِينَ اللَّهَ كَثِيرًا وَالذَّاكِرَاتِ أَعَدَّ اللَّهُ لَهُم مَّغْفِرَةً وَأَجْرًا عَظِيمًا﴾
+          </p>
+          <p className="text-center text-white/50 text-[10px] mt-1">سورة الأحزاب - 35</p>
+        </div>
       </div>
 
       {/* Sections */}
