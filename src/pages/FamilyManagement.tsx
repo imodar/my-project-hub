@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield } from "lucide-react";
+import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
-type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife";
+type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife" | "worker" | "maid" | "driver";
 type InviteStatus = "active" | "pending";
 
 interface FamilyMember {
