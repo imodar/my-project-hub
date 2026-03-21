@@ -632,14 +632,28 @@ const Budget = () => {
             </div>
           ) : (
             <>
+              {/* Trip Budgets */}
+              {budgets.some(b => b.type === "trip") && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Plane size={14} style={{ color: "hsl(215 70% 50%)" }} />
+                    <h3 className="text-xs font-bold text-foreground">ميزانيات الرحلات</h3>
+                    <span className="text-[9px] text-muted-foreground">(تُدار تلقائياً)</span>
+                  </div>
+                  {budgets.filter(b => b.type === "trip").map(b => (
+                    <BudgetCard key={b.id} b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
+                  ))}
+                </div>
+              )}
+
               {/* Shared Budgets */}
-              {budgets.some(b => (b.sharedWith ?? []).length > 0) && (
+              {budgets.some(b => b.type !== "trip" && (b.sharedWith ?? []).length > 0) && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 px-1">
                     <Users size={14} className="text-primary" />
                     <h3 className="text-xs font-bold text-foreground">ميزانيات مشتركة</h3>
                   </div>
-                  {budgets.filter(b => (b.sharedWith ?? []).length > 0).map(b => (
+                  {budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length > 0).map(b => (
                     <SwipeableCard
                       key={b.id}
                       onEdit={() => {
@@ -657,13 +671,13 @@ const Budget = () => {
               )}
 
               {/* Personal Budgets */}
-              {budgets.some(b => (b.sharedWith ?? []).length === 0) && (
+              {budgets.some(b => b.type !== "trip" && (b.sharedWith ?? []).length === 0) && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 px-1">
                     <Wallet size={14} className="text-primary" />
                     <h3 className="text-xs font-bold text-foreground">ميزانيات شخصية</h3>
                   </div>
-                  {budgets.filter(b => (b.sharedWith ?? []).length === 0).map(b => (
+                  {budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length === 0).map(b => (
                     <SwipeableCard
                       key={b.id}
                       onEdit={() => {
