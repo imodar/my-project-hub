@@ -872,6 +872,7 @@ const Documents = () => {
             </DrawerHeader>
             <div className="space-y-3 px-4">
               <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
+              {!featureAccess.isStaff && (
               <div>
                 <p className="text-xs text-muted-foreground mb-2">نوع القائمة</p>
                 <div className="flex gap-2">
@@ -893,6 +894,7 @@ const Documents = () => {
                   </button>
                 </div>
               </div>
+              )}
               {newListType === "family" && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">مشاركة مع</p>
