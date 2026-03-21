@@ -86,24 +86,24 @@ const SOSNavButton = () => {
         {/* Progress ring */}
         {isHolding && (
           <svg
-            className="absolute inset-[-8px] w-[calc(100%+16px)] h-[calc(100%+16px)]"
-            viewBox="0 0 64 64"
+            className="absolute inset-[-16px] w-[calc(100%+32px)] h-[calc(100%+32px)] pointer-events-none"
+            viewBox="0 0 80 80"
             style={{ transform: "rotate(-90deg)" }}
           >
             <circle
-              cx="32" cy="32" r="29"
+              cx="40" cy="40" r="37"
               fill="none"
-              stroke="hsla(0, 72%, 51%, 0.15)"
-              strokeWidth="3"
+              stroke="hsla(0, 72%, 51%, 0.12)"
+              strokeWidth="2.5"
             />
             <circle
-              cx="32" cy="32" r="29"
+              cx="40" cy="40" r="37"
               fill="none"
               stroke="hsl(0, 72%, 51%)"
-              strokeWidth="3.5"
+              strokeWidth="3"
               strokeLinecap="round"
-              strokeDasharray={2 * Math.PI * 29}
-              strokeDashoffset={2 * Math.PI * 29 * (1 - holdProgress)}
+              strokeDasharray={2 * Math.PI * 37}
+              strokeDashoffset={2 * Math.PI * 37 * (1 - holdProgress)}
               style={{ transition: "stroke-dashoffset 30ms linear" }}
             />
           </svg>
