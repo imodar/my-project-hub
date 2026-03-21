@@ -30,14 +30,14 @@ type WeatherTheme = {
   particles?: React.ReactNode;
 };
 
-const DEMO_STATES: { code: number; hour: number; label: string }[] = [
-  { code: 0, hour: 10, label: "☀️ صافي - نهار" },
-  { code: 0, hour: 22, label: "🌙 صافي - ليل" },
-  { code: 2, hour: 14, label: "⛅ غائم جزئياً" },
-  { code: 3, hour: 15, label: "☁️ غائم" },
-  { code: 45, hour: 12, label: "🌫️ ضبابي" },
-  { code: 61, hour: 16, label: "🌧️ ممطر" },
-  { code: 71, hour: 11, label: "❄️ ثلوج" },
+const DEMO_STATES: { code: number; hour: number; label: string; temp: number; description: string; icon: string; city: string }[] = [
+  { code: 0, hour: 10, label: "☀️ صافي - نهار", temp: 34, description: "صافي", icon: "clear", city: "الرياض" },
+  { code: 0, hour: 22, label: "🌙 صافي - ليل", temp: 22, description: "صافي", icon: "clear", city: "الرياض" },
+  { code: 2, hour: 14, label: "⛅ غائم جزئياً", temp: 28, description: "غائم جزئياً", icon: "cloudsun", city: "جدة" },
+  { code: 3, hour: 15, label: "☁️ غائم", temp: 24, description: "غائم", icon: "cloud", city: "أبها" },
+  { code: 45, hour: 12, label: "🌫️ ضبابي", temp: 19, description: "ضبابي", icon: "fog", city: "الطائف" },
+  { code: 61, hour: 16, label: "🌧️ ممطر", temp: 16, description: "ممطر", icon: "rain", city: "تبوك" },
+  { code: 71, hour: 11, label: "❄️ ثلوج", temp: -2, description: "ثلوج", icon: "snow", city: "طريف" },
 ];
 
 const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme => {
@@ -428,21 +428,33 @@ const HeroSection = () => {
                 <p className="text-white/75 font-medium text-sm">
                   {gregorianDate} {islamicMode && `• ${hijriDate}`}
                 </p>
-                {weather && !demoActive && (
+                {(weather || demoActive) && (
                   <div className="flex items-center gap-1 mt-1">
                     <MapPin size={12} className="text-white/50" />
-                    <span className="text-white/50 text-xs">{weather.city}</span>
+                    <span className="text-white/50 text-xs">
+                      {demoActive ? DEMO_STATES[demoIndex].city : weather?.city}
+                    </span>
                   </div>
                 )}
               </div>
-              {weather && !demoActive && (
-                <div className="bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 border border-white/20">
+              {(weather || demoActive) && (
+                <motion.div
+                  key={demoActive ? `demo-${demoIndex}` : "real"}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className="bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 border border-white/20"
+                >
                   <div className="flex items-center justify-end gap-2">
-                    <WeatherIcon icon={weather.icon} />
-                    <span className="text-2xl font-bold">{weather.temp}°</span>
+                    <WeatherIcon icon={demoActive ? DEMO_STATES[demoIndex].icon : (weather?.icon || "clear")} />
+                    <span className="text-2xl font-bold">
+                      {demoActive ? DEMO_STATES[demoIndex].temp : weather?.temp}°
+                    </span>
                   </div>
-                  <p className="text-[11px] font-semibold text-white/70 mt-0.5 text-center">{weather.description}</p>
-                </div>
+                  <p className="text-[11px] font-semibold text-white/70 mt-0.5 text-center">
+                    {demoActive ? DEMO_STATES[demoIndex].description : weather?.description}
+                  </p>
+                </motion.div>
               )}
             </div>
 
