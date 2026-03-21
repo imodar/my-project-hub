@@ -719,6 +719,51 @@ const Tasks = () => {
                   </div>
                 </div>
               )}
+              {/* Repeat section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Switch checked={editRepeatEnabled} onCheckedChange={setEditRepeatEnabled} />
+                  <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Repeat size={16} className="text-primary" />
+                    تكرار المهمة
+                  </span>
+                </div>
+                {editRepeatEnabled && (
+                  <>
+                    <div className="flex justify-between gap-1.5">
+                      {WEEKDAYS_SHORT.map((day) => (
+                        <button
+                          key={day.value}
+                          onClick={() => setEditRepeatDays(prev => prev.includes(day.value) ? prev.filter(d => d !== day.value) : [...prev, day.value])}
+                          className={`w-10 h-10 rounded-full text-xs font-bold transition-all ${
+                            editRepeatDays.includes(day.value)
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground border border-border"
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2 text-right">عدد التكرارات</p>
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => { if (editRepeatCount > 1) setEditRepeatCount(editRepeatCount - 1); }}
+                          className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-lg font-bold text-foreground hover:bg-muted/80 transition-colors"
+                        >−</button>
+                        <div className="w-16 h-10 rounded-xl border-2 border-primary bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                          {editRepeatCount}
+                        </div>
+                        <button
+                          onClick={() => { if (editRepeatCount < 99) setEditRepeatCount(editRepeatCount + 1); }}
+                          className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-lg font-bold text-foreground hover:bg-muted/80 transition-colors"
+                        >+</button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             <DrawerFooter className="flex-row gap-2">
               <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
