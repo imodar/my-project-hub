@@ -280,7 +280,7 @@ const Albums = () => {
           actions={[
             {
               icon: <Trash2 size={18} className="text-white" />,
-              onClick: () => handleDeleteAlbum(selectedAlbum.id),
+              onClick: () => setConfirmDeleteAlbum(selectedAlbum.id),
             },
           ]}
         />
