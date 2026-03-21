@@ -210,6 +210,7 @@ const saveBudgets = (b: MonthBudget[]) => localStorage.setItem(STORAGE_KEY, JSON
 
 const Budget = () => {
   const navigate = useNavigate();
+  const { featureAccess } = useUserRole();
   const [budgets, setBudgets] = useState<MonthBudget[]>(loadBudgets);
   const [selectedBudget, setSelectedBudget] = useState<MonthBudget | null>(null);
   const [showAddMonth, setShowAddMonth] = useState(false);
