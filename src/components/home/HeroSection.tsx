@@ -143,12 +143,12 @@ const HeroSection = () => {
                 )}
               </div>
               {weather && (
-                <div className="text-left pl-4">
+                <div className="bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 border border-white/20">
                   <div className="flex items-center justify-end gap-2">
                     <WeatherIcon icon={weather.icon} />
                     <span className="text-2xl font-bold">{weather.temp}°</span>
                   </div>
-                  <p className="text-[11px] font-semibold text-white/70 mt-0.5">{weather.description}</p>
+                  <p className="text-[11px] font-semibold text-white/70 mt-0.5 text-center">{weather.description}</p>
                 </div>
               )}
             </div>
