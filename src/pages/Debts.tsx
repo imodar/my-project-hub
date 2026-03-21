@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff } from "lucide-react";
+import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import PageHeader from "@/components/PageHeader";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
 
 type PaymentType = "cash" | "item" | "installment";
 
@@ -37,18 +38,24 @@ interface Payment {
   itemDescription?: string;
 }
 
+interface Postponement {
+  newDate: string;
+  reason: string;
+  date: string; // when postponement was made
+}
+
 interface Debt {
   id: string;
   personName: string;
   amounts: DebtAmount[];
-  date: string;
+  date: string; // تاريخ أخذ الدين
   dueDate: string;
   note: string;
   payments: Payment[];
   isFullyPaid: boolean;
   isArchived: boolean;
   hasReminder: boolean;
-  postponements: { newDate: string; reason: string }[];
+  postponements: Postponement[];
 }
 
 const initialGiven: Debt[] = [
@@ -60,9 +67,7 @@ const initialGiven: Debt[] = [
     dueDate: "2025-03-28",
     note: "قرض شخصي",
     payments: [{ id: "p1", amounts: [{ amount: 3000, currency: "SAR" }], date: "2025-02-20", type: "cash" }],
-    isFullyPaid: false,
-    isArchived: false,
-    hasReminder: false,
+    isFullyPaid: false, isArchived: false, hasReminder: false,
     postponements: [],
   },
   {
@@ -73,9 +78,7 @@ const initialGiven: Debt[] = [
     dueDate: "2025-03-10",
     note: "رجع عسل – قيمة 800 ر",
     payments: [{ id: "p2", amounts: [{ amount: 800, currency: "SAR" }], date: "2025-03-01", type: "item", itemDescription: "عسل" }],
-    isFullyPaid: false,
-    isArchived: false,
-    hasReminder: false,
+    isFullyPaid: false, isArchived: false, hasReminder: false,
     postponements: [],
   },
   {
@@ -89,9 +92,7 @@ const initialGiven: Debt[] = [
       { id: "p3a", amounts: [{ amount: 1000, currency: "SAR" }], date: "2025-03-10", type: "cash" },
       { id: "p3b", amounts: [{ amount: 100, currency: "USD" }], date: "2025-03-15", type: "cash" },
     ],
-    isFullyPaid: true,
-    isArchived: false,
-    hasReminder: false,
+    isFullyPaid: true, isArchived: false, hasReminder: false,
     postponements: [],
   },
 ];
@@ -105,9 +106,7 @@ const initialTaken: Debt[] = [
     dueDate: "2025-04-15",
     note: "سلفة شخصية",
     payments: [{ id: "p4", amounts: [{ amount: 1200, currency: "SAR" }], date: "2025-03-05", type: "cash" }],
-    isFullyPaid: false,
-    isArchived: false,
-    hasReminder: false,
+    isFullyPaid: false, isArchived: false, hasReminder: false,
     postponements: [],
   },
   {
@@ -117,25 +116,21 @@ const initialTaken: Debt[] = [
     date: "2025-01-20",
     dueDate: "2025-06-01",
     note: "أونصتين ذهب",
-    payments: [],
-    isFullyPaid: false,
-    isArchived: false,
-    hasReminder: false,
+    payments: [], isFullyPaid: false, isArchived: false, hasReminder: false,
     postponements: [],
   },
 ];
 
-// Swipeable card component
+// Swipeable card with Edit + Delete
+const ACTION_WIDTH = 140;
 const SwipeableDebtCard = ({
   children,
   onDelete,
-  onToggleReminder,
-  hasReminder,
+  onEdit,
 }: {
   children: React.ReactNode;
   onDelete: () => void;
-  onToggleReminder: () => void;
-  hasReminder: boolean;
+  onEdit: () => void;
 }) => {
   const [swipeX, setSwipeX] = useState(0);
   const startXRef = useRef(0);
@@ -149,46 +144,42 @@ const SwipeableDebtCard = ({
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDraggingRef.current) return;
     const diff = e.touches[0].clientX - startXRef.current;
-    if (diff > 0) {
-      setSwipeX(Math.min(diff, 160));
-    } else {
-      setSwipeX(0);
-    }
+    if (diff > 0) setSwipeX(Math.min(diff, ACTION_WIDTH));
+    else setSwipeX(0);
   }, []);
 
   const handleTouchEnd = useCallback(() => {
     isDraggingRef.current = false;
-    setSwipeX((prev) => (prev > 80 ? 160 : 0));
+    setSwipeX((prev) => (prev > 60 ? ACTION_WIDTH : 0));
   }, []);
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
       <div
-        className="absolute inset-y-0 left-0 flex overflow-hidden rounded-r-2xl"
-        style={{ width: 160, opacity: swipeX > 0 ? 1 : 0, pointerEvents: swipeX > 0 ? 'auto' : 'none' }}
+        className="absolute inset-y-0 left-0 flex items-stretch gap-0.5 rounded-r-2xl overflow-hidden p-0.5"
+        style={{ width: ACTION_WIDTH, opacity: swipeX > 0 ? 1 : 0, pointerEvents: swipeX > 0 ? "auto" : "none" }}
       >
         <button
-          onClick={() => { onToggleReminder(); setSwipeX(0); }}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 ${hasReminder ? 'bg-amber-500' : 'bg-primary'} text-white`}
+          onClick={() => { onEdit(); setSwipeX(0); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl"
+          style={{ background: "hsl(220, 60%, 50%)" }}
         >
-          {hasReminder ? <BellOff size={20} /> : <Bell size={20} />}
-          <span className="text-[10px] font-bold">{hasReminder ? 'إلغاء تنبيه' : 'تنبيه'}</span>
+          <Pencil size={16} className="text-white" />
+          <span className="text-[10px] text-white font-bold">تعديل</span>
         </button>
         <button
-          onClick={onDelete}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-destructive-foreground"
+          onClick={() => { onDelete(); setSwipeX(0); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive rounded-xl"
         >
-          <Trash2 size={20} />
-          <span className="text-[10px] font-bold">حذف</span>
+          <Trash2 size={16} className="text-destructive-foreground" />
+          <span className="text-[10px] text-destructive-foreground font-bold">حذف</span>
         </button>
       </div>
-
       <div
         className="relative z-10 bg-background rounded-2xl"
         style={{
           transform: `translateX(${swipeX}px)`,
-          transition: isDraggingRef.current ? 'none' : 'transform 300ms ease-out',
-          marginLeft: swipeX > 0 ? '4px' : '0',
+          transition: isDraggingRef.current ? "none" : "transform 300ms ease-out",
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -206,9 +197,12 @@ const formatDate = (d: string) => {
   const date = new Date(d);
   return date.toLocaleDateString("ar-SA", { day: "numeric", month: "long" });
 };
+const formatFullDate = (d: string) => {
+  const date = new Date(d);
+  return date.toLocaleDateString("ar-SA", { day: "numeric", month: "long", year: "numeric" });
+};
 
 const formatDebtAmount = (da: DebtAmount) => `${formatNumber(da.amount)} ${getCurrencySymbol(da.currency)}`;
-
 const formatAmountsList = (amounts: DebtAmount[]) => amounts.map(formatDebtAmount).join(" + ");
 
 const isOverdue = (dueDate: string, isFullyPaid: boolean) => {
@@ -277,7 +271,8 @@ const AmountEditor = ({
             updated[i] = { ...updated[i], amount: e.target.value };
             setAmounts(updated);
           }}
-          className="flex-1 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+          className="w-28 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+          inputMode="decimal"
         />
         <select
           value={entry.currency}
@@ -286,7 +281,7 @@ const AmountEditor = ({
             updated[i] = { ...updated[i], currency: e.target.value as CurrencyCode };
             setAmounts(updated);
           }}
-          className="w-32 rounded-xl border border-input bg-background px-2 py-2.5 text-xs"
+          className="flex-1 rounded-xl border border-input bg-background px-2 py-2.5 text-xs"
         >
           {CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>{c.symbol} {c.label}</option>
@@ -321,10 +316,17 @@ const Debts = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [addFormType, setAddFormType] = useState<"given" | "taken">("given");
   const [showFabMenu, setShowFabMenu] = useState(false);
-  const [showPaymentForm, setShowPaymentForm] = useState<string | null>(null);
-  const [showPostponeForm, setShowPostponeForm] = useState<string | null>(null);
 
-  const [newDebt, setNewDebt] = useState({ personName: "", dueDate: "", note: "" });
+  // Payment drawer
+  const [showPaymentDrawer, setShowPaymentDrawer] = useState(false);
+  const [paymentDebtId, setPaymentDebtId] = useState<string | null>(null);
+  // Postpone drawer
+  const [showPostponeDrawer, setShowPostponeDrawer] = useState(false);
+  const [postponeDebtId, setPostponeDebtId] = useState<string | null>(null);
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const [newDebt, setNewDebt] = useState({ personName: "", date: "", dueDate: "", note: "" });
   const [newDebtAmounts, setNewDebtAmounts] = useState<{ amount: string; currency: CurrencyCode }[]>([{ amount: "", currency: "SAR" }]);
 
   const [newPayment, setNewPayment] = useState({ type: "cash" as PaymentType, itemDescription: "" });
@@ -341,15 +343,21 @@ const Debts = () => {
   const givenSummary = getSummaryByCurrency(givenDebts);
   const takenSummary = getSummaryByCurrency(takenDebts);
 
+  const findDebtById = (id: string): { debt: Debt; setFn: typeof setGivenDebts } | null => {
+    const g = givenDebts.find(d => d.id === id);
+    if (g) return { debt: g, setFn: setGivenDebts };
+    const t = takenDebts.find(d => d.id === id);
+    if (t) return { debt: t, setFn: setTakenDebts };
+    return null;
+  };
+
   const handleMarkFullyPaid = (debtId: string) => {
     setDebts((prev) =>
       prev.map((d) => {
         if (d.id !== debtId) return d;
         const remaining = getRemainingAmounts(d);
         return {
-          ...d,
-          isFullyPaid: true,
-          isArchived: true,
+          ...d, isFullyPaid: true, isArchived: true,
           payments: [...d.payments, { id: Date.now().toString(), amounts: remaining, date: new Date().toISOString().split("T")[0], type: "cash" as PaymentType }],
         };
       })
@@ -358,7 +366,7 @@ const Debts = () => {
 
   const handleStartEdit = (debt: Debt) => {
     setEditingDebtId(debt.id);
-    setNewDebt({ personName: debt.personName, dueDate: debt.dueDate, note: debt.note });
+    setNewDebt({ personName: debt.personName, date: debt.date, dueDate: debt.dueDate, note: debt.note });
     setNewDebtAmounts(debt.amounts.map((a) => ({ amount: String(a.amount), currency: a.currency })));
     setAddFormType(activeTab);
     setShowAddForm(true);
@@ -374,7 +382,7 @@ const Debts = () => {
       targetSetDebts((prev) =>
         prev.map((d) =>
           d.id === editingDebtId
-            ? { ...d, personName: newDebt.personName, amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })), dueDate: newDebt.dueDate, note: newDebt.note }
+            ? { ...d, personName: newDebt.personName, amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })), date: newDebt.date || d.date, dueDate: newDebt.dueDate, note: newDebt.note }
             : d
         )
       );
@@ -383,24 +391,31 @@ const Debts = () => {
         id: Date.now().toString(),
         personName: newDebt.personName,
         amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })),
-        date: new Date().toISOString().split("T")[0],
+        date: newDebt.date || new Date().toISOString().split("T")[0],
         dueDate: newDebt.dueDate,
         note: newDebt.note,
-        payments: [],
-        isFullyPaid: false,
-        isArchived: false,
-        hasReminder: false,
-        postponements: [],
+        payments: [], isFullyPaid: false, isArchived: false, hasReminder: false, postponements: [],
       };
       targetSetDebts((prev) => [debt, ...prev]);
     }
-    setNewDebt({ personName: "", dueDate: "", note: "" });
+    setNewDebt({ personName: "", date: "", dueDate: "", note: "" });
     setNewDebtAmounts([{ amount: "", currency: "SAR" }]);
     setShowAddForm(false);
     setEditingDebtId(null);
   };
 
-  const handleAddPayment = (debtId: string) => {
+  const openPaymentDrawer = (debtId: string) => {
+    const found = findDebtById(debtId);
+    if (!found) return;
+    const rem = getRemainingAmounts(found.debt);
+    setNewPaymentAmounts(rem.map((r) => ({ amount: "", currency: r.currency })));
+    setNewPayment({ type: "cash", itemDescription: "" });
+    setPaymentDebtId(debtId);
+    setShowPaymentDrawer(true);
+  };
+
+  const handleAddPayment = () => {
+    if (!paymentDebtId) return;
     const validAmounts = newPaymentAmounts.filter((a) => a.amount && Number(a.amount) > 0);
     if (validAmounts.length === 0) return;
     const payment: Payment = {
@@ -410,45 +425,56 @@ const Debts = () => {
       type: newPayment.type,
       itemDescription: newPayment.itemDescription || undefined,
     };
-    setDebts((prev) =>
+    // Update in both lists
+    const updateFn = (prev: Debt[]) =>
       prev.map((d) => {
-        if (d.id !== debtId) return d;
+        if (d.id !== paymentDebtId) return d;
         const updated = { ...d, payments: [...d.payments, payment] };
         const remaining = getRemainingAmounts(updated);
-        if (remaining.length === 0) {
-          updated.isFullyPaid = true;
-          updated.isArchived = true;
-        }
+        if (remaining.length === 0) { updated.isFullyPaid = true; updated.isArchived = true; }
         return updated;
-      })
-    );
-    setNewPayment({ type: "cash", itemDescription: "" });
-    setNewPaymentAmounts([{ amount: "", currency: "SAR" }]);
-    setShowPaymentForm(null);
+      });
+    setGivenDebts(updateFn);
+    setTakenDebts(updateFn);
+    setShowPaymentDrawer(false);
+    setPaymentDebtId(null);
   };
 
-  const handlePostpone = (debtId: string) => {
-    if (!postponeData.newDate || !postponeData.reason) return;
-    setDebts((prev) =>
-      prev.map((d) =>
-        d.id === debtId
-          ? { ...d, dueDate: postponeData.newDate, postponements: [...d.postponements, postponeData] }
-          : d
-      )
-    );
+  const openPostponeDrawer = (debtId: string) => {
     setPostponeData({ newDate: "", reason: "" });
-    setShowPostponeForm(null);
+    setPostponeDebtId(debtId);
+    setShowPostponeDrawer(true);
+  };
+
+  const handlePostpone = () => {
+    if (!postponeDebtId || !postponeData.newDate || !postponeData.reason) return;
+    const postponement: Postponement = { ...postponeData, date: new Date().toISOString().split("T")[0] };
+    const updateFn = (prev: Debt[]) =>
+      prev.map((d) =>
+        d.id === postponeDebtId
+          ? { ...d, dueDate: postponeData.newDate, postponements: [...d.postponements, postponement] }
+          : d
+      );
+    setGivenDebts(updateFn);
+    setTakenDebts(updateFn);
+    setShowPostponeDrawer(false);
+    setPostponeDebtId(null);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setGivenDebts(prev => prev.filter(d => d.id !== deleteTarget.id));
+    setTakenDebts(prev => prev.filter(d => d.id !== deleteTarget.id));
+    setDeleteTarget(null);
   };
 
   const getStatusBadge = (debt: Debt) => {
-    if (debt.isFullyPaid) return <span className="flex items-center gap-1 text-xs font-bold text-primary"><Check size={14} /> مُسدَّد بالكامل</span>;
+    if (debt.isFullyPaid) return <span className="flex items-center gap-1 text-xs font-bold text-primary"><Check size={14} /> مُسدَّد</span>;
     if (isOverdue(debt.dueDate, debt.isFullyPaid)) return <span className="flex items-center gap-1 text-xs font-bold text-destructive"><AlertTriangle size={14} /> متأخر!</span>;
     const days = getDaysUntilDue(debt.dueDate);
     if (days <= 3) return <span className="flex items-center gap-1 text-xs font-bold text-accent"><Clock size={14} /> قريب السداد</span>;
     return <span className="text-xs text-muted-foreground">{formatDate(debt.dueDate)}</span>;
   };
-
-
 
   const SummaryItem = ({ label, icon, summary, count, colorClass }: { label: string; icon: React.ReactNode; summary: DebtAmount[]; count: number; colorClass: string }) => (
     <div className="flex-1 text-center">
@@ -461,7 +487,7 @@ const Debts = () => {
           {summary.map((s, i) => {
             const isGold = s.currency === "GOLD_OZ" || s.currency === "GOLD_G";
             return (
-              <p key={i} className={`text-lg font-black tabular-nums ${isGold ? 'text-[hsl(var(--gold))]' : 'text-white'}`}>
+              <p key={i} className={`text-lg font-black tabular-nums ${isGold ? "text-[hsl(var(--gold))]" : "text-white"}`}>
                 {formatNumber(s.amount)} <span className="text-[10px] font-medium opacity-60">{getCurrencySymbol(s.currency)}</span>
               </p>
             );
@@ -476,9 +502,7 @@ const Debts = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto relative pb-32" dir="rtl">
-      {/* Header with PageHeader */}
       <PageHeader title="دفتر الديون" onBack={() => navigate("/")}>
-        {/* Integrated Summary */}
         <div className="mt-4 flex items-stretch">
           <SummaryItem
             label="لك على الآخرين"
@@ -498,7 +522,7 @@ const Debts = () => {
         </div>
       </PageHeader>
 
-      {/* Tabs - improved design */}
+      {/* Tabs */}
       <div className="flex mx-5 mt-5 gap-2">
         <button
           onClick={() => setActiveTab("given")}
@@ -534,24 +558,27 @@ const Debts = () => {
           return (
             <SwipeableDebtCard
               key={debt.id}
-              onDelete={() => setDebts((prev) => prev.filter((d) => d.id !== debt.id))}
-              onToggleReminder={() => setDebts((prev) => prev.map((d) => d.id === debt.id ? { ...d, hasReminder: !d.hasReminder } : d))}
-              hasReminder={debt.hasReminder}
+              onDelete={() => setDeleteTarget({ id: debt.id, name: debt.personName })}
+              onEdit={() => handleStartEdit(debt)}
             >
               <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
                 <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
+                  {/* Name on right, amounts on left */}
                   <div className="flex items-start justify-between mb-2">
-                    <div className="text-left space-y-0.5">
+                    <div className="text-right flex items-center gap-2 flex-1 min-w-0">
+                      {debt.hasReminder && <Bell size={14} className="text-amber-500 shrink-0" />}
+                      <div className="min-w-0">
+                        <p className={`font-bold text-base ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{debt.personName}</p>
+                        <p className={`text-xs mt-0.5 ${debt.isFullyPaid ? "line-through text-muted-foreground/40" : "text-muted-foreground"}`}>{debt.note}</p>
+                        <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                          {formatDate(debt.date)} → {formatDate(debt.dueDate)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-left space-y-0.5 shrink-0 mr-3">
                       {debt.amounts.map((a, i) => (
                         <p key={i} className={`text-xl font-black ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{formatDebtAmount(a)}</p>
                       ))}
-                    </div>
-                    <div className="text-right flex items-center gap-2">
-                      {debt.hasReminder && <Bell size={14} className="text-amber-500 shrink-0" />}
-                      <div>
-                        <p className={`font-bold text-base ${debt.isFullyPaid ? "line-through text-muted-foreground/50" : "text-foreground"}`}>{debt.personName}</p>
-                        <p className={`text-xs mt-0.5 ${debt.isFullyPaid ? "line-through text-muted-foreground/40" : "text-muted-foreground"}`}>{debt.note}</p>
-                      </div>
                     </div>
                   </div>
 
@@ -572,106 +599,86 @@ const Debts = () => {
 
                 {isExpanded && (
                   <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
-                    {debt.payments.length > 0 && (
+                    {/* History: payments + postponements merged chronologically */}
+                    {(debt.payments.length > 0 || debt.postponements.length > 0) && (
                       <div>
-                        <p className="text-xs font-bold text-foreground mb-2">سجل الدفعات</p>
+                        <p className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5">
+                          <History size={13} className="text-primary" />
+                          سجل العمليات
+                        </p>
                         <div className="space-y-1.5">
-                          {debt.payments.map((p) => (
-                            <div key={p.id} className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-3 py-2">
-                              <span className="text-muted-foreground">{formatDate(p.date)}</span>
-                              <div className="text-left">
-                                <span className="font-bold text-foreground">
-                                  {p.type === "item" && p.itemDescription ? `${p.itemDescription}: ` : ""}
-                                  {formatAmountsList(p.amounts)}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
+                          {/* Merge and sort by date */}
+                          {[
+                            ...debt.payments.map(p => ({
+                              type: "payment" as const,
+                              date: p.date,
+                              data: p,
+                            })),
+                            ...debt.postponements.map(pp => ({
+                              type: "postponement" as const,
+                              date: pp.date,
+                              data: pp,
+                            })),
+                          ]
+                            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                            .map((entry, i) => {
+                              if (entry.type === "payment") {
+                                const p = entry.data as Payment;
+                                return (
+                                  <div key={`p-${i}`} className="flex items-center justify-between text-xs bg-primary/5 rounded-xl px-3 py-2.5">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <HandCoins size={12} className="text-primary" />
+                                      </div>
+                                      <div>
+                                        <span className="font-bold text-foreground">
+                                          {p.type === "item" && p.itemDescription ? `${p.itemDescription}: ` : ""}
+                                          {formatAmountsList(p.amounts)}
+                                        </span>
+                                        <p className="text-[10px] text-muted-foreground">
+                                          {p.type === "cash" ? "نقدي" : p.type === "item" ? "عرض/بدل" : "دفعة"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <span className="text-muted-foreground">{formatDate(p.date)}</span>
+                                  </div>
+                                );
+                              } else {
+                                const pp = entry.data as Postponement;
+                                return (
+                                  <div key={`pp-${i}`} className="flex items-center justify-between text-xs bg-accent/10 rounded-xl px-3 py-2.5">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center">
+                                        <CalendarClock size={12} className="text-accent-foreground" />
+                                      </div>
+                                      <div>
+                                        <span className="font-bold text-foreground">أُجّل إلى {formatDate(pp.newDate)}</span>
+                                        <p className="text-[10px] text-muted-foreground">{pp.reason}</p>
+                                      </div>
+                                    </div>
+                                    <span className="text-muted-foreground">{formatDate(pp.date)}</span>
+                                  </div>
+                                );
+                              }
+                            })}
                         </div>
                       </div>
                     )}
 
-                    {debt.postponements.length > 0 && (
-                      <div>
-                        <p className="text-xs font-bold text-foreground mb-2">التأجيلات</p>
-                        {debt.postponements.map((pp, i) => (
-                          <div key={i} className="text-xs bg-accent/10 rounded-lg px-3 py-2 mb-1">
-                            <span className="text-muted-foreground">أُجّل إلى {formatDate(pp.newDate)} — {pp.reason}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
+                    {/* Actions */}
                     {!debt.isFullyPaid && (
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => handleMarkFullyPaid(debt.id)} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5">
                           <CircleCheckBig size={15} />
                           مُسدَّد بالكامل
                         </button>
-                        <button onClick={() => {
-                          const rem = getRemainingAmounts(debt);
-                          setNewPaymentAmounts(rem.map((r) => ({ amount: "", currency: r.currency })));
-                          setShowPaymentForm(showPaymentForm === debt.id ? null : debt.id);
-                        }} className="flex-1 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold flex items-center justify-center gap-1.5">
+                        <button onClick={() => openPaymentDrawer(debt.id)} className="flex-1 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold flex items-center justify-center gap-1.5">
                           <HandCoins size={15} />
-                          إضافة دفعة
+                          تسجيل دفعة
                         </button>
-                        <button onClick={() => setShowPostponeForm(showPostponeForm === debt.id ? null : debt.id)} className="flex-1 py-2.5 rounded-xl bg-accent/20 text-accent-foreground text-xs font-bold flex items-center justify-center gap-1.5">
+                        <button onClick={() => openPostponeDrawer(debt.id)} className="flex-1 py-2.5 rounded-xl bg-accent/20 text-accent-foreground text-xs font-bold flex items-center justify-center gap-1.5">
                           <CalendarClock size={15} />
                           تأجيل
-                        </button>
-                      </div>
-                    )}
-
-                    {showPaymentForm === debt.id && (
-                      <div className="bg-muted/50 rounded-xl p-3 space-y-2">
-                        <div className="flex gap-2">
-                          {(["cash", "item", "installment"] as PaymentType[]).map((t) => (
-                            <button
-                              key={t}
-                              onClick={() => setNewPayment({ ...newPayment, type: t })}
-                              className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all ${newPayment.type === t ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}
-                            >
-                              {t === "cash" ? "نقدي" : t === "item" ? "عرض/بدل" : "دفعة"}
-                            </button>
-                          ))}
-                        </div>
-
-                        {newPayment.type === "item" && (
-                          <input
-                            type="text"
-                            placeholder="وصف العرض (مثال: عسل، فضة)"
-                            value={newPayment.itemDescription}
-                            onChange={(e) => setNewPayment({ ...newPayment, itemDescription: e.target.value })}
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                          />
-                        )}
-
-                        <AmountEditor amounts={newPaymentAmounts} setAmounts={setNewPaymentAmounts} />
-
-                        <button onClick={() => handleAddPayment(debt.id)} className="w-full py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold">
-                          تأكيد الدفعة
-                        </button>
-                      </div>
-                    )}
-
-                    {showPostponeForm === debt.id && (
-                      <div className="bg-muted/50 rounded-xl p-3 space-y-2">
-                        <input
-                          type="date"
-                          value={postponeData.newDate}
-                          onChange={(e) => setPostponeData({ ...postponeData, newDate: e.target.value })}
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                        />
-                        <input
-                          type="text"
-                          placeholder="سبب التأجيل"
-                          value={postponeData.reason}
-                          onChange={(e) => setPostponeData({ ...postponeData, reason: e.target.value })}
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                        />
-                        <button onClick={() => handlePostpone(debt.id)} className="w-full py-2 rounded-xl bg-accent text-accent-foreground text-sm font-bold">
-                          تأكيد التأجيل
                         </button>
                       </div>
                     )}
@@ -695,11 +702,11 @@ const Debts = () => {
             {archivedDebts.map((debt) => (
               <div key={debt.id} className="bg-card/50 rounded-2xl border border-border p-4 mb-2 opacity-60">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-foreground">{formatAmountsList(debt.amounts)}</span>
                   <div className="text-right flex items-center gap-2">
                     <span className="text-sm font-bold text-foreground">{debt.personName}</span>
                     <span className="flex items-center gap-1 text-xs text-primary"><Check size={12} /> مُسدَّد</span>
                   </div>
+                  <span className="text-sm font-bold text-foreground">{formatAmountsList(debt.amounts)}</span>
                 </div>
               </div>
             ))}
@@ -710,12 +717,14 @@ const Debts = () => {
       {/* FAB with menu */}
       {createPortal(
         <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30 flex flex-col items-center gap-2">
-          {/* FAB sub-buttons */}
           {showFabMenu && (
             <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
               <button
                 onClick={() => {
                   setAddFormType("given");
+                  setEditingDebtId(null);
+                  setNewDebt({ personName: "", date: "", dueDate: "", note: "" });
+                  setNewDebtAmounts([{ amount: "", currency: "SAR" }]);
                   setShowAddForm(true);
                   setShowFabMenu(false);
                 }}
@@ -727,6 +736,9 @@ const Debts = () => {
               <button
                 onClick={() => {
                   setAddFormType("taken");
+                  setEditingDebtId(null);
+                  setNewDebt({ personName: "", date: "", dueDate: "", note: "" });
+                  setNewDebtAmounts([{ amount: "", currency: "SAR" }]);
                   setShowAddForm(true);
                   setShowFabMenu(false);
                 }}
@@ -740,20 +752,19 @@ const Debts = () => {
           <button
             onClick={() => setShowFabMenu(!showFabMenu)}
             className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center transition-transform active:scale-95"
-            style={{ boxShadow: '0 6px 24px hsla(209, 100%, 31%, 0.35)' }}
+            style={{ boxShadow: "0 6px 24px hsla(209, 100%, 31%, 0.35)" }}
           >
-            <Plus size={26} className={`transition-transform duration-200 ${showFabMenu ? 'rotate-45' : ''}`} />
+            <Plus size={26} className={`transition-transform duration-200 ${showFabMenu ? "rotate-45" : ""}`} />
           </button>
         </div>,
         document.body
       )}
 
-      {/* Click outside to close FAB menu */}
       {showFabMenu && (
         <div className="fixed inset-0 z-20" onClick={() => setShowFabMenu(false)} />
       )}
 
-      {/* Add Debt Bottom Sheet */}
+      {/* Add/Edit Debt Drawer */}
       <Drawer open={showAddForm} onOpenChange={(open) => { setShowAddForm(open); if (!open) setEditingDebtId(null); }}>
         <DrawerContent dir="rtl">
           <DrawerHeader>
@@ -762,7 +773,6 @@ const Debts = () => {
             </DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6 space-y-4 max-h-[70vh] overflow-y-auto">
-            {/* Type indicator */}
             {!editingDebtId && (
               <div className={`flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl ${
                 addFormType === "given" ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-500"
@@ -785,15 +795,27 @@ const Debts = () => {
               <AmountEditor amounts={newDebtAmounts} setAmounts={setNewDebtAmounts} />
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-foreground mb-1 block">تاريخ السداد المتوقع</label>
-              <input
-                type="date"
-                value={newDebt.dueDate}
-                onChange={(e) => setNewDebt({ ...newDebt, dueDate: e.target.value })}
-                className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-foreground mb-1 block">تاريخ أخذ الدين</label>
+                <input
+                  type="date"
+                  value={newDebt.date}
+                  onChange={(e) => setNewDebt({ ...newDebt, date: e.target.value })}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-3 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-foreground mb-1 block">تاريخ السداد المتوقع</label>
+                <input
+                  type="date"
+                  value={newDebt.dueDate}
+                  onChange={(e) => setNewDebt({ ...newDebt, dueDate: e.target.value })}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-3 text-sm"
+                />
+              </div>
             </div>
+
             <input
               type="text"
               placeholder="ملاحظة (اختياري)"
@@ -806,6 +828,97 @@ const Debts = () => {
             }`}>
               {editingDebtId ? "حفظ التعديلات" : "إضافة"}
             </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Payment Drawer */}
+      <Drawer open={showPaymentDrawer} onOpenChange={setShowPaymentDrawer}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader>
+            <DrawerTitle>تسجيل دفعة</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4 space-y-3">
+            <div className="flex gap-2">
+              {(["cash", "item", "installment"] as PaymentType[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setNewPayment({ ...newPayment, type: t })}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${newPayment.type === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                >
+                  {t === "cash" ? "نقدي" : t === "item" ? "عرض/بدل" : "دفعة"}
+                </button>
+              ))}
+            </div>
+
+            {newPayment.type === "item" && (
+              <input
+                type="text"
+                placeholder="وصف العرض (مثال: عسل، فضة)"
+                value={newPayment.itemDescription}
+                onChange={(e) => setNewPayment({ ...newPayment, itemDescription: e.target.value })}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+              />
+            )}
+
+            <AmountEditor amounts={newPaymentAmounts} setAmounts={setNewPaymentAmounts} />
+          </div>
+          <DrawerFooter className="flex-row gap-2">
+            <Button onClick={handleAddPayment} className="flex-1 rounded-xl">تأكيد الدفعة</Button>
+            <Button variant="outline" onClick={() => setShowPaymentDrawer(false)} className="flex-1 rounded-xl">إلغاء</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Postpone Drawer */}
+      <Drawer open={showPostponeDrawer} onOpenChange={setShowPostponeDrawer}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader>
+            <DrawerTitle>تأجيل الدين</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4 space-y-3">
+            <div>
+              <label className="text-xs font-bold text-foreground mb-1 block">التاريخ الجديد</label>
+              <input
+                type="date"
+                value={postponeData.newDate}
+                onChange={(e) => setPostponeData({ ...postponeData, newDate: e.target.value })}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="سبب التأجيل"
+              value={postponeData.reason}
+              onChange={(e) => setPostponeData({ ...postponeData, reason: e.target.value })}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+            />
+          </div>
+          <DrawerFooter className="flex-row gap-2">
+            <Button onClick={handlePostpone} className="flex-1 rounded-xl">تأكيد التأجيل</Button>
+            <Button variant="outline" onClick={() => setShowPostponeDrawer(false)} className="flex-1 rounded-xl">إلغاء</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Delete Confirmation Drawer */}
+      <Drawer open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader>
+            <DrawerTitle className="text-center">حذف الدين</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-5 pb-6 space-y-4">
+            <p className="text-center text-sm text-muted-foreground">
+              هل أنت متأكد من حذف دين "{deleteTarget?.name}"؟
+            </p>
+            <div className="flex gap-2">
+              <button onClick={confirmDelete} className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                حذف
+              </button>
+              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-3 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors">
+                إلغاء
+              </button>
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
