@@ -545,19 +545,19 @@ const Vehicle = () => {
                     onEdit={() => handleEditMaintenance(record)}
                     onReminder={() => handleSetReminder(record)}
                   >
-                    <div className="bg-card rounded-2xl p-4 border border-border">
+                    <div className="bg-card rounded-2xl p-4 border border-border" dir="rtl">
                       <div className="flex items-start gap-3">
                         <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                           style={{ background: typeInfo?.color + "20" }}>
                           <Icon size={20} style={{ color: typeInfo?.color }} />
                         </div>
-                        <div className="flex-1 min-w-0 text-right">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-sm text-foreground">{record.label}</h4>
                             <Badge variant="outline" className="text-[10px] px-2 py-0.5 rounded-full border-0"
                               style={{ background: status.bgColor, color: status.color }}>
                               {status.label}
                             </Badge>
-                            <h4 className="font-bold text-sm text-foreground">{record.label}</h4>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
                             {new Date(record.date).toLocaleDateString("ar-SA")} • {record.mileageAtService.toLocaleString()} {selectedCar.mileageUnit === "km" ? "كم" : "ميل"}
