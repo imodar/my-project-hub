@@ -467,7 +467,7 @@ const Trips = () => {
     toast.success("تم حذف المستند");
   };
 
-
+  const togglePackingItem = (itemId: string) => {
     if (!selectedTrip) return;
     const updatedList = selectedTrip.packingList.map((p) =>
       p.id === itemId ? { ...p, packed: !p.packed } : p
