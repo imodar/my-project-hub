@@ -316,7 +316,7 @@ const Trips = () => {
         participants: tripParticipants,
         budget: Number(tripBudget) || 0, status: "planning",
         type: tripParticipants.length > 1 ? "family" : "personal",
-        days: [], suggestions: [], packingList: [], expenses: [],
+        days: [], suggestions: [], packingList: [], expenses: [], documents: [],
       };
       setTrips((prev) => [...prev, newTrip]);
       toast.success("تم إنشاء الرحلة");
