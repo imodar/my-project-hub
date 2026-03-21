@@ -831,6 +831,7 @@ const Budget = () => {
                 inputMode="decimal"
               />
             </div>
+            {!featureAccess.isStaff && (
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-2 block">
                 <Users size={12} className="inline ml-1" />
@@ -858,6 +859,7 @@ const Budget = () => {
                 ))}
               </div>
             </div>
+            )}
           </div>
           <DrawerFooter>
             <Button onClick={handleEditBudgetSave} disabled={!newIncome}>
