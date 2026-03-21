@@ -139,10 +139,15 @@ const PhotoThumb = ({ photo, size = "md", onClick }: { photo: Photo; size?: "sm"
 
 const Albums = () => {
   const navigate = useNavigate();
+  const { featureAccess } = useUserRole();
   const [albums, setAlbums] = useState<Album[]>(INITIAL_ALBUMS);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+
+  // Delete confirmation states
+  const [confirmDeleteAlbum, setConfirmDeleteAlbum] = useState<string | null>(null);
+  const [confirmDeletePhoto, setConfirmDeletePhoto] = useState<string | null>(null);
 
   // Create album form
   const [newName, setNewName] = useState("");
