@@ -405,20 +405,6 @@ const HeroSection = () => {
             </>
           )}
 
-          {/* Demo label */}
-          <AnimatePresence>
-            {demoActive && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1 text-[11px] font-bold text-white/90"
-              >
-                {DEMO_STATES[demoIndex].label}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <div className="relative z-20 space-y-5">
             <div className="flex justify-between items-start">
               <div>
@@ -428,33 +414,44 @@ const HeroSection = () => {
                 <p className="text-white/75 font-medium text-sm">
                   {gregorianDate} {islamicMode && `• ${hijriDate}`}
                 </p>
-                {(weather || demoActive) && (
+                {demoActive && (
                   <div className="flex items-center gap-1 mt-1">
                     <MapPin size={12} className="text-white/50" />
-                    <span className="text-white/50 text-xs">
-                      {demoActive ? DEMO_STATES[demoIndex].city : weather?.city}
-                    </span>
+                    <span className="text-white/50 text-xs">{DEMO_STATES[demoIndex].city}</span>
+                  </div>
+                )}
+                {!demoActive && weather && hasLocationPermission && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <MapPin size={12} className="text-white/50" />
+                    <span className="text-white/50 text-xs">{weather.city}</span>
                   </div>
                 )}
               </div>
-              {(weather || demoActive) && (
+              {demoActive && (
                 <motion.div
-                  key={demoActive ? `demo-${demoIndex}` : "real"}
+                  key={`demo-${demoIndex}`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4 }}
                   className="bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 border border-white/20"
                 >
                   <div className="flex items-center justify-end gap-2">
-                    <WeatherIcon icon={demoActive ? DEMO_STATES[demoIndex].icon : (weather?.icon || "clear")} />
-                    <span className="text-2xl font-bold">
-                      {demoActive ? DEMO_STATES[demoIndex].temp : weather?.temp}°
-                    </span>
+                    <WeatherIcon icon={DEMO_STATES[demoIndex].icon} />
+                    <span className="text-2xl font-bold">{DEMO_STATES[demoIndex].temp}°</span>
                   </div>
                   <p className="text-[11px] font-semibold text-white/70 mt-0.5 text-center">
-                    {demoActive ? DEMO_STATES[demoIndex].description : weather?.description}
+                    {DEMO_STATES[demoIndex].description}
                   </p>
                 </motion.div>
+              )}
+              {!demoActive && weather && (
+                <div className="bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 border border-white/20">
+                  <div className="flex items-center justify-end gap-2">
+                    <WeatherIcon icon={weather.icon} />
+                    <span className="text-2xl font-bold">{weather.temp}°</span>
+                  </div>
+                  <p className="text-[11px] font-semibold text-white/70 mt-0.5 text-center">{weather.description}</p>
+                </div>
               )}
             </div>
 
