@@ -496,6 +496,7 @@ const Budget = () => {
                   onEdit={() => {
                     setEditExpenseName(exp.name);
                     setEditExpenseAmount(exp.amount.toString());
+                    setEditExpenseDate(exp.date ? new Date(exp.date) : undefined);
                     setShowEditExpense({ budgetId: b.id, expense: exp });
                   }}
                   onDelete={() => setShowDeleteExpense({ budgetId: b.id, expenseId: exp.id })}
@@ -506,6 +507,11 @@ const Budget = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{exp.name}</p>
+                      {exp.date && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {format(new Date(exp.date), "d MMMM yyyy", { locale: ar })}
+                        </p>
+                      )}
                     </div>
                     <p className="text-sm font-bold text-destructive">{exp.amount.toLocaleString()}</p>
                   </div>
