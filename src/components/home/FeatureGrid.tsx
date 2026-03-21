@@ -21,6 +21,7 @@ const features = [
   { icon: Car, label: "المركبات", bg: "hsl(220 50% 93%)", color: "hsl(220 55% 45%)", route: "/vehicle" },
   { icon: BookHeart, label: "عبادات الأطفال", bg: "hsl(320 50% 93%)", color: "hsl(320 55% 45%)", route: "/kids-worship" },
   { icon: Syringe, label: "اللقاحات", bg: "hsl(170 45% 92%)", color: "hsl(170 50% 35%)", route: "/vaccinations" },
+  { icon: Pill, label: "الأدوية", bg: "hsl(0 55% 93%)", color: "hsl(0 60% 45%)", route: "/medications" },
 ];
 
 const FeatureGrid = () => {
