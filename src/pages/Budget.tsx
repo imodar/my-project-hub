@@ -382,7 +382,7 @@ const Budget = () => {
             ...b,
             expenses: b.expenses.map(e =>
               e.id === showEditExpense.expense.id
-                ? { ...e, name: editExpenseName.trim(), amount: parseFloat(editExpenseAmount) }
+                ? { ...e, name: editExpenseName.trim(), amount: parseFloat(editExpenseAmount), date: editExpenseDate ? editExpenseDate.toISOString().split("T")[0] : e.date }
                 : e
             ),
           }
