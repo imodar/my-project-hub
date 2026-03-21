@@ -267,6 +267,8 @@ const Budget = () => {
   const [shareNames, setShareNames] = useState<string[]>([]);
   const [editExpenseName, setEditExpenseName] = useState("");
   const [editExpenseAmount, setEditExpenseAmount] = useState("");
+  const [expenseDate, setExpenseDate] = useState<Date | undefined>(undefined);
+  const [editExpenseDate, setEditExpenseDate] = useState<Date | undefined>(undefined);
 
   const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
