@@ -249,6 +249,14 @@ const Cars = () => {
   const [editMaintenanceRecord, setEditMaintenanceRecord] = useState<MaintenanceRecord | null>(null);
   const [manufacturerSearch, setManufacturerSearch] = useState("");
 
+  // Family members for sharing
+  const familyMembers: { id: string; name: string; role: string }[] = useMemo(() => {
+    try {
+      const saved = localStorage.getItem("family_members");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  }, [addCarOpen]);
+
   // Add car form
   const [newManufacturer, setNewManufacturer] = useState("");
   const [newModel, setNewModel] = useState("");
@@ -257,6 +265,7 @@ const Cars = () => {
   const [newMileageUnit, setNewMileageUnit] = useState<"km" | "mi">("km");
   const [newColor, setNewColor] = useState("");
   const [newPlate, setNewPlate] = useState("");
+  const [newSharedWith, setNewSharedWith] = useState<string[]>([]);
 
   // Add maintenance form
   const [maintType, setMaintType] = useState("");
