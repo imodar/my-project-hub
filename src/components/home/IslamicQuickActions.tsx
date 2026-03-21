@@ -35,7 +35,7 @@ const IslamicQuickActions = () => {
         <img
           src={islamicPattern}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-[0.08]"
+          className="absolute inset-0 w-full h-full object-contain opacity-[0.08]"
           aria-hidden="true"
         />
 
