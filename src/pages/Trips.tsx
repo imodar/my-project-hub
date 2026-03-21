@@ -230,7 +230,21 @@ function SwipeableCard({ onEdit, onDelete, children }: {
 
 const Trips = () => {
   const navigate = useNavigate();
-  const [trips, setTrips] = useState<Trip[]>(INITIAL_TRIPS);
+  const [trips, setTripsState] = useState<Trip[]>(() => {
+    try {
+      const saved = localStorage.getItem("trips_data");
+      return saved ? JSON.parse(saved) : INITIAL_TRIPS;
+    } catch { return INITIAL_TRIPS; }
+  });
+
+  // Wrapper to persist trips and sync budgets
+  const setTrips: typeof setTripsState = useCallback((updater) => {
+    setTripsState((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      saveTripsToStorage(next);
+      return next;
+    });
+  }, []);
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album" | "documents">("itinerary");
