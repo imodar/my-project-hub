@@ -829,7 +829,7 @@ const Vehicle = () => {
                 <div className="space-y-2 w-28 shrink-0">
                   <Label className="text-right block">السنة *</Label>
                   <Input type="number" value={newYear} onChange={e => setNewYear(e.target.value)}
-                    placeholder="2024" className="text-right" maxLength={4} />
+                    placeholder="2024" className="text-right" min={1900} max={maxYear} />
                 </div>
               </div>
 
