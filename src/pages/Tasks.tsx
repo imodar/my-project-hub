@@ -334,6 +334,7 @@ const Tasks = () => {
       priority: newItemPriority,
       assignedTo: newItemAssignedTo || "أنت",
       done: false,
+      repeat: newItemRepeatEnabled ? { enabled: true, days: newItemRepeatDays, count: newItemRepeatCount } : undefined,
     };
     setLists((prev) =>
       prev.map((list) =>
@@ -346,8 +347,11 @@ const Tasks = () => {
     setNewItemNote("");
     setNewItemPriority("medium");
     setNewItemAssignedTo("");
+    setNewItemRepeatEnabled(false);
+    setNewItemRepeatDays([]);
+    setNewItemRepeatCount(1);
     setShowAddItem(false);
-  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo]);
+  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, newItemRepeatEnabled, newItemRepeatDays, newItemRepeatCount]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
