@@ -226,9 +226,8 @@ const HeroSection = () => {
   const mockUser = { name: "أحمد", role: "parent" as const };
   const hijriDate = "٢١ رمضان ١٤٤٧";
   const gregorianDate = "١٩ مارس ٢٠٢٦";
-  const nextPrayer = "المغرب";
-  const nextPrayerTime = "بعد ٤٢ دقيقة";
-  const qiblaDirection = "٢٥٤° غ";
+  const hijriDate = "٢١ رمضان ١٤٤٧";
+  const gregorianDate = "١٩ مارس ٢٠٢٦";
 
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentHour] = useState(() => new Date().getHours());
