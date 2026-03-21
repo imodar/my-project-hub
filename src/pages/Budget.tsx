@@ -3,6 +3,7 @@ import { useState, useCallback, useRef } from "react";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
