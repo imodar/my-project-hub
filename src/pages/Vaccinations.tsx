@@ -60,8 +60,9 @@ const Vaccinations = () => {
 
   // Swipe state
   const [swipedChildId, setSwipedChildId] = useState<string | null>(null);
-  const touchStartX = useRef(0);
-  const touchCurrentX = useRef(0);
+  const swipeRef = useRef<{ startX: number; startY: number; swiping: boolean; childId: string | null }>({
+    startX: 0, startY: 0, swiping: false, childId: null,
+  });
 
   useEffect(() => {
     saveChildren(children);
@@ -173,20 +174,60 @@ const Vaccinations = () => {
 
   // Swipe handlers
   const handleTouchStart = (e: React.TouchEvent, childId: string) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchCurrentX.current = e.touches[0].clientX;
+    swipeRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, swiping: false, childId };
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchCurrentX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (childId: string) => {
-    const diff = touchStartX.current - touchCurrentX.current;
-    // RTL: swipe left reveals actions (positive diff in LTR = swipe left)
-    if (Math.abs(diff) > 60) {
-      setSwipedChildId(diff > 0 ? childId : null);
+  const handleTouchMove = (e: React.TouchEvent, childId: string, cardEl: HTMLDivElement | null) => {
+    if (!cardEl || swipeRef.current.childId !== childId) return;
+    const diffX = e.touches[0].clientX - swipeRef.current.startX;
+    const diffY = Math.abs(e.touches[0].clientY - swipeRef.current.startY);
+    
+    // If vertical scroll is dominant, ignore
+    if (diffY > Math.abs(diffX) && !swipeRef.current.swiping) return;
+    
+    if (Math.abs(diffX) > 10) swipeRef.current.swiping = true;
+    
+    if (swipeRef.current.swiping) {
+      e.preventDefault();
+      // RTL: positive diffX = swipe right = close, negative = swipe left = open
+      const clampedX = Math.max(-112, Math.min(0, diffX));
+      cardEl.style.transform = `translateX(${clampedX}px)`;
     }
+  };
+
+  const handleTouchEnd = (childId: string, cardEl: HTMLDivElement | null) => {
+    if (!cardEl || swipeRef.current.childId !== childId) return;
+    const wasSwiping = swipeRef.current.swiping;
+    
+    if (wasSwiping) {
+      const currentTransform = cardEl.style.transform;
+      const match = currentTransform.match(/translateX\((-?\d+)px\)/);
+      const currentX = match ? parseInt(match[1]) : 0;
+      
+      cardEl.style.transition = "transform 200ms ease-out";
+      if (currentX < -50) {
+        cardEl.style.transform = "translateX(-112px)";
+        setSwipedChildId(childId);
+      } else {
+        cardEl.style.transform = "translateX(0px)";
+        setSwipedChildId(null);
+      }
+      setTimeout(() => { if (cardEl) cardEl.style.transition = ""; }, 200);
+    }
+    swipeRef.current.swiping = false;
+  };
+
+  const handleCardClick = (child: Child) => {
+    if (swipeRef.current.swiping) return;
+    if (swipedChildId === child.id) {
+      setSwipedChildId(null);
+      return;
+    }
+    if (swipedChildId) {
+      setSwipedChildId(null);
+      return;
+    }
+    setSelectedChild(child);
   };
 
   const totalVaccines = getTotalVaccines();
@@ -240,14 +281,20 @@ const Vaccinations = () => {
                 </div>
 
                 {/* Card */}
-                <button
-                  onClick={() => { if (!isSwiped) setSelectedChild(child); else setSwipedChildId(null); }}
+                <div
+                  ref={(el) => { if (el) el.dataset.childId = child.id; }}
+                  onClick={() => handleCardClick(child)}
                   onTouchStart={(e) => handleTouchStart(e, child.id)}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={() => handleTouchEnd(child.id)}
-                  className={`w-full bg-card rounded-2xl p-4 border border-border/50 text-right active:scale-[0.98] transition-transform relative z-10 ${
-                    isSwiped ? "-translate-x-28" : "translate-x-0"
-                  } transition-transform duration-200`}
+                  onTouchMove={(e) => {
+                    const card = e.currentTarget as HTMLDivElement;
+                    handleTouchMove(e, child.id, card);
+                  }}
+                  onTouchEnd={(e) => {
+                    const card = e.currentTarget as HTMLDivElement;
+                    handleTouchEnd(child.id, card);
+                  }}
+                  className="w-full bg-card rounded-2xl p-4 border border-border/50 text-right relative z-10 cursor-pointer"
+                  style={{ transform: isSwiped ? "translateX(-112px)" : "translateX(0)" }}
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div
@@ -281,7 +328,7 @@ const Vaccinations = () => {
                     </div>
                     <Progress value={progress} className="h-2" />
                   </div>
-                </button>
+                </div>
               </div>
             );
           })
