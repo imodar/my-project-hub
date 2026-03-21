@@ -1,4 +1,5 @@
 import HeroSection from "@/components/home/HeroSection";
+import IslamicQuickActions from "@/components/home/IslamicQuickActions";
 import FeatureGrid from "@/components/home/FeatureGrid";
 import UpcomingEvents from "@/components/home/UpcomingEvents";
 import DailyTasks from "@/components/home/DailyTasks";
@@ -14,6 +15,7 @@ const Index = () => {
     <div className="min-h-screen bg-background max-w-2xl mx-auto relative">
       <PullToRefresh onRefresh={handleRefresh}>
         <HeroSection />
+        <IslamicQuickActions />
         <FeatureGrid />
         <UpcomingEvents />
         <DailyTasks />
