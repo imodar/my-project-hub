@@ -48,7 +48,7 @@ const SWIPE_WIDTH = 140;
 const initialLists: TaskList[] = [
   {
     id: "1",
-    name: "مهام المنزل",
+    name: "مهام عائلية",
     type: "family",
     isDefault: true,
     lastUpdatedBy: "أم فهد",
