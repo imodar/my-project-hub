@@ -669,7 +669,24 @@ const FamilyManagement = () => {
                   <span className="text-sm font-bold text-foreground">ابنة</span>
                 </button>
               </div>
-            </div>
+
+              {/* Staff roles */}
+              <p className="text-xs font-semibold text-muted-foreground px-1 mt-3">طاقم المنزل</p>
+              <div className="flex gap-2">
+                {(["worker", "maid", "driver"] as FamilyRole[]).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => { setSelectedType(r); setAddStep("enter-name"); }}
+                    className="flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl transition-colors active:bg-primary/10"
+                    style={{ background: "hsl(30, 50%, 95%)", border: "2px solid hsl(30, 40%, 85%)" }}
+                  >
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(30, 50%, 90%)" }}>
+                      <RoleIcon role={r} size={20} className="text-amber-700" />
+                    </div>
+                    <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
+                  </button>
+                ))}
+              </div>
           )}
 
           {addStep === "enter-name" && (
