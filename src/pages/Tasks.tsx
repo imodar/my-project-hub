@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,8 +76,14 @@ const initialLists: TaskList[] = [
 
 const Tasks = () => {
   const navigate = useNavigate();
-  const [lists, setLists] = useState<TaskList[]>(initialLists);
-  const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
+  const { featureAccess } = useUserRole();
+  const [lists, setLists] = useState<TaskList[]>(() =>
+    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
+  );
+  const [activeListId, setActiveListId] = useState(() => {
+    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
+    return filtered[0]?.id || "";
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
@@ -106,7 +113,7 @@ const Tasks = () => {
 
   // New list form
   const [newListName, setNewListName] = useState("");
-  const [newListType, setNewListType] = useState<"family" | "personal">("family");
+  const [newListType, setNewListType] = useState<"family" | "personal">(featureAccess.isStaff ? "personal" : "family");
   const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
 
   // Share form
@@ -757,6 +764,7 @@ const Tasks = () => {
             </DrawerHeader>
             <div className="space-y-3 px-4">
               <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
+              {!featureAccess.isStaff && (
               <div>
                 <p className="text-xs text-muted-foreground mb-2">نوع القائمة</p>
                 <div className="flex gap-2">
@@ -778,6 +786,7 @@ const Tasks = () => {
                   </button>
                 </div>
               </div>
+              )}
               {newListType === "family" && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">مشاركة مع</p>
