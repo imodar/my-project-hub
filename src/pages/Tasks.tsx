@@ -364,7 +364,7 @@ const Tasks = () => {
 
   const getListIcon = (type: TaskList["type"]) => {
     switch (type) {
-      case "family": return <Users size={14} className="text-primary" />;
+      case "family": return <Users size={14} className="text-accent" />;
       case "personal": return <Lock size={14} className="text-accent" />;
       case "shared": return <Share2 size={14} className="text-blue-500" />;
     }
