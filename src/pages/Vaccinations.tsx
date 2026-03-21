@@ -302,8 +302,8 @@ const Vaccinations = () => {
             <div className="space-y-2">
               <Label className="text-right block">الجنس</Label>
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setNewGender("male")} className={`p-3 rounded-xl border-2 text-center font-medium transition-colors ${newGender === "male" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600" : "border-border text-muted-foreground"}`}>👦 ذكر</button>
-                <button onClick={() => setNewGender("female")} className={`p-3 rounded-xl border-2 text-center font-medium transition-colors ${newGender === "female" ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600" : "border-border text-muted-foreground"}`}>👧 أنثى</button>
+                <button onClick={() => setNewGender("male")} className={`p-3 rounded-xl border-2 flex items-center justify-center gap-2 font-medium transition-colors ${newGender === "male" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600" : "border-border text-muted-foreground"}`}><PersonStanding className="w-5 h-5" /> ذكر</button>
+                <button onClick={() => setNewGender("female")} className={`p-3 rounded-xl border-2 flex items-center justify-center gap-2 font-medium transition-colors ${newGender === "female" ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600" : "border-border text-muted-foreground"}`}><Baby className="w-5 h-5" /> أنثى</button>
               </div>
             </div>
             <div className="space-y-2">
