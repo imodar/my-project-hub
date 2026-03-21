@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import ProfileSheet from "./ProfileSheet";
 import { motion, AnimatePresence } from "framer-motion";
+import NextPrayerBox from "./NextPrayerBox";
 
 interface WeatherData {
   temp: number;
