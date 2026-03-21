@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Image, Camera, ChevronLeft, X, Plane, Calendar,
-  Heart, Trash2, FolderPlus, ImagePlus
+  Heart, Trash2, FolderPlus, ImagePlus, AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
+import { useUserRole } from "@/contexts/UserRoleContext";
 
 interface Photo {
   id: string;
@@ -138,10 +139,15 @@ const PhotoThumb = ({ photo, size = "md", onClick }: { photo: Photo; size?: "sm"
 
 const Albums = () => {
   const navigate = useNavigate();
+  const { featureAccess } = useUserRole();
   const [albums, setAlbums] = useState<Album[]>(INITIAL_ALBUMS);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+
+  // Delete confirmation states
+  const [confirmDeleteAlbum, setConfirmDeleteAlbum] = useState<string | null>(null);
+  const [confirmDeletePhoto, setConfirmDeletePhoto] = useState<string | null>(null);
 
   // Create album form
   const [newName, setNewName] = useState("");
@@ -233,7 +239,7 @@ const Albums = () => {
             {format(new Date(selectedPhoto.date), "d MMMM yyyy", { locale: ar })}
           </span>
           <button
-            onClick={() => handleDeletePhoto(selectedPhoto.id)}
+            onClick={() => setConfirmDeletePhoto(selectedPhoto.id)}
             className="text-red-400 active:scale-95"
           >
             <Trash2 size={20} />
@@ -274,7 +280,7 @@ const Albums = () => {
           actions={[
             {
               icon: <Trash2 size={18} className="text-white" />,
-              onClick: () => handleDeleteAlbum(selectedAlbum.id),
+              onClick: () => setConfirmDeleteAlbum(selectedAlbum.id),
             },
           ]}
         />
@@ -345,9 +351,13 @@ const Albums = () => {
         <PageHeader title="الألبومات" subtitle="صور العائلة وذكرياتها" onBack={() => navigate(-1)} />
 
         <div className="px-5 mt-6">
-          {/* Albums grid — masonry-like, filtered to hide personal trip albums */}
+          {/* Albums grid — masonry-like, filtered for staff/personal trip albums */}
           {(() => {
-            const visibleAlbums = albums.filter((a) => !isPersonalTripAlbum(a, trips));
+            let visibleAlbums = albums.filter((a) => !isPersonalTripAlbum(a, trips));
+            // Staff only see personal (non-linked) albums
+            if (featureAccess.isStaff) {
+              visibleAlbums = visibleAlbums.filter((a) => !a.linkedTripId);
+            }
             return visibleAlbums.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 px-8">
               <div
@@ -547,6 +557,70 @@ const Albums = () => {
             <Button onClick={handleCreateAlbum} className="w-full h-12 rounded-xl font-bold text-base">
               إنشاء الألبوم
             </Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Confirm Delete Album */}
+      <Drawer open={!!confirmDeleteAlbum} onOpenChange={(v) => { if (!v) setConfirmDeleteAlbum(null); }}>
+        <DrawerContent>
+          <div className="px-5 pb-8 pt-4 text-center space-y-4" dir="rtl">
+            <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
+              <AlertTriangle size={28} className="text-destructive" />
+            </div>
+            <h3 className="text-lg font-extrabold text-foreground">حذف الألبوم</h3>
+            <p className="text-sm text-muted-foreground">هل أنت متأكد من حذف هذا الألبوم؟ سيتم حذف جميع الصور بداخله.</p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-xl font-bold"
+                onClick={() => setConfirmDeleteAlbum(null)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 h-12 rounded-xl font-bold"
+                onClick={() => {
+                  if (confirmDeleteAlbum) handleDeleteAlbum(confirmDeleteAlbum);
+                  setConfirmDeleteAlbum(null);
+                }}
+              >
+                حذف
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Confirm Delete Photo */}
+      <Drawer open={!!confirmDeletePhoto} onOpenChange={(v) => { if (!v) setConfirmDeletePhoto(null); }}>
+        <DrawerContent>
+          <div className="px-5 pb-8 pt-4 text-center space-y-4" dir="rtl">
+            <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
+              <AlertTriangle size={28} className="text-destructive" />
+            </div>
+            <h3 className="text-lg font-extrabold text-foreground">حذف الصورة</h3>
+            <p className="text-sm text-muted-foreground">هل أنت متأكد من حذف هذه الصورة؟</p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-xl font-bold"
+                onClick={() => setConfirmDeletePhoto(null)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 h-12 rounded-xl font-bold"
+                onClick={() => {
+                  if (confirmDeletePhoto) handleDeletePhoto(confirmDeletePhoto);
+                  setConfirmDeletePhoto(null);
+                }}
+              >
+                حذف
+              </Button>
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
