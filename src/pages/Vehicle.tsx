@@ -301,9 +301,20 @@ const Vehicle = () => {
     setMaintNotes(""); setOilWithFilter(false); setEditMaintenanceRecord(null);
   };
 
+  const maxYear = new Date().getFullYear() + 1;
+
   const handleAddCar = () => {
     if (!newManufacturer || !newModel || !newYear) {
       toast.error("يرجى تعبئة الحقول المطلوبة");
+      return;
+    }
+    const yearNum = Number(newYear);
+    if (yearNum < 1900 || yearNum > maxYear) {
+      toast.error(`السنة يجب أن تكون بين 1900 و ${maxYear}`);
+      return;
+    }
+    if (newMileage && Number(newMileage) < 0) {
+      toast.error("الممشى يجب أن يكون أكبر من 0");
       return;
     }
     const car: CarData = {
