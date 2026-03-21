@@ -13,11 +13,17 @@ import { haptic } from "@/lib/haptics";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { loadBudgets as loadBudgetsFromStorage, saveBudgets as saveBudgetsToStorage, syncBudgetToTrip, loadTrips } from "@/lib/tripBudgetSync";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 interface ExpenseItem {
   id: string;
   name: string;
   amount: number;
+  date?: string;
 }
 
 type BudgetType = "month" | "project" | "trip";
