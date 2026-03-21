@@ -626,6 +626,33 @@ const Budget = () => {
                 className="text-right"
                 inputMode="decimal"
               />
+              {/* Date picker (optional) */}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">التاريخ (اختياري)</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !editExpenseDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                      {editExpenseDate ? format(editExpenseDate, "d MMMM yyyy", { locale: ar }) : <span>اختر تاريخ</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={editExpenseDate}
+                      onSelect={setEditExpenseDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <DrawerFooter>
               <Button onClick={handleEditExpense} disabled={!editExpenseName.trim() || !editExpenseAmount}>
