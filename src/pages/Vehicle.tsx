@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search, Users, UserPlus } from "lucide-react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
@@ -589,13 +590,16 @@ const Vehicle = () => {
         </div>
 
         {/* FAB */}
-        <button
-          onClick={() => { resetMaintForm(); setAddMaintenanceOpen(true); }}
-          className="fixed bottom-24 left-5 z-40 w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center"
-          style={{ background: "hsl(var(--primary))" }}
-        >
-          <Plus size={24} className="text-primary-foreground" />
-        </button>
+        {createPortal(
+          <button
+            onClick={() => { resetMaintForm(); setAddMaintenanceOpen(true); }}
+            className="fixed bottom-24 left-5 z-40 w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center"
+            style={{ background: "hsl(var(--primary))" }}
+          >
+            <Plus size={24} className="text-primary-foreground" />
+          </button>,
+          document.body
+        )}
 
         {/* Add/Edit Maintenance Drawer */}
         <Drawer open={addMaintenanceOpen} onOpenChange={setAddMaintenanceOpen}>
@@ -751,13 +755,16 @@ const Vehicle = () => {
         </div>
 
         {/* FAB */}
-        <button
-          onClick={() => { resetAddForm(); setAddCarOpen(true); }}
-          className="fixed bottom-24 left-5 z-40 w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center"
-          style={{ background: "hsl(var(--primary))" }}
-        >
-          <Plus size={24} className="text-primary-foreground" />
-        </button>
+        {createPortal(
+          <button
+            onClick={() => { resetAddForm(); setAddCarOpen(true); }}
+            className="fixed bottom-24 left-5 z-40 w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center"
+            style={{ background: "hsl(var(--primary))" }}
+          >
+            <Plus size={24} className="text-primary-foreground" />
+          </button>,
+          document.body
+        )}
 
         {/* Add Car Drawer */}
         <Drawer open={addCarOpen} onOpenChange={(open) => { setAddCarOpen(open); if (!open) setManufacturerSearch(""); }}>
