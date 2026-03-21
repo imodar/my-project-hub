@@ -3,6 +3,7 @@ import { useState, useCallback, useRef } from "react";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
+import { useUserRole } from "@/contexts/UserRoleContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -209,6 +210,7 @@ const saveBudgets = (b: MonthBudget[]) => localStorage.setItem(STORAGE_KEY, JSON
 
 const Budget = () => {
   const navigate = useNavigate();
+  const { featureAccess } = useUserRole();
   const [budgets, setBudgets] = useState<MonthBudget[]>(loadBudgets);
   const [selectedBudget, setSelectedBudget] = useState<MonthBudget | null>(null);
   const [showAddMonth, setShowAddMonth] = useState(false);
@@ -756,6 +758,7 @@ const Budget = () => {
             </div>
 
             {/* Sharing */}
+            {!featureAccess.isStaff && (
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-2 block">
                 <Users size={12} className="inline ml-1" />
@@ -786,6 +789,7 @@ const Budget = () => {
                 <p className="text-[10px] text-muted-foreground/60 mt-2">🔒 ستبقى خاصة بك فقط</p>
               )}
             </div>
+            )}
           </div>
           <DrawerFooter>
             <Button
@@ -828,6 +832,7 @@ const Budget = () => {
                 inputMode="decimal"
               />
             </div>
+            {!featureAccess.isStaff && (
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-2 block">
                 <Users size={12} className="inline ml-1" />
@@ -855,6 +860,7 @@ const Budget = () => {
                 ))}
               </div>
             </div>
+            )}
           </div>
           <DrawerFooter>
             <Button onClick={handleEditBudgetSave} disabled={!newIncome}>
