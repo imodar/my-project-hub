@@ -30,14 +30,14 @@ type WeatherTheme = {
   particles?: React.ReactNode;
 };
 
-const DEMO_STATES: { code: number; hour: number; label: string }[] = [
-  { code: 0, hour: 10, label: "☀️ صافي - نهار" },
-  { code: 0, hour: 22, label: "🌙 صافي - ليل" },
-  { code: 2, hour: 14, label: "⛅ غائم جزئياً" },
-  { code: 3, hour: 15, label: "☁️ غائم" },
-  { code: 45, hour: 12, label: "🌫️ ضبابي" },
-  { code: 61, hour: 16, label: "🌧️ ممطر" },
-  { code: 71, hour: 11, label: "❄️ ثلوج" },
+const DEMO_STATES: { code: number; hour: number; label: string; temp: number; description: string; icon: string; city: string }[] = [
+  { code: 0, hour: 10, label: "☀️ صافي - نهار", temp: 34, description: "صافي", icon: "clear", city: "الرياض" },
+  { code: 0, hour: 22, label: "🌙 صافي - ليل", temp: 22, description: "صافي", icon: "clear", city: "الرياض" },
+  { code: 2, hour: 14, label: "⛅ غائم جزئياً", temp: 28, description: "غائم جزئياً", icon: "cloudsun", city: "جدة" },
+  { code: 3, hour: 15, label: "☁️ غائم", temp: 24, description: "غائم", icon: "cloud", city: "أبها" },
+  { code: 45, hour: 12, label: "🌫️ ضبابي", temp: 19, description: "ضبابي", icon: "fog", city: "الطائف" },
+  { code: 61, hour: 16, label: "🌧️ ممطر", temp: 16, description: "ممطر", icon: "rain", city: "تبوك" },
+  { code: 71, hour: 11, label: "❄️ ثلوج", temp: -2, description: "ثلوج", icon: "snow", city: "طريف" },
 ];
 
 const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme => {
