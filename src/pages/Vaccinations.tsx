@@ -281,14 +281,20 @@ const Vaccinations = () => {
                 </div>
 
                 {/* Card */}
-                <button
-                  onClick={() => { if (!isSwiped) setSelectedChild(child); else setSwipedChildId(null); }}
+                <div
+                  ref={(el) => { if (el) el.dataset.childId = child.id; }}
+                  onClick={() => handleCardClick(child)}
                   onTouchStart={(e) => handleTouchStart(e, child.id)}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={() => handleTouchEnd(child.id)}
-                  className={`w-full bg-card rounded-2xl p-4 border border-border/50 text-right active:scale-[0.98] transition-transform relative z-10 ${
-                    isSwiped ? "-translate-x-28" : "translate-x-0"
-                  } transition-transform duration-200`}
+                  onTouchMove={(e) => {
+                    const card = e.currentTarget as HTMLDivElement;
+                    handleTouchMove(e, child.id, card);
+                  }}
+                  onTouchEnd={(e) => {
+                    const card = e.currentTarget as HTMLDivElement;
+                    handleTouchEnd(child.id, card);
+                  }}
+                  className="w-full bg-card rounded-2xl p-4 border border-border/50 text-right relative z-10 cursor-pointer"
+                  style={{ transform: isSwiped ? "translateX(-112px)" : "translateX(0)" }}
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div
@@ -322,7 +328,7 @@ const Vaccinations = () => {
                     </div>
                     <Progress value={progress} className="h-2" />
                   </div>
-                </button>
+                </div>
               </div>
             );
           })
