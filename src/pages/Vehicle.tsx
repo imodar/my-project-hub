@@ -248,6 +248,8 @@ const Vehicle = () => {
   const [addCarOpen, setAddCarOpen] = useState(false);
   const [addMaintenanceOpen, setAddMaintenanceOpen] = useState(false);
   const [editMaintenanceRecord, setEditMaintenanceRecord] = useState<MaintenanceRecord | null>(null);
+  const [shareDrawerOpen, setShareDrawerOpen] = useState(false);
+  const [shareWith, setShareWith] = useState<string[]>([]);
   const [manufacturerSearch, setManufacturerSearch] = useState("");
 
   // Family members for sharing
