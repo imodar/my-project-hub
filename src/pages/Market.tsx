@@ -124,7 +124,7 @@ const Market = () => {
 
   // New list form
   const [newListName, setNewListName] = useState("");
-  const [newListType, setNewListType] = useState<"family" | "personal">("family");
+  const [newListType, setNewListType] = useState<"family" | "personal">(featureAccess.isStaff ? "personal" : "family");
   const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
   const [newListUseCategories, setNewListUseCategories] = useState(false);
 
