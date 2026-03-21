@@ -66,6 +66,7 @@ const AnimatedRoutes = () => {
         <Route path="/kids-worship" element={<KidsWorship />} />
         <Route path="/parent-dashboard" element={<ParentDashboard />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/athkar" element={<Athkar />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>

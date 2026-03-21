@@ -4,7 +4,7 @@ import { useIslamicMode } from "@/contexts/IslamicModeContext";
 
 const islamicActions = [
   { icon: BookOpen, label: "القرآن", color: "hsl(145, 40%, 45%)", path: "/" },
-  { icon: Heart, label: "الأذكار", color: "hsl(200, 50%, 55%)", path: "/" },
+  { icon: Heart, label: "الأذكار", color: "hsl(200, 50%, 55%)", path: "/athkar" },
   { icon: Hand, label: "المسبحة", color: "hsl(43, 55%, 54%)", path: "/tasbih" },
 ];
 
