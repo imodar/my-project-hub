@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Image, Camera, ChevronLeft, X, Plane, Calendar,
-  Heart, Trash2, FolderPlus, ImagePlus
+  Heart, Trash2, FolderPlus, ImagePlus, AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
+import { useUserRole } from "@/contexts/UserRoleContext";
 
 interface Photo {
   id: string;
