@@ -335,7 +335,7 @@ const Vaccinations = () => {
             </div>
             <div className="space-y-2">
               <Label className="text-right block">تاريخ الميلاد</Label>
-              <Input type="date" value={newBirthDate} onChange={(e) => setNewBirthDate(e.target.value)} max={new Date().toISOString().split("T")[0]} className="text-right" />
+              <Input type="date" value={newBirthDate} onChange={(e) => setNewBirthDate(e.target.value)} max={new Date().toISOString().split("T")[0]} dir="rtl" className="text-right" />
             </div>
             <Button onClick={handleEditChild} className="w-full h-12 text-base font-bold">حفظ التعديلات</Button>
           </div>
