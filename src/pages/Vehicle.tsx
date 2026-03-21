@@ -453,6 +453,8 @@ const Vehicle = () => {
   // ─── Car Detail View ───
   if (selectedCar) {
     const carInfo = CAR_MANUFACTURERS[selectedCar.manufacturer] || CAR_MANUFACTURERS.other;
+    const lastMaintenance = selectedCar.maintenance.length > 0 ? selectedCar.maintenance[0] : null;
+    const lastMileage = lastMaintenance ? lastMaintenance.mileageAtService : selectedCar.mileage;
     return (
       <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
         <PageHeader
@@ -464,46 +466,29 @@ const Vehicle = () => {
               onClick: () => handleShareCar(selectedCar),
             },
           ]}
-        />
-
-        {/* Car Card */}
-        <div className="px-4 pt-5">
-          <div className="rounded-3xl p-5 text-center" style={{
-            background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))"
-          }}>
-            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <CarLogo manufacturer={selectedCar.manufacturer} size={48} />
+        >
+          <div className="flex items-center gap-3 mt-3 pb-1">
+            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
+              <CarLogo manufacturer={selectedCar.manufacturer} size={36} />
             </div>
-            <h2 className="text-xl font-bold text-white mb-1">
-              {carInfo.name} {selectedCar.model}
-            </h2>
-            <p className="text-white/70 text-sm mb-4">{selectedCar.year}</p>
-
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-center">
-                <div className="flex items-center gap-1 text-white/60 text-xs mb-1">
-                  <Gauge size={14} />
-                  <span>الممشى</span>
-                </div>
-                <p className="text-white font-bold text-lg">
-                  {selectedCar.mileage.toLocaleString()}
-                  <span className="text-xs text-white/60 mr-1">
-                    {selectedCar.mileageUnit === "km" ? "كم" : "ميل"}
-                  </span>
-                </p>
+            <div className="flex-1 min-w-0 flex flex-wrap gap-x-4 gap-y-1 items-center text-white/80 text-xs">
+              <div className="flex items-center gap-1">
+                <Calendar size={12} />
+                <span>{selectedCar.year}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Gauge size={12} />
+                <span>{lastMileage.toLocaleString()} {selectedCar.mileageUnit === "km" ? "كم" : "ميل"}</span>
               </div>
               {selectedCar.plateNumber && (
-                <div className="text-center">
-                  <div className="flex items-center gap-1 text-white/60 text-xs mb-1">
-                    <Car size={14} />
-                    <span>اللوحة</span>
-                  </div>
-                  <p className="text-white font-bold">{selectedCar.plateNumber}</p>
+                <div className="flex items-center gap-1">
+                  <Car size={12} />
+                  <span>{selectedCar.plateNumber}</span>
                 </div>
               )}
             </div>
           </div>
-        </div>
+        </PageHeader>
 
         {/* Shared With */}
         {selectedCar.sharedWith.length > 0 && (
@@ -534,10 +519,10 @@ const Vehicle = () => {
         )}
 
         {/* Maintenance List */}
-        <div className="px-4 mt-6">
+        <div className="px-4 mt-6" dir="rtl">
           <div className="flex items-center justify-between mb-4">
-            <div />
             <h3 className="text-base font-bold text-foreground">سجل الصيانة</h3>
+            <div />
           </div>
 
           {selectedCar.maintenance.length === 0 ? (
@@ -560,19 +545,19 @@ const Vehicle = () => {
                     onEdit={() => handleEditMaintenance(record)}
                     onReminder={() => handleSetReminder(record)}
                   >
-                    <div className="bg-card rounded-2xl p-4 border border-border">
+                    <div className="bg-card rounded-2xl p-4 border border-border" dir="rtl">
                       <div className="flex items-start gap-3">
                         <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                           style={{ background: typeInfo?.color + "20" }}>
                           <Icon size={20} style={{ color: typeInfo?.color }} />
                         </div>
-                        <div className="flex-1 min-w-0 text-right">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-sm text-foreground">{record.label}</h4>
                             <Badge variant="outline" className="text-[10px] px-2 py-0.5 rounded-full border-0"
                               style={{ background: status.bgColor, color: status.color }}>
                               {status.label}
                             </Badge>
-                            <h4 className="font-bold text-sm text-foreground">{record.label}</h4>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
                             {new Date(record.date).toLocaleDateString("ar-SA")} • {record.mileageAtService.toLocaleString()} {selectedCar.mileageUnit === "km" ? "كم" : "ميل"}
