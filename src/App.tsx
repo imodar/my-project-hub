@@ -73,20 +73,22 @@ const AnimatedRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <IslamicModeProvider>
-      <TrashProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <OfflineBanner />
-            <ScrollToTop />
-            <AnimatedRoutes />
-            <BottomNav />
-          </BrowserRouter>
-        </TooltipProvider>
-      </TrashProvider>
-    </IslamicModeProvider>
+    <UserRoleProvider>
+      <IslamicModeProvider>
+        <TrashProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <OfflineBanner />
+              <ScrollToTop />
+              <AnimatedRoutes />
+              <BottomNav />
+            </BrowserRouter>
+          </TooltipProvider>
+        </TrashProvider>
+      </IslamicModeProvider>
+    </UserRoleProvider>
   </QueryClientProvider>
 );
 
