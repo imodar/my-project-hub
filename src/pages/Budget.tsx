@@ -173,8 +173,8 @@ const BudgetCard = ({ b, onSelect, remaining, spentPercent }: {
       className="w-full rounded-2xl bg-card border border-border p-4 text-right active:scale-[0.98] transition-transform"
     >
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: b.type === "project" ? "hsl(var(--accent) / 0.15)" : "hsl(var(--primary) / 0.12)" }}>
-          {b.type === "project" ? <FolderOpen size={20} className="text-accent-foreground" /> : <CalendarDays size={20} className="text-primary" />}
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: b.type === "trip" ? "hsl(215 70% 50% / 0.15)" : b.type === "project" ? "hsl(var(--accent) / 0.15)" : "hsl(var(--primary) / 0.12)" }}>
+          {b.type === "trip" ? <Plane size={20} style={{ color: "hsl(215 70% 50%)" }} /> : b.type === "project" ? <FolderOpen size={20} className="text-accent-foreground" /> : <CalendarDays size={20} className="text-primary" />}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-foreground">{getBudgetTitle(b)}</p>
