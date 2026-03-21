@@ -420,14 +420,23 @@ const Vehicle = () => {
   };
 
   const handleShareCar = (car: CarData) => {
-    if (navigator.share) {
-      navigator.share({
-        title: `${CAR_MANUFACTURERS[car.manufacturer]?.name || car.manufacturer} ${car.model}`,
-        text: `مركبة ${CAR_MANUFACTURERS[car.manufacturer]?.name} ${car.model} - ${car.year}\nالممشى: ${car.mileage.toLocaleString()} ${car.mileageUnit === "km" ? "كم" : "ميل"}`,
-      });
-    } else {
-      toast.info("المشاركة غير متاحة على هذا الجهاز");
-    }
+    setShareWith([...car.sharedWith]);
+    setShareDrawerOpen(true);
+  };
+
+  const handleSaveShare = () => {
+    if (!selectedCar) return;
+    const updatedCar = { ...selectedCar, sharedWith: shareWith };
+    setCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
+    setSelectedCar(updatedCar);
+    setShareDrawerOpen(false);
+    toast.success("تم تحديث المشاركة");
+  };
+
+  const toggleShareMember = (memberId: string) => {
+    setShareWith(prev =>
+      prev.includes(memberId) ? prev.filter(id => id !== memberId) : [...prev, memberId]
+    );
   };
 
   const getMaintenanceStatus = (record: MaintenanceRecord, car: CarData) => {
