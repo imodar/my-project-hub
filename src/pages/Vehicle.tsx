@@ -240,7 +240,7 @@ const SwipeableRow = ({ children, onDelete, onEdit, onReminder }: {
 };
 
 // ─── Main Component ───
-const Cars = () => {
+const Vehicle = () => {
   const navigate = useNavigate();
   const [cars, setCars] = useState<CarData[]>(loadCars);
   const [selectedCar, setSelectedCar] = useState<CarData | null>(null);
@@ -321,13 +321,13 @@ const Cars = () => {
     setCars(prev => [car, ...prev]);
     setAddCarOpen(false);
     resetAddForm();
-    toast.success("تمت إضافة السيارة بنجاح");
+    toast.success("تمت إضافة المركبة بنجاح");
   };
 
   const handleDeleteCar = (carId: string) => {
     setCars(prev => prev.filter(c => c.id !== carId));
     if (selectedCar?.id === carId) setSelectedCar(null);
-    toast.success("تم حذف السيارة");
+    toast.success("تم حذف المركبة");
   };
 
   const handleAddMaintenance = () => {
@@ -409,7 +409,7 @@ const Cars = () => {
     if (navigator.share) {
       navigator.share({
         title: `${CAR_MANUFACTURERS[car.manufacturer]?.name || car.manufacturer} ${car.model}`,
-        text: `سيارة ${CAR_MANUFACTURERS[car.manufacturer]?.name} ${car.model} - ${car.year}\nالممشى: ${car.mileage.toLocaleString()} ${car.mileageUnit === "km" ? "كم" : "ميل"}`,
+        text: `مركبة ${CAR_MANUFACTURERS[car.manufacturer]?.name} ${car.model} - ${car.year}\nالممشى: ${car.mileage.toLocaleString()} ${car.mileageUnit === "km" ? "كم" : "ميل"}`,
       });
     } else {
       toast.info("المشاركة غير متاحة على هذا الجهاز");
@@ -675,7 +675,7 @@ const Cars = () => {
   // ─── Cars List View ───
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
-      <PageHeader title="سياراتي" subtitle={cars.length > 0 ? `${cars.length} سيارة` : undefined} />
+      <PageHeader title="مركباتي" subtitle={cars.length > 0 ? `${cars.length} مركبة` : undefined} />
       <PullToRefresh onRefresh={handleRefresh}>
 
         {/* Cars */}
@@ -685,8 +685,8 @@ const Cars = () => {
               <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                 <Car size={36} className="text-muted-foreground/40" />
               </div>
-              <h3 className="text-foreground font-bold mb-1">لا توجد سيارات</h3>
-              <p className="text-muted-foreground text-sm">أضف سيارتك الأولى لتتبع صيانتها</p>
+              <h3 className="text-foreground font-bold mb-1">لا توجد مركبات</h3>
+              <p className="text-muted-foreground text-sm">أضف مركبتك الأولى لتتبع صيانتها</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -763,7 +763,7 @@ const Cars = () => {
         <Drawer open={addCarOpen} onOpenChange={(open) => { setAddCarOpen(open); if (!open) setManufacturerSearch(""); }}>
           <DrawerContent>
             <DrawerHeader>
-              <DrawerTitle>إضافة سيارة جديدة</DrawerTitle>
+              <DrawerTitle>إضافة مركبة جديدة</DrawerTitle>
             </DrawerHeader>
             <div className="px-4 pb-4 space-y-4 max-h-[60vh] overflow-y-auto">
               {/* Manufacturer with search */}
@@ -892,7 +892,7 @@ const Cars = () => {
             <DrawerFooter>
               <Button onClick={handleAddCar} disabled={!newManufacturer || !newModel || !newYear}
                 className="w-full rounded-xl h-12">
-                إضافة السيارة
+                إضافة المركبة
               </Button>
               <DrawerClose asChild>
                 <Button variant="outline" className="w-full rounded-xl">إلغاء</Button>
@@ -905,4 +905,4 @@ const Cars = () => {
   );
 };
 
-export default Cars;
+export default Vehicle;
