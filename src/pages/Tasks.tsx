@@ -314,7 +314,7 @@ const Tasks = () => {
               ...list,
               items: list.items.map((item) =>
                 item.id === editTarget.id
-                  ? { ...item, name: editName.trim(), note: editNote.trim(), priority: editPriority, assignedTo: editAssignedTo || item.assignedTo }
+                  ? { ...item, name: editName.trim(), note: editNote.trim(), priority: editPriority, assignedTo: editAssignedTo || item.assignedTo, repeat: editRepeatEnabled ? { enabled: true, days: editRepeatDays, count: editRepeatCount } : undefined }
                   : item
               ),
             }
@@ -322,7 +322,7 @@ const Tasks = () => {
       )
     );
     setEditTarget(null);
-  }, [activeListId, editTarget, editName, editNote, editPriority, editAssignedTo]);
+  }, [activeListId, editTarget, editName, editNote, editPriority, editAssignedTo, editRepeatEnabled, editRepeatDays, editRepeatCount]);
 
   const addItem = useCallback(() => {
     if (!newItemName.trim()) return;
