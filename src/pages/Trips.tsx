@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   Plus, Plane, MapPin, Calendar, Clock, DollarSign, Users, ChevronLeft,
   Check, X, HelpCircle, GripVertical, List, Map as MapIcon,
-  PackageCheck, Calculator, Lightbulb, Trash2, Pencil, Star, Camera, Image
+  PackageCheck, Calculator, Lightbulb, Trash2, Pencil, Star, Camera, Image,
+  FileText, Upload, Ticket, Building2, CreditCard, File, Eye
 } from "lucide-react";
 import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -57,6 +58,25 @@ interface Expense {
   amount: number;
 }
 
+interface TripDocument {
+  id: string;
+  name: string;
+  type: "ticket" | "visa" | "hotel" | "insurance" | "passport" | "other";
+  fileUrl: string;
+  fileName: string;
+  addedAt: string;
+  notes?: string;
+}
+
+const DOC_TYPES: Record<TripDocument["type"], { label: string; icon: typeof FileText; color: string }> = {
+  ticket: { label: "تذكرة سفر", icon: Ticket, color: "hsl(215 70% 50%)" },
+  visa: { label: "تأشيرة / فيزا", icon: CreditCard, color: "hsl(145 45% 40%)" },
+  hotel: { label: "حجز فندقي", icon: Building2, color: "hsl(280 50% 55%)" },
+  insurance: { label: "تأمين سفر", icon: FileText, color: "hsl(40 80% 45%)" },
+  passport: { label: "جواز سفر", icon: FileText, color: "hsl(350 60% 50%)" },
+  other: { label: "مستند آخر", icon: File, color: "hsl(0 0% 45%)" },
+};
+
 interface Trip {
   id: string;
   name: string;
@@ -71,6 +91,7 @@ interface Trip {
   suggestions: Suggestion[];
   packingList: PackingItem[];
   expenses: Expense[];
+  documents: TripDocument[];
 }
 
 
@@ -124,6 +145,10 @@ const INITIAL_TRIPS: Trip[] = [
       { id: "p3", name: "أدوية الطوارئ", packed: false },
       { id: "p4", name: "ملابس شتوية خفيفة", packed: false },
     ],
+    documents: [
+      { id: "doc1", name: "تذاكر الطيران", type: "ticket", fileUrl: "", fileName: "tickets.pdf", addedAt: "2026-03-20" },
+      { id: "doc2", name: "حجز الفندق", type: "hotel", fileUrl: "", fileName: "hotel-booking.pdf", addedAt: "2026-03-18" },
+    ],
   },
   {
     id: "2",
@@ -142,6 +167,7 @@ const INITIAL_TRIPS: Trip[] = [
     days: [],
     suggestions: [],
     packingList: [],
+    documents: [],
   },
 ];
 
@@ -206,7 +232,7 @@ const Trips = () => {
   const [trips, setTrips] = useState<Trip[]>(INITIAL_TRIPS);
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
-  const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album">("itinerary");
+  const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album" | "documents">("itinerary");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   // Load family members
@@ -226,6 +252,15 @@ const Trips = () => {
   const [deleteDrawer, setDeleteDrawer] = useState(false);
   const [newDayDrawer, setNewDayDrawer] = useState(false);
   const [suggestionReviewDrawer, setSuggestionReviewDrawer] = useState(false);
+  const [newDocDrawer, setNewDocDrawer] = useState(false);
+  const [docViewDrawer, setDocViewDrawer] = useState(false);
+  const [viewingDoc, setViewingDoc] = useState<TripDocument | null>(null);
+
+  // Document form states
+  const [docName, setDocName] = useState("");
+  const [docType, setDocType] = useState<TripDocument["type"]>("ticket");
+  const [docNotes, setDocNotes] = useState("");
+  const [docFileInput, setDocFileInput] = useState<File | null>(null);
 
   // Form states
   const [tripName, setTripName] = useState("");
@@ -290,7 +325,7 @@ const Trips = () => {
         participants: tripParticipants,
         budget: Number(tripBudget) || 0, status: "planning",
         type: tripParticipants.length > 1 ? "family" : "personal",
-        days: [], suggestions: [], packingList: [], expenses: [],
+        days: [], suggestions: [], packingList: [], expenses: [], documents: [],
       };
       setTrips((prev) => [...prev, newTrip]);
       toast.success("تم إنشاء الرحلة");
@@ -402,7 +437,37 @@ const Trips = () => {
     toast.success("تم إضافة المصروف");
   };
 
-  const togglePackingItem = (itemId: string) => {
+  const handleAddDocument = () => {
+    if (!selectedTrip || !docName.trim()) return;
+    const fileUrl = docFileInput ? URL.createObjectURL(docFileInput) : "";
+    const newDoc: TripDocument = {
+      id: Date.now().toString(),
+      name: docName,
+      type: docType,
+      fileUrl,
+      fileName: docFileInput?.name || "مستند",
+      addedAt: new Date().toISOString().split("T")[0],
+      notes: docNotes || undefined,
+    };
+    const updated = { ...selectedTrip, documents: [...selectedTrip.documents, newDoc] };
+    setSelectedTrip(updated);
+    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    setDocName(""); setDocType("ticket"); setDocNotes(""); setDocFileInput(null);
+    setNewDocDrawer(false);
+    toast.success("تم إضافة المستند");
+  };
+
+  const handleDeleteDocument = (docId: string) => {
+    if (!selectedTrip) return;
+    const updated = { ...selectedTrip, documents: selectedTrip.documents.filter((d) => d.id !== docId) };
+    setSelectedTrip(updated);
+    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    setDocViewDrawer(false);
+    setViewingDoc(null);
+    toast.success("تم حذف المستند");
+  };
+
+
     if (!selectedTrip) return;
     const updatedList = selectedTrip.packingList.map((p) =>
       p.id === itemId ? { ...p, packed: !p.packed } : p
@@ -505,6 +570,7 @@ const Trips = () => {
               ...(selectedTrip.type === "family" || selectedTrip.participants.length > 1
                 ? [{ key: "suggestions", label: "المقترحات", icon: Lightbulb }]
                 : []),
+              { key: "documents", label: "المستندات", icon: FileText },
               { key: "packing", label: "التجهيزات", icon: PackageCheck },
               { key: "calculator", label: "التكاليف", icon: Calculator },
               ...((() => {
@@ -529,6 +595,7 @@ const Trips = () => {
                 suggestions: "hsl(40 90% 50%)",
                 packing: "hsl(145 45% 40%)",
                 calculator: "hsl(280 50% 55%)",
+                documents: "hsl(200 65% 50%)",
                 album: "hsl(350 65% 55%)",
               };
               return (
@@ -930,7 +997,193 @@ const Trips = () => {
           );
         })()}
 
-        {/* Add Day Drawer */}
+        {/* Documents */}
+        {tripView === "documents" && (
+          <div className="px-5 mt-5 space-y-3">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-bold text-foreground">المستندات والوثائق</h3>
+                {selectedTrip.documents.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {selectedTrip.documents.length} مستند
+                  </p>
+                )}
+              </div>
+              <button onClick={() => setNewDocDrawer(true)} className="p-1.5 rounded-lg bg-primary/10">
+                <Plus size={16} className="text-primary" />
+              </button>
+            </div>
+
+            {selectedTrip.documents.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText size={40} className="mx-auto mb-3 opacity-40" />
+                <p className="text-sm font-medium">لا مستندات بعد</p>
+                <p className="text-xs mt-1 text-muted-foreground/70">أضف تذاكر السفر، الفيزا، حجوزات الفنادق</p>
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => setNewDocDrawer(true)}>
+                  <Upload size={14} /> أضف مستند
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {selectedTrip.documents.map((doc) => {
+                  const docInfo = DOC_TYPES[doc.type];
+                  const DocIcon = docInfo.icon;
+                  return (
+                    <button
+                      key={doc.id}
+                      onClick={() => { setViewingDoc(doc); setDocViewDrawer(true); }}
+                      className="w-full text-right bg-card rounded-2xl border border-border/50 p-4 shadow-sm active:scale-[0.98] transition-transform"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                          style={{ background: docInfo.color.replace(")", " / 0.12)"), color: docInfo.color }}
+                        >
+                          <DocIcon size={20} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-foreground truncate">{doc.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: docInfo.color.replace(")", " / 0.1)"), color: docInfo.color }}
+                            >
+                              {docInfo.label}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">{doc.addedAt}</span>
+                          </div>
+                        </div>
+                        <Eye size={16} className="text-muted-foreground shrink-0" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Documents FAB */}
+        {tripView === "documents" && createPortal(
+          <button
+            onClick={() => setNewDocDrawer(true)}
+            className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Plus size={24} />
+          </button>,
+          document.body
+        )}
+
+        {/* Add Document Drawer */}
+        <Drawer open={newDocDrawer} onOpenChange={setNewDocDrawer}>
+          <DrawerContent>
+            <DrawerHeader><DrawerTitle>إضافة مستند</DrawerTitle></DrawerHeader>
+            <div className="px-5 pb-8 space-y-4">
+              <Input placeholder="اسم المستند (مثال: تذكرة الطيران)" value={docName} onChange={(e) => setDocName(e.target.value)} />
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">نوع المستند</label>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.entries(DOC_TYPES) as [TripDocument["type"], typeof DOC_TYPES[TripDocument["type"]]][]).map(([key, info]) => {
+                    const isSelected = docType === key;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setDocType(key)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                        style={{
+                          background: isSelected ? info.color : "hsl(var(--muted))",
+                          color: isSelected ? "white" : "hsl(var(--muted-foreground))",
+                        }}
+                      >
+                        <info.icon size={14} />
+                        {info.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">إرفاق ملف (اختياري)</label>
+                <label className="flex items-center gap-3 p-3 rounded-xl border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors">
+                  <Upload size={20} className="text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    {docFileInput ? (
+                      <p className="text-sm font-medium text-foreground truncate">{docFileInput.name}</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">اضغط لاختيار ملف</p>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    onChange={(e) => setDocFileInput(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+              <Input placeholder="ملاحظات (اختياري)" value={docNotes} onChange={(e) => setDocNotes(e.target.value)} />
+              <Button className="w-full rounded-xl" onClick={handleAddDocument}>إضافة المستند</Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        {/* View Document Drawer */}
+        <Drawer open={docViewDrawer} onOpenChange={setDocViewDrawer}>
+          <DrawerContent>
+            <DrawerHeader><DrawerTitle>تفاصيل المستند</DrawerTitle></DrawerHeader>
+            {viewingDoc && (() => {
+              const docInfo = DOC_TYPES[viewingDoc.type];
+              const DocIcon = docInfo.icon;
+              return (
+                <div className="px-5 pb-8 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-14 h-14 rounded-xl flex items-center justify-center"
+                      style={{ background: docInfo.color.replace(")", " / 0.12)"), color: docInfo.color }}
+                    >
+                      <DocIcon size={28} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-bold text-foreground">{viewingDoc.name}</p>
+                      <span
+                        className="text-[11px] font-bold px-2 py-0.5 rounded-full inline-block mt-1"
+                        style={{ background: docInfo.color.replace(")", " / 0.1)"), color: docInfo.color }}
+                      >
+                        {docInfo.label}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">اسم الملف</span>
+                      <span className="text-xs font-medium text-foreground">{viewingDoc.fileName}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">تاريخ الإضافة</span>
+                      <span className="text-xs font-medium text-foreground">{viewingDoc.addedAt}</span>
+                    </div>
+                    {viewingDoc.notes && (
+                      <div className="pt-2 border-t border-border/30">
+                        <span className="text-xs text-muted-foreground">ملاحظات</span>
+                        <p className="text-sm text-foreground mt-1">{viewingDoc.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                  {viewingDoc.fileUrl && (
+                    <Button className="w-full rounded-xl" variant="outline" onClick={() => window.open(viewingDoc.fileUrl, "_blank")}>
+                      <Eye size={16} /> عرض الملف
+                    </Button>
+                  )}
+                  <Button className="w-full rounded-xl" variant="destructive" onClick={() => handleDeleteDocument(viewingDoc.id)}>
+                    <Trash2 size={16} /> حذف المستند
+                  </Button>
+                </div>
+              );
+            })()}
+          </DrawerContent>
+        </Drawer>
+
+
         <Drawer open={newDayDrawer} onOpenChange={setNewDayDrawer}>
           <DrawerContent>
             <DrawerHeader><DrawerTitle>إضافة يوم جديد</DrawerTitle></DrawerHeader>
