@@ -347,12 +347,13 @@ const Albums = () => {
   // Main albums grid
   return (
     <div className="min-h-screen bg-background pb-32" dir="rtl">
+        <PageHeader title="الألبومات" subtitle="صور العائلة وذكرياتها" onBack={() => navigate(-1)} />
+
         <PullToRefresh onRefresh={async () => {
           await new Promise((r) => setTimeout(r, 600));
           setAlbums([...INITIAL_ALBUMS]);
           toast.success("تم تحديث الألبومات");
         }}>
-        <PageHeader title="الألبومات" subtitle="صور العائلة وذكرياتها" onBack={() => navigate(-1)} />
 
         <div className="px-5 mt-6">
           {/* Albums grid — masonry-like, filtered for staff/personal trip albums */}
