@@ -26,16 +26,6 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import PageHeader from "@/components/PageHeader";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTrash } from "@/contexts/TrashContext";
 
