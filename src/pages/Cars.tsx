@@ -816,8 +816,8 @@ const Cars = () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-      </div>
-    </PullToRefresh>
+      </PullToRefresh>
+    </div>
   );
 };
 
