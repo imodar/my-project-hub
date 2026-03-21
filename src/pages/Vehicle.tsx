@@ -810,15 +810,15 @@ const Vehicle = () => {
 
               {/* Model & Year */}
               <div className="flex gap-3">
-                <div className="space-y-2 w-28 shrink-0">
-                  <Label className="text-right block">السنة *</Label>
-                  <Input type="number" value={newYear} onChange={e => setNewYear(e.target.value)}
-                    placeholder="2024" className="text-right" maxLength={4} />
-                </div>
                 <div className="space-y-2 flex-1">
                   <Label className="text-right block">الموديل *</Label>
                   <Input value={newModel} onChange={e => setNewModel(e.target.value)}
                     placeholder="مثال: Camry, Accord" className="text-right" />
+                </div>
+                <div className="space-y-2 w-28 shrink-0">
+                  <Label className="text-right block">السنة *</Label>
+                  <Input type="number" value={newYear} onChange={e => setNewYear(e.target.value)}
+                    placeholder="2024" className="text-right" maxLength={4} />
                 </div>
               </div>
 
@@ -826,6 +826,8 @@ const Vehicle = () => {
               <div className="space-y-2">
                 <Label className="text-right block">الممشى (اختياري)</Label>
                 <div className="flex gap-2">
+                  <Input type="number" value={newMileage} onChange={e => setNewMileage(e.target.value)}
+                    placeholder="0" className="text-right flex-1" />
                   <Select value={newMileageUnit} onValueChange={v => setNewMileageUnit(v as "km" | "mi")}>
                     <SelectTrigger className="w-24">
                       <SelectValue />
@@ -835,8 +837,6 @@ const Vehicle = () => {
                       <SelectItem value="mi">ميل</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input type="number" value={newMileage} onChange={e => setNewMileage(e.target.value)}
-                    placeholder="0" className="text-right flex-1" />
                 </div>
               </div>
 
