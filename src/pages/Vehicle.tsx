@@ -905,4 +905,4 @@ const Vehicle = () => {
   );
 };
 
-export default Cars;
+export default Vehicle;
