@@ -49,6 +49,8 @@ const events = [
 ];
 
 const UpcomingEvents = () => {
+  const { featureAccess } = useUserRole();
+  if (featureAccess.isStaff) return null;
   return (
     <section className="mt-8 px-5">
       <div className="flex items-center justify-between mb-5">
