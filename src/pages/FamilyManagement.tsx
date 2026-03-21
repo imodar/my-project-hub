@@ -822,6 +822,23 @@ const FamilyManagement = () => {
                   <span className="text-xs font-bold text-foreground">ابنة</span>
                 </button>
               </div>
+
+              {/* Staff roles in approval */}
+              <p className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1 mt-2">طاقم المنزل</p>
+              <div className="flex gap-2">
+                {(["worker", "maid", "driver"] as FamilyRole[]).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setApprovalRole(r)}
+                    className={`flex-1 flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                      approvalRole === r ? "border-amber-500 bg-amber-50" : "border-border bg-card"
+                    }`}
+                  >
+                    <RoleIcon role={r} size={16} className={approvalRole === r ? "text-amber-700" : "text-muted-foreground"} />
+                    <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {approvalRole && isParentRole(approvalRole) && (
