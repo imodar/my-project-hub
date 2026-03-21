@@ -298,6 +298,9 @@ const Tasks = () => {
     setEditNote(item.note);
     setEditPriority(item.priority);
     setEditAssignedTo(item.assignedTo);
+    setEditRepeatEnabled(item.repeat?.enabled || false);
+    setEditRepeatDays(item.repeat?.days || []);
+    setEditRepeatCount(item.repeat?.count || 1);
     closeSwipe(item.id);
   }, [closeSwipe]);
 
