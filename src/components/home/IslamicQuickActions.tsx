@@ -30,7 +30,7 @@ const IslamicQuickActions = () => {
 
   return (
     <div className="px-5 mt-4">
-      <div className="relative rounded-2xl p-4 overflow-hidden border border-border">
+      <div className="relative rounded-2xl p-4 overflow-hidden">
         {/* Pattern background image */}
         <img
           src={islamicPattern}
