@@ -386,7 +386,7 @@ const Vaccinations = () => {
 
       {/* Child Vaccine Detail Drawer */}
       <Drawer open={!!selectedChild} onOpenChange={(open) => !open && setSelectedChild(null)}>
-        <DrawerContent className="max-h-[90vh] overflow-y-auto">
+        <DrawerContent className="max-h-[90vh]">
           {selectedChild && (
             <>
               <DrawerHeader>
