@@ -216,6 +216,27 @@ const loadBudgets = (): MonthBudget[] => {
 
 const saveBudgets = (b: MonthBudget[]) => localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
 
+// Merge trip budgets from trips_data into budgets
+const mergeWithTripBudgets = (budgets: MonthBudget[]): MonthBudget[] => {
+  const trips = loadTrips();
+  const tripBudgets: MonthBudget[] = trips.map((trip: any) => {
+    const existing = budgets.find(b => b.tripId === trip.id);
+    return {
+      id: existing?.id || `trip-budget-${trip.id}`,
+      type: "trip" as BudgetType,
+      month: `trip-${trip.id}`,
+      label: trip.name,
+      income: trip.budget || 0,
+      expenses: (trip.expenses || []).map((e: any) => ({ id: e.id, name: e.name, amount: e.amount })),
+      sharedWith: [],
+      tripId: trip.id,
+    };
+  });
+  // Keep non-trip budgets + fresh trip budgets
+  const nonTripBudgets = budgets.filter(b => b.type !== "trip");
+  return [...nonTripBudgets, ...tripBudgets];
+};
+
 const Budget = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
