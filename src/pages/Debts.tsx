@@ -271,7 +271,7 @@ const AmountEditor = ({
             updated[i] = { ...updated[i], amount: e.target.value };
             setAmounts(updated);
           }}
-          className="w-28 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+          className="flex-1 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
           inputMode="decimal"
         />
         <select
@@ -281,7 +281,7 @@ const AmountEditor = ({
             updated[i] = { ...updated[i], currency: e.target.value as CurrencyCode };
             setAmounts(updated);
           }}
-          className="flex-1 rounded-xl border border-input bg-background px-2 py-2.5 text-xs"
+          className="w-24 rounded-xl border border-input bg-background px-2 py-2.5 text-xs"
         >
           {CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>{c.symbol} {c.label}</option>
