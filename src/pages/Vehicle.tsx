@@ -755,13 +755,16 @@ const Vehicle = () => {
         </div>
 
         {/* FAB */}
-        <button
-          onClick={() => { resetAddForm(); setAddCarOpen(true); }}
-          className="fixed bottom-24 left-5 z-40 w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center"
-          style={{ background: "hsl(var(--primary))" }}
-        >
-          <Plus size={24} className="text-primary-foreground" />
-        </button>
+        {createPortal(
+          <button
+            onClick={() => { resetAddForm(); setAddCarOpen(true); }}
+            className="fixed bottom-24 left-5 z-40 w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center"
+            style={{ background: "hsl(var(--primary))" }}
+          >
+            <Plus size={24} className="text-primary-foreground" />
+          </button>,
+          document.body
+        )}
 
         {/* Add Car Drawer */}
         <Drawer open={addCarOpen} onOpenChange={(open) => { setAddCarOpen(open); if (!open) setManufacturerSearch(""); }}>
