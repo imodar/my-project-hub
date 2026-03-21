@@ -686,6 +686,12 @@ const Cars = () => {
                           </h3>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {car.year} • {car.mileage.toLocaleString()} {car.mileageUnit === "km" ? "كم" : "ميل"}
+                            {car.sharedWith.length > 0 && (
+                              <span className="inline-flex items-center gap-1 mr-2">
+                                <Users size={10} className="inline" />
+                                {car.sharedWith.length}
+                              </span>
+                            )}
                           </p>
                           {(overdueCount > 0 || soonCount > 0) && (
                             <div className="flex items-center gap-2 mt-2">
