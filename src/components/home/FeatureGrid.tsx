@@ -4,6 +4,7 @@ import {
   Image, Plane, FileText, ListChecks,
   FolderLock, TreePine, MapPin, Heart, Scale, ScrollText, Camera, BookHeart
 } from "lucide-react";
+import { useUserRole } from "@/contexts/UserRoleContext";
 
 const features = [
   { icon: ShoppingCart, label: "السوق", bg: "hsl(30 100% 93%)", color: "hsl(30 80% 45%)", route: "/market" },
@@ -22,27 +23,41 @@ const features = [
 
 const FeatureGrid = () => {
   const navigate = useNavigate();
+  const { featureAccess } = useUserRole();
+
+  const visibleFeatures = features.filter(
+    (f) => !featureAccess.hidden.includes(f.route)
+  );
+
   return (
     <section className="px-5 mt-8">
       <div className="mb-5">
-        <h2 className="text-lg font-extrabold text-foreground tracking-tight">أدوات العائلة</h2>
+        <h2 className="text-lg font-extrabold text-foreground tracking-tight">
+          {featureAccess.isStaff ? "الأدوات" : "أدوات العائلة"}
+        </h2>
       </div>
       <div className="grid grid-cols-4 gap-4">
-        {features.map((feature) => (
-          <button
-            key={feature.label}
-            onClick={() => feature.route && navigate(feature.route)}
-            className="flex flex-col items-center gap-2 transition-transform active:scale-95"
-          >
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center"
-              style={{ background: feature.bg }}
+        {visibleFeatures.map((feature) => {
+          const isDisabled = featureAccess.disabled.includes(feature.route);
+          return (
+            <button
+              key={feature.label}
+              onClick={() => !isDisabled && feature.route && navigate(feature.route)}
+              className={`flex flex-col items-center gap-2 transition-transform active:scale-95 ${isDisabled ? "opacity-40 pointer-events-none" : ""}`}
             >
-              <feature.icon size={24} style={{ color: feature.color }} />
-            </div>
-            <span className="text-[11px] font-bold text-muted-foreground">{feature.label}</span>
-          </button>
-        ))}
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                style={{ background: feature.bg }}
+              >
+                <feature.icon size={24} style={{ color: feature.color }} />
+              </div>
+              <span className="text-[11px] font-bold text-muted-foreground">{feature.label}</span>
+              {isDisabled && (
+                <span className="text-[9px] text-muted-foreground -mt-1">غير متاح</span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </section>
   );

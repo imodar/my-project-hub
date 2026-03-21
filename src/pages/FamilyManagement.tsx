@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield } from "lucide-react";
+import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
-type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife";
+type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife" | "worker" | "maid" | "driver";
 type InviteStatus = "active" | "pending";
 
 interface FamilyMember {
@@ -31,7 +31,13 @@ const ROLE_LABELS: Record<string, string> = {
   daughter: "ابنة",
   husband: "الزوج",
   wife: "الزوجة",
+  worker: "عامل",
+  maid: "عاملة",
+  driver: "سائق",
 };
+
+const isStaffRole = (role: FamilyRole) =>
+  role === "worker" || role === "maid" || role === "driver";
 
 const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: number; className?: string }) => {
   switch (role) {
@@ -44,6 +50,11 @@ const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: nu
     case "son":
     case "daughter":
       return <Baby size={size} className={className} />;
+    case "worker":
+    case "maid":
+      return <Briefcase size={size} className={className} />;
+    case "driver":
+      return <Car size={size} className={className} />;
     default:
       return <User size={size} className={className} />;
   }
@@ -658,6 +669,24 @@ const FamilyManagement = () => {
                   <span className="text-sm font-bold text-foreground">ابنة</span>
                 </button>
               </div>
+
+              {/* Staff roles */}
+              <p className="text-xs font-semibold text-muted-foreground px-1 mt-3">طاقم المنزل</p>
+              <div className="flex gap-2">
+                {(["worker", "maid", "driver"] as FamilyRole[]).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => { setSelectedType(r); setAddStep("enter-name"); }}
+                    className="flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl transition-colors active:bg-primary/10"
+                    style={{ background: "hsl(30, 50%, 95%)", border: "2px solid hsl(30, 40%, 85%)" }}
+                  >
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "hsl(30, 50%, 90%)" }}>
+                      <RoleIcon role={r} size={20} className="text-amber-700" />
+                    </div>
+                    <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -792,6 +821,23 @@ const FamilyManagement = () => {
                   <Baby size={18} className={approvalRole === "daughter" ? "text-pink-500" : "text-muted-foreground"} />
                   <span className="text-xs font-bold text-foreground">ابنة</span>
                 </button>
+              </div>
+
+              {/* Staff roles in approval */}
+              <p className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1 mt-2">طاقم المنزل</p>
+              <div className="flex gap-2">
+                {(["worker", "maid", "driver"] as FamilyRole[]).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setApprovalRole(r)}
+                    className={`flex-1 flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                      approvalRole === r ? "border-amber-500 bg-amber-50" : "border-border bg-card"
+                    }`}
+                  >
+                    <RoleIcon role={r} size={16} className={approvalRole === r ? "text-amber-700" : "text-muted-foreground"} />
+                    <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
