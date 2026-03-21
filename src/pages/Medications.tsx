@@ -69,6 +69,7 @@ const Medications = () => {
   const [formMemberName, setFormMemberName] = useState("أنا");
   const [formFreqType, setFormFreqType] = useState<FrequencyType>("daily");
   const [formFreqValue, setFormFreqValue] = useState(1);
+  const [formSelectedDays, setFormSelectedDays] = useState<number[]>([]);
   const [formTimesPerDay, setFormTimesPerDay] = useState(1);
   const [formTimes, setFormTimes] = useState<string[]>(["08:00"]);
   const [formStartDate, setFormStartDate] = useState(new Date().toISOString().split("T")[0]);
