@@ -549,23 +549,27 @@ const Medications = () => {
               </div>
             )}
 
-            {/* Times per day */}
+            {/* Times per day - stepper */}
             <div className="space-y-2">
               <Label className="text-right block">عدد الجرعات</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {[1, 2, 3, 4].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => handleTimesPerDayChange(n)}
-                    className={`p-2.5 rounded-xl border-2 text-center text-sm font-medium transition-colors ${
-                      formTimesPerDay === n
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground"
-                    }`}
-                  >
-                    {n} {n === 1 ? "مرة" : "مرات"}
-                  </button>
-                ))}
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => { if (formTimesPerDay > 1) handleTimesPerDayChange(formTimesPerDay - 1); }}
+                  className="w-10 h-10 rounded-xl border-2 border-border text-muted-foreground flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors disabled:opacity-30"
+                  disabled={formTimesPerDay <= 1}
+                >
+                  −
+                </button>
+                <div className="w-16 h-10 rounded-xl border-2 border-primary bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                  {formTimesPerDay}
+                </div>
+                <button
+                  onClick={() => { if (formTimesPerDay < 10) handleTimesPerDayChange(formTimesPerDay + 1); }}
+                  className="w-10 h-10 rounded-xl border-2 border-border text-muted-foreground flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors disabled:opacity-30"
+                  disabled={formTimesPerDay >= 10}
+                >
+                  +
+                </button>
               </div>
             </div>
 
