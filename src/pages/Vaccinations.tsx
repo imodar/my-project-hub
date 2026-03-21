@@ -358,7 +358,7 @@ const Vaccinations = () => {
                 { key: "beforeWeek" as const, label: "قبل أسبوع" },
                 { key: "beforeMonth" as const, label: "قبل شهر" },
               ].map((item) => (
-                <div key={item.key} className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/50">
+                <div key={item.key} className="flex items-center justify-between flex-row-reverse p-3 rounded-xl bg-card border border-border/50">
                   <Switch
                     checked={reminderChild.reminderSettings[item.key]}
                     onCheckedChange={(checked) => {
