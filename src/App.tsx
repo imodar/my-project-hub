@@ -34,6 +34,7 @@ import Albums from "./pages/Albums.tsx";
 import KidsWorship from "./pages/KidsWorship.tsx";
 import ParentDashboard from "./pages/ParentDashboard.tsx";
 import Athkar from "./pages/Athkar.tsx";
+import Cars from "./pages/Cars.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient({
@@ -79,6 +80,7 @@ const AnimatedRoutes = () => {
         <Route path="/parent-dashboard" element={<ParentDashboard />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/athkar" element={<Athkar />} />
+        <Route path="/cars" element={<Cars />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>

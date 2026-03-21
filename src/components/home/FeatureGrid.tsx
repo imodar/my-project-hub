@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ShoppingCart, Calendar, HandCoins, Wallet,
   Image, Plane, FileText, ListChecks,
-  FolderLock, TreePine, MapPin, Heart, Scale, ScrollText, Camera, BookHeart
+  FolderLock, TreePine, MapPin, Heart, Scale, ScrollText, Camera, BookHeart, Car
 } from "lucide-react";
 import { useUserRole } from "@/contexts/UserRoleContext";
 
@@ -18,6 +18,7 @@ const features = [
   { icon: Camera, label: "الألبومات", bg: "hsl(290 45% 92%)", color: "hsl(290 50% 45%)", route: "/albums" },
   { icon: Scale, label: "الزكاة", bg: "hsl(160 45% 92%)", color: "hsl(160 50% 35%)", route: "/zakat" },
   { icon: ScrollText, label: "الوصية", bg: "hsl(200 45% 92%)", color: "hsl(200 50% 35%)", route: "/will" },
+  { icon: Car, label: "السيارات", bg: "hsl(220 50% 93%)", color: "hsl(220 55% 45%)", route: "/cars" },
   { icon: BookHeart, label: "عبادات الأطفال", bg: "hsl(320 50% 93%)", color: "hsl(320 55% 45%)", route: "/kids-worship" },
 ];
 
