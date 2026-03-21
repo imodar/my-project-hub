@@ -687,6 +687,7 @@ const FamilyManagement = () => {
                   </button>
                 ))}
               </div>
+            </div>
           )}
 
           {addStep === "enter-name" && (
