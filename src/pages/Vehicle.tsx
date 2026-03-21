@@ -679,6 +679,57 @@ const Vehicle = () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
+
+        {/* Share Drawer */}
+        <Drawer open={shareDrawerOpen} onOpenChange={setShareDrawerOpen}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle className="text-right">مشاركة المركبة</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-4 space-y-4" dir="rtl">
+              <p className="text-sm text-muted-foreground">اختر أفراد الأسرة أو السائق لمشاركة المركبة معهم</p>
+              {familyMembers.filter(m => m.id !== "creator").length === 0 ? (
+                <div className="text-center py-8">
+                  <Users size={32} className="mx-auto text-muted-foreground/30 mb-2" />
+                  <p className="text-muted-foreground text-sm">لا يوجد أفراد أسرة</p>
+                  <p className="text-muted-foreground/60 text-xs mt-1">أضف أفراد الأسرة من صفحة إدارة الأسرة</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {familyMembers.filter(m => m.id !== "creator").map(member => {
+                    const isSelected = shareWith.includes(member.id);
+                    return (
+                      <button
+                        key={member.id}
+                        onClick={() => toggleShareMember(member.id)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                          isSelected ? "border-primary bg-primary/5" : "border-border bg-card"
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                          isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        }`}>
+                          {member.name.charAt(0)}
+                        </div>
+                        <div className="flex-1 text-right">
+                          <p className="font-medium text-sm text-foreground">{member.name}</p>
+                          <p className="text-xs text-muted-foreground">{member.role}</p>
+                        </div>
+                        {isSelected && <Check size={18} className="text-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <DrawerFooter>
+              <Button onClick={handleSaveShare} className="w-full rounded-xl">حفظ</Button>
+              <DrawerClose asChild>
+                <Button variant="outline" className="w-full rounded-xl">إلغاء</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
       </div>
     );
   }
