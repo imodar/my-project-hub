@@ -637,9 +637,9 @@ const Cars = () => {
 
   // ─── Cars List View ───
   return (
-    <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
-        <PageHeader title="سياراتي" subtitle={cars.length > 0 ? `${cars.length} سيارة` : undefined} />
+    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
+      <PageHeader title="سياراتي" subtitle={cars.length > 0 ? `${cars.length} سيارة` : undefined} />
+      <PullToRefresh onRefresh={handleRefresh}>
 
         {/* Cars */}
         <div className="px-4 pt-5">
@@ -816,8 +816,8 @@ const Cars = () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-      </div>
-    </PullToRefresh>
+      </PullToRefresh>
+    </div>
   );
 };
 
