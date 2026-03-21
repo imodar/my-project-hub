@@ -119,6 +119,9 @@ const Tasks = () => {
   const [editNote, setEditNote] = useState("");
   const [editPriority, setEditPriority] = useState<TaskItem["priority"]>("medium");
   const [editAssignedTo, setEditAssignedTo] = useState("");
+  const [editRepeatEnabled, setEditRepeatEnabled] = useState(false);
+  const [editRepeatDays, setEditRepeatDays] = useState<number[]>([]);
+  const [editRepeatCount, setEditRepeatCount] = useState(1);
 
   // New item form
   const [newItemName, setNewItemName] = useState("");
