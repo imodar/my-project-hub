@@ -239,7 +239,7 @@ const Albums = () => {
             {format(new Date(selectedPhoto.date), "d MMMM yyyy", { locale: ar })}
           </span>
           <button
-            onClick={() => handleDeletePhoto(selectedPhoto.id)}
+            onClick={() => setConfirmDeletePhoto(selectedPhoto.id)}
             className="text-red-400 active:scale-95"
           >
             <Trash2 size={20} />
