@@ -199,7 +199,7 @@ const SectionDetail = ({
   const handleReset = () => {
     setProgress({});
     save({});
-    haptic("medium");
+    haptic.medium();
   };
 
   const total = section.athkar.reduce((s, t) => s + t.count, 0);
