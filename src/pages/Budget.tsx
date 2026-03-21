@@ -757,6 +757,7 @@ const Budget = () => {
             </div>
 
             {/* Sharing */}
+            {!featureAccess.isStaff && (
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-2 block">
                 <Users size={12} className="inline ml-1" />
@@ -787,6 +788,7 @@ const Budget = () => {
                 <p className="text-[10px] text-muted-foreground/60 mt-2">🔒 ستبقى خاصة بك فقط</p>
               )}
             </div>
+            )}
           </div>
           <DrawerFooter>
             <Button
