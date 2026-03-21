@@ -35,7 +35,18 @@ import ParentDashboard from "./pages/ParentDashboard.tsx";
 import Athkar from "./pages/Athkar.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount) => navigator.onLine && failureCount < 2,
+      networkMode: "offlineFirst",
+      staleTime: 5 * 60 * 1000,
+    },
+    mutations: {
+      networkMode: "offlineFirst",
+    },
+  },
+});
 
 const AnimatedRoutes = () => {
   const location = useLocation();
