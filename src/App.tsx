@@ -36,6 +36,7 @@ import ParentDashboard from "./pages/ParentDashboard.tsx";
 import Athkar from "./pages/Athkar.tsx";
 import Vehicle from "./pages/Vehicle.tsx";
 import Vaccinations from "./pages/Vaccinations.tsx";
+import Medications from "./pages/Medications.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient({
@@ -83,6 +84,7 @@ const AnimatedRoutes = () => {
         <Route path="/athkar" element={<Athkar />} />
         <Route path="/vehicle" element={<Vehicle />} />
         <Route path="/vaccinations" element={<Vaccinations />} />
+        <Route path="/medications" element={<Medications />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
