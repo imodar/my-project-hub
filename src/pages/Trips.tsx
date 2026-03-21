@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import PageHeader from "@/components/PageHeader";
@@ -18,6 +18,7 @@ import {
 import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
+import { saveTrips as saveTripsToStorage, syncTripToBudget, removeTripBudget } from "@/lib/tripBudgetSync";
 
 // Types
 interface Activity {
