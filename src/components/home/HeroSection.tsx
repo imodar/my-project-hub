@@ -101,15 +101,15 @@ const HeroSection = () => {
       {/* Hero Card */}
       <section className="px-5 pt-8 relative overflow-visible">
         {/* Artistic Sun - positioned to break out of the card */}
-        <div className="absolute top-0 left-2 w-24 h-24 z-10 pointer-events-none">
+        <div className="absolute top-0 left-2 w-16 h-16 z-10 pointer-events-none">
           <div className="absolute inset-0 rounded-full animate-pulse" style={{
-            filter: "blur(18px)",
-            background: "radial-gradient(circle, rgba(255,245,158,0.7) 0%, rgba(255,164,0,0.2) 70%)"
+            filter: "blur(12px)",
+            background: "radial-gradient(circle, rgba(255,245,158,0.5) 0%, rgba(255,164,0,0.15) 70%)"
           }} />
           <div className="relative w-full h-full rounded-full shadow-lg"
             style={{
               background: "linear-gradient(135deg, hsl(48 100% 65%), hsl(30 100% 55%))",
-              border: "3px solid hsla(0,0%,100%,0.25)"
+              border: "2px solid hsla(0,0%,100%,0.25)"
             }}
           />
         </div>
@@ -143,12 +143,12 @@ const HeroSection = () => {
                 )}
               </div>
               {weather && (
-                <div className="text-left pl-4">
+                <div className="bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 border border-white/20">
                   <div className="flex items-center justify-end gap-2">
                     <WeatherIcon icon={weather.icon} />
                     <span className="text-2xl font-bold">{weather.temp}°</span>
                   </div>
-                  <p className="text-[11px] font-semibold text-white/70 mt-0.5">{weather.description}</p>
+                  <p className="text-[11px] font-semibold text-white/70 mt-0.5 text-center">{weather.description}</p>
                 </div>
               )}
             </div>
