@@ -1127,7 +1127,7 @@ const Trips = () => {
                     onDelete={() => { setDeleteTarget(trip.id); setDeleteDrawer(true); }}
                   >
                     <button
-                      onClick={() => setSelectedTrip(trip)}
+                      onClick={() => handleSelectTrip(trip)}
                       className="w-full text-right p-4 active:bg-muted/30 transition-colors"
                     >
                       <div className="flex items-start justify-between">
