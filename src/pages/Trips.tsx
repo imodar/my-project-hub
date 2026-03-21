@@ -167,6 +167,7 @@ const INITIAL_TRIPS: Trip[] = [
     days: [],
     suggestions: [],
     packingList: [],
+    documents: [],
   },
 ];
 
