@@ -459,15 +459,7 @@ const HeroSection = () => {
             {islamicMode && (
               <div className="grid grid-cols-2 gap-3">
                 <QiblaCompass />
-                <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 flex items-center gap-3 border border-white/10">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <Sun size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-white/60">{nextPrayer}</p>
-                    <p className="text-sm font-bold">{nextPrayerTime}</p>
-                  </div>
-                </div>
+                <NextPrayerBox />
               </div>
             )}
           </div>
