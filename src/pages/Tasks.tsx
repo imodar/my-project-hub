@@ -582,7 +582,7 @@ const Tasks = () => {
                 </button>
               )}
               <button
-                onClick={() => { setShowListActions(false); if (activeList) deleteList(activeList.id); }}
+                onClick={() => { setShowListActions(false); if (activeList) setDeleteListTarget(activeList.id); }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors"
               >
                 <Trash2 size={16} className="text-destructive" />
