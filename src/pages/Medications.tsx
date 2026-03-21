@@ -135,6 +135,7 @@ const Medications = () => {
     setFormMemberName("أنا");
     setFormFreqType("daily");
     setFormFreqValue(1);
+    setFormSelectedDays([]);
     setFormTimesPerDay(1);
     setFormTimes(["08:00"]);
     setFormStartDate(new Date().toISOString().split("T")[0]);
