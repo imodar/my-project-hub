@@ -157,8 +157,9 @@ const Medications = () => {
     setFormDosage(med.dosage);
     setFormMemberId(med.memberId);
     setFormMemberName(med.memberName);
-    setFormFreqType(med.frequencyType);
+    setFormFreqType(med.frequencyType === "daily" || med.frequencyType === "specific_days" ? med.frequencyType : "daily");
     setFormFreqValue(med.frequencyValue);
+    setFormSelectedDays(med.selectedDays || []);
     setFormTimesPerDay(med.timesPerDay || 1);
     setFormTimes(med.specificTimes || ["08:00"]);
     setFormStartDate(med.startDate);
