@@ -48,7 +48,7 @@ const SWIPE_WIDTH = 140;
 const initialLists: TaskList[] = [
   {
     id: "1",
-    name: "مهام المنزل",
+    name: "مهام عائلية",
     type: "family",
     isDefault: true,
     lastUpdatedBy: "أم فهد",
@@ -364,7 +364,7 @@ const Tasks = () => {
 
   const getListIcon = (type: TaskList["type"]) => {
     switch (type) {
-      case "family": return <Users size={14} className="text-primary" />;
+      case "family": return <Users size={14} className="text-accent" />;
       case "personal": return <Lock size={14} className="text-accent" />;
       case "shared": return <Share2 size={14} className="text-blue-500" />;
     }
