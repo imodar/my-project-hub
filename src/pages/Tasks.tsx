@@ -592,23 +592,49 @@ const Tasks = () => {
           </DrawerContent>
         </Drawer>
 
-        {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-          <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>حذف المهمة</AlertDialogTitle>
-              <AlertDialogDescription>
+        {/* Delete Task Confirmation */}
+        <Drawer open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <DrawerContent onClick={(e) => e.stopPropagation()}>
+            <DrawerHeader>
+              <DrawerTitle className="text-center font-black">حذف المهمة</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-5 pb-6 space-y-4" dir="rtl">
+              <p className="text-center text-sm text-muted-foreground">
                 هل أنت متأكد من حذف "{deleteTarget?.name}"؟
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex-row gap-2">
-              <AlertDialogAction onClick={confirmDelete} className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
-                حذف
-              </AlertDialogAction>
-              <AlertDialogCancel className="flex-1 rounded-xl">إلغاء</AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </p>
+              <div className="flex gap-2">
+                <button onClick={confirmDelete} className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                  حذف
+                </button>
+                <button onClick={() => setDeleteTarget(null)} className="flex-1 py-3 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors">
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        {/* Delete List Confirmation */}
+        <Drawer open={!!deleteListTarget} onOpenChange={(open) => !open && setDeleteListTarget(null)}>
+          <DrawerContent onClick={(e) => e.stopPropagation()}>
+            <DrawerHeader>
+              <DrawerTitle className="text-center font-black">حذف القائمة</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-5 pb-6 space-y-4" dir="rtl">
+              <p className="text-center text-sm text-muted-foreground">
+                هل أنت متأكد من حذف هذه القائمة وجميع مهامها؟
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => { if (deleteListTarget) deleteList(deleteListTarget); setDeleteListTarget(null); }} className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                  حذف
+                </button>
+                <button onClick={() => setDeleteListTarget(null)} className="flex-1 py-3 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors">
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         {/* Edit Item Drawer */}
         <Drawer open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
