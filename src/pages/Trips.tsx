@@ -252,6 +252,15 @@ const Trips = () => {
   const [deleteDrawer, setDeleteDrawer] = useState(false);
   const [newDayDrawer, setNewDayDrawer] = useState(false);
   const [suggestionReviewDrawer, setSuggestionReviewDrawer] = useState(false);
+  const [newDocDrawer, setNewDocDrawer] = useState(false);
+  const [docViewDrawer, setDocViewDrawer] = useState(false);
+  const [viewingDoc, setViewingDoc] = useState<TripDocument | null>(null);
+
+  // Document form states
+  const [docName, setDocName] = useState("");
+  const [docType, setDocType] = useState<TripDocument["type"]>("ticket");
+  const [docNotes, setDocNotes] = useState("");
+  const [docFileInput, setDocFileInput] = useState<File | null>(null);
 
   // Form states
   const [tripName, setTripName] = useState("");
