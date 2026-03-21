@@ -9,6 +9,7 @@ import { TrashProvider } from "@/contexts/TrashContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import OfflineBanner from "@/components/OfflineBanner";
 import PageTransition from "@/components/PageTransition";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index.tsx";
 import Tasbih from "./pages/Tasbih.tsx";
 import Settings from "./pages/Settings.tsx";
