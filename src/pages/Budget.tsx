@@ -48,6 +48,7 @@ const formatMonth = (m: string) => {
 };
 
 const getBudgetTitle = (b: MonthBudget) => {
+  if (b.type === "trip") return `✈️ ${b.label || "رحلة"}`;
   if (b.type === "project") return b.label || "مشروع";
   return formatMonth(b.month);
 };
