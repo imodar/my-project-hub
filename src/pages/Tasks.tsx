@@ -76,8 +76,14 @@ const initialLists: TaskList[] = [
 
 const Tasks = () => {
   const navigate = useNavigate();
-  const [lists, setLists] = useState<TaskList[]>(initialLists);
-  const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
+  const { featureAccess } = useUserRole();
+  const [lists, setLists] = useState<TaskList[]>(() =>
+    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
+  );
+  const [activeListId, setActiveListId] = useState(() => {
+    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
+    return filtered[0]?.id || "";
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);

@@ -89,8 +89,14 @@ const SWIPE_WIDTH = 140;
 
 const Market = () => {
   const navigate = useNavigate();
-  const [lists, setLists] = useState<MarketList[]>(initialLists);
-  const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
+  const { featureAccess } = useUserRole();
+  const [lists, setLists] = useState<MarketList[]>(() =>
+    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
+  );
+  const [activeListId, setActiveListId] = useState(() => {
+    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
+    return filtered[0]?.id || "";
+  });
   const [activeCategory, setActiveCategory] = useState("الكل");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);

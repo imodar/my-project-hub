@@ -115,8 +115,14 @@ const initialLists: DocList[] = [
 
 const Documents = () => {
   const navigate = useNavigate();
-  const [lists, setLists] = useState<DocList[]>(initialLists);
-  const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
+  const { featureAccess } = useUserRole();
+  const [lists, setLists] = useState<DocList[]>(() =>
+    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
+  );
+  const [activeListId, setActiveListId] = useState(() => {
+    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
+    return filtered[0]?.id || "";
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<DocCategory | "all">("all");
   const [showAddItem, setShowAddItem] = useState(false);
