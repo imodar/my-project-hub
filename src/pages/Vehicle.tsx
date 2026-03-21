@@ -301,9 +301,20 @@ const Vehicle = () => {
     setMaintNotes(""); setOilWithFilter(false); setEditMaintenanceRecord(null);
   };
 
+  const maxYear = new Date().getFullYear() + 1;
+
   const handleAddCar = () => {
     if (!newManufacturer || !newModel || !newYear) {
       toast.error("يرجى تعبئة الحقول المطلوبة");
+      return;
+    }
+    const yearNum = Number(newYear);
+    if (yearNum < 1900 || yearNum > maxYear) {
+      toast.error(`السنة يجب أن تكون بين 1900 و ${maxYear}`);
+      return;
+    }
+    if (newMileage && Number(newMileage) < 0) {
+      toast.error("الممشى يجب أن يكون أكبر من 0");
       return;
     }
     const car: CarData = {
@@ -818,18 +829,18 @@ const Vehicle = () => {
                 <div className="space-y-2 w-28 shrink-0">
                   <Label className="text-right block">السنة *</Label>
                   <Input type="number" value={newYear} onChange={e => setNewYear(e.target.value)}
-                    placeholder="2024" className="text-right" maxLength={4} />
+                    placeholder="2024" className="text-right" min={1900} max={maxYear} />
                 </div>
               </div>
 
               {/* Mileage */}
               <div className="space-y-2">
                 <Label className="text-right block">الممشى (اختياري)</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Input type="number" value={newMileage} onChange={e => setNewMileage(e.target.value)}
-                    placeholder="0" className="text-right flex-1" />
+                    placeholder="0" className="text-right flex-1" min={0} />
                   <Select value={newMileageUnit} onValueChange={v => setNewMileageUnit(v as "km" | "mi")}>
-                    <SelectTrigger className="w-24">
+                    <SelectTrigger className="w-28 shrink-0 text-right" dir="rtl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
