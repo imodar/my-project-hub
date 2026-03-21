@@ -23,9 +23,7 @@ import {
   Medication,
   FrequencyType,
   MEDICATION_COLORS,
-  FREQUENCY_OPTIONS,
-  DAY_INTERVALS,
-  HOUR_INTERVALS,
+  WEEKDAYS,
   calculateNextDue,
   isMedicationDue,
   formatFrequency,
@@ -71,6 +69,7 @@ const Medications = () => {
   const [formMemberName, setFormMemberName] = useState("أنا");
   const [formFreqType, setFormFreqType] = useState<FrequencyType>("daily");
   const [formFreqValue, setFormFreqValue] = useState(1);
+  const [formSelectedDays, setFormSelectedDays] = useState<number[]>([]);
   const [formTimesPerDay, setFormTimesPerDay] = useState(1);
   const [formTimes, setFormTimes] = useState<string[]>(["08:00"]);
   const [formStartDate, setFormStartDate] = useState(new Date().toISOString().split("T")[0]);
@@ -136,6 +135,7 @@ const Medications = () => {
     setFormMemberName("أنا");
     setFormFreqType("daily");
     setFormFreqValue(1);
+    setFormSelectedDays([]);
     setFormTimesPerDay(1);
     setFormTimes(["08:00"]);
     setFormStartDate(new Date().toISOString().split("T")[0]);
@@ -157,8 +157,9 @@ const Medications = () => {
     setFormDosage(med.dosage);
     setFormMemberId(med.memberId);
     setFormMemberName(med.memberName);
-    setFormFreqType(med.frequencyType);
+    setFormFreqType(med.frequencyType === "daily" || med.frequencyType === "specific_days" ? med.frequencyType : "daily");
     setFormFreqValue(med.frequencyValue);
+    setFormSelectedDays(med.selectedDays || []);
     setFormTimesPerDay(med.timesPerDay || 1);
     setFormTimes(med.specificTimes || ["08:00"]);
     setFormStartDate(med.startDate);
@@ -179,8 +180,9 @@ const Medications = () => {
       memberId: formMemberId,
       memberName: formMemberName,
       frequencyType: formFreqType,
-      frequencyValue: formFreqType === "daily" ? 1 : formFreqValue,
-      timesPerDay: formFreqType === "daily" ? formTimesPerDay : undefined,
+      frequencyValue: 1,
+      selectedDays: formFreqType === "specific_days" ? formSelectedDays : undefined,
+      timesPerDay: formTimesPerDay,
       specificTimes: formTimes.filter(Boolean),
       startDate: formStartDate,
       endDate: formEndDate || undefined,
@@ -249,11 +251,7 @@ const Medications = () => {
         updated.reminder.nextDueAt = calculateNextDue(updated);
         // Push next due forward
         const next = new Date(updated.reminder.nextDueAt);
-        if (updated.frequencyType === "every_x_hours") {
-          next.setHours(next.getHours() + updated.frequencyValue);
-        } else {
-          next.setDate(next.getDate() + (updated.frequencyType === "daily" ? 1 : updated.frequencyValue));
-        }
+        next.setDate(next.getDate() + 1);
         updated.reminder.nextDueAt = next.toISOString();
         return updated;
       })
@@ -493,118 +491,105 @@ const Medications = () => {
               </Select>
             </div>
 
-            {/* Frequency Type */}
+            {/* Frequency Type: Daily or Specific Days */}
             <div className="space-y-2">
               <Label className="text-right block">تكرار الدواء</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {FREQUENCY_OPTIONS.map((opt) => (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setFormFreqType("daily")}
+                  className={`p-2.5 rounded-xl border-2 text-center text-sm font-medium transition-colors ${
+                    formFreqType === "daily"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  يومياً
+                </button>
+                <button
+                  onClick={() => setFormFreqType("specific_days")}
+                  className={`p-2.5 rounded-xl border-2 text-center text-sm font-medium transition-colors ${
+                    formFreqType === "specific_days"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  أيام محددة
+                </button>
+              </div>
+            </div>
+
+            {/* Weekday circles for specific_days */}
+            {formFreqType === "specific_days" && (
+              <div className="space-y-2">
+                <Label className="text-right block">اختر الأيام</Label>
+                <div className="flex justify-between gap-1">
+                  {WEEKDAYS.map((day) => {
+                    const isSelected = formSelectedDays.includes(day.value);
+                    return (
+                      <button
+                        key={day.value}
+                        onClick={() => {
+                          setFormSelectedDays((prev) =>
+                            isSelected
+                              ? prev.filter((d) => d !== day.value)
+                              : [...prev, day.value]
+                          );
+                        }}
+                        className={`w-10 h-10 rounded-full border-2 text-xs font-bold transition-colors ${
+                          isSelected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border text-muted-foreground"
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Times per day */}
+            <div className="space-y-2">
+              <Label className="text-right block">عدد الجرعات</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 3, 4].map((n) => (
                   <button
-                    key={opt.value}
-                    onClick={() => {
-                      setFormFreqType(opt.value);
-                      if (opt.value === "every_x_days") setFormFreqValue(2);
-                      else if (opt.value === "every_x_hours") setFormFreqValue(4);
-                      else setFormFreqValue(1);
-                    }}
+                    key={n}
+                    onClick={() => handleTimesPerDayChange(n)}
                     className={`p-2.5 rounded-xl border-2 text-center text-sm font-medium transition-colors ${
-                      formFreqType === opt.value
+                      formTimesPerDay === n
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border text-muted-foreground"
                     }`}
                   >
-                    {opt.label}
+                    {n} {n === 1 ? "مرة" : "مرات"}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Frequency Value */}
-            {formFreqType === "daily" && (
+            {/* Specific Times - dynamic based on timesPerDay */}
+            <div className="space-y-2">
+              <Label className="text-right block">أوقات التناول</Label>
               <div className="space-y-2">
-                <Label className="text-right block">عدد المرات يومياً</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {[1, 2, 3, 4].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => handleTimesPerDayChange(n)}
-                      className={`p-2.5 rounded-xl border-2 text-center text-sm font-medium transition-colors ${
-                        formTimesPerDay === n
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground"
-                      }`}
-                    >
-                      {n} {n === 1 ? "مرة" : "مرات"}
-                    </button>
-                  ))}
-                </div>
+                {formTimes.map((time, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      type="time"
+                      value={time}
+                      onChange={(e) => {
+                        const newTimes = [...formTimes];
+                        newTimes[i] = e.target.value;
+                        setFormTimes(newTimes);
+                      }}
+                      className="text-center flex-1"
+                    />
+                    <span className="text-xs text-muted-foreground shrink-0">الجرعة {i + 1}</span>
+                  </div>
+                ))}
               </div>
-            )}
-
-            {formFreqType === "every_x_days" && (
-              <div className="space-y-2">
-                <Label className="text-right block">الفترة بين الجرعات</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {DAY_INTERVALS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setFormFreqValue(opt.value)}
-                      className={`p-2.5 rounded-xl border-2 text-center text-xs font-medium transition-colors ${
-                        formFreqValue === opt.value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {formFreqType === "every_x_hours" && (
-              <div className="space-y-2">
-                <Label className="text-right block">الفترة بين الجرعات</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {HOUR_INTERVALS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setFormFreqValue(opt.value)}
-                      className={`p-2.5 rounded-xl border-2 text-center text-xs font-medium transition-colors ${
-                        formFreqValue === opt.value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Specific Times */}
-            {(formFreqType === "daily") && (
-              <div className="space-y-2">
-                <Label className="text-right block">أوقات التناول</Label>
-                <div className="space-y-2">
-                  {formTimes.map((time, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Input
-                        type="time"
-                        value={time}
-                        onChange={(e) => {
-                          const newTimes = [...formTimes];
-                          newTimes[i] = e.target.value;
-                          setFormTimes(newTimes);
-                        }}
-                        className="text-center flex-1"
-                      />
-                      <span className="text-xs text-muted-foreground shrink-0">الجرعة {i + 1}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            </div>
 
             {/* Start / End Date */}
             <div className="grid grid-cols-2 gap-3">
@@ -618,16 +603,16 @@ const Medications = () => {
               </div>
             </div>
 
-            {/* Color */}
+            {/* Color - single row */}
             <div className="space-y-2">
               <Label className="text-right block">لون الدواء</Label>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-2 overflow-x-auto">
                 {MEDICATION_COLORS.map((c) => (
                   <button
                     key={c}
                     onClick={() => setFormColor(c)}
-                    className={`w-9 h-9 rounded-full border-2 transition-transform ${
-                      formColor === c ? "border-foreground scale-110" : "border-transparent"
+                    className={`w-8 h-8 rounded-full border-2 transition-transform shrink-0 ${
+                      formColor === c ? "border-foreground scale-110" : c === "hsl(0, 0%, 100%)" ? "border-border" : "border-transparent"
                     }`}
                     style={{ background: c }}
                   />
@@ -646,13 +631,13 @@ const Medications = () => {
               />
             </div>
 
-            {/* Reminder Toggle */}
-            <div className="flex items-center justify-between flex-row-reverse p-3 rounded-xl bg-card border border-border/50">
+            {/* Reminder Toggle - swapped: toggle on right, label on left */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/50">
+              <Switch checked={formReminderEnabled} onCheckedChange={setFormReminderEnabled} />
               <span className="font-medium text-foreground flex items-center gap-2">
                 <Bell className="w-4 h-4" />
                 تفعيل التنبيهات
               </span>
-              <Switch checked={formReminderEnabled} onCheckedChange={setFormReminderEnabled} />
             </div>
 
             <Button onClick={handleSave} className="w-full h-12 text-base font-bold">
