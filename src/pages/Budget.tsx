@@ -240,7 +240,7 @@ const mergeWithTripBudgets = (budgets: MonthBudget[]): MonthBudget[] => {
 const Budget = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [budgets, setBudgets] = useState<MonthBudget[]>(loadBudgets);
+  const [budgets, setBudgets] = useState<MonthBudget[]>(() => mergeWithTripBudgets(loadBudgets()));
   const [selectedBudget, setSelectedBudget] = useState<MonthBudget | null>(null);
   const [showAddMonth, setShowAddMonth] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
