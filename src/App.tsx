@@ -32,6 +32,7 @@ import Trips from "./pages/Trips.tsx";
 import Albums from "./pages/Albums.tsx";
 import KidsWorship from "./pages/KidsWorship.tsx";
 import ParentDashboard from "./pages/ParentDashboard.tsx";
+import Athkar from "./pages/Athkar.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient();
