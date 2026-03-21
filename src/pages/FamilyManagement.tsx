@@ -36,6 +36,9 @@ const ROLE_LABELS: Record<string, string> = {
   driver: "سائق",
 };
 
+const isStaffRole = (role: FamilyRole) =>
+  role === "worker" || role === "maid" || role === "driver";
+
 const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: number; className?: string }) => {
   switch (role) {
     case "father":
@@ -47,6 +50,11 @@ const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: nu
     case "son":
     case "daughter":
       return <Baby size={size} className={className} />;
+    case "worker":
+    case "maid":
+      return <Briefcase size={size} className={className} />;
+    case "driver":
+      return <Car size={size} className={className} />;
     default:
       return <User size={size} className={className} />;
   }
