@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical } from "lucide-react";
+import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, Repeat } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +23,22 @@ interface TaskItem {
   priority: "none" | "high" | "medium" | "low";
   assignedTo: string;
   done: boolean;
+  repeat?: {
+    enabled: boolean;
+    days: number[]; // 0=Sat..6=Fri
+    count: number;
+  };
 }
+
+const WEEKDAYS_SHORT = [
+  { value: 0, label: "سب" },
+  { value: 1, label: "أح" },
+  { value: 2, label: "إث" },
+  { value: 3, label: "ثل" },
+  { value: 4, label: "أر" },
+  { value: 5, label: "خم" },
+  { value: 6, label: "جم" },
+];
 
 interface TaskList {
   id: string;
@@ -104,12 +119,18 @@ const Tasks = () => {
   const [editNote, setEditNote] = useState("");
   const [editPriority, setEditPriority] = useState<TaskItem["priority"]>("medium");
   const [editAssignedTo, setEditAssignedTo] = useState("");
+  const [editRepeatEnabled, setEditRepeatEnabled] = useState(false);
+  const [editRepeatDays, setEditRepeatDays] = useState<number[]>([]);
+  const [editRepeatCount, setEditRepeatCount] = useState(1);
 
   // New item form
   const [newItemName, setNewItemName] = useState("");
   const [newItemNote, setNewItemNote] = useState("");
   const [newItemPriority, setNewItemPriority] = useState<TaskItem["priority"]>("medium");
   const [newItemAssignedTo, setNewItemAssignedTo] = useState("");
+  const [newItemRepeatEnabled, setNewItemRepeatEnabled] = useState(false);
+  const [newItemRepeatDays, setNewItemRepeatDays] = useState<number[]>([]);
+  const [newItemRepeatCount, setNewItemRepeatCount] = useState(1);
 
   // New list form
   const [newListName, setNewListName] = useState("");
@@ -277,6 +298,9 @@ const Tasks = () => {
     setEditNote(item.note);
     setEditPriority(item.priority);
     setEditAssignedTo(item.assignedTo);
+    setEditRepeatEnabled(item.repeat?.enabled || false);
+    setEditRepeatDays(item.repeat?.days || []);
+    setEditRepeatCount(item.repeat?.count || 1);
     closeSwipe(item.id);
   }, [closeSwipe]);
 
@@ -290,7 +314,7 @@ const Tasks = () => {
               ...list,
               items: list.items.map((item) =>
                 item.id === editTarget.id
-                  ? { ...item, name: editName.trim(), note: editNote.trim(), priority: editPriority, assignedTo: editAssignedTo || item.assignedTo }
+                  ? { ...item, name: editName.trim(), note: editNote.trim(), priority: editPriority, assignedTo: editAssignedTo || item.assignedTo, repeat: editRepeatEnabled ? { enabled: true, days: editRepeatDays, count: editRepeatCount } : undefined }
                   : item
               ),
             }
@@ -298,7 +322,7 @@ const Tasks = () => {
       )
     );
     setEditTarget(null);
-  }, [activeListId, editTarget, editName, editNote, editPriority, editAssignedTo]);
+  }, [activeListId, editTarget, editName, editNote, editPriority, editAssignedTo, editRepeatEnabled, editRepeatDays, editRepeatCount]);
 
   const addItem = useCallback(() => {
     if (!newItemName.trim()) return;
@@ -310,6 +334,7 @@ const Tasks = () => {
       priority: newItemPriority,
       assignedTo: newItemAssignedTo || "أنت",
       done: false,
+      repeat: newItemRepeatEnabled ? { enabled: true, days: newItemRepeatDays, count: newItemRepeatCount } : undefined,
     };
     setLists((prev) =>
       prev.map((list) =>
@@ -322,8 +347,11 @@ const Tasks = () => {
     setNewItemNote("");
     setNewItemPriority("medium");
     setNewItemAssignedTo("");
+    setNewItemRepeatEnabled(false);
+    setNewItemRepeatDays([]);
+    setNewItemRepeatCount(1);
     setShowAddItem(false);
-  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo]);
+  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, newItemRepeatEnabled, newItemRepeatDays, newItemRepeatCount]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
@@ -691,6 +719,51 @@ const Tasks = () => {
                   </div>
                 </div>
               )}
+              {/* Repeat section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Switch checked={editRepeatEnabled} onCheckedChange={setEditRepeatEnabled} />
+                  <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Repeat size={16} className="text-primary" />
+                    تكرار المهمة
+                  </span>
+                </div>
+                {editRepeatEnabled && (
+                  <>
+                    <div className="flex justify-between gap-1.5">
+                      {WEEKDAYS_SHORT.map((day) => (
+                        <button
+                          key={day.value}
+                          onClick={() => setEditRepeatDays(prev => prev.includes(day.value) ? prev.filter(d => d !== day.value) : [...prev, day.value])}
+                          className={`w-10 h-10 rounded-full text-xs font-bold transition-all ${
+                            editRepeatDays.includes(day.value)
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground border border-border"
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2 text-right">عدد التكرارات</p>
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => { if (editRepeatCount > 1) setEditRepeatCount(editRepeatCount - 1); }}
+                          className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-lg font-bold text-foreground hover:bg-muted/80 transition-colors"
+                        >−</button>
+                        <div className="w-16 h-10 rounded-xl border-2 border-primary bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                          {editRepeatCount}
+                        </div>
+                        <button
+                          onClick={() => { if (editRepeatCount < 99) setEditRepeatCount(editRepeatCount + 1); }}
+                          className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-lg font-bold text-foreground hover:bg-muted/80 transition-colors"
+                        >+</button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             <DrawerFooter className="flex-row gap-2">
               <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
@@ -747,6 +820,51 @@ const Tasks = () => {
                   </div>
                 </div>
               )}
+              {/* Repeat section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Switch checked={newItemRepeatEnabled} onCheckedChange={setNewItemRepeatEnabled} />
+                  <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Repeat size={16} className="text-primary" />
+                    تكرار المهمة
+                  </span>
+                </div>
+                {newItemRepeatEnabled && (
+                  <>
+                    <div className="flex justify-between gap-1.5">
+                      {WEEKDAYS_SHORT.map((day) => (
+                        <button
+                          key={day.value}
+                          onClick={() => setNewItemRepeatDays(prev => prev.includes(day.value) ? prev.filter(d => d !== day.value) : [...prev, day.value])}
+                          className={`w-10 h-10 rounded-full text-xs font-bold transition-all ${
+                            newItemRepeatDays.includes(day.value)
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground border border-border"
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2 text-right">عدد التكرارات</p>
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => { if (newItemRepeatCount > 1) setNewItemRepeatCount(newItemRepeatCount - 1); }}
+                          className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-lg font-bold text-foreground hover:bg-muted/80 transition-colors"
+                        >−</button>
+                        <div className="w-16 h-10 rounded-xl border-2 border-primary bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                          {newItemRepeatCount}
+                        </div>
+                        <button
+                          onClick={() => { if (newItemRepeatCount < 99) setNewItemRepeatCount(newItemRepeatCount + 1); }}
+                          className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-lg font-bold text-foreground hover:bg-muted/80 transition-colors"
+                        >+</button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             <DrawerFooter className="flex-row gap-2">
               <Button onClick={addItem} className="flex-1 rounded-xl">إضافة</Button>
