@@ -179,6 +179,9 @@ const SectionDetail = ({
       return {};
     }
   });
+  const [sequentialMode, setSequentialMode] = useState(false);
+  const [seqIndex, setSeqIndex] = useState(0);
+  const [seqCount, setSeqCount] = useState(0);
 
   const save = useCallback(
     (p: Record<string, number>) => {
@@ -209,6 +212,124 @@ const SectionDetail = ({
   );
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
+  // Sequential mode logic
+  const startSequential = () => {
+    setSeqIndex(0);
+    setSeqCount(0);
+    setSequentialMode(true);
+  };
+
+  const currentThikr = section.athkar[seqIndex];
+  const seqRemaining = currentThikr ? currentThikr.count - seqCount : 0;
+
+  const handleSeqTap = () => {
+    if (!currentThikr) return;
+    haptic.light();
+    const newCount = seqCount + 1;
+    // Update progress
+    const cur = progress[currentThikr.id] || 0;
+    if (cur < currentThikr.count) {
+      const next = { ...progress, [currentThikr.id]: cur + 1 };
+      setProgress(next);
+      save(next);
+    }
+    if (newCount >= currentThikr.count) {
+      // Move to next thikr
+      if (seqIndex < section.athkar.length - 1) {
+        setSeqIndex(seqIndex + 1);
+        setSeqCount(0);
+      } else {
+        // All done
+        haptic.medium();
+        setSequentialMode(false);
+      }
+    } else {
+      setSeqCount(newCount);
+    }
+  };
+
+  // Sequential reading mode
+  if (sequentialMode && currentThikr) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Header */}
+        <div
+          className="px-4 pt-12 pb-4 rounded-b-3xl"
+          style={{
+            background: `linear-gradient(135deg, ${section.gradient[0]}, ${section.gradient[1]})`,
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSequentialMode(false)}
+              className="p-1.5 rounded-full shrink-0"
+              style={{ background: "hsla(0,0%,100%,0.15)" }}
+            >
+              <ArrowRight size={20} className="text-white" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-bold text-white">قراءة متتابعة</h1>
+              <p className="text-xs text-white/70">
+                {seqIndex + 1} / {section.athkar.length}
+              </p>
+            </div>
+          </div>
+          {/* Progress */}
+          <div className="mt-3 h-2 rounded-full bg-white/20 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full bg-white"
+              animate={{ width: `${((seqIndex + seqCount / currentThikr.count) / section.athkar.length) * 100}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+        </div>
+
+        {/* Single thikr - full screen tap area */}
+        <button
+          onClick={handleSeqTap}
+          className="flex-1 flex flex-col items-center justify-center px-6 py-8 active:bg-muted/20 transition-colors"
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentThikr.id}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.3 }}
+              className="text-center"
+            >
+              <p
+                className="leading-[2.4] text-foreground mb-6"
+                style={{
+                  fontFamily: "'Amiri Quran', serif",
+                  fontSize: "1.5rem",
+                  direction: "rtl",
+                }}
+              >
+                {currentThikr.text}
+              </p>
+              {currentThikr.fadl && (
+                <p className="text-xs text-muted-foreground mb-4">{currentThikr.fadl}</p>
+              )}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Counter */}
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold"
+            style={{
+              background: `linear-gradient(135deg, ${section.gradient[0]}, ${section.gradient[1]})`,
+              color: "white",
+            }}
+          >
+            {seqRemaining}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">اضغط في أي مكان</p>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-28">
       {/* Header */}
@@ -233,6 +354,14 @@ const SectionDetail = ({
             </h1>
             <p className="text-xs text-white/70">{section.subtitle}</p>
           </div>
+          <button
+            onClick={startSequential}
+            className="p-1.5 rounded-full shrink-0"
+            style={{ background: "hsla(0,0%,100%,0.15)" }}
+            title="قراءة متتابعة"
+          >
+            <BookOpen size={18} className="text-white" />
+          </button>
           <button
             onClick={handleReset}
             className="p-1.5 rounded-full shrink-0"
