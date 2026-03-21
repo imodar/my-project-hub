@@ -125,6 +125,9 @@ const Tasks = () => {
   const [newItemNote, setNewItemNote] = useState("");
   const [newItemPriority, setNewItemPriority] = useState<TaskItem["priority"]>("medium");
   const [newItemAssignedTo, setNewItemAssignedTo] = useState("");
+  const [newItemRepeatEnabled, setNewItemRepeatEnabled] = useState(false);
+  const [newItemRepeatDays, setNewItemRepeatDays] = useState<number[]>([]);
+  const [newItemRepeatCount, setNewItemRepeatCount] = useState(1);
 
   // New list form
   const [newListName, setNewListName] = useState("");
