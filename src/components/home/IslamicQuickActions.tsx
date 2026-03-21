@@ -46,13 +46,13 @@ const IslamicQuickActions = () => {
   return (
     <div className="px-5 mt-4">
       <div
-        className="relative rounded-2xl p-4 overflow-hidden"
+        className="relative rounded-2xl p-4 overflow-hidden border border-amber-200/40"
         style={{
-          background: "linear-gradient(135deg, hsl(150 30% 18%), hsl(160 25% 22%))",
+          background: "linear-gradient(135deg, hsl(40 40% 97%), hsl(45 50% 95%))",
         }}
       >
-        {/* Islamic pattern overlay */}
-        <div className="absolute inset-0 text-white">
+        {/* Islamic pattern overlay in gold */}
+        <div className="absolute inset-0" style={{ color: "hsl(40 60% 55%)" }}>
           <IslamicPattern />
         </div>
 
@@ -66,15 +66,15 @@ const IslamicQuickActions = () => {
             >
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{ background: "hsla(0,0%,100%,0.12)" }}
+                style={{ background: "hsl(150 35% 40% / 0.1)" }}
               >
                 {typeof action.icon === "function" && action.icon === TasbihIcon ? (
-                  <TasbihIcon size={24} className="text-emerald-300" />
+                  <TasbihIcon size={24} className="text-emerald-700" />
                 ) : (
-                  <action.icon size={24} className="text-emerald-300" />
+                  <action.icon size={24} className="text-emerald-700" />
                 )}
               </div>
-              <span className="text-xs font-semibold text-white">{action.label}</span>
+              <span className="text-xs font-semibold text-foreground">{action.label}</span>
             </button>
           ))}
         </div>
