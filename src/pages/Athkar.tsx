@@ -190,7 +190,7 @@ const SectionDetail = ({
   const handleTap = (thikr: Thikr) => {
     const cur = progress[thikr.id] || 0;
     if (cur >= thikr.count) return;
-    haptic("light");
+    haptic.light();
     const next = { ...progress, [thikr.id]: cur + 1 };
     setProgress(next);
     save(next);
