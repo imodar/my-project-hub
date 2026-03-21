@@ -1,6 +1,6 @@
 // Budget Page
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane } from "lucide-react";
+import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane, CalendarIcon } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
 import { useUserRole } from "@/contexts/UserRoleContext";
@@ -13,11 +13,17 @@ import { haptic } from "@/lib/haptics";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { loadBudgets as loadBudgetsFromStorage, saveBudgets as saveBudgetsToStorage, syncBudgetToTrip, loadTrips } from "@/lib/tripBudgetSync";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 interface ExpenseItem {
   id: string;
   name: string;
   amount: number;
+  date?: string;
 }
 
 type BudgetType = "month" | "project" | "trip";
@@ -261,6 +267,8 @@ const Budget = () => {
   const [shareNames, setShareNames] = useState<string[]>([]);
   const [editExpenseName, setEditExpenseName] = useState("");
   const [editExpenseAmount, setEditExpenseAmount] = useState("");
+  const [expenseDate, setExpenseDate] = useState<Date | undefined>(undefined);
+  const [editExpenseDate, setEditExpenseDate] = useState<Date | undefined>(undefined);
 
   const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
@@ -317,6 +325,7 @@ const Budget = () => {
       id: Date.now().toString(),
       name: expenseName.trim(),
       amount: parseFloat(expenseAmount),
+      date: expenseDate ? expenseDate.toISOString().split("T")[0] : undefined,
     };
     const updated = budgets.map(b =>
       b.id === selectedBudget.id ? { ...b, expenses: [...b.expenses, expense] } : b
@@ -327,6 +336,7 @@ const Budget = () => {
     setShowAddExpense(false);
     setExpenseName("");
     setExpenseAmount("");
+    setExpenseDate(undefined);
   };
 
   const handleEditIncome = () => {
@@ -372,7 +382,7 @@ const Budget = () => {
             ...b,
             expenses: b.expenses.map(e =>
               e.id === showEditExpense.expense.id
-                ? { ...e, name: editExpenseName.trim(), amount: parseFloat(editExpenseAmount) }
+                ? { ...e, name: editExpenseName.trim(), amount: parseFloat(editExpenseAmount), date: editExpenseDate ? editExpenseDate.toISOString().split("T")[0] : e.date }
                 : e
             ),
           }
@@ -486,6 +496,7 @@ const Budget = () => {
                   onEdit={() => {
                     setEditExpenseName(exp.name);
                     setEditExpenseAmount(exp.amount.toString());
+                    setEditExpenseDate(exp.date ? new Date(exp.date) : undefined);
                     setShowEditExpense({ budgetId: b.id, expense: exp });
                   }}
                   onDelete={() => setShowDeleteExpense({ budgetId: b.id, expenseId: exp.id })}
@@ -496,6 +507,11 @@ const Budget = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{exp.name}</p>
+                      {exp.date && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {format(new Date(exp.date), "d MMMM yyyy", { locale: ar })}
+                        </p>
+                      )}
                     </div>
                     <p className="text-sm font-bold text-destructive">{exp.amount.toLocaleString()}</p>
                   </div>
@@ -527,6 +543,33 @@ const Budget = () => {
                 className="text-right"
                 inputMode="decimal"
               />
+              {/* Date picker (optional) */}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">التاريخ (اختياري)</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !expenseDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                      {expenseDate ? format(expenseDate, "d MMMM yyyy", { locale: ar }) : <span>اختر تاريخ</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={expenseDate}
+                      onSelect={setExpenseDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <DrawerFooter>
               <Button onClick={handleAddExpense} disabled={!expenseName.trim() || !expenseAmount}>
@@ -583,6 +626,33 @@ const Budget = () => {
                 className="text-right"
                 inputMode="decimal"
               />
+              {/* Date picker (optional) */}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">التاريخ (اختياري)</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !editExpenseDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                      {editExpenseDate ? format(editExpenseDate, "d MMMM yyyy", { locale: ar }) : <span>اختر تاريخ</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={editExpenseDate}
+                      onSelect={setEditExpenseDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <DrawerFooter>
               <Button onClick={handleEditExpense} disabled={!editExpenseName.trim() || !editExpenseAmount}>
