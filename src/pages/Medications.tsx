@@ -251,11 +251,7 @@ const Medications = () => {
         updated.reminder.nextDueAt = calculateNextDue(updated);
         // Push next due forward
         const next = new Date(updated.reminder.nextDueAt);
-        if (updated.frequencyType === "every_x_hours") {
-          next.setHours(next.getHours() + updated.frequencyValue);
-        } else {
-          next.setDate(next.getDate() + (updated.frequencyType === "daily" ? 1 : updated.frequencyValue));
-        }
+        next.setDate(next.getDate() + 1);
         updated.reminder.nextDueAt = next.toISOString();
         return updated;
       })
