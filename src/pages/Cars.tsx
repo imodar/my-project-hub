@@ -314,7 +314,7 @@ const Cars = () => {
       mileageUnit: newMileageUnit,
       color: newColor,
       plateNumber: newPlate,
-      sharedWith: [],
+      sharedWith: newSharedWith,
       maintenance: [],
       createdAt: new Date().toISOString(),
     };
