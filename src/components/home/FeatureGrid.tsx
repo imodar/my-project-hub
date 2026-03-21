@@ -20,6 +20,7 @@ const features = [
   { icon: ScrollText, label: "الوصية", bg: "hsl(200 45% 92%)", color: "hsl(200 50% 35%)", route: "/will" },
   { icon: Car, label: "المركبات", bg: "hsl(220 50% 93%)", color: "hsl(220 55% 45%)", route: "/vehicle" },
   { icon: BookHeart, label: "عبادات الأطفال", bg: "hsl(320 50% 93%)", color: "hsl(320 55% 45%)", route: "/kids-worship" },
+  { icon: Syringe, label: "اللقاحات", bg: "hsl(170 45% 92%)", color: "hsl(170 50% 35%)", route: "/vaccinations" },
 ];
 
 const FeatureGrid = () => {
