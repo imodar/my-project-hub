@@ -935,6 +935,37 @@ const Trips = () => {
           <DrawerContent>
             <DrawerHeader><DrawerTitle>إضافة يوم جديد</DrawerTitle></DrawerHeader>
             <div className="px-5 pb-8 space-y-4">
+              {selectedTrip.startDate && selectedTrip.endDate && (() => {
+                const start = new Date(selectedTrip.startDate);
+                const end = new Date(selectedTrip.endDate);
+                const totalDays = differenceInDays(end, start) + 1;
+                const existingDayNumbers = selectedTrip.days.map(d => d.dayNumber);
+                const availableDays = Array.from({ length: totalDays }, (_, i) => i + 1)
+                  .filter(n => !existingDayNumbers.includes(n));
+                if (availableDays.length > 0) {
+                  return (
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-2 block">اختر اليوم</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {availableDays.map((dayNum) => {
+                          const date = addDays(start, dayNum - 1);
+                          return (
+                            <button
+                              key={dayNum}
+                              onClick={() => setDayCity(prev => prev || selectedTrip.destination)}
+                              className="px-3 py-2 rounded-lg text-xs font-bold transition-all bg-muted text-muted-foreground text-center"
+                            >
+                              <span className="block">{format(date, "EEEE", { locale: ar })}</span>
+                              <span className="block text-[10px] opacity-75">{format(date, "d MMM", { locale: ar })}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+                return <p className="text-xs text-muted-foreground text-center">جميع أيام الرحلة مضافة بالفعل</p>;
+              })()}
               <Input placeholder="المدينة / المنطقة" value={dayCity} onChange={(e) => setDayCity(e.target.value)} />
               <Button className="w-full rounded-xl" onClick={handleAddDay}>إضافة</Button>
             </div>
