@@ -437,7 +437,37 @@ const Trips = () => {
     toast.success("تم إضافة المصروف");
   };
 
-  const togglePackingItem = (itemId: string) => {
+  const handleAddDocument = () => {
+    if (!selectedTrip || !docName.trim()) return;
+    const fileUrl = docFileInput ? URL.createObjectURL(docFileInput) : "";
+    const newDoc: TripDocument = {
+      id: Date.now().toString(),
+      name: docName,
+      type: docType,
+      fileUrl,
+      fileName: docFileInput?.name || "مستند",
+      addedAt: new Date().toISOString().split("T")[0],
+      notes: docNotes || undefined,
+    };
+    const updated = { ...selectedTrip, documents: [...selectedTrip.documents, newDoc] };
+    setSelectedTrip(updated);
+    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    setDocName(""); setDocType("ticket"); setDocNotes(""); setDocFileInput(null);
+    setNewDocDrawer(false);
+    toast.success("تم إضافة المستند");
+  };
+
+  const handleDeleteDocument = (docId: string) => {
+    if (!selectedTrip) return;
+    const updated = { ...selectedTrip, documents: selectedTrip.documents.filter((d) => d.id !== docId) };
+    setSelectedTrip(updated);
+    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    setDocViewDrawer(false);
+    setViewingDoc(null);
+    toast.success("تم حذف المستند");
+  };
+
+
     if (!selectedTrip) return;
     const updatedList = selectedTrip.packingList.map((p) =>
       p.id === itemId ? { ...p, packed: !p.packed } : p
