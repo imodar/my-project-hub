@@ -560,6 +560,70 @@ const Albums = () => {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Confirm Delete Album */}
+      <Drawer open={!!confirmDeleteAlbum} onOpenChange={(v) => { if (!v) setConfirmDeleteAlbum(null); }}>
+        <DrawerContent>
+          <div className="px-5 pb-8 pt-4 text-center space-y-4" dir="rtl">
+            <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
+              <AlertTriangle size={28} className="text-destructive" />
+            </div>
+            <h3 className="text-lg font-extrabold text-foreground">حذف الألبوم</h3>
+            <p className="text-sm text-muted-foreground">هل أنت متأكد من حذف هذا الألبوم؟ سيتم حذف جميع الصور بداخله.</p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-xl font-bold"
+                onClick={() => setConfirmDeleteAlbum(null)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 h-12 rounded-xl font-bold"
+                onClick={() => {
+                  if (confirmDeleteAlbum) handleDeleteAlbum(confirmDeleteAlbum);
+                  setConfirmDeleteAlbum(null);
+                }}
+              >
+                حذف
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Confirm Delete Photo */}
+      <Drawer open={!!confirmDeletePhoto} onOpenChange={(v) => { if (!v) setConfirmDeletePhoto(null); }}>
+        <DrawerContent>
+          <div className="px-5 pb-8 pt-4 text-center space-y-4" dir="rtl">
+            <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
+              <AlertTriangle size={28} className="text-destructive" />
+            </div>
+            <h3 className="text-lg font-extrabold text-foreground">حذف الصورة</h3>
+            <p className="text-sm text-muted-foreground">هل أنت متأكد من حذف هذه الصورة؟</p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-xl font-bold"
+                onClick={() => setConfirmDeletePhoto(null)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 h-12 rounded-xl font-bold"
+                onClick={() => {
+                  if (confirmDeletePhoto) handleDeletePhoto(confirmDeletePhoto);
+                  setConfirmDeletePhoto(null);
+                }}
+              >
+                حذف
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
