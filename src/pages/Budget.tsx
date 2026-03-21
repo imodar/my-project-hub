@@ -180,6 +180,11 @@ const BudgetCard = ({ b, onSelect, remaining, spentPercent }: {
           <p className="text-sm font-bold text-foreground">{getBudgetTitle(b)}</p>
           <div className="flex items-center gap-2">
             <p className="text-[10px] text-muted-foreground">{b.expenses.length} بنود</p>
+            {b.type === "trip" && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "hsl(215 70% 50% / 0.12)", color: "hsl(215 70% 50%)" }}>
+                منشأة تلقائياً من الرحلة
+              </span>
+            )}
             {shared && (
               <span className="text-[9px] text-primary/70 flex items-center gap-0.5">
                 <Users size={10} /> مع {b.sharedWith.join("، ")}
