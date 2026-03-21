@@ -19,7 +19,7 @@ const TasbihIcon = ({ size = 22, className = "" }: { size?: number; className?: 
 const actions = [
   { icon: BookOpen, label: "القرآن", path: "/" },
   { icon: TasbihIcon, label: "المسبحة", path: "/tasbih" },
-  { icon: Heart, label: "الأذكار", path: "/" },
+  { icon: Heart, label: "الأذكار", path: "/athkar" },
 ];
 
 const IslamicQuickActions = () => {
