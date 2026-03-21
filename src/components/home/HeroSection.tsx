@@ -1,7 +1,8 @@
-import { Bell, Compass, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, CloudSnow, Wind, CloudDrizzle, Snowflake } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { Bell, Compass, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, Play } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import ProfileSheet from "./ProfileSheet";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface WeatherData {
   temp: number;
@@ -24,25 +25,40 @@ type WeatherTheme = {
   gradient: string;
   decorationIcon: React.ReactNode;
   glowColor: string;
+  orbBg: string;
+  label: string;
   particles?: React.ReactNode;
 };
+
+const DEMO_STATES: { code: number; hour: number; label: string }[] = [
+  { code: 0, hour: 10, label: "☀️ صافي - نهار" },
+  { code: 0, hour: 22, label: "🌙 صافي - ليل" },
+  { code: 2, hour: 14, label: "⛅ غائم جزئياً" },
+  { code: 3, hour: 15, label: "☁️ غائم" },
+  { code: 45, hour: 12, label: "🌫️ ضبابي" },
+  { code: 61, hour: 16, label: "🌧️ ممطر" },
+  { code: 71, hour: 11, label: "❄️ ثلوج" },
+];
 
 const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme => {
   const night = isNightTime(hour);
 
-  // No weather data — just day/night
   if (weatherCode === null) {
     if (night) {
       return {
         gradient: "linear-gradient(135deg, hsl(230 40% 18%), hsl(250 35% 25%))",
         decorationIcon: <Moon size={28} className="text-yellow-100" />,
         glowColor: "rgba(200,200,255,0.25)",
+        orbBg: "linear-gradient(135deg, hsl(230 40% 25%), hsl(250 35% 35%))",
+        label: "ليل",
       };
     }
     return {
       gradient: "linear-gradient(135deg, hsl(205 80% 60%), hsl(185 90% 55%))",
       decorationIcon: <Sun size={28} className="text-yellow-200" />,
       glowColor: "rgba(255,245,158,0.4)",
+      orbBg: "linear-gradient(135deg, hsl(48 100% 65%), hsl(30 100% 55%))",
+      label: "نهار",
     };
   }
 
@@ -54,24 +70,31 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
         : "linear-gradient(135deg, hsl(210 30% 75%), hsl(200 25% 85%))",
       decorationIcon: <Snowflake size={28} className="text-blue-100 animate-pulse" />,
       glowColor: "rgba(200,220,255,0.3)",
+      orbBg: "linear-gradient(135deg, hsl(210 40% 80%), hsl(200 30% 90%))",
+      label: "ثلوج",
       particles: (
         <>
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="absolute rounded-full bg-white/30 animate-bounce" style={{
-              width: 4 + Math.random() * 4,
-              height: 4 + Math.random() * 4,
-              top: `${10 + Math.random() * 70}%`,
-              left: `${10 + Math.random() * 80}%`,
-              animationDelay: `${i * 0.3}s`,
-              animationDuration: `${1.5 + Math.random()}s`,
-            }} />
+            <motion.div
+              key={`snow-${i}`}
+              className="absolute rounded-full bg-white/30"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: [0, 0.6, 0], y: [0, 60] }}
+              transition={{ duration: 2 + Math.random(), repeat: Infinity, delay: i * 0.3 }}
+              style={{
+                width: 4 + Math.random() * 4,
+                height: 4 + Math.random() * 4,
+                left: `${10 + Math.random() * 80}%`,
+                top: `${5 + Math.random() * 30}%`,
+              }}
+            />
           ))}
         </>
       ),
     };
   }
 
-  // Rain (51-67, 80-82, 95-99)
+  // Rain
   if ((weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82) || weatherCode >= 95) {
     return {
       gradient: night
@@ -79,17 +102,24 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
         : "linear-gradient(135deg, hsl(215 50% 45%), hsl(210 45% 55%))",
       decorationIcon: <CloudRain size={28} className="text-blue-200" />,
       glowColor: "rgba(100,150,220,0.25)",
+      orbBg: "linear-gradient(135deg, hsl(215 40% 50%), hsl(220 35% 60%))",
+      label: "ممطر",
       particles: (
         <>
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="absolute w-[2px] bg-white/20 rounded-full" style={{
-              height: 8 + Math.random() * 12,
-              top: `${Math.random() * 60}%`,
-              left: `${5 + Math.random() * 90}%`,
-              transform: "rotate(15deg)",
-              animation: `rainDrop ${0.6 + Math.random() * 0.4}s linear infinite`,
-              animationDelay: `${i * 0.15}s`,
-            }} />
+            <motion.div
+              key={`rain-${i}`}
+              className="absolute w-[2px] bg-white/25 rounded-full"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: [0, 0.5, 0], y: [0, 50] }}
+              transition={{ duration: 0.7 + Math.random() * 0.3, repeat: Infinity, delay: i * 0.12 }}
+              style={{
+                height: 10 + Math.random() * 10,
+                left: `${5 + Math.random() * 90}%`,
+                top: `${Math.random() * 40}%`,
+                transform: "rotate(15deg)",
+              }}
+            />
           ))}
         </>
       ),
@@ -104,6 +134,8 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
         : "linear-gradient(135deg, hsl(40 45% 65%), hsl(35 40% 55%))",
       decorationIcon: <Wind size={28} className="text-amber-200/80" />,
       glowColor: "rgba(220,190,120,0.3)",
+      orbBg: "linear-gradient(135deg, hsl(40 50% 60%), hsl(35 45% 50%))",
+      label: "ضبابي",
     };
   }
 
@@ -115,6 +147,8 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
         : "linear-gradient(135deg, hsl(210 30% 60%), hsl(215 25% 70%))",
       decorationIcon: <Cloud size={28} className="text-white/80" />,
       glowColor: "rgba(180,200,220,0.25)",
+      orbBg: "linear-gradient(135deg, hsl(210 30% 65%), hsl(215 25% 75%))",
+      label: "غائم",
     };
   }
 
@@ -125,12 +159,16 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
         gradient: "linear-gradient(135deg, hsl(225 35% 20%), hsl(235 30% 28%))",
         decorationIcon: <CloudSun size={28} className="text-white/70" />,
         glowColor: "rgba(180,190,220,0.2)",
+        orbBg: "linear-gradient(135deg, hsl(225 35% 30%), hsl(235 30% 38%))",
+        label: "غائم جزئياً",
       };
     }
     return {
       gradient: "linear-gradient(135deg, hsl(205 70% 58%), hsl(195 60% 62%))",
       decorationIcon: <CloudSun size={28} className="text-white/90" />,
       glowColor: "rgba(255,245,180,0.3)",
+      orbBg: "linear-gradient(135deg, hsl(48 80% 60%), hsl(40 70% 55%))",
+      label: "غائم جزئياً",
     };
   }
 
@@ -140,17 +178,23 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
       gradient: "linear-gradient(135deg, hsl(230 45% 15%), hsl(250 40% 22%))",
       decorationIcon: <Moon size={28} className="text-yellow-100" />,
       glowColor: "rgba(255,255,200,0.3)",
+      orbBg: "linear-gradient(135deg, hsl(230 40% 25%), hsl(250 35% 35%))",
+      label: "صافي ليلاً",
       particles: (
         <>
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="absolute rounded-full bg-white/40" style={{
-              width: 2,
-              height: 2,
-              top: `${15 + Math.random() * 50}%`,
-              left: `${10 + Math.random() * 80}%`,
-              animation: `twinkle ${1.5 + Math.random() * 2}s ease-in-out infinite`,
-              animationDelay: `${i * 0.4}s`,
-            }} />
+            <motion.div
+              key={`star-${i}`}
+              className="absolute rounded-full bg-white/50"
+              animate={{ opacity: [0.2, 1, 0.2] }}
+              transition={{ duration: 2 + Math.random(), repeat: Infinity, delay: i * 0.4 }}
+              style={{
+                width: 2,
+                height: 2,
+                top: `${15 + Math.random() * 50}%`,
+                left: `${10 + Math.random() * 80}%`,
+              }}
+            />
           ))}
         </>
       ),
@@ -160,6 +204,8 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
     gradient: "linear-gradient(135deg, hsl(205 80% 60%), hsl(185 90% 55%))",
     decorationIcon: <Sun size={28} className="text-yellow-200" />,
     glowColor: "rgba(255,245,158,0.5)",
+    orbBg: "linear-gradient(135deg, hsl(48 100% 65%), hsl(30 100% 55%))",
+    label: "صافي",
   };
 };
 
@@ -187,9 +233,33 @@ const HeroSection = () => {
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
   const greeting = useMemo(() => getGreeting(currentHour), [currentHour]);
 
-  const theme = useMemo(() => {
-    return getWeatherTheme(weather?.weatherCode ?? null, currentHour);
-  }, [weather, currentHour, hasLocationPermission]);
+  // Demo mode
+  const [demoActive, setDemoActive] = useState(false);
+  const [demoIndex, setDemoIndex] = useState(0);
+
+  const activeCode = demoActive ? DEMO_STATES[demoIndex].code : (weather?.weatherCode ?? null);
+  const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
+  const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
+
+  // Demo cycle
+  useEffect(() => {
+    if (!demoActive) return;
+    const timer = setInterval(() => {
+      setDemoIndex((prev) => {
+        if (prev >= DEMO_STATES.length - 1) {
+          setDemoActive(false);
+          return 0;
+        }
+        return prev + 1;
+      });
+    }, 2500);
+    return () => clearInterval(timer);
+  }, [demoActive]);
+
+  const startDemo = useCallback(() => {
+    setDemoIndex(0);
+    setDemoActive(true);
+  }, []);
 
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(
@@ -240,19 +310,6 @@ const HeroSection = () => {
 
   return (
     <>
-      {/* Rain animation keyframes */}
-      <style>{`
-        @keyframes rainDrop {
-          0% { opacity: 0; transform: translateY(-10px) rotate(15deg); }
-          50% { opacity: 0.6; }
-          100% { opacity: 0; transform: translateY(40px) rotate(15deg); }
-        }
-        @keyframes twinkle {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 1; }
-        }
-      `}</style>
-
       {/* Sticky Top Bar */}
       <header className="sticky top-0 z-40 px-5 pt-4 pb-2 flex justify-between items-center bg-background/95 backdrop-blur-sm">
         <div className="flex items-center gap-3">
@@ -265,40 +322,79 @@ const HeroSection = () => {
           </button>
           <span className="text-xl font-bold text-primary tracking-tight">عائلتنا</span>
         </div>
-        <button className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors">
-          <Bell size={22} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={startDemo}
+            disabled={demoActive}
+            className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors disabled:opacity-40"
+            title="محاكاة حالات الطقس"
+          >
+            <Play size={18} />
+          </button>
+          <button className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors">
+            <Bell size={22} />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive" />
+          </button>
+        </div>
       </header>
 
       {/* Hero Card */}
       <section className="px-5 pt-8 relative overflow-visible">
-        {/* Decoration Icon with Glow */}
-        <div className="absolute top-0 left-2 w-16 h-16 z-10 pointer-events-none">
+        {/* Decoration Orb */}
+        <motion.div
+          className="absolute top-0 left-2 w-16 h-16 z-10 pointer-events-none"
+          key={theme.label}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+        >
           <div className="absolute inset-0 rounded-full animate-pulse" style={{
             filter: "blur(12px)",
             background: `radial-gradient(circle, ${theme.glowColor} 0%, transparent 70%)`
           }} />
           <div className="relative w-full h-full rounded-full shadow-lg flex items-center justify-center"
             style={{
-              background: isNightTime(currentHour)
-                ? "linear-gradient(135deg, hsl(230 40% 25%), hsl(250 35% 35%))"
-                : "linear-gradient(135deg, hsl(48 100% 65%), hsl(30 100% 55%))",
+              background: theme.orbBg,
               border: "2px solid hsla(0,0%,100%,0.25)"
             }}
           >
-            {theme.decorationIcon}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={theme.label}
+                initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.4 }}
+              >
+                {theme.decorationIcon}
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="rounded-2xl p-6 relative overflow-hidden text-white shadow-xl transition-all duration-700" style={{
-          background: theme.gradient
-        }}>
-          {/* Weather particles */}
-          {theme.particles}
+        {/* Main Card */}
+        <motion.div
+          className="rounded-2xl p-6 relative overflow-hidden text-white shadow-xl"
+          animate={{ background: theme.gradient }}
+          transition={{ duration: 1, ease: "easeInOut" }}
+          style={{ background: theme.gradient }}
+        >
+          {/* Animated particles */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`particles-${theme.label}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0 z-0"
+            >
+              {theme.particles}
+            </motion.div>
+          </AnimatePresence>
 
-          {/* Cloud decorations - only for cloudy/partly cloudy */}
-          {weather && (weather.weatherCode <= 3 || !weather) && (
+          {/* Cloud decorations */}
+          {(!weather || (weather && weather.weatherCode <= 3)) && !demoActive && (
             <>
               <div className="absolute top-3 right-10 opacity-20">
                 <Cloud size={52} />
@@ -309,8 +405,21 @@ const HeroSection = () => {
             </>
           )}
 
+          {/* Demo label */}
+          <AnimatePresence>
+            {demoActive && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1 text-[11px] font-bold text-white/90"
+              >
+                {DEMO_STATES[demoIndex].label}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="relative z-20 space-y-5">
-            {/* Greeting + Weather */}
             <div className="flex justify-between items-start">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight mb-1">
@@ -319,14 +428,14 @@ const HeroSection = () => {
                 <p className="text-white/75 font-medium text-sm">
                   {gregorianDate} {islamicMode && `• ${hijriDate}`}
                 </p>
-                {weather && (
+                {weather && !demoActive && (
                   <div className="flex items-center gap-1 mt-1">
                     <MapPin size={12} className="text-white/50" />
                     <span className="text-white/50 text-xs">{weather.city}</span>
                   </div>
                 )}
               </div>
-              {weather && (
+              {weather && !demoActive && (
                 <div className="bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 border border-white/20">
                   <div className="flex items-center justify-end gap-2">
                     <WeatherIcon icon={weather.icon} />
@@ -337,7 +446,6 @@ const HeroSection = () => {
               )}
             </div>
 
-            {/* Qibla + Prayer Cards - Islamic mode */}
             {islamicMode && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 flex items-center gap-3 border border-white/10">
@@ -361,7 +469,7 @@ const HeroSection = () => {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={mockUser} />
