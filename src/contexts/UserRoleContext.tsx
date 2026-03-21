@@ -18,9 +18,9 @@ export const STAFF_ROLE_LABELS: Record<string, string> = {
 // parent: all features
 // child: all features  
 // staff: restricted
-const STAFF_HIDDEN_FEATURES = ["/places", "/will"];
+const STAFF_HIDDEN_FEATURES = ["/places", "/will", "/calendar"];
 const STAFF_PERSONAL_ONLY_FEATURES = ["/albums"]; // personal scope only
-const STAFF_DISABLED_FEATURES = ["/calendar"]; // disabled
+const STAFF_DISABLED_FEATURES: string[] = []; // disabled
 
 export interface FeatureAccess {
   hidden: string[];
