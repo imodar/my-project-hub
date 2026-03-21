@@ -519,10 +519,10 @@ const Vehicle = () => {
         )}
 
         {/* Maintenance List */}
-        <div className="px-4 mt-6">
+        <div className="px-4 mt-6" dir="rtl">
           <div className="flex items-center justify-between mb-4">
-            <div />
             <h3 className="text-base font-bold text-foreground">سجل الصيانة</h3>
+            <div />
           </div>
 
           {selectedCar.maintenance.length === 0 ? (
