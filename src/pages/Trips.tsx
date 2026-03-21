@@ -58,6 +58,25 @@ interface Expense {
   amount: number;
 }
 
+interface TripDocument {
+  id: string;
+  name: string;
+  type: "ticket" | "visa" | "hotel" | "insurance" | "passport" | "other";
+  fileUrl: string;
+  fileName: string;
+  addedAt: string;
+  notes?: string;
+}
+
+const DOC_TYPES: Record<TripDocument["type"], { label: string; icon: typeof FileText; color: string }> = {
+  ticket: { label: "تذكرة سفر", icon: Ticket, color: "hsl(215 70% 50%)" },
+  visa: { label: "تأشيرة / فيزا", icon: CreditCard, color: "hsl(145 45% 40%)" },
+  hotel: { label: "حجز فندقي", icon: Building2, color: "hsl(280 50% 55%)" },
+  insurance: { label: "تأمين سفر", icon: FileText, color: "hsl(40 80% 45%)" },
+  passport: { label: "جواز سفر", icon: FileText, color: "hsl(350 60% 50%)" },
+  other: { label: "مستند آخر", icon: File, color: "hsl(0 0% 45%)" },
+};
+
 interface Trip {
   id: string;
   name: string;
@@ -72,6 +91,7 @@ interface Trip {
   suggestions: Suggestion[];
   packingList: PackingItem[];
   expenses: Expense[];
+  documents: TripDocument[];
 }
 
 
