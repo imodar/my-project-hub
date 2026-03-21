@@ -319,6 +319,7 @@ const Trips = () => {
     if (!tripName.trim() || !tripDest.trim()) return;
     if (editingTripId) {
       const newType = tripParticipants.length > 1 ? "family" : "personal";
+      const existingTrip = trips.find(t => t.id === editingTripId);
       setTrips((prev) => prev.map((t) => t.id === editingTripId ? {
         ...t, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
         budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
@@ -329,7 +330,11 @@ const Trips = () => {
           budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
         } : null);
       }
-      toast.success(newType !== trips.find(t => t.id === editingTripId)?.type
+      // Sync budget with updated trip info
+      if (existingTrip) {
+        syncTripToBudget({ id: editingTripId, name: tripName, budget: Number(tripBudget) || 0, expenses: existingTrip.expenses });
+      }
+      toast.success(newType !== existingTrip?.type
         ? newType === "family" ? "تم تحويل الرحلة إلى عائلية" : "تم تحويل الرحلة إلى شخصية"
         : "تم تعديل الرحلة"
       );
@@ -343,6 +348,8 @@ const Trips = () => {
         days: [], suggestions: [], packingList: [], expenses: [], documents: [],
       };
       setTrips((prev) => [...prev, newTrip]);
+      // Create trip budget entry
+      syncTripToBudget({ id: newTrip.id, name: newTrip.name, budget: newTrip.budget, expenses: [] });
       toast.success("تم إنشاء الرحلة");
     }
     resetTripForm();
