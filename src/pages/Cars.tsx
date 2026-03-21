@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search } from "lucide-react";
+import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search, Users, UserPlus } from "lucide-react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -249,6 +249,14 @@ const Cars = () => {
   const [editMaintenanceRecord, setEditMaintenanceRecord] = useState<MaintenanceRecord | null>(null);
   const [manufacturerSearch, setManufacturerSearch] = useState("");
 
+  // Family members for sharing
+  const familyMembers: { id: string; name: string; role: string }[] = useMemo(() => {
+    try {
+      const saved = localStorage.getItem("family_members");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  }, [addCarOpen]);
+
   // Add car form
   const [newManufacturer, setNewManufacturer] = useState("");
   const [newModel, setNewModel] = useState("");
@@ -257,6 +265,7 @@ const Cars = () => {
   const [newMileageUnit, setNewMileageUnit] = useState<"km" | "mi">("km");
   const [newColor, setNewColor] = useState("");
   const [newPlate, setNewPlate] = useState("");
+  const [newSharedWith, setNewSharedWith] = useState<string[]>([]);
 
   // Add maintenance form
   const [maintType, setMaintType] = useState("");
@@ -282,7 +291,7 @@ const Cars = () => {
   const resetAddForm = () => {
     setNewManufacturer(""); setNewModel(""); setNewYear("");
     setNewMileage(""); setNewMileageUnit("km"); setNewColor(""); setNewPlate("");
-    setManufacturerSearch("");
+    setManufacturerSearch(""); setNewSharedWith([]);
   };
 
   const resetMaintForm = () => {
@@ -305,7 +314,7 @@ const Cars = () => {
       mileageUnit: newMileageUnit,
       color: newColor,
       plateNumber: newPlate,
-      sharedWith: [],
+      sharedWith: newSharedWith,
       maintenance: [],
       createdAt: new Date().toISOString(),
     };
@@ -483,6 +492,34 @@ const Cars = () => {
             </div>
           </div>
         </div>
+
+        {/* Shared With */}
+        {selectedCar.sharedWith.length > 0 && (
+          <div className="px-4 mt-4">
+            <div className="rounded-2xl bg-card border border-border p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div />
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-foreground">مشاركة مع</h4>
+                  <Users size={16} className="text-primary" />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-end">
+                {selectedCar.sharedWith.map(memberId => {
+                  const member = familyMembers.find(m => m.id === memberId);
+                  return (
+                    <div key={memberId} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10">
+                      <span className="text-xs font-medium text-primary">{member?.name || "غير معروف"}</span>
+                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[9px] font-bold text-primary">
+                        {member?.name?.charAt(0) || "؟"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Maintenance List */}
         <div className="px-4 mt-6">
@@ -677,6 +714,12 @@ const Cars = () => {
                           </h3>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {car.year} • {car.mileage.toLocaleString()} {car.mileageUnit === "km" ? "كم" : "ميل"}
+                            {car.sharedWith.length > 0 && (
+                              <span className="inline-flex items-center gap-1 mr-2">
+                                <Users size={10} className="inline" />
+                                {car.sharedWith.length}
+                              </span>
+                            )}
                           </p>
                           {(overdueCount > 0 || soonCount > 0) && (
                             <div className="flex items-center gap-2 mt-2">
@@ -803,6 +846,47 @@ const Cars = () => {
                 <Label className="text-right block">رقم اللوحة (اختياري)</Label>
                 <Input value={newPlate} onChange={e => setNewPlate(e.target.value)}
                   placeholder="مثال: ABC 1234" className="text-right" />
+              </div>
+
+              {/* Share with family */}
+              <div className="space-y-2">
+                <Label className="text-right block flex items-center gap-2 justify-end">
+                  <span>مشاركة مع</span>
+                  <Users size={14} className="text-muted-foreground" />
+                </Label>
+                {familyMembers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-right">
+                    لا يوجد أفراد مضافون بعد. أضف أفراد الأسرة من إدارة العائلة.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {familyMembers.filter(m => m.id !== "creator").map(member => {
+                      const isSelected = newSharedWith.includes(member.id);
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => {
+                            setNewSharedWith(prev =>
+                              isSelected ? prev.filter(id => id !== member.id) : [...prev, member.id]
+                            );
+                          }}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all ${
+                            isSelected
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-card text-foreground"
+                          }`}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
+                            {member.name?.charAt(0) || "؟"}
+                          </div>
+                          <span>{member.name}</span>
+                          {isSelected && <Check size={14} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
             <DrawerFooter>
