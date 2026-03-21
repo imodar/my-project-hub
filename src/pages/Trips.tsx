@@ -595,6 +595,7 @@ const Trips = () => {
                 suggestions: "hsl(40 90% 50%)",
                 packing: "hsl(145 45% 40%)",
                 calculator: "hsl(280 50% 55%)",
+                documents: "hsl(200 65% 50%)",
                 album: "hsl(350 65% 55%)",
               };
               return (
