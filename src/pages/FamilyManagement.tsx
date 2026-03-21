@@ -31,6 +31,9 @@ const ROLE_LABELS: Record<string, string> = {
   daughter: "ابنة",
   husband: "الزوج",
   wife: "الزوجة",
+  worker: "عامل",
+  maid: "عاملة",
+  driver: "سائق",
 };
 
 const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: number; className?: string }) => {
