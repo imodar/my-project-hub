@@ -20,7 +20,7 @@ interface ExpenseItem {
   amount: number;
 }
 
-type BudgetType = "month" | "project";
+type BudgetType = "month" | "project" | "trip";
 
 interface MonthBudget {
   id: string;
@@ -30,6 +30,7 @@ interface MonthBudget {
   income: number;
   expenses: ExpenseItem[];
   sharedWith: string[];
+  tripId?: string;
 }
 
 const MONTH_NAMES = [
