@@ -808,26 +808,18 @@ const Vehicle = () => {
                 </div>
               </div>
 
-              {/* Model */}
-              <div className="space-y-2">
-                <Label className="text-right block">الموديل *</Label>
-                <Input value={newModel} onChange={e => setNewModel(e.target.value)}
-                  placeholder="مثال: Camry, Accord" className="text-right" />
-              </div>
-
-              {/* Year */}
-              <div className="space-y-2">
-                <Label className="text-right block">سنة الصنع *</Label>
-                <Select value={newYear} onValueChange={setNewYear}>
-                  <SelectTrigger className="text-right">
-                    <SelectValue placeholder="اختر السنة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currentYears.map(y => (
-                      <SelectItem key={y} value={y}>{y}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Model & Year */}
+              <div className="flex gap-3">
+                <div className="space-y-2 w-28 shrink-0">
+                  <Label className="text-right block">السنة *</Label>
+                  <Input type="number" value={newYear} onChange={e => setNewYear(e.target.value)}
+                    placeholder="2024" className="text-right" maxLength={4} />
+                </div>
+                <div className="space-y-2 flex-1">
+                  <Label className="text-right block">الموديل *</Label>
+                  <Input value={newModel} onChange={e => setNewModel(e.target.value)}
+                    placeholder="مثال: Camry, Accord" className="text-right" />
+                </div>
               </div>
 
               {/* Mileage */}
