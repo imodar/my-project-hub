@@ -369,6 +369,7 @@ const Trips = () => {
 
   const handleDeleteTrip = () => {
     if (!deleteTarget) return;
+    removeTripBudget(deleteTarget);
     setTrips((prev) => prev.filter((t) => t.id !== deleteTarget));
     if (selectedTrip?.id === deleteTarget) setSelectedTrip(null);
     setDeleteTarget(null);
