@@ -22,6 +22,7 @@ const familyMembers = [
 const Settings = () => {
   const navigate = useNavigate();
   const { islamicMode, setIslamicMode } = useIslamicMode();
+  const { currentRole, setCurrentRole } = useUserRole();
   const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
   const [contacts, setContacts] = useState(emergencyContacts);
   const [members, setMembers] = useState(familyMembers);
