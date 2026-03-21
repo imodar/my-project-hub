@@ -351,9 +351,13 @@ const Albums = () => {
         <PageHeader title="الألبومات" subtitle="صور العائلة وذكرياتها" onBack={() => navigate(-1)} />
 
         <div className="px-5 mt-6">
-          {/* Albums grid — masonry-like, filtered to hide personal trip albums */}
+          {/* Albums grid — masonry-like, filtered for staff/personal trip albums */}
           {(() => {
-            const visibleAlbums = albums.filter((a) => !isPersonalTripAlbum(a, trips));
+            let visibleAlbums = albums.filter((a) => !isPersonalTripAlbum(a, trips));
+            // Staff only see personal (non-linked) albums
+            if (featureAccess.isStaff) {
+              visibleAlbums = visibleAlbums.filter((a) => !a.linkedTripId);
+            }
             return visibleAlbums.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 px-8">
               <div
