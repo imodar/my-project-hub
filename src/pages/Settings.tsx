@@ -191,6 +191,42 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* Role Switcher (Demo) */}
+        <div>
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">محاكاة الدور (للتجربة)</h2>
+          <div
+            className="rounded-2xl overflow-hidden p-4"
+            style={{
+              background: "hsla(0,0%,100%,0.9)",
+              boxShadow: "0 2px 12px hsla(0,0%,0%,0.05)",
+            }}
+          >
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { role: "father" as UserRole, label: "أب", icon: User, color: "hsl(var(--primary))" },
+                { role: "son" as UserRole, label: "ابن", icon: User, color: "hsl(215, 70%, 50%)" },
+                { role: "worker" as UserRole, label: "عامل", icon: Briefcase, color: "hsl(30, 60%, 45%)" },
+                { role: "maid" as UserRole, label: "عاملة", icon: Briefcase, color: "hsl(30, 60%, 45%)" },
+                { role: "driver" as UserRole, label: "سائق", icon: Car, color: "hsl(30, 60%, 45%)" },
+              ]).map((item) => (
+                <button
+                  key={item.role}
+                  onClick={() => setCurrentRole(item.role)}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                    currentRole === item.role ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <item.icon size={18} style={{ color: currentRole === item.role ? item.color : "hsl(var(--muted-foreground))" }} />
+                  <span className="text-xs font-bold text-foreground">{item.label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center mt-3">
+              اختر دوراً لمحاكاة تجربة المستخدم المختلفة
+            </p>
+          </div>
+        </div>
+
         {/* Other Settings Groups */}
         {settingsGroups.map((group) => (
           <div key={group.title}>
