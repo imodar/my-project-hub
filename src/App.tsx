@@ -80,7 +80,7 @@ const AnimatedRoutes = () => {
         <Route path="/parent-dashboard" element={<ParentDashboard />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/athkar" element={<Athkar />} />
-        <Route path="/cars" element={<Cars />} />
+        <Route path="/vehicle" element={<Vehicle />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
