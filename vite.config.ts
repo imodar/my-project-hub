@@ -42,6 +42,26 @@ export default defineConfig(({ mode }) => ({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          {
+            urlPattern: /^https:\/\/api\.aladhan\.com\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "prayer-times-cache",
+              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 6 },
+              cacheableResponse: { statuses: [0, 200] },
+              networkTimeoutSeconds: 5,
+            },
+          },
+          {
+            urlPattern: /^https:\/\/api\.open-meteo\.com\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "weather-cache",
+              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+              networkTimeoutSeconds: 5,
+            },
+          },
         ],
       },
       manifest: {
