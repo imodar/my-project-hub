@@ -570,6 +570,7 @@ const Trips = () => {
               ...(selectedTrip.type === "family" || selectedTrip.participants.length > 1
                 ? [{ key: "suggestions", label: "المقترحات", icon: Lightbulb }]
                 : []),
+              { key: "documents", label: "المستندات", icon: FileText },
               { key: "packing", label: "التجهيزات", icon: PackageCheck },
               { key: "calculator", label: "التكاليف", icon: Calculator },
               ...((() => {
