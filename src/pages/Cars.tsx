@@ -813,6 +813,47 @@ const Cars = () => {
                 <Input value={newPlate} onChange={e => setNewPlate(e.target.value)}
                   placeholder="مثال: ABC 1234" className="text-right" />
               </div>
+
+              {/* Share with family */}
+              <div className="space-y-2">
+                <Label className="text-right block flex items-center gap-2 justify-end">
+                  <span>مشاركة مع</span>
+                  <Users size={14} className="text-muted-foreground" />
+                </Label>
+                {familyMembers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-right">
+                    لا يوجد أفراد مضافون بعد. أضف أفراد الأسرة من إدارة العائلة.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {familyMembers.filter(m => m.id !== "creator").map(member => {
+                      const isSelected = newSharedWith.includes(member.id);
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => {
+                            setNewSharedWith(prev =>
+                              isSelected ? prev.filter(id => id !== member.id) : [...prev, member.id]
+                            );
+                          }}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all ${
+                            isSelected
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-card text-foreground"
+                          }`}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
+                            {member.name?.charAt(0) || "؟"}
+                          </div>
+                          <span>{member.name}</span>
+                          {isSelected && <Check size={14} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
             <DrawerFooter>
               <Button onClick={handleAddCar} disabled={!newManufacturer || !newModel || !newYear}
