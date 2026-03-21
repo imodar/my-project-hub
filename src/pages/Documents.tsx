@@ -163,6 +163,7 @@ const Documents = () => {
   // Share form
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
   const [showListActions, setShowListActions] = useState(false);
+  const [deleteListConfirm, setDeleteListConfirm] = useState(false);
 
   const activeList = lists.find((l) => l.id === activeListId);
 
@@ -723,7 +724,7 @@ const Documents = () => {
                 </button>
               )}
               <button
-                onClick={() => { setShowListActions(false); if (activeList) deleteList(activeList.id); }}
+                onClick={() => { setShowListActions(false); setDeleteListConfirm(true); }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors"
               >
                 <Trash2 size={16} className="text-destructive" />
@@ -733,7 +734,36 @@ const Documents = () => {
           </DrawerContent>
         </Drawer>
 
-        {/* Delete Confirmation */}
+        {/* Delete List Confirmation */}
+        <Drawer open={deleteListConfirm} onOpenChange={setDeleteListConfirm}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>حذف القائمة</DrawerTitle>
+              <DrawerDescription>
+                هل أنت متأكد من حذف "{activeList?.name}"؟ سيتم حذف جميع الوثائق داخلها.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="flex-row gap-2">
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => { setDeleteListConfirm(false); if (activeList) deleteList(activeList.id); }}
+              >
+                <Trash2 size={16} className="ml-1" />
+                حذف نهائي
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setDeleteListConfirm(false)}
+              >
+                إلغاء
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+
+
           <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
             <AlertDialogHeader>
               <AlertDialogTitle>حذف المستند</AlertDialogTitle>
