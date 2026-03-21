@@ -291,7 +291,7 @@ const Cars = () => {
   const resetAddForm = () => {
     setNewManufacturer(""); setNewModel(""); setNewYear("");
     setNewMileage(""); setNewMileageUnit("km"); setNewColor(""); setNewPlate("");
-    setManufacturerSearch("");
+    setManufacturerSearch(""); setNewSharedWith([]);
   };
 
   const resetMaintForm = () => {
