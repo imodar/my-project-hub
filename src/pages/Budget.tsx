@@ -268,6 +268,10 @@ const Budget = () => {
     const sorted = [...newBudgets].sort((a, b) => a.month.localeCompare(b.month));
     setBudgets(sorted);
     saveBudgets(sorted);
+    // Sync trip budgets back to trips localStorage
+    sorted.filter(b => b.type === "trip" && b.tripId).forEach(b => {
+      syncBudgetToTrip(b.tripId!, b.expenses, b.income);
+    });
   }, []);
 
   const handleAddBudget = () => {
