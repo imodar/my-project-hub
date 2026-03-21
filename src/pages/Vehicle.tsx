@@ -836,11 +836,11 @@ const Vehicle = () => {
               {/* Mileage */}
               <div className="space-y-2">
                 <Label className="text-right block">الممشى (اختياري)</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Input type="number" value={newMileage} onChange={e => setNewMileage(e.target.value)}
-                    placeholder="0" className="text-right flex-1" />
+                    placeholder="0" className="text-right flex-1" min={0} />
                   <Select value={newMileageUnit} onValueChange={v => setNewMileageUnit(v as "km" | "mi")}>
-                    <SelectTrigger className="w-24">
+                    <SelectTrigger className="w-28 shrink-0 text-right" dir="rtl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
