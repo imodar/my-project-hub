@@ -734,7 +734,36 @@ const Documents = () => {
           </DrawerContent>
         </Drawer>
 
-        {/* Delete Confirmation */}
+        {/* Delete List Confirmation */}
+        <Drawer open={deleteListConfirm} onOpenChange={setDeleteListConfirm}>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>حذف القائمة</DrawerTitle>
+              <DrawerDescription>
+                هل أنت متأكد من حذف "{activeList?.name}"؟ سيتم حذف جميع الوثائق داخلها.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="flex-row gap-2">
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => { setDeleteListConfirm(false); if (activeList) deleteList(activeList.id); }}
+              >
+                <Trash2 size={16} className="ml-1" />
+                حذف نهائي
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setDeleteListConfirm(false)}
+              >
+                إلغاء
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+
+
           <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
             <AlertDialogHeader>
               <AlertDialogTitle>حذف المستند</AlertDialogTitle>
