@@ -493,6 +493,34 @@ const Cars = () => {
           </div>
         </div>
 
+        {/* Shared With */}
+        {selectedCar.sharedWith.length > 0 && (
+          <div className="px-4 mt-4">
+            <div className="rounded-2xl bg-card border border-border p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div />
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-foreground">مشاركة مع</h4>
+                  <Users size={16} className="text-primary" />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-end">
+                {selectedCar.sharedWith.map(memberId => {
+                  const member = familyMembers.find(m => m.id === memberId);
+                  return (
+                    <div key={memberId} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10">
+                      <span className="text-xs font-medium text-primary">{member?.name || "غير معروف"}</span>
+                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[9px] font-bold text-primary">
+                        {member?.name?.charAt(0) || "؟"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Maintenance List */}
         <div className="px-4 mt-6">
           <div className="flex items-center justify-between mb-4">
