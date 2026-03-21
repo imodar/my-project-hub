@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ShoppingCart, Calendar, HandCoins, Wallet,
   Image, Plane, FileText, ListChecks,
-  FolderLock, TreePine, MapPin, Heart, Scale, ScrollText, Camera, BookHeart, Car, Syringe
+  FolderLock, TreePine, MapPin, Heart, Scale, ScrollText, Camera, BookHeart, Car, Syringe, Pill
 } from "lucide-react";
 import { useUserRole } from "@/contexts/UserRoleContext";
 
