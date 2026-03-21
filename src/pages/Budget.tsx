@@ -419,7 +419,7 @@ const Budget = () => {
       <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
         <PageHeader
           title={getBudgetTitle(b)}
-          subtitle="تفاصيل الميزانية"
+          subtitle={b.type === "trip" ? "ميزانية رحلة — تُدار تلقائياً" : "تفاصيل الميزانية"}
           onBack={() => setSelectedBudget(null)}
         />
 
