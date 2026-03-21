@@ -89,6 +89,7 @@ const Tasks = () => {
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<TaskItem | null>(null);
+  const [deleteListTarget, setDeleteListTarget] = useState<string | null>(null);
 
   // Edit item
   const [editTarget, setEditTarget] = useState<TaskItem | null>(null);
