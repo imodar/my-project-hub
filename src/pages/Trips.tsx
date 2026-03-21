@@ -145,6 +145,10 @@ const INITIAL_TRIPS: Trip[] = [
       { id: "p3", name: "أدوية الطوارئ", packed: false },
       { id: "p4", name: "ملابس شتوية خفيفة", packed: false },
     ],
+    documents: [
+      { id: "doc1", name: "تذاكر الطيران", type: "ticket", fileUrl: "", fileName: "tickets.pdf", addedAt: "2026-03-20" },
+      { id: "doc2", name: "حجز الفندق", type: "hotel", fileUrl: "", fileName: "hotel-booking.pdf", addedAt: "2026-03-18" },
+    ],
   },
   {
     id: "2",
