@@ -407,96 +407,98 @@ const Vaccinations = () => {
                 </div>
               </DrawerHeader>
 
-              {/* Summary */}
-              <div className="px-5">
-                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">
-                      العمر: {getChildAge(selectedChild.birthDate)}
-                    </span>
-                    <span className="text-sm font-bold text-primary">
-                      {selectedChild.completedVaccines.length}/{totalVaccines}
-                    </span>
+              <div className="overflow-y-auto flex-1">
+                {/* Summary */}
+                <div className="px-5">
+                  <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-muted-foreground">
+                        العمر: {getChildAge(selectedChild.birthDate)}
+                      </span>
+                      <span className="text-sm font-bold text-primary">
+                        {selectedChild.completedVaccines.length}/{totalVaccines}
+                      </span>
+                    </div>
+                    <Progress
+                      value={Math.round((selectedChild.completedVaccines.length / totalVaccines) * 100)}
+                      className="h-2.5"
+                    />
                   </div>
-                  <Progress
-                    value={Math.round((selectedChild.completedVaccines.length / totalVaccines) * 100)}
-                    className="h-2.5"
-                  />
                 </div>
-              </div>
 
-              {/* Vaccine schedule */}
-              <Accordion type="multiple" className="mt-4 px-5 pb-8">
-                {vaccineSchedule.map((group) => {
-                  const childAgeDays = Math.floor(
-                    (new Date().getTime() - new Date(selectedChild.birthDate).getTime()) / (1000 * 60 * 60 * 24)
-                  );
-                  const isDue = childAgeDays >= group.vaccines[0].ageDays;
-                  const allCompleted = group.vaccines.every((v) => selectedChild.completedVaccines.includes(v.id));
-                  const someCompleted = !allCompleted && group.vaccines.some((v) => selectedChild.completedVaccines.includes(v.id));
+                {/* Vaccine schedule */}
+                <Accordion type="multiple" className="mt-4 px-5 pb-4">
+                  {vaccineSchedule.map((group) => {
+                    const childAgeDays = Math.floor(
+                      (new Date().getTime() - new Date(selectedChild.birthDate).getTime()) / (1000 * 60 * 60 * 24)
+                    );
+                    const isDue = childAgeDays >= group.vaccines[0].ageDays;
+                    const allCompleted = group.vaccines.every((v) => selectedChild.completedVaccines.includes(v.id));
+                    const someCompleted = !allCompleted && group.vaccines.some((v) => selectedChild.completedVaccines.includes(v.id));
 
-                  return (
-                    <AccordionItem key={group.id} value={group.id} className="border-b-0 mb-2">
-                      <AccordionTrigger className="hover:no-underline p-3 rounded-xl bg-card border border-border/50">
-                        <div className="flex items-center gap-3 flex-1 text-right">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                              allCompleted ? "bg-green-100 dark:bg-green-900/30" : isDue && !allCompleted ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
-                            }`}
-                          >
-                            {allCompleted ? <Check className="w-4 h-4 text-green-600" /> : isDue ? <Clock className="w-4 h-4 text-amber-600" /> : <Clock className="w-4 h-4 text-muted-foreground" />}
+                    return (
+                      <AccordionItem key={group.id} value={group.id} className="border-b-0 mb-2">
+                        <AccordionTrigger className="hover:no-underline p-3 rounded-xl bg-card border border-border/50">
+                          <div className="flex items-center gap-3 flex-1 text-right">
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                                allCompleted ? "bg-green-100 dark:bg-green-900/30" : isDue && !allCompleted ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
+                              }`}
+                            >
+                              {allCompleted ? <Check className="w-4 h-4 text-green-600" /> : isDue ? <Clock className="w-4 h-4 text-amber-600" /> : <Clock className="w-4 h-4 text-muted-foreground" />}
+                            </div>
+                            <div className="flex-1">
+                              <span className="font-bold text-sm">{group.title}</span>
+                              {someCompleted && <span className="text-xs text-muted-foreground mr-2">(جزئي)</span>}
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {group.vaccines.filter((v) => selectedChild.completedVaccines.includes(v.id)).length}/{group.vaccines.length}
+                            </span>
                           </div>
-                          <div className="flex-1">
-                            <span className="font-bold text-sm">{group.title}</span>
-                            {someCompleted && <span className="text-xs text-muted-foreground mr-2">(جزئي)</span>}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {group.vaccines.filter((v) => selectedChild.completedVaccines.includes(v.id)).length}/{group.vaccines.length}
-                          </span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pt-2 pb-0">
-                        <div className="space-y-2 pr-4">
-                          {group.vaccines.map((vaccine) => {
-                            const isCompleted = selectedChild.completedVaccines.includes(vaccine.id);
-                            const isOverdue = isDue && !isCompleted;
-                            const hasNote = !!getVaccineNote(selectedChild, vaccine.id);
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2 pb-0">
+                          <div className="space-y-2 pr-4">
+                            {group.vaccines.map((vaccine) => {
+                              const isCompleted = selectedChild.completedVaccines.includes(vaccine.id);
+                              const isOverdue = isDue && !isCompleted;
+                              const hasNote = !!getVaccineNote(selectedChild, vaccine.id);
 
-                            return (
-                              <div key={vaccine.id} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-right ${
-                                isCompleted ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : isOverdue ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800" : "bg-card border-border/50"
-                              }`}>
-                                <button
-                                  onClick={() => toggleVaccine(selectedChild.id, vaccine.id)}
-                                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isCompleted ? "bg-green-500 border-green-500" : "border-border"}`}
-                                >
-                                  {isCompleted && <Check className="w-3.5 h-3.5 text-white" />}
-                                </button>
-                                <div className="flex-1 min-w-0" onClick={() => toggleVaccine(selectedChild.id, vaccine.id)}>
-                                  <p className={`text-sm font-medium ${isCompleted ? "line-through text-muted-foreground" : "text-foreground"}`}>{vaccine.name}</p>
-                                  <p className="text-xs text-muted-foreground truncate">{vaccine.description}</p>
-                                  {hasNote && (
-                                    <p className="text-xs text-primary mt-1 truncate">📝 {getVaccineNote(selectedChild, vaccine.id)}</p>
+                              return (
+                                <div key={vaccine.id} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-right ${
+                                  isCompleted ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : isOverdue ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800" : "bg-card border-border/50"
+                                }`}>
+                                  <button
+                                    onClick={() => toggleVaccine(selectedChild.id, vaccine.id)}
+                                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isCompleted ? "bg-green-500 border-green-500" : "border-border"}`}
+                                  >
+                                    {isCompleted && <Check className="w-3.5 h-3.5 text-white" />}
+                                  </button>
+                                  <div className="flex-1 min-w-0" onClick={() => toggleVaccine(selectedChild.id, vaccine.id)}>
+                                    <p className={`text-sm font-medium ${isCompleted ? "line-through text-muted-foreground" : "text-foreground"}`}>{vaccine.name}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{vaccine.description}</p>
+                                    {hasNote && (
+                                      <p className="text-xs text-primary mt-1 truncate">📝 {getVaccineNote(selectedChild, vaccine.id)}</p>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); openNoteSheet(vaccine.id); }}
+                                    className={`p-1.5 rounded-lg shrink-0 ${hasNote ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-accent"}`}
+                                  >
+                                    <MessageSquare className="w-4 h-4" />
+                                  </button>
+                                  {isOverdue && (
+                                    <Badge variant="outline" className="text-amber-600 border-amber-300 text-[10px] shrink-0">مستحق</Badge>
                                   )}
                                 </div>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); openNoteSheet(vaccine.id); }}
-                                  className={`p-1.5 rounded-lg shrink-0 ${hasNote ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-accent"}`}
-                                >
-                                  <MessageSquare className="w-4 h-4" />
-                                </button>
-                                {isOverdue && (
-                                  <Badge variant="outline" className="text-amber-600 border-amber-300 text-[10px] shrink-0">مستحق</Badge>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
+                              );
+                            })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
+              </div>
             </>
           )}
         </DrawerContent>
