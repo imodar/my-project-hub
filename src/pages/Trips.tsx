@@ -245,6 +245,17 @@ const Trips = () => {
       return next;
     });
   }, []);
+  // Save initial trips to localStorage and sync budgets on mount
+  useEffect(() => {
+    saveTripsToStorage(trips);
+    trips.forEach(t => {
+      if (t.expenses.length > 0 || t.budget > 0) {
+        syncTripToBudget({ id: t.id, name: t.name, budget: t.budget, expenses: t.expenses });
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album" | "documents">("itinerary");
