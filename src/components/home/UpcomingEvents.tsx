@@ -1,4 +1,5 @@
 import { Moon, PartyPopper, GraduationCap, Gift } from "lucide-react";
+import { useUserRole } from "@/contexts/UserRoleContext";
 
 const events = [
   {
