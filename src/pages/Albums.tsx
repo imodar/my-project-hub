@@ -382,23 +382,41 @@ const Albums = () => {
                   }`}
                   style={{ background: album.coverColor }}
                 >
-                  {/* Photo grid preview */}
-                  {album.photos.length > 0 && (
-                    <div className="absolute inset-0 grid grid-cols-2 gap-[1px] opacity-30">
-                      {album.photos.slice(0, 4).map((p) => {
+                  {/* Photo preview or empty state */}
+                  {album.photos.length > 0 ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      {/* Stacked photos effect */}
+                      {album.photos.slice(0, Math.min(3, album.photos.length)).map((p, idx, arr) => {
                         const hue = (p.id.charCodeAt(p.id.length - 1) * 47) % 360;
+                        const total = arr.length;
+                        const rotation = (idx - Math.floor(total / 2)) * 8;
+                        const offsetY = Math.abs(idx - Math.floor(total / 2)) * 4;
                         return (
                           <div
                             key={p.id}
-                            className="w-full h-full"
+                            className="absolute rounded-lg border-2 border-white/20 shadow-lg overflow-hidden"
                             style={{
+                              width: i === 0 ? "35%" : "55%",
+                              aspectRatio: "3/4",
+                              transform: `rotate(${rotation}deg) translateY(${-offsetY}px)`,
+                              zIndex: idx,
                               background: p.url
                                 ? `url(${p.url}) center/cover`
-                                : `linear-gradient(135deg, hsl(${hue} 35% 70%), hsl(${(hue + 30) % 360} 40% 60%))`,
+                                : `linear-gradient(135deg, hsl(${hue} 45% 68%), hsl(${(hue + 35) % 360} 50% 58%))`,
                             }}
-                          />
+                          >
+                            {!p.url && (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Camera size={16} className="text-white/30" />
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <ImageOff size={32} className="text-white/25" />
                     </div>
                   )}
 
