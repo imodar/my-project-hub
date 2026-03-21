@@ -36,6 +36,7 @@ import ParentDashboard from "./pages/ParentDashboard.tsx";
 import Athkar from "./pages/Athkar.tsx";
 import Vehicle from "./pages/Vehicle.tsx";
 import Vaccinations from "./pages/Vaccinations.tsx";
+import Medications from "./pages/Medications.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 const queryClient = new QueryClient({
