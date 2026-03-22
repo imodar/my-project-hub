@@ -47,6 +47,7 @@ const FAMILY_MEMBERS: FamilyMember[] = [
 ];
 
 const Will = () => {
+  const { will, isLoading, upsertWill, deleteWill, createOpenRequest } = useWill();
   const [sections, setSections] = useState<WillSection[]>(DEFAULT_SECTIONS);
   const [passwordDrawer, setPasswordDrawer] = useState(false);
   const [requestDrawer, setRequestDrawer] = useState(false);
