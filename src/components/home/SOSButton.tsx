@@ -27,6 +27,9 @@ const SOS_DISABLED_KEY = "sos_disabled_members";
 type SOSPhase = "idle" | "holding" | "countdown" | "active";
 
 const SOSButton = () => {
+  const { user } = useAuth();
+  const { familyId } = useFamilyId();
+  const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string }[]>([]);
   const [phase, setPhase] = useState<SOSPhase>("idle");
   const [holdProgress, setHoldProgress] = useState(0);
   const [countdown, setCountdown] = useState(3);
@@ -35,6 +38,27 @@ const SOSButton = () => {
   const [cancelDrawer, setCancelDrawer] = useState(false);
   const [addContactDrawer, setAddContactDrawer] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+
+  // Fetch family members from DB
+  useEffect(() => {
+    if (!familyId) return;
+    supabase
+      .from("family_members")
+      .select("user_id")
+      .eq("family_id", familyId)
+      .eq("status", "active")
+      .then(async ({ data }) => {
+        if (!data) return;
+        const memberIds = data.map((m) => m.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, name")
+          .in("id", memberIds);
+        if (profiles) {
+          setFamilyMembers(profiles.map((p) => ({ id: p.id, name: p.name || "بدون اسم" })));
+        }
+      });
+  }, [familyId]);
 
   const [contacts, setContacts] = useState<EmergencyContact[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
