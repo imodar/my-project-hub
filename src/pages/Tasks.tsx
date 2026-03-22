@@ -62,44 +62,39 @@ const PRIORITY_INFO: Record<string, { label: string; bg: string; text: string; e
 const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 const SWIPE_WIDTH = 140;
 
-const initialLists: TaskList[] = [
-  {
-    id: "1",
-    name: "مهام عائلية",
-    type: "family",
-    isDefault: true,
-    lastUpdatedBy: "أم فهد",
-    lastUpdatedAt: "منذ ساعة",
-    items: [
-      { id: "t1", name: "ترتيب غرفة المعيشة", note: "قبل المغرب", priority: "high", assignedTo: "سارة", done: false },
-      { id: "t2", name: "غسل السيارة", note: "يوم السبت", priority: "medium", assignedTo: "فهد", done: false },
-      { id: "t3", name: "شراء تمر وحليب", note: "للإفطار", priority: "high", assignedTo: "أم فهد", done: false },
-      { id: "t4", name: "إصلاح باب الحديقة", note: "", priority: "low", assignedTo: "أبو فهد", done: true },
-    ],
-  },
-  {
-    id: "2",
-    name: "مهامي الشخصية",
-    type: "personal",
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "أمس",
-    items: [
-      { id: "t5", name: "مراجعة الطبيب", note: "الأربعاء الساعة 4", priority: "high", assignedTo: "أنت", done: false },
-      { id: "t6", name: "تجديد الاستمارة", note: "", priority: "medium", assignedTo: "أنت", done: false },
-    ],
-  },
-];
-
 const Tasks = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [lists, setLists] = useState<TaskList[]>(() =>
-    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
-  );
-  const [activeListId, setActiveListId] = useState(() => {
-    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
-    return filtered[0]?.id || "";
-  });
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useTaskLists();
+
+  const lists: TaskList[] = useMemo(() => {
+    const mapped = (dbLists || []).map((l: any) => ({
+      id: l.id,
+      name: l.name,
+      type: (l.type || "family") as "family" | "personal" | "shared",
+      sharedWith: l.shared_with || [],
+      lastUpdatedBy: "",
+      lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
+      items: (l.task_items || []).map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        note: i.note || "",
+        priority: (i.priority || "none") as TaskItem["priority"],
+        assignedTo: i.assigned_to || "",
+        done: i.done,
+        repeat: i.repeat_enabled ? { enabled: true, days: i.repeat_days || [], count: i.repeat_count || 0 } : undefined,
+      })),
+    }));
+    return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
+  }, [dbLists, featureAccess.isStaff]);
+
+  const [activeListId, setActiveListId] = useState("");
+
+  useEffect(() => {
+    if (lists.length > 0 && (!activeListId || !lists.find(l => l.id === activeListId))) {
+      setActiveListId(lists[0].id);
+    }
+  }, [lists, activeListId]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
