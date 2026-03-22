@@ -547,16 +547,29 @@ const Zakat = () => {
             {/* Amount */}
             <div>
               <label className="text-xs font-bold text-foreground mb-1.5 block">
-                {addType === "gold" || addType === "silver" ? "الوزن (جرام)" : "المبلغ (ر.س)"}
+                {addType === "gold" || addType === "silver" ? "الوزن (جرام)" : "المبلغ"}
               </label>
-              <Input
-                type="number"
-                value={addAmount}
-                onChange={e => setAddAmount(e.target.value)}
-                placeholder={addType === "gold" ? "مثال: 100" : "مثال: 50000"}
-                className="text-right"
-                inputMode="decimal"
-              />
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={addAmount}
+                  onChange={e => setAddAmount(e.target.value)}
+                  placeholder={addType === "gold" ? "مثال: 100" : "مثال: 50000"}
+                  className="flex-1 min-w-0 text-right"
+                  inputMode="decimal"
+                />
+                {addType === "cash" && (
+                  <select
+                    value={addCurrency}
+                    onChange={e => setAddCurrency(e.target.value)}
+                    className="w-20 shrink-0 rounded-xl border border-input bg-background px-1.5 py-2.5 text-[11px]"
+                  >
+                    {CASH_CURRENCIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.symbol} {c.label}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
 
             {/* Karat for gold */}
