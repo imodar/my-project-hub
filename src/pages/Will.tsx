@@ -75,7 +75,7 @@ const Will = () => {
   // Sync DB will data into local sections state
   useEffect(() => {
     if (will?.sections && Array.isArray(will.sections)) {
-      setSections(will.sections as WillSection[]);
+      setSections(will.sections as unknown as WillSection[]);
     }
   }, [will]);
 
