@@ -625,12 +625,29 @@ const Zakat = () => {
             {/* Purchase date */}
             <div>
               <label className="text-xs font-bold text-foreground mb-1.5 block">تاريخ الاقتناء / الشراء</label>
-              <Input
-                type="date"
-                value={addDate}
-                onChange={e => setAddDate(e.target.value)}
-                className="text-right"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-right font-normal rounded-xl",
+                      !addDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                    {addDate ? format(new Date(addDate), "d MMMM yyyy", { locale: ar }) : "اختر التاريخ"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={addDate ? new Date(addDate) : undefined}
+                    onSelect={(date) => date && setAddDate(date.toISOString().split("T")[0])}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
               <p className="text-[10px] text-muted-foreground mt-1">يُحسب الحول (354 يوم) من هذا التاريخ</p>
             </div>
 
