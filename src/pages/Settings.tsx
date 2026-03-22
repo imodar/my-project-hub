@@ -76,7 +76,7 @@ const Settings = () => {
 
   return (
     <div
-      className="min-h-screen max-w-2xl mx-auto flex flex-col"
+      className="min-h-screen max-w-2xl mx-auto flex flex-col pb-28"
       style={{
         background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)",
       }}
