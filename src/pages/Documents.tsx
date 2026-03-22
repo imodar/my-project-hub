@@ -199,16 +199,10 @@ const Documents = () => {
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: list.items.filter((i) => i.id !== deleteTarget.id) }
-          : list
-      )
-    );
+    deleteDocItemMut.mutate(deleteTarget.id);
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
-  }, [activeListId, deleteTarget]);
+  }, [deleteTarget, deleteDocItemMut]);
 
   const openEdit = useCallback((item: DocumentItem) => {
     setEditTarget(item);
