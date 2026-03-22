@@ -193,22 +193,9 @@ const Market = () => {
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? {
-              ...list,
-              items: list.items.map((item) =>
-                item.id === editTarget.id
-                  ? { ...item, name: editName.trim(), quantity: editQuantity.trim() || "1", category: editCategory }
-                  : item
-              ),
-            }
-          : list
-      )
-    );
+    updateItemMutation.mutate({ id: editTarget.id, name: editName.trim(), quantity: editQuantity.trim() || "1", category: editCategory });
     setEditTarget(null);
-  }, [activeListId, editTarget, editName, editQuantity, editCategory]);
+  }, [editTarget, editName, editQuantity, editCategory, updateItemMutation]);
 
   const addItem = useCallback(() => {
     if (!newItemName.trim()) return;
