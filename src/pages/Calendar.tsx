@@ -205,18 +205,12 @@ const CalendarPage = () => {
   };
   const saveEdit = () => {
     if (!editTarget || !editForm.title.trim()) return;
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === editTarget.id
-          ? {
-              ...e,
-              title: editForm.title.trim(),
-              date: editForm.date,
-              reminderBefore: editForm.hasReminder && editForm.reminderBefore.length > 0 ? editForm.reminderBefore : undefined,
-            }
-          : e
-      )
-    );
+    updateEventMutation.mutate({
+      id: editTarget.id,
+      title: editForm.title.trim(),
+      date: editForm.date,
+      reminder_before: editForm.hasReminder && editForm.reminderBefore.length > 0 ? editForm.reminderBefore : [],
+    });
     setEditTarget(null);
   };
 
