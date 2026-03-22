@@ -211,13 +211,10 @@ const Places = () => {
       setReviewWouldReturn(null);
     } else {
       // Unmark as visited
-      setLists((prev) =>
-        prev.map((list) =>
-          list.id === activeListId
-            ? { ...list, places: list.places.map((p) => p.id === placeId ? { ...p, visited: false, rating: undefined } : p) }
-            : list
-        )
-      );
+      const place2 = activeList?.places.find(p => p.id === placeId);
+      if (place2) {
+        updatePlaceMut.mutate({ id: placeId, visited: false, rating: null });
+      }
     }
   }, [activeListId, activeList]);
 
