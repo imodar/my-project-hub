@@ -44,7 +44,8 @@ const loadFamilyMembers = (): { id: string; name: string; role: string }[] => {
 };
 
 const Medications = () => {
-  const [medications, setMedications] = useState<Medication[]>(loadMedications);
+  const { medications: dbMeds, isLoading: medsLoading, addMedication, updateMedication, deleteMedication } = useMedications();
+  const [medications, setMedications] = useState<Medication[]>([]);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
   const [showDueAlert, setShowDueAlert] = useState<Medication | null>(null);
