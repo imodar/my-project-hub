@@ -844,6 +844,7 @@ export type Database = {
           id: string
           items: Json | null
           month: number
+          user_id: string | null
           year: number
         }
         Insert: {
@@ -852,6 +853,7 @@ export type Database = {
           id?: string
           items?: Json | null
           month: number
+          user_id?: string | null
           year: number
         }
         Update: {
@@ -860,6 +862,7 @@ export type Database = {
           id?: string
           items?: Json | null
           month?: number
+          user_id?: string | null
           year?: number
         }
         Relationships: []
@@ -1219,6 +1222,7 @@ export type Database = {
           id: string
           notes: string | null
           prayers: Json | null
+          user_id: string | null
         }
         Insert: {
           child_id: string
@@ -1227,6 +1231,7 @@ export type Database = {
           id?: string
           notes?: string | null
           prayers?: Json | null
+          user_id?: string | null
         }
         Update: {
           child_id?: string
@@ -1235,6 +1240,7 @@ export type Database = {
           id?: string
           notes?: string | null
           prayers?: Json | null
+          user_id?: string | null
         }
         Relationships: []
       }
