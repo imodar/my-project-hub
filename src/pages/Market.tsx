@@ -82,11 +82,15 @@ const Market = () => {
     }));
     return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
   }, [dbLists, featureAccess.isStaff]);
-  const [activeListId, setActiveListId] = useState(() => {
-    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
-    return filtered[0]?.id || "";
-  });
+  const [activeListId, setActiveListId] = useState("");
   const [activeCategory, setActiveCategory] = useState("الكل");
+
+  // Auto-select first list when data loads
+  useEffect(() => {
+    if (lists.length > 0 && (!activeListId || !lists.find(l => l.id === activeListId))) {
+      setActiveListId(lists[0].id);
+    }
+  }, [lists, activeListId]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
