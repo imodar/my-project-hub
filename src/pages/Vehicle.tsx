@@ -454,7 +454,7 @@ const Vehicle = () => {
 
   const handleRefresh = async () => {
     await new Promise(resolve => setTimeout(resolve, 600));
-    setCars(loadCars());
+    // React Query will auto-refetch
   };
 
   // ─── Car Detail View ───
