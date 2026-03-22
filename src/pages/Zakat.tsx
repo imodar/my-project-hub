@@ -213,6 +213,7 @@ const Zakat = () => {
   const [addLabel, setAddLabel] = useState("");
   const [addAmount, setAddAmount] = useState("");
   const [addKarat, setAddKarat] = useState(24);
+  const [addCurrency, setAddCurrency] = useState("SAR");
   const [addDate, setAddDate] = useState(new Date().toISOString().split("T")[0]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
