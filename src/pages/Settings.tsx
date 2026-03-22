@@ -10,16 +10,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 
 
-const emergencyContacts = [
-  { id: "1", name: "الجد أبو محمد", phone: "+966 50 123 4567" },
-  { id: "2", name: "العم خالد", phone: "+966 55 987 6543" },
-];
+const emergencyContacts: { id: string; name: string; phone: string }[] = [];
 
-const familyMembers = [
-  { id: "1", name: "أحمد", sosEnabled: true },
-  { id: "2", name: "سارة", sosEnabled: true },
-  { id: "3", name: "يوسف", sosEnabled: false },
-];
+const familyMembers: { id: string; name: string; sosEnabled: boolean }[] = [];
 
 const Settings = () => {
   const { signOut } = useAuth();
