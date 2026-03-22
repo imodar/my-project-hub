@@ -40,6 +40,7 @@ import Athkar from "./pages/Athkar.tsx";
 import Vehicle from "./pages/Vehicle.tsx";
 import Vaccinations from "./pages/Vaccinations.tsx";
 import Medications from "./pages/Medications.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
 import IslamicReminders from "./pages/IslamicReminders.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
