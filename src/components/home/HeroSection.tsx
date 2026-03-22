@@ -341,7 +341,7 @@ const HeroSection = () => {
             className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-primary/30"
             style={{ background: "hsl(var(--primary) / 0.1)" }}
           >
-            <span className="text-sm font-bold text-primary">{mockUser.name.charAt(0)}</span>
+            <span className="text-sm font-bold text-primary">{currentUser.name.charAt(0)}</span>
           </button>
           <span className="text-xl font-bold text-primary tracking-tight">عائلتنا</span>
         </div>
