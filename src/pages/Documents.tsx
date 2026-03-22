@@ -72,47 +72,7 @@ const CATEGORIES: Record<DocCategory, { label: string; icon: typeof CreditCard; 
 const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 const SWIPE_WIDTH = 140;
 
-const initialLists: DocList[] = [
-  {
-    id: "1",
-    name: "وثائق العائلة",
-    type: "family",
-    isDefault: true,
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "منذ يومين",
-    items: [
-      {
-        id: "d1", name: "جواز سفر أبو فهد", category: "identity",
-        files: [], expiryDate: "2027-06-15", reminderEnabled: true,
-        note: "تم التجديد", addedBy: "أبو فهد", addedAt: "2024-01-10",
-      },
-      {
-        id: "d2", name: "استمارة السيارة", category: "vehicles",
-        files: [], expiryDate: "2025-12-01", reminderEnabled: true,
-        note: "كامري 2022", addedBy: "أبو فهد", addedAt: "2024-03-05",
-      },
-      {
-        id: "d3", name: "تقرير تحاليل نورة", category: "medical",
-        files: [], reminderEnabled: false,
-        note: "فحص دوري", addedBy: "أم فهد", addedAt: "2024-06-20",
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "وثائقي الشخصية",
-    type: "personal",
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "أمس",
-    items: [
-      {
-        id: "d4", name: "رخصة القيادة", category: "identity",
-        files: [], expiryDate: "2026-03-01", reminderEnabled: true,
-        note: "", addedBy: "أنت", addedAt: "2024-02-15",
-      },
-    ],
-  },
-];
+// Initial data removed — using Supabase hooks
 
 const Documents = () => {
   const navigate = useNavigate();
