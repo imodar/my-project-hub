@@ -59,6 +59,7 @@ const Settings = () => {
       items: [
         { icon: Archive, label: "سلة المحذوفات", desc: "استعادة أو حذف العناصر نهائياً", onClick: () => navigate("/trash") },
         { icon: Trash2, label: "مسح البيانات", desc: "حذف جميع البيانات المحفوظة", danger: true },
+        { icon: LogOut, label: "تسجيل الخروج", desc: "الخروج من الحساب", danger: true, onClick: async () => { await signOut(); navigate("/auth", { replace: true }); } },
       ],
     },
   ];
