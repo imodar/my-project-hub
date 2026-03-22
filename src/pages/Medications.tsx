@@ -730,7 +730,7 @@ const Medications = () => {
                 <Button variant="outline" onClick={() => setShowDeleteConfirm(null)} className="h-12">
                   إلغاء
                 </Button>
-                <Button variant="destructive" onClick={() => deleteMedication(showDeleteConfirm.id)} className="h-12">
+                <Button variant="destructive" onClick={() => handleDeleteMedication(showDeleteConfirm.id)} className="h-12">
                   حذف
                 </Button>
               </div>
