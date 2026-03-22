@@ -101,17 +101,10 @@ const CalendarPage = () => {
   const navigate = useNavigate();
   const { addToTrash } = useTrash();
   const today = new Date();
+  const { events, isLoading, addEvent: addEventMutation, updateEvent: updateEventMutation, deleteEvent: deleteEventMutation } = useCalendarEvents();
 
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  const [events, setEvents] = useState<FamilyEvent[]>(() => {
-    try {
-      const saved = localStorage.getItem(EVENTS_KEY);
-      return saved ? JSON.parse(saved) : initialEvents;
-    } catch {
-      return initialEvents;
-    }
-  });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newEvent, setNewEvent] = useState({
