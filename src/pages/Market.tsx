@@ -170,14 +170,9 @@ const Market = () => {
 
   const toggleItem = useCallback((itemId: string) => {
     haptic.light();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: list.items.map((item) => item.id === itemId ? { ...item, checked: !item.checked } : item) }
-          : list
-      )
-    );
-  }, [activeListId]);
+    const item = activeList?.items.find(i => i.id === itemId);
+    if (item) updateItemMutation.mutate({ id: itemId, checked: !item.checked });
+  }, [activeList, updateItemMutation]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
