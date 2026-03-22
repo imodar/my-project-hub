@@ -132,17 +132,7 @@ const NISAB_GOLD_GRAMS = 85; // grams of 24k gold
 const NISAB_SILVER_GRAMS = 595;
 const ZAKAT_RATE = 0.025;
 
-const STORAGE_KEY = "zakat_assets";
-
-function loadAssets(): ZakatAsset[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-function saveAssets(assets: ZakatAsset[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(assets));
-}
+// localStorage helpers removed — using Supabase hooks
 
 // Days until hawl (1 hijri year ≈ 354 days)
 function daysUntilHawl(purchaseDateISO: string): number {
