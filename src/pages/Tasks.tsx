@@ -189,18 +189,8 @@ const Tasks = () => {
       return;
     }
     haptic.light();
-    setLists((prev) =>
-      prev.map((list) => {
-        if (list.id !== activeListId) return list;
-        const items = [...list.items];
-        const fromIdx = items.findIndex((i) => i.id === dragActiveId);
-        const toIdx = items.findIndex((i) => i.id === targetId);
-        if (fromIdx === -1 || toIdx === -1) return list;
-        const [moved] = items.splice(fromIdx, 1);
-        items.splice(toIdx, 0, moved);
-        return { ...list, items };
-      })
-    );
+    // Drag reorder is local-only for now (no server-side ordering)
+    // TODO: implement server-side task ordering
     setDragActiveId(null);
     setDragOverId(null);
     isLongPressingRef.current = false;
