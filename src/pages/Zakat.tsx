@@ -63,6 +63,13 @@ function SwipeableAssetCard({ onEdit, onReminder, onDelete, onZakatPaid, childre
     <div className="relative overflow-hidden rounded-2xl" ref={containerRef}>
       <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
         <button
+          onClick={() => { haptic.light(); onZakatPaid(); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-emerald-600 text-white"
+        >
+          <Check size={18} />
+          <span className="text-[10px] font-bold">تمت التزكية</span>
+        </button>
+        <button
           onClick={() => { haptic.light(); onEdit(); }}
           className="flex-1 flex flex-col items-center justify-center gap-1 bg-primary text-white"
         >
