@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletions: {
+        Row: {
+          completed_at: string | null
+          id: string
+          reason: string | null
+          requested_at: string
+          scheduled_delete_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          reason?: string | null
+          requested_at?: string
+          scheduled_delete_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          reason?: string | null
+          requested_at?: string
+          scheduled_delete_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       admin_transfer_requests: {
         Row: {
           approvals: Json
@@ -134,6 +197,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      app_versions: {
+        Row: {
+          created_at: string
+          force_update: boolean
+          id: string
+          min_supported_version: string | null
+          release_notes: string | null
+          update_message: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          force_update?: boolean
+          id?: string
+          min_supported_version?: string | null
+          release_notes?: string | null
+          update_message?: string | null
+          version: string
+        }
+        Update: {
+          created_at?: string
+          force_update?: boolean
+          id?: string
+          min_supported_version?: string | null
+          release_notes?: string | null
+          update_message?: string | null
+          version?: string
+        }
+        Relationships: []
       }
       budget_expenses: {
         Row: {
@@ -271,6 +364,53 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          created_at: string
+          encrypted_text: string
+          family_id: string
+          id: string
+          iv: string | null
+          mention_user_id: string | null
+          pinned: boolean
+          reactions: Json | null
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_text: string
+          family_id: string
+          id?: string
+          iv?: string | null
+          mention_user_id?: string | null
+          pinned?: boolean
+          reactions?: Json | null
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_text?: string
+          family_id?: string
+          id?: string
+          iv?: string | null
+          mention_user_id?: string | null
+          pinned?: boolean
+          reactions?: Json | null
+          sender_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consent_log: {
         Row: {
           accepted: boolean
@@ -298,6 +438,57 @@ export type Database = {
           ip_address?: string | null
           user_id?: string
           version?: string
+        }
+        Relationships: []
+      }
+      data_export_requests: {
+        Row: {
+          completed_at: string | null
+          expires_at: string | null
+          file_url: string | null
+          id: string
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          expires_at?: string | null
+          file_url?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          expires_at?: string | null
+          file_url?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      data_retention_policy: {
+        Row: {
+          auto_purge: boolean
+          description: string | null
+          retention_days: number
+          table_name: string
+        }
+        Insert: {
+          auto_purge?: boolean
+          description?: string | null
+          retention_days: number
+          table_name: string
+        }
+        Update: {
+          auto_purge?: boolean
+          description?: string | null
+          retention_days?: number
+          table_name?: string
         }
         Relationships: []
       }
@@ -559,6 +750,38 @@ export type Database = {
           },
         ]
       }
+      emergency_contacts: {
+        Row: {
+          created_by: string
+          family_id: string
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          created_by: string
+          family_id: string
+          id?: string
+          name: string
+          phone: string
+        }
+        Update: {
+          created_by?: string
+          family_id?: string
+          id?: string
+          name?: string
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_contacts_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       families: {
         Row: {
           created_at: string
@@ -738,6 +961,81 @@ export type Database = {
           },
         ]
       }
+      feature_usage: {
+        Row: {
+          created_at: string
+          feature_name: string
+          id: string
+          page_path: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          feature_name: string
+          id?: string
+          page_path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          feature_name?: string
+          id?: string
+          page_path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      islamic_reminder_prefs: {
+        Row: {
+          enabled: boolean
+          id: string
+          reminder_id: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: string
+          reminder_id: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          reminder_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kids_worship_data: {
+        Row: {
+          child_id: string
+          day: number
+          id: string
+          items: Json
+          month: number
+          year: number
+        }
+        Insert: {
+          child_id: string
+          day: number
+          id?: string
+          items?: Json
+          month: number
+          year: number
+        }
+        Update: {
+          child_id?: string
+          day?: number
+          id?: string
+          items?: Json
+          month?: number
+          year?: number
+        }
+        Relationships: []
+      }
       market_items: {
         Row: {
           added_by: string | null
@@ -823,6 +1121,112 @@ export type Database = {
           },
         ]
       }
+      medication_logs: {
+        Row: {
+          created_at: string
+          id: string
+          medication_id: string
+          notes: string | null
+          skipped: boolean
+          taken_at: string
+          taken_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          medication_id: string
+          notes?: string | null
+          skipped?: boolean
+          taken_at?: string
+          taken_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          medication_id?: string
+          notes?: string | null
+          skipped?: boolean
+          taken_at?: string
+          taken_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_logs_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          color: string | null
+          created_at: string
+          dosage: string | null
+          end_date: string | null
+          family_id: string
+          frequency_type: string | null
+          frequency_value: number | null
+          id: string
+          member_id: string | null
+          member_name: string | null
+          name: string
+          notes: string | null
+          reminder_enabled: boolean
+          selected_days: number[] | null
+          specific_times: string[] | null
+          start_date: string | null
+          times_per_day: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          dosage?: string | null
+          end_date?: string | null
+          family_id: string
+          frequency_type?: string | null
+          frequency_value?: number | null
+          id?: string
+          member_id?: string | null
+          member_name?: string | null
+          name: string
+          notes?: string | null
+          reminder_enabled?: boolean
+          selected_days?: number[] | null
+          specific_times?: string[] | null
+          start_date?: string | null
+          times_per_day?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          dosage?: string | null
+          end_date?: string | null
+          family_id?: string
+          frequency_type?: string | null
+          frequency_value?: number | null
+          id?: string
+          member_id?: string | null
+          member_name?: string | null
+          name?: string
+          notes?: string | null
+          reminder_enabled?: boolean
+          selected_days?: number[] | null
+          specific_times?: string[] | null
+          start_date?: string | null
+          times_per_day?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medications_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_removals: {
         Row: {
           deleted_at: string
@@ -866,6 +1270,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_log: {
+        Row: {
+          body: string | null
+          id: string
+          opened_count: number
+          sent_at: string
+          sent_by: string | null
+          target_id: string | null
+          target_type: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          id?: string
+          opened_count?: number
+          sent_at?: string
+          sent_by?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          id?: string
+          opened_count?: number
+          sent_at?: string
+          sent_by?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      notification_tokens: {
+        Row: {
+          created_at: string
+          device_info: string | null
+          id: string
+          platform: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: string | null
+          id?: string
+          platform?: string | null
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: string | null
+          id?: string
+          platform?: string | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      otp_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          verified?: boolean
+        }
+        Relationships: []
       }
       place_lists: {
         Row: {
@@ -976,6 +1470,33 @@ export type Database = {
           },
         ]
       }
+      prayer_logs: {
+        Row: {
+          child_id: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          prayers: Json
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          date: string
+          id?: string
+          notes?: string | null
+          prayers?: Json
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          prayers?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1015,6 +1536,141 @@ export type Database = {
           subscription_expires_at?: string | null
           subscription_plan?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_counters: {
+        Row: {
+          count: number
+          endpoint: string
+          id: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          endpoint: string
+          id?: string
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          endpoint?: string
+          id?: string
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      scheduled_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          data: Json | null
+          id: string
+          scheduled_at: string
+          sent: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          id?: string
+          scheduled_at: string
+          sent?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          id?: string
+          scheduled_at?: string
+          sent?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_events: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          event_type: string
+          id: string
+          plan: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          event_type: string
+          id?: string
+          plan?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          event_type?: string
+          id?: string
+          plan?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json | null
+        }
+        Relationships: []
+      }
+      tasbih_sessions: {
+        Row: {
+          count: number
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1099,6 +1755,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "task_lists_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trash_items: {
+        Row: {
+          deleted_at: string
+          description: string | null
+          family_id: string | null
+          id: string
+          is_shared: boolean
+          original_data: Json | null
+          permanent_delete_at: string
+          related_records: Json | null
+          restored: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          description?: string | null
+          family_id?: string | null
+          id?: string
+          is_shared?: boolean
+          original_data?: Json | null
+          permanent_delete_at?: string
+          related_records?: Json | null
+          restored?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          description?: string | null
+          family_id?: string | null
+          id?: string
+          is_shared?: boolean
+          original_data?: Json | null
+          permanent_delete_at?: string
+          related_records?: Json | null
+          restored?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trash_items_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
@@ -1360,6 +2069,39 @@ export type Database = {
           },
         ]
       }
+      upgrade_attempts: {
+        Row: {
+          abandoned_at: string | null
+          completed_at: string | null
+          followup_sent: boolean
+          id: string
+          plan_attempted: string
+          price: number | null
+          step_reached: string | null
+          user_id: string
+        }
+        Insert: {
+          abandoned_at?: string | null
+          completed_at?: string | null
+          followup_sent?: boolean
+          id?: string
+          plan_attempted: string
+          price?: number | null
+          step_reached?: string | null
+          user_id: string
+        }
+        Update: {
+          abandoned_at?: string | null
+          completed_at?: string | null
+          followup_sent?: boolean
+          id?: string
+          plan_attempted?: string
+          price?: number | null
+          step_reached?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_keypairs: {
         Row: {
           created_at: string
@@ -1407,6 +2149,351 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          device_info: string | null
+          ended_at: string | null
+          id: string
+          ip_address: string | null
+          platform: string | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          device_info?: string | null
+          ended_at?: string | null
+          id?: string
+          ip_address?: string | null
+          platform?: string | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          device_info?: string | null
+          ended_at?: string | null
+          id?: string
+          ip_address?: string | null
+          platform?: string | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vaccination_children: {
+        Row: {
+          birth_date: string | null
+          completed_vaccines: string[] | null
+          created_at: string
+          family_id: string
+          gender: string | null
+          id: string
+          name: string
+          reminder_settings: Json | null
+        }
+        Insert: {
+          birth_date?: string | null
+          completed_vaccines?: string[] | null
+          created_at?: string
+          family_id: string
+          gender?: string | null
+          id?: string
+          name: string
+          reminder_settings?: Json | null
+        }
+        Update: {
+          birth_date?: string | null
+          completed_vaccines?: string[] | null
+          created_at?: string
+          family_id?: string
+          gender?: string | null
+          id?: string
+          name?: string
+          reminder_settings?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccination_children_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vaccine_notes: {
+        Row: {
+          child_id: string
+          created_at: string
+          id: string
+          note: string
+          vaccine_id: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          id?: string
+          note: string
+          vaccine_id: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          vaccine_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccine_notes_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "vaccination_children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_maintenance: {
+        Row: {
+          date: string | null
+          id: string
+          label: string
+          mileage_at_service: number | null
+          next_date: string | null
+          next_mileage: number | null
+          notes: string | null
+          type: string
+          vehicle_id: string
+        }
+        Insert: {
+          date?: string | null
+          id?: string
+          label: string
+          mileage_at_service?: number | null
+          next_date?: string | null
+          next_mileage?: number | null
+          notes?: string | null
+          type: string
+          vehicle_id: string
+        }
+        Update: {
+          date?: string | null
+          id?: string
+          label?: string
+          mileage_at_service?: number | null
+          next_date?: string | null
+          next_mileage?: number | null
+          notes?: string | null
+          type?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_maintenance_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string
+          family_id: string
+          id: string
+          manufacturer: string
+          mileage: number
+          mileage_unit: string
+          model: string
+          plate_number: string | null
+          shared_with: string[] | null
+          year: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by: string
+          family_id: string
+          id?: string
+          manufacturer: string
+          mileage?: number
+          mileage_unit?: string
+          model: string
+          plate_number?: string | null
+          shared_with?: string[] | null
+          year?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          family_id?: string
+          id?: string
+          manufacturer?: string
+          mileage?: number
+          mileage_unit?: string
+          model?: string
+          plate_number?: string | null
+          shared_with?: string[] | null
+          year?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      will_open_requests: {
+        Row: {
+          approvals: Json
+          created_at: string
+          id: string
+          reason: string | null
+          requested_by: string
+          required_approvals: number
+          status: string
+          will_id: string
+        }
+        Insert: {
+          approvals?: Json
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_by: string
+          required_approvals?: number
+          status?: string
+          will_id: string
+        }
+        Update: {
+          approvals?: Json
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_by?: string
+          required_approvals?: number
+          status?: string
+          will_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "will_open_requests_will_id_fkey"
+            columns: ["will_id"]
+            isOneToOne: false
+            referencedRelation: "wills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wills: {
+        Row: {
+          created_at: string
+          id: string
+          is_locked: boolean
+          password_hash: string | null
+          sections: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          password_hash?: string | null
+          sections?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          password_hash?: string | null
+          sections?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      zakat_assets: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          name: string
+          purchase_date: string | null
+          reminder: boolean
+          type: string
+          user_id: string
+          weight_grams: number | null
+          zakat_paid_at: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          name: string
+          purchase_date?: string | null
+          reminder?: boolean
+          type: string
+          user_id: string
+          weight_grams?: number | null
+          zakat_paid_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          name?: string
+          purchase_date?: string | null
+          reminder?: boolean
+          type?: string
+          user_id?: string
+          weight_grams?: number | null
+          zakat_paid_at?: string | null
+        }
+        Relationships: []
+      }
+      zakat_history: {
+        Row: {
+          amount_paid: number
+          asset_id: string
+          id: string
+          notes: string | null
+          paid_at: string
+        }
+        Insert: {
+          amount_paid: number
+          asset_id: string
+          id?: string
+          notes?: string | null
+          paid_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          asset_id?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zakat_history_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "zakat_assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
