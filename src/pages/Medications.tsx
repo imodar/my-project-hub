@@ -32,20 +32,7 @@ import {
 } from "@/data/medicationData";
 import { toast } from "sonner";
 
-const STORAGE_KEY = "family-medications";
-
-const loadMedications = (): Medication[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveMedications = (meds: Medication[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(meds));
-};
+// localStorage helpers removed — using Supabase hooks now
 
 const loadFamilyMembers = (): { id: string; name: string; role: string }[] => {
   try {
