@@ -19,6 +19,7 @@ import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
 import { saveTrips as saveTripsToStorage, syncTripToBudget, removeTripBudget } from "@/lib/tripBudgetSync";
+import { useTrips as useTripsHook } from "@/hooks/useTrips";
 
 // Types
 interface Activity {
