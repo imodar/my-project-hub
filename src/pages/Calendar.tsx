@@ -91,10 +91,10 @@ function daysLabel(d: number) {
 }
 
 const initialEvents: FamilyEvent[] = [
-  { id: "1", title: "عيد ميلاد نورة", date: "2026-03-15", icon: "cake", reminderBefore: ["1d"], addedBy: "أم فهد" },
-  { id: "2", title: "ذكرى الزواج", date: "2026-03-22", icon: "heart", reminderBefore: ["7d"], addedBy: "أبو فهد" },
-  { id: "3", title: "رحلة أبها", date: "2026-04-01", icon: "plane", reminderBefore: ["3d"], addedBy: "فهد" },
-  { id: "4", title: "تخرج سارة", date: "2026-05-10", icon: "graduation", reminderBefore: ["30d"], addedBy: "سارة" },
+  { id: "1", title: "عيد ميلاد نورة", date: "2026-03-15", icon: "cake", reminder_before: ["1d"], added_by: "أم فهد" },
+  { id: "2", title: "ذكرى الزواج", date: "2026-03-22", icon: "heart", reminder_before: ["7d"], added_by: "أبو فهد" },
+  { id: "3", title: "رحلة أبها", date: "2026-04-01", icon: "plane", reminder_before: ["3d"], added_by: "فهد" },
+  { id: "4", title: "تخرج سارة", date: "2026-05-10", icon: "graduation", reminder_before: ["30d"], added_by: "سارة" },
 ];
 
 const CalendarPage = () => {
@@ -110,7 +110,7 @@ const CalendarPage = () => {
   const [newEvent, setNewEvent] = useState({
     title: "",
     hasReminder: false,
-    reminderBefore: [] as string[],
+    reminder_before: [] as string[],
   });
 
   // Swipe
@@ -123,7 +123,7 @@ const CalendarPage = () => {
 
   // Edit dialog
   const [editTarget, setEditTarget] = useState<FamilyEvent | null>(null);
-  const [editForm, setEditForm] = useState({ title: "", date: "", hasReminder: false, reminderBefore: [] as string[] });
+  const [editForm, setEditForm] = useState({ title: "", date: "", hasReminder: false, reminder_before: [] as string[] });
 
   // Personal reminders dialog
   const [reminderTarget, setReminderTarget] = useState<FamilyEvent | null>(null);
@@ -164,15 +164,15 @@ const CalendarPage = () => {
 
   const handleAddEvent = () => {
     if (!newEvent.title.trim()) return;
-    if (newEvent.hasReminder && newEvent.reminderBefore.length === 0) return;
+    if (newEvent.hasReminder && newEvent.reminder_before.length === 0) return;
     const dateStr = selectedDay || todayStr;
     addEventMutation.mutate({
       title: newEvent.title.trim(),
       date: dateStr,
       icon: "calendar",
-      reminder_before: newEvent.hasReminder ? newEvent.reminderBefore : [],
+      reminder_before: newEvent.hasReminder ? newEvent.reminder_before : [],
     });
-    setNewEvent({ title: "", hasReminder: false, reminderBefore: [] });
+    setNewEvent({ title: "", hasReminder: false, reminder_before: [] });
     setShowAddDialog(false);
   };
 
@@ -198,8 +198,8 @@ const CalendarPage = () => {
     setEditForm({
       title: ev.title,
       date: ev.date,
-      hasReminder: !!(ev.reminderBefore && ev.reminderBefore.length > 0),
-      reminderBefore: ev.reminderBefore || [],
+      hasReminder: !!(ev.reminder_before && ev.reminder_before.length > 0),
+      reminder_before: ev.reminder_before || [],
     });
     closeSwipe(ev.id);
   };
@@ -209,7 +209,7 @@ const CalendarPage = () => {
       id: editTarget.id,
       title: editForm.title.trim(),
       date: editForm.date,
-      reminder_before: editForm.hasReminder && editForm.reminderBefore.length > 0 ? editForm.reminderBefore : [],
+      reminder_before: editForm.hasReminder && editForm.reminder_before.length > 0 ? editForm.reminder_before : [],
     });
     setEditTarget(null);
   };
@@ -217,7 +217,7 @@ const CalendarPage = () => {
   // Personal reminders
   const openPersonalReminders = (ev: FamilyEvent) => {
     setReminderTarget(ev);
-    setPersonalReminders(ev.personalReminders || []);
+    setPersonalReminders(ev.personal_reminders || []);
     closeSwipe(ev.id);
   };
   const savePersonalReminders = () => {
@@ -354,8 +354,8 @@ const CalendarPage = () => {
             const offset = swipeOffset[ev.id] || 0;
             const d = daysUntil(ev.date);
             const dayNum = new Date(ev.date).getDate();
-            const reminderText = getReminderLabel(ev.reminderBefore);
-            const hasPersonalReminder = ev.personalReminders && ev.personalReminders.length > 0;
+            const reminderText = getReminderLabel(ev.reminder_before);
+            const hasPersonalReminder = ev.personal_reminders && ev.personal_reminders.length > 0;
 
             return (
               <div key={ev.id} className="relative overflow-hidden rounded-2xl select-none">
@@ -441,8 +441,8 @@ const CalendarPage = () => {
               <p className="text-center text-sm text-muted-foreground py-4">لا توجد مناسبات في هذا اليوم</p>
             )}
             {selectedDay && eventsForDay(selectedDay).map((ev) => {
-              const rt = getReminderLabel(ev.reminderBefore);
-              const hasP = ev.personalReminders && ev.personalReminders.length > 0;
+              const rt = getReminderLabel(ev.reminder_before);
+              const hasP = ev.personal_reminders && ev.personal_reminders.length > 0;
               const drawerKey = `drawer_${ev.id}`;
               const offset = swipeOffset[drawerKey] || 0;
               return (
@@ -525,7 +525,7 @@ const CalendarPage = () => {
               <label className="text-xs font-semibold text-muted-foreground block">التذكير</label>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
-                  onClick={() => setNewEvent((p) => ({ ...p, hasReminder: false, reminderBefore: [] }))}
+                  onClick={() => setNewEvent((p) => ({ ...p, hasReminder: false, reminder_before: [] }))}
                   className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${!newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
                   <BellOff size={16} />
                   بدون تذكير
@@ -543,7 +543,7 @@ const CalendarPage = () => {
                   {REMINDER_OPTIONS.map((opt) => (
                     <label key={opt.key} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 cursor-pointer hover:bg-muted/40">
                       <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                      <Checkbox checked={newEvent.reminderBefore.includes(opt.key)}
+                      <Checkbox checked={newEvent.reminder_before.includes(opt.key)}
                         onCheckedChange={() => toggleReminderOption(opt.key, setNewEvent)} />
                     </label>
                   ))}
@@ -551,7 +551,7 @@ const CalendarPage = () => {
               )}
             </div>
             <button onClick={handleAddEvent}
-              disabled={newEvent.hasReminder && newEvent.reminderBefore.length === 0}
+              disabled={newEvent.hasReminder && newEvent.reminder_before.length === 0}
               className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-sm active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed">
               إضافة المناسبة
             </button>
@@ -608,7 +608,7 @@ const CalendarPage = () => {
               <label className="text-xs font-semibold text-muted-foreground block">التذكير</label>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
-                  onClick={() => setEditForm((p) => ({ ...p, hasReminder: false, reminderBefore: [] }))}
+                  onClick={() => setEditForm((p) => ({ ...p, hasReminder: false, reminder_before: [] }))}
                   className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${!editForm.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
                   بدون تذكير
                 </button>
@@ -623,7 +623,7 @@ const CalendarPage = () => {
                   {REMINDER_OPTIONS.map((opt) => (
                     <label key={opt.key} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 cursor-pointer hover:bg-muted/40">
                       <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                      <Checkbox checked={editForm.reminderBefore.includes(opt.key)}
+                      <Checkbox checked={editForm.reminder_before.includes(opt.key)}
                         onCheckedChange={() => toggleReminderOption(opt.key, setEditForm)} />
                     </label>
                   ))}
