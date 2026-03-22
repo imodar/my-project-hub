@@ -252,14 +252,12 @@ const Places = () => {
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
-    setLists((prev) => {
-      const updated = prev.filter((l) => l.id !== listId);
-      if (activeListId === listId && updated.length > 0) {
-        setActiveListId(updated[0].id);
-      }
-      return updated;
-    });
-  }, [activeListId]);
+    deleteListMut.mutate(listId);
+    if (activeListId === listId && lists.length > 1) {
+      const remaining = lists.filter(l => l.id !== listId);
+      if (remaining.length > 0) setActiveListId(remaining[0].id);
+    }
+  }, [activeListId, lists, deleteListMut]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
