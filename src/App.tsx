@@ -64,7 +64,8 @@ const AnimatedRoutes = () => {
   return (
     <PageTransition key={location.pathname}>
       <Routes location={location}>
-        {/* Public route */}
+        {/* Public routes */}
+        <Route path="/get-started" element={<GetStarted />} />
         <Route path="/auth" element={<Auth />} />
 
         {/* Protected routes */}
