@@ -1,4 +1,4 @@
-import { BookOpen, Heart } from "lucide-react";
+import { BookOpen, Heart, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import islamicPattern from "@/assets/islamic-pattern.png";
@@ -20,6 +20,7 @@ const actions = [
   { icon: BookOpen, label: "القرآن", path: "/" },
   { icon: TasbihIcon, label: "المسبحة", path: "/tasbih" },
   { icon: Heart, label: "الأذكار", path: "/athkar" },
+  { icon: Bell, label: "التنبيهات", path: "/islamic-reminders" },
 ];
 
 const IslamicQuickActions = () => {
