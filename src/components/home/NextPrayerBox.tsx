@@ -66,15 +66,15 @@ const getNextPrayer = (times: PrayerTimes): NextPrayerInfo => {
 };
 
 const PrayerIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-    <path d="M12 3C9 3 6 6 6 9h12c0-3-3-6-6-6z" fill="white" fillOpacity="0.2" />
-    <rect x="3" y="7" width="2" height="11" rx="0.5" fill="white" fillOpacity="0.3" />
-    <circle cx="4" cy="6" r="1" fill="white" fillOpacity="0.4" />
-    <rect x="19" y="7" width="2" height="11" rx="0.5" fill="white" fillOpacity="0.3" />
-    <circle cx="20" cy="6" r="1" fill="white" fillOpacity="0.4" />
-    <rect x="6" y="9" width="12" height="9" fill="white" fillOpacity="0.15" />
-    <path d="M10 18h4v-4a2 2 0 0 0-4 0v4z" fill="white" fillOpacity="0.25" />
-    <line x1="2" y1="18" x2="22" y2="18" />
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
+    <path d="M12 3C9 3 6 6 6 9h12c0-3-3-6-6-6z" fill="currentColor" fillOpacity="0.5" />
+    <rect x="3" y="7" width="2" height="11" rx="0.5" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="4" cy="6" r="1" fill="currentColor" fillOpacity="0.6" />
+    <rect x="19" y="7" width="2" height="11" rx="0.5" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="20" cy="6" r="1" fill="currentColor" fillOpacity="0.6" />
+    <rect x="6" y="9" width="12" height="9" fill="currentColor" fillOpacity="0.25" />
+    <path d="M10 18h4v-4a2 2 0 0 0-4 0v4z" fill="currentColor" fillOpacity="0.4" />
+    <line x1="2" y1="18" x2="22" y2="18" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.5" />
   </svg>
 );
 
