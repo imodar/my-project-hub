@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Plus, Coins, Info, Trash2, Bell, BellOff, ChevronDown, ChevronUp,
-  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock, Pencil
+  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock, Pencil, CalendarIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
 import { Button } from "@/components/ui/button";
@@ -13,7 +15,20 @@ import { Progress } from "@/components/ui/progress";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription,
 } from "@/components/ui/drawer";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
+
+const CASH_CURRENCIES = [
+  { code: "SAR", label: "ريال سعودي", symbol: "ر.س" },
+  { code: "QAR", label: "ريال قطري", symbol: "ر.ق" },
+  { code: "USD", label: "دولار أمريكي", symbol: "$" },
+  { code: "EUR", label: "يورو", symbol: "€" },
+  { code: "GBP", label: "جنيه إسترليني", symbol: "£" },
+  { code: "AED", label: "درهم إماراتي", symbol: "د.إ" },
+  { code: "KWD", label: "دينار كويتي", symbol: "د.ك" },
+] as const;
 
 // ── Swipeable Card ──
 const ACTION_WIDTH = 210;
