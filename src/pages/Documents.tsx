@@ -258,34 +258,17 @@ const Documents = () => {
   }, [editTarget, activeListId]);
 
   const addItem = useCallback(() => {
-    if (!newName.trim()) return;
+    if (!newName.trim() || !activeListId) return;
     haptic.medium();
-    const newItem: DocumentItem = {
-      id: crypto.randomUUID(),
-      name: newName.trim(),
-      category: newCategory,
-      files: newFiles,
-      expiryDate: newExpiryDate || undefined,
-      reminderEnabled: newReminderEnabled,
-      note: newNote.trim(),
-      addedBy: "أنت",
-      addedAt: new Date().toISOString().split("T")[0],
-    };
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: [...list.items, newItem], lastUpdatedBy: "أنت", lastUpdatedAt: "الآن" }
-          : list
-      )
-    );
-    setNewName("");
-    setNewNote("");
-    setNewCategory("identity");
-    setNewExpiryDate("");
-    setNewReminderEnabled(false);
-    setNewFiles([]);
+    addDocItemMut.mutate({
+      list_id: activeListId, name: newName.trim(), category: newCategory,
+      note: newNote.trim(), expiry_date: newExpiryDate || undefined,
+      reminder_enabled: newReminderEnabled,
+    });
+    setNewName(""); setNewNote(""); setNewCategory("identity");
+    setNewExpiryDate(""); setNewReminderEnabled(false); setNewFiles([]);
     setShowAddItem(false);
-  }, [activeListId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, newFiles]);
+  }, [activeListId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, addDocItemMut]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
