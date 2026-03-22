@@ -360,16 +360,13 @@ const Trips = () => {
 
   const handleAddActivity = () => {
     if (!selectedTrip || !selectedDayId || !activityName.trim()) return;
-    const newAct: Activity = {
-      id: Date.now().toString(), name: activityName, time: activityTime,
-      location: activityLocation, cost: Number(activityCost) || 0, completed: false,
-    };
-    const updatedDays = selectedTrip.days.map((d) =>
-      d.id === selectedDayId ? { ...d, activities: [...d.activities, newAct] } : d
-    );
-    const updated = { ...selectedTrip, days: updatedDays };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    addActivity.mutate({
+      day_plan_id: selectedDayId,
+      name: activityName,
+      time: activityTime || undefined,
+      location: activityLocation || undefined,
+      cost: Number(activityCost) || 0,
+    });
     setActivityName(""); setActivityTime(""); setActivityLocation(""); setActivityCost("");
     setNewActivityDrawer(false);
     toast.success("تم إضافة النشاط");
@@ -377,13 +374,13 @@ const Trips = () => {
 
   const handleAddSuggestion = () => {
     if (!selectedTrip || !suggestionName.trim()) return;
-    const newSug: Suggestion = {
-      id: Date.now().toString(), placeName: suggestionName, type: suggestionType,
-      reason: suggestionReason, location: suggestionLocation, suggestedBy: "أنت", status: "pending",
-    };
-    const updated = { ...selectedTrip, suggestions: [...selectedTrip.suggestions, newSug] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    addSuggestion.mutate({
+      trip_id: selectedTrip.id,
+      place_name: suggestionName,
+      type: suggestionType || undefined,
+      reason: suggestionReason || undefined,
+      location: suggestionLocation || undefined,
+    });
     setSuggestionName(""); setSuggestionType(""); setSuggestionReason(""); setSuggestionLocation("");
     setNewSuggestionDrawer(false);
     toast.success("تم إرسال المقترح");
@@ -391,12 +388,7 @@ const Trips = () => {
 
   const handleSuggestionDecision = (status: "accepted" | "rejected" | "reviewing") => {
     if (!selectedTrip || !reviewingSuggestion) return;
-    const updatedSuggestions = selectedTrip.suggestions.map((s) =>
-      s.id === reviewingSuggestion.id ? { ...s, status } : s
-    );
-    const updated = { ...selectedTrip, suggestions: updatedSuggestions };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    updateSuggestion.mutate({ id: reviewingSuggestion.id, status });
     setReviewingSuggestion(null);
     setSuggestionReviewDrawer(false);
     toast.success(status === "accepted" ? "تم قبول المقترح" : status === "rejected" ? "تم رفض المقترح" : "قيد الدراسة");
@@ -404,10 +396,7 @@ const Trips = () => {
 
   const handleAddPackingItem = () => {
     if (!selectedTrip || !packingItemName.trim()) return;
-    const newItem: PackingItem = { id: Date.now().toString(), name: packingItemName, packed: false };
-    const updated = { ...selectedTrip, packingList: [...selectedTrip.packingList, newItem] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    addPackingItem.mutate({ trip_id: selectedTrip.id, name: packingItemName });
     setPackingItemName("");
     setNewPackingDrawer(false);
     toast.success("تم إضافة العنصر");
@@ -415,11 +404,11 @@ const Trips = () => {
 
   const handleAddExpense = () => {
     if (!selectedTrip || !expenseName.trim()) return;
-    const newExp: Expense = { id: Date.now().toString(), name: expenseName, amount: Number(expenseAmount) || 0 };
-    const updated = { ...selectedTrip, expenses: [...selectedTrip.expenses, newExp] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
-    syncTripToBudget({ id: updated.id, name: updated.name, budget: updated.budget, expenses: updated.expenses });
+    addExpense.mutate({
+      trip_id: selectedTrip.id,
+      name: expenseName,
+      amount: Number(expenseAmount) || 0,
+    });
     setExpenseName("");
     setExpenseAmount("");
     setNewExpenseDrawer(false);
@@ -428,19 +417,14 @@ const Trips = () => {
 
   const handleAddDocument = () => {
     if (!selectedTrip || !docName.trim()) return;
-    const fileUrl = docFileInput ? URL.createObjectURL(docFileInput) : "";
-    const newDoc: TripDocument = {
-      id: Date.now().toString(),
+    addDocument.mutate({
+      trip_id: selectedTrip.id,
       name: docName,
       type: docType,
-      fileUrl,
-      fileName: docFileInput?.name || "مستند",
-      addedAt: new Date().toISOString().split("T")[0],
+      file_url: docFileInput ? URL.createObjectURL(docFileInput) : undefined,
+      file_name: docFileInput?.name || "مستند",
       notes: docNotes || undefined,
-    };
-    const updated = { ...selectedTrip, documents: [...selectedTrip.documents, newDoc] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    });
     setDocName(""); setDocType("ticket"); setDocNotes(""); setDocFileInput(null);
     setNewDocDrawer(false);
     toast.success("تم إضافة المستند");
@@ -448,9 +432,7 @@ const Trips = () => {
 
   const handleDeleteDocument = (docId: string) => {
     if (!selectedTrip) return;
-    const updated = { ...selectedTrip, documents: selectedTrip.documents.filter((d) => d.id !== docId) };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    deleteDocument.mutate(docId);
     setDocViewDrawer(false);
     setViewingDoc(null);
     toast.success("تم حذف المستند");
@@ -458,12 +440,10 @@ const Trips = () => {
 
   const togglePackingItem = (itemId: string) => {
     if (!selectedTrip) return;
-    const updatedList = selectedTrip.packingList.map((p) =>
-      p.id === itemId ? { ...p, packed: !p.packed } : p
-    );
-    const updated = { ...selectedTrip, packingList: updatedList };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    const item = selectedTrip.packingList.find(p => p.id === itemId);
+    if (item) {
+      updatePackingItem.mutate({ id: itemId, packed: !item.packed });
+    }
   };
 
 
