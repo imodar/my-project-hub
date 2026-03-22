@@ -334,20 +334,16 @@ const Vehicle = () => {
       toast.error("الممشى يجب أن يكون أكبر من 0");
       return;
     }
-    const car: CarData = {
-      id: Date.now().toString(),
+    addVehicleMut.mutate({
       manufacturer: newManufacturer,
       model: newModel,
       year: newYear,
       mileage: Number(newMileage) || 0,
-      mileageUnit: newMileageUnit,
+      mileage_unit: newMileageUnit,
       color: newColor,
-      plateNumber: newPlate,
-      sharedWith: newSharedWith,
-      maintenance: [],
-      createdAt: new Date().toISOString(),
-    };
-    setCars(prev => [car, ...prev]);
+      plate_number: newPlate,
+      shared_with: newSharedWith,
+    });
     setAddCarOpen(false);
     resetAddForm();
     toast.success("تمت إضافة المركبة بنجاح");
