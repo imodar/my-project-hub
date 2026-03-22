@@ -125,11 +125,13 @@ const Will = () => {
   const handleSaveSection = () => {
     if (!editingSection) return;
     haptic.medium();
-    setSections(prev => prev.map(s =>
+    const updated = sections.map(s =>
       s.id === editingSection.id
         ? { ...s, content: sectionContent, completed: sectionContent.trim().length > 0 }
         : s
-    ));
+    );
+    setSections(updated);
+    upsertWill.mutate({ sections: updated });
     setEditingSection(null);
     toast({ title: "تم الحفظ", description: `تم حفظ "${editingSection.label}" بنجاح` });
   };
