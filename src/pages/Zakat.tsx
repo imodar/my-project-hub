@@ -886,7 +886,7 @@ const Zakat = () => {
               className="w-full mt-2 text-muted-foreground"
               onClick={() => {
                 if (reminderAsset) {
-                  updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: false } : a));
+                  updateAssetMut.mutate({ id: reminderAsset, reminder: false });
                   haptic.light();
                   setReminderAsset(null);
                 }
