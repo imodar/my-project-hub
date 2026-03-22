@@ -1,5 +1,5 @@
 // Budget Page
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane, CalendarIcon } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
@@ -12,12 +12,12 @@ import {
 import { haptic } from "@/lib/haptics";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
-import { loadBudgets as loadBudgetsFromStorage, saveBudgets as saveBudgetsToStorage, syncBudgetToTrip, loadTrips } from "@/lib/tripBudgetSync";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { useBudgets } from "@/hooks/useBudgets";
 
 interface ExpenseItem {
   id: string;
