@@ -285,7 +285,7 @@ const Zakat = () => {
   };
 
   const handleDelete = (id: string) => {
-    updateAssets(assets.filter(a => a.id !== id));
+    deleteAssetMut.mutate(id);
     setDeleteConfirm(null);
     haptic.medium();
   };
