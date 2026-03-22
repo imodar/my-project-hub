@@ -78,7 +78,34 @@ const SWIPE_WIDTH = 140;
 
 const Places = () => {
   const navigate = useNavigate();
-  const [lists, setLists] = useState<PlaceList[]>(initialLists);
+  const { lists: dbLists, isLoading: placesLoading, addList: addListMut, deleteList: deleteListMut, addPlace: addPlaceMut, updatePlace: updatePlaceMut, deletePlace: deletePlaceMut } = usePlaceLists();
+
+  const lists: PlaceList[] = useMemo(() => dbLists.map((l: any) => ({
+    id: l.id,
+    name: l.name,
+    type: l.type || "family",
+    sharedWith: l.shared_with || [],
+    lastUpdatedBy: "",
+    lastUpdatedAt: "",
+    places: (l.places || []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category || "أخرى",
+      description: p.description || "",
+      location: p.lat && p.lng ? { lat: p.lat, lng: p.lng, address: p.address } : undefined,
+      socialLink: p.social_link,
+      phone: p.phone,
+      priceRange: p.price_range || "$$",
+      rating: p.rating,
+      kidFriendly: p.kid_friendly || "no",
+      addedBy: p.added_by || "",
+      suggestedBy: p.suggested_by,
+      visited: p.visited || false,
+      mustVisit: p.must_visit || false,
+      note: p.note || "",
+    })),
+  })), [dbLists]);
+
   const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
   const [activeCategory, setActiveCategory] = useState<PlaceCategory | "الكل">("الكل");
   const [showAddList, setShowAddList] = useState(false);
