@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { LogOut } from "lucide-react";
 import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Briefcase, Car } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
@@ -8,18 +10,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 
 
-const emergencyContacts = [
-  { id: "1", name: "الجد أبو محمد", phone: "+966 50 123 4567" },
-  { id: "2", name: "العم خالد", phone: "+966 55 987 6543" },
-];
+const emergencyContacts: { id: string; name: string; phone: string }[] = [];
 
-const familyMembers = [
-  { id: "1", name: "أحمد", sosEnabled: true },
-  { id: "2", name: "سارة", sosEnabled: true },
-  { id: "3", name: "يوسف", sosEnabled: false },
-];
+const familyMembers: { id: string; name: string; sosEnabled: boolean }[] = [];
 
 const Settings = () => {
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const { islamicMode, setIslamicMode } = useIslamicMode();
   const { currentRole, setCurrentRole } = useUserRole();
@@ -56,6 +52,7 @@ const Settings = () => {
       items: [
         { icon: Archive, label: "سلة المحذوفات", desc: "استعادة أو حذف العناصر نهائياً", onClick: () => navigate("/trash") },
         { icon: Trash2, label: "مسح البيانات", desc: "حذف جميع البيانات المحفوظة", danger: true },
+        { icon: LogOut, label: "تسجيل الخروج", desc: "الخروج من الحساب", danger: true, onClick: async () => { await signOut(); navigate("/auth", { replace: true }); } },
       ],
     },
   ];
