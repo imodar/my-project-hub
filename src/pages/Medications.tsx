@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useMedications } from "@/hooks/useMedications";
 import {
   Plus, Pill, Check, Clock, Bell, BellRing, Pencil, Trash2,
   AlertTriangle, User, ChevronDown,
