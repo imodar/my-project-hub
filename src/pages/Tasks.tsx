@@ -349,16 +349,9 @@ const Tasks = () => {
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, type: "shared", sharedWith: selectedShareMembers }
-          : list
-      )
-    );
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [activeListId, selectedShareMembers]);
+  }, [selectedShareMembers]);
 
   const getListIcon = (type: TaskList["type"]) => {
     switch (type) {
