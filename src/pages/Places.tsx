@@ -243,21 +243,12 @@ const Places = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    const newList: PlaceList = {
-      id: crypto.randomUUID(),
-      name: newListName.trim(),
-      type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-      sharedWith: newListType === "family" ? newListShareMembers : undefined,
-      lastUpdatedBy: "أنت",
-      lastUpdatedAt: "الآن",
-      places: [],
-    };
-    setLists((prev) => [...prev, newList]);
-    setActiveListId(newList.id);
+    const type = newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType;
+    createListMut.mutate({ name: newListName.trim(), type, shared_with: newListShareMembers });
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers]);
+  }, [newListName, newListType, newListShareMembers, createListMut]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
