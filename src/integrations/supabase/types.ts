@@ -55,6 +55,138 @@ export type Database = {
           },
         ]
       }
+      budget_expenses: {
+        Row: {
+          amount: number
+          budget_id: string
+          created_at: string
+          currency: string
+          date: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          amount?: number
+          budget_id: string
+          created_at?: string
+          currency?: string
+          date?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          amount?: number
+          budget_id?: string
+          created_at?: string
+          currency?: string
+          date?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_expenses_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budgets: {
+        Row: {
+          created_at: string
+          created_by: string
+          family_id: string
+          id: string
+          income: number
+          label: string | null
+          month: string | null
+          shared_with: string[] | null
+          trip_id: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          family_id: string
+          id?: string
+          income?: number
+          label?: string | null
+          month?: string | null
+          shared_with?: string[] | null
+          trip_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          family_id?: string
+          id?: string
+          income?: number
+          label?: string | null
+          month?: string | null
+          shared_with?: string[] | null
+          trip_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_events: {
+        Row: {
+          added_by: string
+          created_at: string
+          date: string
+          family_id: string
+          icon: string | null
+          id: string
+          personal_reminders: string[] | null
+          reminder_before: string[] | null
+          title: string
+        }
+        Insert: {
+          added_by: string
+          created_at?: string
+          date: string
+          family_id: string
+          icon?: string | null
+          id?: string
+          personal_reminders?: string[] | null
+          reminder_before?: string[] | null
+          title: string
+        }
+        Update: {
+          added_by?: string
+          created_at?: string
+          date?: string
+          family_id?: string
+          icon?: string | null
+          id?: string
+          personal_reminders?: string[] | null
+          reminder_before?: string[] | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consent_log: {
         Row: {
           accepted: boolean
@@ -84,6 +216,144 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      debt_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          date: string
+          debt_id: string
+          id: string
+          item_description: string | null
+          payment_details: Json | null
+          type: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          date?: string
+          debt_id: string
+          id?: string
+          item_description?: string | null
+          payment_details?: Json | null
+          type?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          date?: string
+          debt_id?: string
+          id?: string
+          item_description?: string | null
+          payment_details?: Json | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_payments_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debt_postponements: {
+        Row: {
+          created_at: string
+          debt_id: string
+          id: string
+          new_date: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          debt_id: string
+          id?: string
+          new_date: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          debt_id?: string
+          id?: string
+          new_date?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_postponements_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debts: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          date: string
+          direction: string
+          due_date: string | null
+          family_id: string
+          has_reminder: boolean
+          id: string
+          is_archived: boolean
+          is_fully_paid: boolean
+          note: string | null
+          payment_details: Json | null
+          person_name: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          date?: string
+          direction: string
+          due_date?: string | null
+          family_id: string
+          has_reminder?: boolean
+          id?: string
+          is_archived?: boolean
+          is_fully_paid?: boolean
+          note?: string | null
+          payment_details?: Json | null
+          person_name: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          date?: string
+          direction?: string
+          due_date?: string | null
+          family_id?: string
+          has_reminder?: boolean
+          id?: string
+          is_archived?: boolean
+          is_fully_paid?: boolean
+          note?: string | null
+          payment_details?: Json | null
+          person_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debts_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       families: {
         Row: {
@@ -264,6 +534,91 @@ export type Database = {
           },
         ]
       }
+      market_items: {
+        Row: {
+          added_by: string | null
+          category: string | null
+          checked: boolean
+          checked_by: string | null
+          created_at: string
+          id: string
+          list_id: string
+          name: string
+          quantity: number
+        }
+        Insert: {
+          added_by?: string | null
+          category?: string | null
+          checked?: boolean
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          list_id: string
+          name: string
+          quantity?: number
+        }
+        Update: {
+          added_by?: string | null
+          category?: string | null
+          checked?: boolean
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          list_id?: string
+          name?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "market_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_lists: {
+        Row: {
+          created_at: string
+          created_by: string
+          family_id: string
+          id: string
+          name: string
+          shared_with: string[] | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          family_id: string
+          id?: string
+          name: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          family_id?: string
+          id?: string
+          name?: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_lists_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_removals: {
         Row: {
           deleted_at: string
@@ -349,6 +704,97 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      task_items: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          done: boolean
+          id: string
+          list_id: string
+          name: string
+          note: string | null
+          priority: string | null
+          repeat_count: number
+          repeat_days: number[] | null
+          repeat_enabled: boolean
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          list_id: string
+          name: string
+          note?: string | null
+          priority?: string | null
+          repeat_count?: number
+          repeat_days?: number[] | null
+          repeat_enabled?: boolean
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          list_id?: string
+          name?: string
+          note?: string | null
+          priority?: string | null
+          repeat_count?: number
+          repeat_days?: number[] | null
+          repeat_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "task_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_lists: {
+        Row: {
+          created_at: string
+          created_by: string
+          family_id: string
+          id: string
+          name: string
+          shared_with: string[] | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          family_id: string
+          id?: string
+          name: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          family_id?: string
+          id?: string
+          name?: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_lists_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_keypairs: {
         Row: {
