@@ -348,15 +348,11 @@ const Trips = () => {
 
   const handleAddDay = () => {
     if (!selectedTrip || !dayCity.trim()) return;
-    const newDay: DayPlan = {
-      id: Date.now().toString(),
-      dayNumber: selectedTrip.days.length + 1,
+    addDayPlan.mutate({
+      trip_id: selectedTrip.id,
+      day_number: selectedTrip.days.length + 1,
       city: dayCity,
-      activities: [],
-    };
-    const updated = { ...selectedTrip, days: [...selectedTrip.days, newDay] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    });
     setDayCity("");
     setNewDayDrawer(false);
     toast.success("تم إضافة اليوم");
