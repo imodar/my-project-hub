@@ -22,6 +22,7 @@ const familyMembers = [
 ];
 
 const Settings = () => {
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const { islamicMode, setIslamicMode } = useIslamicMode();
   const { currentRole, setCurrentRole } = useUserRole();
