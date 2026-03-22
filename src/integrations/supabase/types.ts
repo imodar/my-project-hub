@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletions: {
+        Row: {
+          completed_at: string | null
+          id: string
+          reason: string | null
+          requested_at: string
+          scheduled_delete_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          reason?: string | null
+          requested_at?: string
+          scheduled_delete_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          reason?: string | null
+          requested_at?: string
+          scheduled_delete_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       admin_transfer_requests: {
         Row: {
           approvals: Json
@@ -134,6 +197,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      app_versions: {
+        Row: {
+          created_at: string
+          force_update: boolean
+          id: string
+          min_supported_version: string
+          release_notes: string | null
+          update_message: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          force_update?: boolean
+          id?: string
+          min_supported_version: string
+          release_notes?: string | null
+          update_message?: string | null
+          version: string
+        }
+        Update: {
+          created_at?: string
+          force_update?: boolean
+          id?: string
+          min_supported_version?: string
+          release_notes?: string | null
+          update_message?: string | null
+          version?: string
+        }
+        Relationships: []
       }
       budget_expenses: {
         Row: {
@@ -341,6 +434,60 @@ export type Database = {
           ip_address?: string | null
           user_id?: string
           version?: string
+        }
+        Relationships: []
+      }
+      data_export_requests: {
+        Row: {
+          completed_at: string | null
+          expires_at: string | null
+          file_url: string | null
+          id: string
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          expires_at?: string | null
+          file_url?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          expires_at?: string | null
+          file_url?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      data_retention_policy: {
+        Row: {
+          auto_purge: boolean
+          description: string | null
+          id: string
+          retention_days: number
+          table_name: string
+        }
+        Insert: {
+          auto_purge?: boolean
+          description?: string | null
+          id?: string
+          retention_days: number
+          table_name: string
+        }
+        Update: {
+          auto_purge?: boolean
+          description?: string | null
+          id?: string
+          retention_days?: number
+          table_name?: string
         }
         Relationships: []
       }
@@ -816,6 +963,33 @@ export type Database = {
           },
         ]
       }
+      feature_usage: {
+        Row: {
+          created_at: string
+          feature_name: string
+          id: string
+          page_path: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          feature_name: string
+          id?: string
+          page_path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          feature_name?: string
+          id?: string
+          page_path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       islamic_reminder_prefs: {
         Row: {
           enabled: boolean
@@ -1102,6 +1276,96 @@ export type Database = {
           },
         ]
       }
+      notification_log: {
+        Row: {
+          body: string | null
+          id: string
+          opened_count: number | null
+          sent_at: string
+          sent_by: string | null
+          target_id: string | null
+          target_type: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          id?: string
+          opened_count?: number | null
+          sent_at?: string
+          sent_by?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          id?: string
+          opened_count?: number | null
+          sent_at?: string
+          sent_by?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      notification_tokens: {
+        Row: {
+          created_at: string
+          device_info: string | null
+          id: string
+          platform: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: string | null
+          id?: string
+          platform?: string | null
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: string | null
+          id?: string
+          platform?: string | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      otp_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       place_lists: {
         Row: {
           created_at: string
@@ -1286,6 +1550,120 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_counters: {
+        Row: {
+          count: number
+          endpoint: string
+          id: string
+          user_id: string | null
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          endpoint: string
+          id?: string
+          user_id?: string | null
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          endpoint?: string
+          id?: string
+          user_id?: string | null
+          window_start?: string
+        }
+        Relationships: []
+      }
+      scheduled_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          data: Json | null
+          id: string
+          scheduled_at: string
+          sent: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          id?: string
+          scheduled_at: string
+          sent?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          id?: string
+          scheduled_at?: string
+          sent?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_events: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          event_type: string
+          id: string
+          plan: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          event_type: string
+          id?: string
+          plan?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          event_type?: string
+          id?: string
+          plan?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       tasbih_sessions: {
         Row: {
           count: number
@@ -1391,6 +1769,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "task_lists_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trash_items: {
+        Row: {
+          deleted_at: string
+          description: string | null
+          family_id: string | null
+          id: string
+          is_shared: boolean
+          original_data: Json
+          permanent_delete_at: string
+          related_records: Json | null
+          restored: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          description?: string | null
+          family_id?: string | null
+          id?: string
+          is_shared?: boolean
+          original_data?: Json
+          permanent_delete_at?: string
+          related_records?: Json | null
+          restored?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          description?: string | null
+          family_id?: string | null
+          id?: string
+          is_shared?: boolean
+          original_data?: Json
+          permanent_delete_at?: string
+          related_records?: Json | null
+          restored?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trash_items_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
@@ -1652,6 +2083,39 @@ export type Database = {
           },
         ]
       }
+      upgrade_attempts: {
+        Row: {
+          abandoned_at: string | null
+          completed_at: string | null
+          followup_sent: boolean
+          id: string
+          plan_attempted: string
+          price: number | null
+          step_reached: string | null
+          user_id: string
+        }
+        Insert: {
+          abandoned_at?: string | null
+          completed_at?: string | null
+          followup_sent?: boolean
+          id?: string
+          plan_attempted: string
+          price?: number | null
+          step_reached?: string | null
+          user_id: string
+        }
+        Update: {
+          abandoned_at?: string | null
+          completed_at?: string | null
+          followup_sent?: boolean
+          id?: string
+          plan_attempted?: string
+          price?: number | null
+          step_reached?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_keypairs: {
         Row: {
           created_at: string
@@ -1699,6 +2163,36 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          device_info: string | null
+          ended_at: string | null
+          id: string
+          ip_address: string | null
+          platform: string | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          device_info?: string | null
+          ended_at?: string | null
+          id?: string
+          ip_address?: string | null
+          platform?: string | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          device_info?: string | null
+          ended_at?: string | null
+          id?: string
+          ip_address?: string | null
+          platform?: string | null
+          started_at?: string
           user_id?: string
         }
         Relationships: []
