@@ -789,7 +789,7 @@ const Zakat = () => {
                 onClick={() => {
                   if (zakatPaidAsset) {
                     const today = new Date().toISOString().split("T")[0];
-                    updateAssets(assets.map(a => a.id === zakatPaidAsset ? { ...a, purchaseDate: today, reminder: true } : a));
+                    updateAssetMut.mutate({ id: zakatPaidAsset, purchase_date: today, reminder: true });
                     haptic.medium();
                     setZakatPaidAsset(null);
                   }
