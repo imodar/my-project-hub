@@ -1,13 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Camera } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState("أحمد");
+  const { user } = useAuth();
+  const [name, setName] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Load profile from DB
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("name, avatar_url")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setName(data.name || "");
+          setAvatar(data.avatar_url || null);
+        }
+      });
+  }, [user]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -19,9 +39,21 @@ const Profile = () => {
     }
   };
 
-  const handleSave = () => {
-    setEditing(false);
-    toast({ title: "تم حفظ التغييرات" });
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ name })
+      .eq("id", user.id);
+
+    setSaving(false);
+    if (error) {
+      toast({ title: "حدث خطأ أثناء الحفظ", variant: "destructive" });
+    } else {
+      setEditing(false);
+      toast({ title: "تم حفظ التغييرات" });
+    }
   };
 
   return (
@@ -49,7 +81,7 @@ const Profile = () => {
               {avatar ? (
                 <img src={avatar} alt={name} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-3xl font-bold text-primary">{name.charAt(0)}</span>
+                <span className="text-3xl font-bold text-primary">{name.charAt(0) || "?"}</span>
               )}
             </div>
             <label className="absolute bottom-0 left-0 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer" style={{
@@ -77,20 +109,25 @@ const Profile = () => {
                 className="flex-1 px-3 py-2 rounded-xl text-right text-sm border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                 autoFocus
               />
-              <button onClick={handleSave} className="px-4 py-2 rounded-xl text-sm font-semibold text-primary-foreground" style={{ background: "hsl(var(--primary))" }}>
-                حفظ
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                style={{ background: "hsl(var(--primary))" }}
+              >
+                {saving ? "جاري..." : "حفظ"}
               </button>
             </div>
           ) : (
             <button onClick={() => setEditing(true)} className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-right transition-colors active:bg-muted/50">
-              <span className="text-sm font-semibold text-foreground">{name}</span>
+              <span className="text-sm font-semibold text-foreground">{name || "أضف اسمك"}</span>
               <span className="text-xs text-primary">تعديل</span>
             </button>
           )}
         </div>
 
         {/* Role */}
-        <div className="rounded-2xl p-4" style={{
+        <div className="rounded-2xl p-4 mb-4" style={{
           background: "hsla(0,0%,100%,0.9)",
           boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
         }}>
