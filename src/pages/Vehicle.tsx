@@ -294,7 +294,7 @@ const Vehicle = () => {
   const [maintNotes, setMaintNotes] = useState("");
   const [oilWithFilter, setOilWithFilter] = useState(false);
 
-  useEffect(() => { saveCars(cars); }, [cars]);
+  // Syncing handled by React Query
 
   const filteredManufacturers = useMemo(() => {
     const search = manufacturerSearch.toLowerCase().trim();
