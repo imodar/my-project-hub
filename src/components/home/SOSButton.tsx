@@ -62,10 +62,7 @@ const SOSButton = () => {
 
   const [contacts, setContacts] = useState<EmergencyContact[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [
-      { id: "1", name: "الجدّ أبو محمد", phone: "+966501234567", relation: "جد" },
-      { id: "2", name: "العم خالد", phone: "+966559876543", relation: "عم" },
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [newName, setNewName] = useState("");
