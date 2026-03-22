@@ -31,7 +31,7 @@ const CASH_CURRENCIES = [
 ] as const;
 
 // ── Swipeable Card (RTL: swipe left to reveal actions on right) ──
-const ACTION_WIDTH = 210;
+const ACTION_WIDTH = 280;
 function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit: () => void; onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
