@@ -350,7 +350,7 @@ const Vehicle = () => {
   };
 
   const handleDeleteCar = (carId: string) => {
-    setCars(prev => prev.filter(c => c.id !== carId));
+    deleteVehicleMut.mutate(carId);
     if (selectedCar?.id === carId) setSelectedCar(null);
     toast.success("تم حذف المركبة");
   };
