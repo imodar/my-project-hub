@@ -247,8 +247,7 @@ const Zakat = () => {
   const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
 
   const updateAssets = useCallback((newAssets: ZakatAsset[]) => {
-    setAssets(newAssets);
-    saveAssets(newAssets);
+    // Updates are handled via individual mutations now
   }, []);
 
   const handleAdd = () => {
