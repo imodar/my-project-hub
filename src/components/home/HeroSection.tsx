@@ -425,32 +425,34 @@ const HeroSection = () => {
           )}
 
           <div className="relative z-20 space-y-3">
-            {/* Greeting + Date */}
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight mb-1">
-                {greeting}، {mockUser.name}
-              </h1>
-              <p className="text-white/75 font-medium text-sm">
-                {gregorianDate} {islamicMode && `• ${hijriDate}`}
-              </p>
-            </div>
+            {/* Greeting + Weather row */}
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight mb-1">
+                  {greeting}، {mockUser.name}
+                </h1>
+                <p className="text-white/75 font-medium text-sm">
+                  {gregorianDate} {islamicMode && `• ${hijriDate}`}
+                </p>
+              </div>
 
-            {/* Location + Weather status merged row */}
-            {showWeatherInfo && displayCity && displayIcon && displayDesc && (
-              <motion.div
-                key={`weather-row-${demoActive ? demoIndex : 'real'}`}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="flex items-center gap-2 text-white/70 text-xs"
-              >
-                <MapPin size={12} className="shrink-0" />
-                <span className="font-medium">{displayCity}</span>
-                <span className="text-white/30">•</span>
-                <WeatherIcon icon={displayIcon} />
-                <span>{displayDesc}</span>
-              </motion.div>
-            )}
+              {/* Location + Weather on the left side */}
+              {showWeatherInfo && displayCity && displayIcon && displayDesc && (
+                <motion.div
+                  key={`weather-row-${demoActive ? demoIndex : 'real'}`}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-1.5 text-white/70 text-[11px] shrink-0 mt-1"
+                >
+                  <MapPin size={11} className="shrink-0" />
+                  <span className="font-medium">{displayCity}</span>
+                  <span className="text-white/30">•</span>
+                  <WeatherIcon icon={displayIcon} />
+                  <span>{displayDesc}</span>
+                </motion.div>
+              )}
+            </div>
 
             {/* Last updated */}
             {!demoActive && weather?.lastUpdated && (
