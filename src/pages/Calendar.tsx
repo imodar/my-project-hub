@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useMemo } from "react";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { createPortal } from "react-dom";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
