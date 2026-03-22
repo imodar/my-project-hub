@@ -146,7 +146,6 @@ const NextPrayerBox = () => {
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
           <PrayerIcon />
-          <PrayerIcon />
         </div>
         {/* 3 lines */}
         <div className="flex flex-col gap-0.5">
