@@ -250,7 +250,6 @@ const Documents = () => {
         } else if (editTarget) {
           // File upload for existing items - skip for now (needs storage integration)
         }
-        }
       };
       reader.readAsDataURL(file);
     });
