@@ -427,10 +427,10 @@ const HeroSection = () => {
           <div className="relative z-20 space-y-3">
             {/* Greeting */}
             <div>
-              <h1 className="text-2xl font-bold tracking-tight mb-1">
+              <h1 className="text-xl font-bold tracking-tight mb-1">
                 {greeting}، {mockUser.name}
               </h1>
-              <p className="text-white/75 font-medium text-sm whitespace-nowrap">
+              <p className="text-white/75 font-medium text-xs whitespace-nowrap">
                 {gregorianDate} {islamicMode && `• ${hijriDate}`}
               </p>
             </div>
