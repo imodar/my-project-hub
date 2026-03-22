@@ -282,7 +282,8 @@ const Medications = () => {
     toast("تم تخطي الجرعة", { icon: "⏭️" });
   };
 
-  const deleteMedication = (medId: string) => {
+  const handleDeleteMedication = (medId: string) => {
+    deleteMedMut.mutate(medId);
     setMedications((prev) => prev.filter((m) => m.id !== medId));
     setShowDeleteConfirm(null);
     toast.success("تم حذف الدواء");
