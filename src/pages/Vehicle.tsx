@@ -423,9 +423,8 @@ const Vehicle = () => {
 
   const handleSaveShare = () => {
     if (!selectedCar) return;
-    const updatedCar = { ...selectedCar, sharedWith: shareWith };
-    setCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
-    setSelectedCar(updatedCar);
+    updateVehicleMut.mutate({ id: selectedCar.id, shared_with: shareWith });
+    setSelectedCar(prev => prev ? { ...prev, sharedWith: shareWith } : null);
     setShareDrawerOpen(false);
     toast.success("تم تحديث المشاركة");
   };
