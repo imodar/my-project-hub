@@ -439,7 +439,7 @@ const SOSButton = () => {
             <div>
               <h4 className="text-sm font-bold text-foreground mb-3">أفراد العائلة (إشعار تلقائي)</h4>
               <div className="space-y-2">
-                {FAMILY_MEMBERS.map((member) => (
+                {familyMembers.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 bg-card rounded-xl border border-border/50 p-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                       <span className="text-xs font-bold text-primary">{member.name[0]}</span>

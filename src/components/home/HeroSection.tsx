@@ -486,7 +486,7 @@ const HeroSection = () => {
         </motion.div>
       </section>
 
-      <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={mockUser} />
+      <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={currentUser} />
     </>
   );
 };
