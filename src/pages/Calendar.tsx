@@ -129,9 +129,7 @@ const CalendarPage = () => {
   const [reminderTarget, setReminderTarget] = useState<FamilyEvent | null>(null);
   const [personalReminders, setPersonalReminders] = useState<string[]>([]);
 
-  useEffect(() => {
-    localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
-  }, [events]);
+  // Events are now synced via React Query - no localStorage needed
 
   const prevMonth = () => {
     if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear((y) => y - 1); }
