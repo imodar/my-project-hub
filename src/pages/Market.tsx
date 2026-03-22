@@ -56,44 +56,32 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; emoji: string 
 const CATEGORIES = ["الكل", ...Object.keys(CATEGORY_COLORS)];
 const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
-const initialLists: MarketList[] = [
-  {
-    id: "1",
-    name: "قائمة التسوق",
-    type: "family",
-    isDefault: true,
-    lastUpdatedBy: "أم فهد",
-    lastUpdatedAt: "منذ ساعة",
-    items: [
-      { id: "i1", name: "حليب نادك 1 لتر", category: "ألبان", quantity: "3", addedBy: "أم فهد", checked: false },
-      { id: "i2", name: "خيار وطماطم", category: "خضار وفاكهة", quantity: "كيلو من كل", addedBy: "أبو فهد", checked: false },
-      { id: "i3", name: "دجاج كامل", category: "لحوم", quantity: "قطعتان", addedBy: "أم فهد", checked: false },
-      { id: "i4", name: "زيت زيتون", category: "مؤونة", quantity: "750 مل", addedBy: "أبو فهد", checked: false },
-      { id: "i5", name: "خبز تميس", category: "مخبوزات", quantity: "3 أرغفة", addedBy: "أم فهد", checked: true },
-      { id: "i6", name: "عصير برتقال", category: "مشروبات", quantity: "7 لتر", addedBy: "أم فهد", checked: true },
-    ],
-  },
-  {
-    id: "2",
-    name: "أغراضي الشخصية",
-    type: "personal",
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "أمس",
-    items: [
-      { id: "i7", name: "شامبو", category: "أخرى", quantity: "1", addedBy: "أبو فهد", checked: false },
-      { id: "i8", name: "معجون أسنان", category: "أخرى", quantity: "2", addedBy: "أبو فهد", checked: false },
-    ],
-  },
-];
-
 const SWIPE_WIDTH = 140;
 
 const Market = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [lists, setLists] = useState<MarketList[]>(() =>
-    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
-  );
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useMarketLists();
+
+  const lists: MarketList[] = useMemo(() => {
+    const mapped = (dbLists || []).map((l: any) => ({
+      id: l.id,
+      name: l.name,
+      type: (l.type || "family") as "family" | "personal" | "shared",
+      sharedWith: l.shared_with || [],
+      lastUpdatedBy: "",
+      lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
+      items: (l.market_items || []).map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        category: i.category || "أخرى",
+        quantity: i.quantity || "1",
+        addedBy: "",
+        checked: i.checked,
+      })),
+    }));
+    return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
+  }, [dbLists, featureAccess.isStaff]);
   const [activeListId, setActiveListId] = useState(() => {
     const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
     return filtered[0]?.id || "";
