@@ -94,9 +94,34 @@ const Medications = () => {
     }
   }, []);
 
+  // Sync from DB to local state for UI compatibility
   useEffect(() => {
-    saveMedications(medications);
-  }, [medications]);
+    if (dbMeds && dbMeds.length > 0) {
+      const mapped: Medication[] = dbMeds.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        dosage: m.dosage || "",
+        memberId: m.member_id || "me",
+        memberName: m.member_name || "أنا",
+        frequency: {
+          type: (m.frequency_type || "daily") as FrequencyType,
+          value: m.frequency_value || 1,
+          selectedDays: m.selected_days || [],
+        },
+        timesPerDay: m.times_per_day || 1,
+        specificTimes: m.specific_times || ["08:00"],
+        startDate: m.start_date || "",
+        endDate: m.end_date || "",
+        notes: m.notes || "",
+        color: m.color || MEDICATION_COLORS[0],
+        reminder: {
+          enabled: m.reminder_enabled || false,
+          nextDueAt: null,
+        },
+      }));
+      setMedications(mapped);
+    }
+  }, [dbMeds]);
 
   // Request notification permission
   useEffect(() => {
