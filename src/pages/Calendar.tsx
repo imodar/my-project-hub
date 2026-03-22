@@ -57,7 +57,7 @@ const ICON_OPTIONS = [
   { key: "calendar", label: "📅" },
 ];
 
-const EVENTS_KEY = "family_calendar_events";
+const EVENTS_KEY = "family_calendar_events"; // kept for reference only
 
 const ARABIC_MONTHS = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
