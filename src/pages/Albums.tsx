@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -14,6 +14,8 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
 import { useUserRole } from "@/contexts/UserRoleContext";
+import { useAlbums } from "@/hooks/useAlbums";
+import { useTrips } from "@/hooks/useTrips";
 
 interface Photo {
   id: string;
@@ -43,57 +45,6 @@ const COVER_PALETTES = [
   "linear-gradient(135deg, hsl(0 0% 30%), hsl(0 0% 50%))",
   "linear-gradient(135deg, hsl(15 75% 45%), hsl(5 80% 55%))",
 ];
-
-// Sample placeholder photos (using gradient squares as placeholders)
-const SAMPLE_PHOTOS: Photo[] = [
-  { id: "sp1", url: "", date: "2026-03-15", caption: "لحظة عائلية" },
-  { id: "sp2", url: "", date: "2026-03-15", caption: "في الحديقة" },
-  { id: "sp3", url: "", date: "2026-03-10", caption: "عشاء عائلي" },
-  { id: "sp4", url: "", date: "2026-02-20", caption: "يوم ممطر" },
-  { id: "sp5", url: "", date: "2026-02-14", caption: "ذكريات جميلة" },
-  { id: "sp6", url: "", date: "2026-01-01", caption: "بداية السنة" },
-];
-
-const INITIAL_ALBUMS: Album[] = [
-  {
-    id: "a1",
-    name: "ذكريات عائلية",
-    coverColor: COVER_PALETTES[0],
-    photos: SAMPLE_PHOTOS.slice(0, 4),
-    createdAt: "2026-03-01",
-  },
-  {
-    id: "a2",
-    name: "رحلة إسطنبول",
-    coverColor: COVER_PALETTES[1],
-    photos: SAMPLE_PHOTOS.slice(1, 6),
-    createdAt: "2026-04-15",
-    linkedTripId: "1",
-    linkedTripName: "رحلة إسطنبول",
-  },
-  {
-    id: "a3",
-    name: "مناسبات",
-    coverColor: COVER_PALETTES[3],
-    photos: SAMPLE_PHOTOS.slice(2, 5),
-    createdAt: "2026-02-10",
-  },
-];
-
-// Get saved trips from localStorage
-function getSavedTrips(): { id: string; name: string; type: string }[] {
-  try {
-    const stored = localStorage.getItem("family-trips");
-    if (stored) {
-      const trips = JSON.parse(stored);
-      return trips.map((t: any) => ({ id: t.id, name: t.name, type: t.type }));
-    }
-  } catch {}
-  return [
-    { id: "1", name: "رحلة إسطنبول", type: "family" },
-    { id: "2", name: "استراحة نهاية الأسبوع", type: "personal" },
-  ];
-}
 
 // Check if an album's linked trip is personal (non-shared)
 function isPersonalTripAlbum(album: Album, trips: { id: string; type: string }[]): boolean {
@@ -140,7 +91,31 @@ const PhotoThumb = ({ photo, size = "md", onClick }: { photo: Photo; size?: "sm"
 const Albums = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [albums, setAlbums] = useState<Album[]>([]);
+  const { albums: dbAlbums, isLoading, createAlbum, deleteAlbum, addPhoto, deletePhoto } = useAlbums();
+  const { trips: dbTrips } = useTrips();
+
+  // Map DB data to UI format
+  const albums: Album[] = useMemo(() => {
+    return dbAlbums.map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      coverColor: a.cover_color || COVER_PALETTES[0],
+      photos: (a.album_photos || []).map((p: any) => ({
+        id: p.id,
+        url: p.url,
+        date: p.date || p.created_at?.split("T")[0] || "",
+        caption: p.caption,
+      })),
+      createdAt: a.created_at?.split("T")[0] || "",
+      linkedTripId: a.linked_trip_id,
+      linkedTripName: dbTrips.find((t: any) => t.id === a.linked_trip_id)?.name,
+    }));
+  }, [dbAlbums, dbTrips]);
+
+  const trips = useMemo(() => {
+    return dbTrips.map((t: any) => ({ id: t.id, name: t.name, type: "family" }));
+  }, [dbTrips]);
+
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
@@ -155,27 +130,16 @@ const Albums = () => {
   const [selectedTripId, setSelectedTripId] = useState("");
   const [selectedCover, setSelectedCover] = useState(0);
 
-  const trips = getSavedTrips();
-
   const handleCreateAlbum = () => {
     if (!newName.trim()) {
       toast.error("أدخل اسم الألبوم");
       return;
     }
-
-    const linkedTrip = linkToTrip ? trips.find((t) => t.id === selectedTripId) : null;
-
-    const album: Album = {
-      id: Date.now().toString(),
+    createAlbum.mutate({
       name: newName.trim(),
-      coverColor: COVER_PALETTES[selectedCover],
-      photos: [],
-      createdAt: new Date().toISOString().split("T")[0],
-      linkedTripId: linkedTrip?.id,
-      linkedTripName: linkedTrip?.name,
-    };
-
-    setAlbums((prev) => [album, ...prev]);
+      cover_color: COVER_PALETTES[selectedCover],
+      linked_trip_id: linkToTrip && selectedTripId ? selectedTripId : undefined,
+    });
     setShowCreate(false);
     setNewName("");
     setLinkToTrip(false);
@@ -185,33 +149,35 @@ const Albums = () => {
   };
 
   const handleDeleteAlbum = (albumId: string) => {
-    setAlbums((prev) => prev.filter((a) => a.id !== albumId));
+    deleteAlbum.mutate(albumId);
     setSelectedAlbum(null);
     toast.success("تم حذف الألبوم");
   };
 
   const handleAddPhoto = () => {
     if (!selectedAlbum) return;
+    // For now add a placeholder - in production this would open file picker
+    addPhoto.mutate({
+      album_id: selectedAlbum.id,
+      url: "",
+      caption: "صورة جديدة",
+      date: new Date().toISOString().split("T")[0],
+    });
+    // Update local selected album view
     const newPhoto: Photo = {
       id: Date.now().toString(),
       url: "",
       date: new Date().toISOString().split("T")[0],
       caption: "صورة جديدة",
     };
-    const updated = { ...selectedAlbum, photos: [newPhoto, ...selectedAlbum.photos] };
-    setSelectedAlbum(updated);
-    setAlbums((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    setSelectedAlbum(prev => prev ? { ...prev, photos: [newPhoto, ...prev.photos] } : null);
     toast.success("تمت إضافة الصورة");
   };
 
   const handleDeletePhoto = (photoId: string) => {
     if (!selectedAlbum) return;
-    const updated = {
-      ...selectedAlbum,
-      photos: selectedAlbum.photos.filter((p) => p.id !== photoId),
-    };
-    setSelectedAlbum(updated);
-    setAlbums((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    deletePhoto.mutate(photoId);
+    setSelectedAlbum(prev => prev ? { ...prev, photos: prev.photos.filter(p => p.id !== photoId) } : null);
     setSelectedPhoto(null);
     toast.success("تم حذف الصورة");
   };
@@ -351,7 +317,6 @@ const Albums = () => {
 
         <PullToRefresh onRefresh={async () => {
           await new Promise((r) => setTimeout(r, 600));
-          setAlbums([...INITIAL_ALBUMS]);
           toast.success("تم تحديث الألبومات");
         }}>
 

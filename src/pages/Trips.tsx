@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import PageHeader from "@/components/PageHeader";
@@ -19,6 +19,7 @@ import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
 import { saveTrips as saveTripsToStorage, syncTripToBudget, removeTripBudget } from "@/lib/tripBudgetSync";
+import { useTrips as useTripsHook } from "@/hooks/useTrips";
 
 // Types
 interface Activity {
@@ -103,74 +104,7 @@ const SUGGESTION_STATUS: Record<string, { label: string; icon: typeof Check; col
   reviewing: { label: "قيد الدراسة", icon: HelpCircle, color: "hsl(215 70% 50%)" },
 };
 
-const INITIAL_TRIPS: Trip[] = [
-  {
-    id: "1",
-    name: "رحلة إسطنبول",
-    destination: "إسطنبول، تركيا",
-    startDate: "2026-04-15",
-    endDate: "2026-04-22",
-    participants: ["أحمد", "سارة", "ياسين", "لينا"],
-    budget: 12000,
-    status: "confirmed",
-    type: "family",
-    expenses: [
-      { id: "e1", name: "الإقامة", amount: 3500 },
-      { id: "e2", name: "المواصلات", amount: 2800 },
-      { id: "e3", name: "تذاكر طيران", amount: 4200 },
-    ],
-    days: [
-      {
-        id: "d1", dayNumber: 1, city: "إسطنبول — السلطان أحمد",
-        activities: [
-          { id: "a1", name: "زيارة آيا صوفيا", time: "09:00", location: "السلطان أحمد", cost: 200, completed: false },
-          { id: "a2", name: "جامع السلطان أحمد", time: "11:30", location: "السلطان أحمد", cost: 0, completed: false },
-          { id: "a3", name: "غداء بمطعم فاتح", time: "13:00", location: "الفاتح", cost: 350, completed: false },
-        ]
-      },
-      {
-        id: "d2", dayNumber: 2, city: "إسطنبول — تقسيم",
-        activities: [
-          { id: "a4", name: "شارع الاستقلال", time: "10:00", location: "تقسيم", cost: 0, completed: false },
-          { id: "a5", name: "برج غلطة", time: "14:00", location: "غلطة", cost: 150, completed: false },
-        ]
-      }
-    ],
-    suggestions: [
-      { id: "s1", placeName: "البازار الكبير", type: "تسوق", reason: "أسعار ممتازة للهدايا", location: "الفاتح", suggestedBy: "ياسين", status: "accepted" },
-      { id: "s2", placeName: "جزر الأميرات", type: "طبيعة", reason: "مناظر خلابة", location: "بحر مرمرة", suggestedBy: "لينا", status: "pending" },
-    ],
-    packingList: [
-      { id: "p1", name: "جوازات السفر", packed: true },
-      { id: "p2", name: "شواحن الأجهزة", packed: true },
-      { id: "p3", name: "أدوية الطوارئ", packed: false },
-      { id: "p4", name: "ملابس شتوية خفيفة", packed: false },
-    ],
-    documents: [
-      { id: "doc1", name: "تذاكر الطيران", type: "ticket", fileUrl: "", fileName: "tickets.pdf", addedAt: "2026-03-20" },
-      { id: "doc2", name: "حجز الفندق", type: "hotel", fileUrl: "", fileName: "hotel-booking.pdf", addedAt: "2026-03-18" },
-    ],
-  },
-  {
-    id: "2",
-    name: "استراحة نهاية الأسبوع",
-    destination: "العُلا",
-    startDate: "2026-05-01",
-    endDate: "2026-05-03",
-    participants: ["أحمد"],
-    budget: 3000,
-    status: "planning",
-    type: "personal",
-    expenses: [
-      { id: "e4", name: "الإقامة", amount: 1200 },
-      { id: "e5", name: "المواصلات", amount: 600 },
-    ],
-    days: [],
-    suggestions: [],
-    packingList: [],
-    documents: [],
-  },
-];
+const INITIAL_TRIPS: Trip[] = [];
 
 // Swipeable card component
 const ACTION_WIDTH = 140;
@@ -230,39 +164,83 @@ function SwipeableCard({ onEdit, onDelete, children }: {
 
 const Trips = () => {
   const navigate = useNavigate();
-  const [trips, setTripsState] = useState<Trip[]>([]);
+  const {
+    trips: dbTrips, isLoading: tripsLoading,
+    createTrip, updateTrip, deleteTrip: deleteTripMut,
+    addDayPlan, addActivity, updateActivity,
+    addExpense, deleteExpense,
+    addPackingItem, updatePackingItem,
+    addSuggestion, updateSuggestion,
+    addDocument, deleteDocument,
+  } = useTripsHook();
 
-  // Wrapper to persist trips and sync budgets
-  const setTrips: typeof setTripsState = useCallback((updater) => {
-    setTripsState((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveTripsToStorage(next);
-      return next;
-    });
-  }, []);
-  // Save initial trips to localStorage and sync budgets on mount
-  useEffect(() => {
-    saveTripsToStorage(trips);
-    trips.forEach(t => {
-      if (t.expenses.length > 0 || t.budget > 0) {
-        syncTripToBudget({ id: t.id, name: t.name, budget: t.budget, expenses: t.expenses });
-      }
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Map DB trips to UI format
+  const trips: Trip[] = useMemo(() => {
+    return dbTrips.map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      destination: t.destination || "",
+      startDate: t.start_date || "",
+      endDate: t.end_date || "",
+      participants: [],
+      budget: t.budget || 0,
+      status: t.status || "planning",
+      type: "family" as const,
+      days: (t.trip_day_plans || []).map((d: any) => ({
+        id: d.id,
+        dayNumber: d.day_number,
+        city: d.city || "",
+        activities: (d.trip_activities || []).map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          time: a.time || "",
+          location: a.location || "",
+          cost: a.cost || 0,
+          completed: a.completed || false,
+        })),
+      })),
+      suggestions: (t.trip_suggestions || []).map((s: any) => ({
+        id: s.id,
+        placeName: s.place_name,
+        type: s.type || "",
+        reason: s.reason || "",
+        location: s.location || "",
+        suggestedBy: s.suggested_by || "",
+        status: s.status || "pending",
+      })),
+      packingList: (t.trip_packing || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        packed: p.packed || false,
+      })),
+      expenses: (t.trip_expenses || []).map((e: any) => ({
+        id: e.id,
+        name: e.name,
+        amount: e.amount || 0,
+      })),
+      documents: (t.trip_documents || []).map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        type: d.type || "other",
+        fileUrl: d.file_url || "",
+        fileName: d.file_name || "",
+        addedAt: d.added_at?.split("T")[0] || "",
+        notes: d.notes,
+      })),
+    }));
+  }, [dbTrips]);
+
+  // Local state wrappers for UI (selected trip sync)
+  const [tripsLocal, setTripsLocal] = useState<Trip[]>([]);
+  useEffect(() => { setTripsLocal(trips); }, [trips]);
+  const setTrips = setTripsLocal;
 
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album" | "documents">("itinerary");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
-  // Load family members
-  const familyMembers: { id: string; name: string; role: string }[] = (() => {
-    try {
-      const saved = localStorage.getItem("family_members");
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  })();
+  const familyMembers: { id: string; name: string; role: string }[] = [];
 
   // Drawers
   const [newExpenseDrawer, setNewExpenseDrawer] = useState(false);
@@ -314,7 +292,7 @@ const Trips = () => {
   // Drag state
   const [draggedActivity, setDraggedActivity] = useState<string | null>(null);
 
-  const filteredTrips = trips.filter((t) => t.type === activeTab);
+  const filteredTrips = tripsLocal.filter((t) => t.type === activeTab);
 
   const resetTripForm = () => {
     setTripName(""); setTripDest(""); setTripStart(""); setTripEnd(""); setTripBudget(""); setTripParticipants([]);
@@ -324,38 +302,24 @@ const Trips = () => {
   const handleSaveTrip = () => {
     if (!tripName.trim() || !tripDest.trim()) return;
     if (editingTripId) {
-      const newType = tripParticipants.length > 1 ? "family" : "personal";
-      const existingTrip = trips.find(t => t.id === editingTripId);
-      setTrips((prev) => prev.map((t) => t.id === editingTripId ? {
-        ...t, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
-        budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
-      } : t));
-      if (selectedTrip?.id === editingTripId) {
-        setSelectedTrip((prev) => prev ? {
-          ...prev, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
-          budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
-        } : null);
-      }
-      // Sync budget with updated trip info
-      if (existingTrip) {
-        syncTripToBudget({ id: editingTripId, name: tripName, budget: Number(tripBudget) || 0, expenses: existingTrip.expenses });
-      }
-      toast.success(newType !== existingTrip?.type
-        ? newType === "family" ? "تم تحويل الرحلة إلى عائلية" : "تم تحويل الرحلة إلى شخصية"
-        : "تم تعديل الرحلة"
-      );
+      updateTrip.mutate({
+        id: editingTripId,
+        name: tripName,
+        destination: tripDest,
+        start_date: tripStart,
+        end_date: tripEnd,
+        budget: Number(tripBudget) || 0,
+      });
+      toast.success("تم تعديل الرحلة");
     } else {
-      const newTrip: Trip = {
-        id: Date.now().toString(), name: tripName, destination: tripDest,
-        startDate: tripStart, endDate: tripEnd,
-        participants: tripParticipants,
-        budget: Number(tripBudget) || 0, status: "planning",
-        type: tripParticipants.length > 1 ? "family" : "personal",
-        days: [], suggestions: [], packingList: [], expenses: [], documents: [],
-      };
-      setTrips((prev) => [...prev, newTrip]);
-      // Create trip budget entry
-      syncTripToBudget({ id: newTrip.id, name: newTrip.name, budget: newTrip.budget, expenses: [] });
+      createTrip.mutate({
+        name: tripName,
+        destination: tripDest,
+        start_date: tripStart,
+        end_date: tripEnd,
+        budget: Number(tripBudget) || 0,
+        status: "planning",
+      });
       toast.success("تم إنشاء الرحلة");
     }
     resetTripForm();
@@ -375,8 +339,7 @@ const Trips = () => {
 
   const handleDeleteTrip = () => {
     if (!deleteTarget) return;
-    removeTripBudget(deleteTarget);
-    setTrips((prev) => prev.filter((t) => t.id !== deleteTarget));
+    deleteTripMut.mutate(deleteTarget);
     if (selectedTrip?.id === deleteTarget) setSelectedTrip(null);
     setDeleteTarget(null);
     setDeleteDrawer(false);
@@ -385,15 +348,11 @@ const Trips = () => {
 
   const handleAddDay = () => {
     if (!selectedTrip || !dayCity.trim()) return;
-    const newDay: DayPlan = {
-      id: Date.now().toString(),
-      dayNumber: selectedTrip.days.length + 1,
+    addDayPlan.mutate({
+      trip_id: selectedTrip.id,
+      day_number: selectedTrip.days.length + 1,
       city: dayCity,
-      activities: [],
-    };
-    const updated = { ...selectedTrip, days: [...selectedTrip.days, newDay] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    });
     setDayCity("");
     setNewDayDrawer(false);
     toast.success("تم إضافة اليوم");
@@ -401,16 +360,13 @@ const Trips = () => {
 
   const handleAddActivity = () => {
     if (!selectedTrip || !selectedDayId || !activityName.trim()) return;
-    const newAct: Activity = {
-      id: Date.now().toString(), name: activityName, time: activityTime,
-      location: activityLocation, cost: Number(activityCost) || 0, completed: false,
-    };
-    const updatedDays = selectedTrip.days.map((d) =>
-      d.id === selectedDayId ? { ...d, activities: [...d.activities, newAct] } : d
-    );
-    const updated = { ...selectedTrip, days: updatedDays };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    addActivity.mutate({
+      day_plan_id: selectedDayId,
+      name: activityName,
+      time: activityTime || undefined,
+      location: activityLocation || undefined,
+      cost: Number(activityCost) || 0,
+    });
     setActivityName(""); setActivityTime(""); setActivityLocation(""); setActivityCost("");
     setNewActivityDrawer(false);
     toast.success("تم إضافة النشاط");
@@ -418,13 +374,13 @@ const Trips = () => {
 
   const handleAddSuggestion = () => {
     if (!selectedTrip || !suggestionName.trim()) return;
-    const newSug: Suggestion = {
-      id: Date.now().toString(), placeName: suggestionName, type: suggestionType,
-      reason: suggestionReason, location: suggestionLocation, suggestedBy: "أنت", status: "pending",
-    };
-    const updated = { ...selectedTrip, suggestions: [...selectedTrip.suggestions, newSug] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    addSuggestion.mutate({
+      trip_id: selectedTrip.id,
+      place_name: suggestionName,
+      type: suggestionType || undefined,
+      reason: suggestionReason || undefined,
+      location: suggestionLocation || undefined,
+    });
     setSuggestionName(""); setSuggestionType(""); setSuggestionReason(""); setSuggestionLocation("");
     setNewSuggestionDrawer(false);
     toast.success("تم إرسال المقترح");
@@ -432,12 +388,7 @@ const Trips = () => {
 
   const handleSuggestionDecision = (status: "accepted" | "rejected" | "reviewing") => {
     if (!selectedTrip || !reviewingSuggestion) return;
-    const updatedSuggestions = selectedTrip.suggestions.map((s) =>
-      s.id === reviewingSuggestion.id ? { ...s, status } : s
-    );
-    const updated = { ...selectedTrip, suggestions: updatedSuggestions };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    updateSuggestion.mutate({ id: reviewingSuggestion.id, status });
     setReviewingSuggestion(null);
     setSuggestionReviewDrawer(false);
     toast.success(status === "accepted" ? "تم قبول المقترح" : status === "rejected" ? "تم رفض المقترح" : "قيد الدراسة");
@@ -445,10 +396,7 @@ const Trips = () => {
 
   const handleAddPackingItem = () => {
     if (!selectedTrip || !packingItemName.trim()) return;
-    const newItem: PackingItem = { id: Date.now().toString(), name: packingItemName, packed: false };
-    const updated = { ...selectedTrip, packingList: [...selectedTrip.packingList, newItem] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    addPackingItem.mutate({ trip_id: selectedTrip.id, name: packingItemName });
     setPackingItemName("");
     setNewPackingDrawer(false);
     toast.success("تم إضافة العنصر");
@@ -456,11 +404,11 @@ const Trips = () => {
 
   const handleAddExpense = () => {
     if (!selectedTrip || !expenseName.trim()) return;
-    const newExp: Expense = { id: Date.now().toString(), name: expenseName, amount: Number(expenseAmount) || 0 };
-    const updated = { ...selectedTrip, expenses: [...selectedTrip.expenses, newExp] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
-    syncTripToBudget({ id: updated.id, name: updated.name, budget: updated.budget, expenses: updated.expenses });
+    addExpense.mutate({
+      trip_id: selectedTrip.id,
+      name: expenseName,
+      amount: Number(expenseAmount) || 0,
+    });
     setExpenseName("");
     setExpenseAmount("");
     setNewExpenseDrawer(false);
@@ -469,19 +417,14 @@ const Trips = () => {
 
   const handleAddDocument = () => {
     if (!selectedTrip || !docName.trim()) return;
-    const fileUrl = docFileInput ? URL.createObjectURL(docFileInput) : "";
-    const newDoc: TripDocument = {
-      id: Date.now().toString(),
+    addDocument.mutate({
+      trip_id: selectedTrip.id,
       name: docName,
       type: docType,
-      fileUrl,
-      fileName: docFileInput?.name || "مستند",
-      addedAt: new Date().toISOString().split("T")[0],
+      file_url: docFileInput ? URL.createObjectURL(docFileInput) : undefined,
+      file_name: docFileInput?.name || "مستند",
       notes: docNotes || undefined,
-    };
-    const updated = { ...selectedTrip, documents: [...selectedTrip.documents, newDoc] };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    });
     setDocName(""); setDocType("ticket"); setDocNotes(""); setDocFileInput(null);
     setNewDocDrawer(false);
     toast.success("تم إضافة المستند");
@@ -489,9 +432,7 @@ const Trips = () => {
 
   const handleDeleteDocument = (docId: string) => {
     if (!selectedTrip) return;
-    const updated = { ...selectedTrip, documents: selectedTrip.documents.filter((d) => d.id !== docId) };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    deleteDocument.mutate(docId);
     setDocViewDrawer(false);
     setViewingDoc(null);
     toast.success("تم حذف المستند");
@@ -499,12 +440,10 @@ const Trips = () => {
 
   const togglePackingItem = (itemId: string) => {
     if (!selectedTrip) return;
-    const updatedList = selectedTrip.packingList.map((p) =>
-      p.id === itemId ? { ...p, packed: !p.packed } : p
-    );
-    const updated = { ...selectedTrip, packingList: updatedList };
-    setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+    const item = selectedTrip.packingList.find(p => p.id === itemId);
+    if (item) {
+      updatePackingItem.mutate({ id: itemId, packed: !item.packed });
+    }
   };
 
 
@@ -526,9 +465,6 @@ const Trips = () => {
 
   const handleSelectTrip = (trip: Trip) => {
     const updated = autoGenerateDays(trip);
-    if (updated !== trip) {
-      setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
-    }
     setSelectedTrip(updated);
   };
 

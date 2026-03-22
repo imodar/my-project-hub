@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Lock, KeyRound, Users, ChevronLeft, CheckCircle2, Circle,
   Shield, Eye, EyeOff, Trash2, RotateCcw, ScrollText, UserCheck
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/drawer";
 import { haptic } from "@/lib/haptics";
 import { toast } from "@/hooks/use-toast";
+import { useWill } from "@/hooks/useWill";
 
 // ── Types ──
 interface WillSection {
@@ -46,6 +47,7 @@ const FAMILY_MEMBERS: FamilyMember[] = [
 ];
 
 const Will = () => {
+  const { will, isLoading, upsertWill, deleteWill, createOpenRequest } = useWill();
   const [sections, setSections] = useState<WillSection[]>(DEFAULT_SECTIONS);
   const [passwordDrawer, setPasswordDrawer] = useState(false);
   const [requestDrawer, setRequestDrawer] = useState(false);
@@ -69,6 +71,13 @@ const Will = () => {
   // Family request
   const [familyRequestDrawer, setFamilyRequestDrawer] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
+
+  // Sync DB will data into local sections state
+  useEffect(() => {
+    if (will?.sections && Array.isArray(will.sections)) {
+      setSections(will.sections as unknown as WillSection[]);
+    }
+  }, [will]);
 
   const handleRefresh = async () => {
     await new Promise((r) => setTimeout(r, 800));
@@ -102,6 +111,7 @@ const Will = () => {
 
   const handleDeleteWill = () => {
     haptic.heavy();
+    deleteWill.mutate();
     setSections(DEFAULT_SECTIONS.map(s => ({ ...s, completed: false, content: "" })));
     setDeleteDrawer(false);
     toast({ title: "تم حذف الوصية", description: "تم مسح جميع محتويات الوصية" });
@@ -116,11 +126,13 @@ const Will = () => {
   const handleSaveSection = () => {
     if (!editingSection) return;
     haptic.medium();
-    setSections(prev => prev.map(s =>
+    const updated = sections.map(s =>
       s.id === editingSection.id
         ? { ...s, content: sectionContent, completed: sectionContent.trim().length > 0 }
         : s
-    ));
+    );
+    setSections(updated);
+    upsertWill.mutate({ sections: updated });
     setEditingSection(null);
     toast({ title: "تم الحفظ", description: `تم حفظ "${editingSection.label}" بنجاح` });
   };
