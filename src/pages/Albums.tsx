@@ -317,7 +317,6 @@ const Albums = () => {
 
         <PullToRefresh onRefresh={async () => {
           await new Promise((r) => setTimeout(r, 600));
-          setAlbums([...INITIAL_ALBUMS]);
           toast.success("تم تحديث الألبومات");
         }}>
 
