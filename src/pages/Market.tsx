@@ -198,28 +198,14 @@ const Market = () => {
   }, [editTarget, editName, editQuantity, editCategory, updateItemMutation]);
 
   const addItem = useCallback(() => {
-    if (!newItemName.trim()) return;
+    if (!newItemName.trim() || !activeListId) return;
     haptic.medium();
-    const newItem: MarketItem = {
-      id: crypto.randomUUID(),
-      name: newItemName.trim(),
-      category: newItemCategory,
-      quantity: newItemQuantity.trim() || "1",
-      addedBy: "أنت",
-      checked: false,
-    };
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: [...list.items, newItem], lastUpdatedBy: "أنت", lastUpdatedAt: "الآن" }
-          : list
-      )
-    );
+    addItemMutation.mutate({ list_id: activeListId, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || "1" });
     setNewItemName("");
     setNewItemQuantity("");
     setNewItemCategory("أخرى");
     setShowAddItem(false);
-  }, [activeListId, newItemName, newItemCategory, newItemQuantity]);
+  }, [activeListId, newItemName, newItemCategory, newItemQuantity, addItemMutation]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
