@@ -163,7 +163,10 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" });
 }
 
-// ── Gold price hook ──
+// ── Gold price hook (gold-api.com free, no key needed) ──
+const TROY_OZ_TO_GRAMS = 31.1035;
+const USD_TO_SAR = 3.75; // fallback rate
+
 function useGoldPrice() {
   const [goldPricePerGram, setGoldPricePerGram] = useState<number | null>(null);
   const [silverPricePerGram, setSilverPricePerGram] = useState<number | null>(null);
@@ -186,26 +189,32 @@ function useGoldPrice() {
       } catch {}
     }
 
-    fetch("https://api.metals.dev/v1/latest?api_key=demo&currency=SAR&unit=gram")
-      .then(r => r.json())
-      .then(data => {
+    // Fetch gold, silver, and USD→SAR rate in parallel
+    Promise.all([
+      fetch("https://api.gold-api.com/price/XAU").then(r => r.json()),
+      fetch("https://api.gold-api.com/price/XAG").then(r => r.json()),
+      fetch("https://api.exchangerate-api.com/v4/latest/USD").then(r => r.json()).catch(() => null),
+    ])
+      .then(([goldData, silverData, fxData]) => {
         const now = Date.now();
-        if (data.metals) {
-          const gold24 = data.metals.gold;
-          const silver = data.metals.silver;
-          setGoldPricePerGram(gold24);
-          setSilverPricePerGram(silver);
-          setLastUpdated(now);
-          localStorage.setItem("zakat_metal_prices", JSON.stringify({ gold: gold24, silver, ts: now }));
-        } else {
-          setGoldPricePerGram(310);
-          setSilverPricePerGram(3.5);
-          setLastUpdated(now);
-        }
+        const sarRate = fxData?.rates?.SAR || USD_TO_SAR;
+
+        // API returns USD per troy ounce → convert to SAR per gram
+        const goldPerGram = (goldData.price / TROY_OZ_TO_GRAMS) * sarRate;
+        const silverPerGram = (silverData.price / TROY_OZ_TO_GRAMS) * sarRate;
+
+        setGoldPricePerGram(Math.round(goldPerGram * 100) / 100);
+        setSilverPricePerGram(Math.round(silverPerGram * 100) / 100);
+        setLastUpdated(now);
+        localStorage.setItem("zakat_metal_prices", JSON.stringify({
+          gold: Math.round(goldPerGram * 100) / 100,
+          silver: Math.round(silverPerGram * 100) / 100,
+          ts: now,
+        }));
       })
       .catch(() => {
-        setGoldPricePerGram(310);
-        setSilverPricePerGram(3.5);
+        setGoldPricePerGram(540);
+        setSilverPricePerGram(8);
         setError(true);
       })
       .finally(() => setLoading(false));
