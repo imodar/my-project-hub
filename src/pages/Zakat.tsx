@@ -671,6 +671,24 @@ const Zakat = () => {
             <DrawerDescription>شروط وأحكام احتساب الزكاة</DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-6 overflow-y-auto max-h-[60vh] space-y-4 text-right">
+            {/* Disclaimer */}
+            <div className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-3 py-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1.5">
+                  <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed font-bold">
+                    تنويه مهم
+                  </p>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                    الأفضل دائماً استقصاء الضوابط الشرعية والدينية من مصادرها الصحيحة. ما نذكره هنا هو من باب الاستدلال، وللمزكّي حرية الالتزام بذلك.
+                  </p>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                    الأرقام المعروضة هي أرقام <span className="font-bold">تقريبية بنسبة كبيرة جداً</span>، وننصح دائماً بأن يدفع المزكّي مبلغاً أكثر من المحسوب، فذلك أبرك وتجنباً لأي شبهة بنقص الزكاة.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <RuleSection
               title="💵 زكاة النقد"
               text="تجب الزكاة عند بلوغ النصاب ومرور حول كامل (سنة هجرية). مقدارها 2.5% من الرصيد."
@@ -681,7 +699,7 @@ const Zakat = () => {
             />
             <RuleSection
               title="📈 زكاة الأسهم"
-              text="إذا كانت للاستثمار طويل الأجل، تُزكى الأرباح بنسبة 2.5%.\nإذا كانت للتداول (المضاربة)، تُزكى القيمة السوقية كاملة بنسبة 2.5%."
+              text={"1. إن كان المساهم مضارباً (يبيع ويشتري في الأسهم): يجب عليه زكاتها بأن ينظر للقيمة السوقية لمحفظة الأسهم عند تمام الحول ويخرج ربع العشر (2.5%).\n\n2. إن كان المساهم مستثمراً (اكتتب في الأسهم أو اشتراها وتركها للإفادة من أرباحها): فلا زكاة فيها باعتبار أن الشركات المساهمة تخرج الزكاة لهيئة الزكاة.\n\n🌍 الأسهم الأمريكية والأجنبية:\nإذا كانت الأسهم في شركات خارج المملكة فيزكّيها، وذلك بأن يقوم بضرب مقدار الوعاء الزكوي للسهم في عدد الأسهم فيخرج له مقدار الزكاة."}
             />
             <RuleSection
               title="🏦 صناديق الاستثمار"
