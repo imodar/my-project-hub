@@ -30,7 +30,7 @@ const CASH_CURRENCIES = [
   { code: "KWD", label: "دينار كويتي", symbol: "د.ك" },
 ] as const;
 
-// ── Swipeable Card ──
+// ── Swipeable Card (RTL: swipe left to reveal actions on right) ──
 const ACTION_WIDTH = 210;
 function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit: () => void; onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
   const startXRef = useRef(0);
@@ -43,10 +43,14 @@ function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit
     startXRef.current = e.touches[0].clientX;
   };
   const handleTouchMove = (e: React.TouchEvent) => {
-    const diff = e.touches[0].clientX - startXRef.current;
+    const diff = startXRef.current - e.touches[0].clientX; // positive when swiping left
     currentXRef.current = isOpenRef.current
-      ? Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH + diff))
+      ? Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH + (startXRef.current - e.touches[0].clientX) - ACTION_WIDTH))
       : Math.max(0, Math.min(ACTION_WIDTH, diff));
+    if (isOpenRef.current) {
+      const closeDiff = e.touches[0].clientX - startXRef.current; // positive when swiping right (to close)
+      currentXRef.current = Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH - closeDiff));
+    }
     setTransform(currentXRef.current);
   };
   const handleTouchEnd = () => {
@@ -57,7 +61,7 @@ function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit
 
   return (
     <div className="relative overflow-hidden rounded-2xl" ref={containerRef}>
-      <div className="absolute inset-y-0 left-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
+      <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
         <button
           onClick={() => { haptic.light(); onEdit(); }}
           className="flex-1 flex flex-col items-center justify-center gap-1 bg-primary text-white"
@@ -82,7 +86,7 @@ function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit
       </div>
       <div
         className="relative bg-background z-10 transition-transform duration-200"
-        style={{ transform: `translateX(${transform}px)` }}
+        style={{ transform: `translateX(-${transform}px)` }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
