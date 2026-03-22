@@ -261,7 +261,7 @@ const CalendarPage = () => {
   };
 
   const getMonthShort = (dateStr: string) => ARABIC_MONTHS[new Date(dateStr).getMonth()];
-  const getEventIcon = (iconKey: string) => ICON_OPTIONS.find((o) => o.key === iconKey)?.label || "📅";
+  const getEventIcon = (iconKey: string | null) => ICON_OPTIONS.find((o) => o.key === iconKey)?.label || "📅";
   const getReminderLabel = (value?: string[]) => {
     if (!value || value.length === 0) return null;
     return value.map((item) => REMINDER_OPTIONS.find((o) => o.key === item)?.label || item).join(" • ");
