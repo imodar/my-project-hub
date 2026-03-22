@@ -12,13 +12,14 @@ interface WeatherData {
   city: string;
   icon: string;
   weatherCode: number;
+  lastUpdated: Date;
 }
 
 const getGreeting = (hour: number) => {
   if (hour >= 5 && hour < 12) return "صباح الخير";
   if (hour >= 12 && hour < 17) return "مساء النور";
   if (hour >= 17 && hour < 21) return "مساء الخير";
-  return "مساء الخير";
+  return "تصبح على خير";
 };
 
 const isNightTime = (hour: number) => hour >= 19 || hour < 5;
@@ -64,7 +65,6 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
     };
   }
 
-  // Snow (71-77)
   if (weatherCode >= 71 && weatherCode <= 77) {
     return {
       gradient: night
@@ -96,7 +96,6 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
     };
   }
 
-  // Rain
   if ((weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82) || weatherCode >= 95) {
     return {
       gradient: night
@@ -128,7 +127,6 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
     };
   }
 
-  // Foggy / Sandstorm (45-48)
   if (weatherCode >= 45 && weatherCode <= 48) {
     return {
       gradient: night
@@ -141,7 +139,6 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
     };
   }
 
-  // Overcast (3)
   if (weatherCode === 3) {
     return {
       gradient: night
@@ -154,7 +151,6 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
     };
   }
 
-  // Partly cloudy (1-2)
   if (weatherCode >= 1 && weatherCode <= 2) {
     if (night) {
       return {
@@ -174,7 +170,6 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
     };
   }
 
-  // Clear (0)
   if (night) {
     return {
       gradient: "linear-gradient(135deg, hsl(230 45% 15%), hsl(250 40% 22%))",
@@ -212,27 +207,32 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
 };
 
 const WeatherIcon = ({ icon }: { icon: string }) => {
-  if (icon.includes("rain")) return <CloudRain size={22} className="text-blue-200" />;
-  if (icon.includes("snow")) return <Snowflake size={22} className="text-blue-100" />;
-  if (icon.includes("fog")) return <Wind size={22} className="text-amber-200" />;
-  if (icon.includes("cloud")) return <Cloud size={22} className="text-white/80" />;
-  if (icon.includes("sun") || icon.includes("clear")) return <Sun size={22} className="text-yellow-200" />;
-  return <CloudSun size={22} className="text-white/80" />;
+  if (icon.includes("rain")) return <CloudRain size={16} className="text-blue-200" />;
+  if (icon.includes("snow")) return <Snowflake size={16} className="text-blue-100" />;
+  if (icon.includes("fog")) return <Wind size={16} className="text-amber-200" />;
+  if (icon.includes("cloud")) return <Cloud size={16} className="text-white/80" />;
+  if (icon.includes("sun") || icon.includes("clear")) return <Sun size={16} className="text-yellow-200" />;
+  return <CloudSun size={16} className="text-white/80" />;
+};
+
+const formatLastUpdated = (date: Date): string => {
+  const h = date.getHours().toString().padStart(2, "0");
+  const m = date.getMinutes().toString().padStart(2, "0");
+  return `${h}:${m}`;
 };
 
 const HeroSection = () => {
   const { islamicMode } = useIslamicMode();
   const [profileOpen, setProfileOpen] = useState(false);
   const mockUser = { name: "أحمد", role: "parent" as const };
-  const hijriDate = "٢١ رمضان ١٤٤٧";
-  const gregorianDate = "١٩ مارس ٢٠٢٦";
+  const hijriDate = "٤ شوّال ١٤٤٧";
+  const gregorianDate = "٢٣ مارس ٢٠٢٦";
 
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentHour] = useState(() => new Date().getHours());
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
   const greeting = useMemo(() => getGreeting(currentHour), [currentHour]);
 
-  // Demo mode
   const [demoActive, setDemoActive] = useState(false);
   const [demoIndex, setDemoIndex] = useState(0);
 
@@ -240,7 +240,6 @@ const HeroSection = () => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Demo cycle
   useEffect(() => {
     if (!demoActive) return;
     const timer = setInterval(() => {
@@ -277,7 +276,7 @@ const HeroSection = () => {
               `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ar`
             );
             const reverseData = await reverseRes.json();
-            cityName = reverseData.address?.city || reverseData.address?.town || reverseData.address?.state || "موقعك";
+            cityName = reverseData.address?.city || reverseData.address?.town || reverseData.address?.suburb || reverseData.address?.state || "موقعك";
           } catch {}
 
           const weatherCode = data.current?.weather_code || 0;
@@ -296,6 +295,7 @@ const HeroSection = () => {
             city: cityName,
             icon,
             weatherCode,
+            lastUpdated: new Date(),
           });
         } catch (e) {
           console.error("Weather fetch failed:", e);
@@ -306,6 +306,13 @@ const HeroSection = () => {
       }
     );
   }, []);
+
+  // Current display data
+  const displayTemp = demoActive ? DEMO_STATES[demoIndex].temp : weather?.temp;
+  const displayCity = demoActive ? DEMO_STATES[demoIndex].city : weather?.city;
+  const displayIcon = demoActive ? DEMO_STATES[demoIndex].icon : weather?.icon;
+  const displayDesc = demoActive ? DEMO_STATES[demoIndex].description : weather?.description;
+  const showWeatherInfo = demoActive || (weather && hasLocationPermission);
 
   return (
     <>
@@ -339,7 +346,7 @@ const HeroSection = () => {
 
       {/* Hero Card */}
       <section className="px-5 pt-8 relative overflow-visible">
-        {/* Decoration Orb */}
+        {/* Temperature Orb */}
         <motion.div
           className="absolute top-0 left-2 w-16 h-16 z-10 pointer-events-none"
           key={theme.label}
@@ -358,22 +365,35 @@ const HeroSection = () => {
             }}
           >
             <AnimatePresence mode="wait">
-              <motion.div
-                key={theme.label}
-                initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-                animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
-                transition={{ duration: 0.4 }}
-              >
-                {theme.decorationIcon}
-              </motion.div>
+              {showWeatherInfo && displayTemp !== undefined ? (
+                <motion.span
+                  key={`temp-${displayTemp}`}
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-white font-bold text-lg"
+                >
+                  {displayTemp}°
+                </motion.span>
+              ) : (
+                <motion.div
+                  key={theme.label}
+                  initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  {theme.decorationIcon}
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </motion.div>
 
         {/* Main Card */}
         <motion.div
-          className="rounded-2xl p-6 relative overflow-hidden text-white shadow-xl"
+          className="rounded-2xl p-5 relative overflow-hidden text-white shadow-xl"
           animate={{ background: theme.gradient }}
           transition={{ duration: 1, ease: "easeInOut" }}
           style={{ background: theme.gradient }}
@@ -404,55 +424,40 @@ const HeroSection = () => {
             </>
           )}
 
-          <div className="relative z-20 space-y-5">
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight mb-1">
-                  {greeting}، {mockUser.name}
-                </h1>
-                <p className="text-white/75 font-medium text-sm">
-                  {gregorianDate} {islamicMode && `• ${hijriDate}`}
-                </p>
-                {demoActive && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <MapPin size={12} className="text-white/50" />
-                    <span className="text-white/50 text-xs">{DEMO_STATES[demoIndex].city}</span>
-                  </div>
-                )}
-                {!demoActive && weather && hasLocationPermission && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <MapPin size={12} className="text-white/50" />
-                    <span className="text-white/50 text-xs">{weather.city}</span>
-                  </div>
-                )}
-              </div>
-              {demoActive && (
-                <motion.div
-                  key={`demo-${demoIndex}`}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 border border-white/20"
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    <WeatherIcon icon={DEMO_STATES[demoIndex].icon} />
-                    <span className="text-2xl font-bold">{DEMO_STATES[demoIndex].temp}°</span>
-                  </div>
-                  <p className="text-[11px] font-semibold text-white/70 mt-0.5 text-center">
-                    {DEMO_STATES[demoIndex].description}
-                  </p>
-                </motion.div>
-              )}
-              {!demoActive && weather && (
-                <div className="bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 border border-white/20">
-                  <div className="flex items-center justify-end gap-2">
-                    <WeatherIcon icon={weather.icon} />
-                    <span className="text-2xl font-bold">{weather.temp}°</span>
-                  </div>
-                  <p className="text-[11px] font-semibold text-white/70 mt-0.5 text-center">{weather.description}</p>
-                </div>
-              )}
+          <div className="relative z-20 space-y-3">
+            {/* Greeting + Date */}
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight mb-1">
+                {greeting}، {mockUser.name}
+              </h1>
+              <p className="text-white/75 font-medium text-sm">
+                {gregorianDate} {islamicMode && `• ${hijriDate}`}
+              </p>
             </div>
+
+            {/* Location + Weather status merged row */}
+            {showWeatherInfo && displayCity && displayIcon && displayDesc && (
+              <motion.div
+                key={`weather-row-${demoActive ? demoIndex : 'real'}`}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-center gap-2 text-white/70 text-xs"
+              >
+                <MapPin size={12} className="shrink-0" />
+                <span className="font-medium">{displayCity}</span>
+                <span className="text-white/30">•</span>
+                <WeatherIcon icon={displayIcon} />
+                <span>{displayDesc}</span>
+              </motion.div>
+            )}
+
+            {/* Last updated */}
+            {!demoActive && weather?.lastUpdated && (
+              <p className="text-[10px] text-white/35">
+                آخر تحديث {formatLastUpdated(weather.lastUpdated)}
+              </p>
+            )}
 
             {islamicMode && (
               <div className="grid grid-cols-2 gap-3">

@@ -56,7 +56,6 @@ const getNextPrayer = (times: PrayerTimes): NextPrayerInfo => {
       };
     }
   }
-  // All prayers passed, next is Fajr tomorrow
   const fajrTomorrow = parseTime(times.Fajr);
   fajrTomorrow.setDate(fajrTomorrow.getDate() + 1);
   return {
@@ -66,22 +65,15 @@ const getNextPrayer = (times: PrayerTimes): NextPrayerInfo => {
   };
 };
 
-// Mosque/prayer icon as SVG
 const PrayerIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-    {/* Dome */}
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
     <path d="M12 3C9 3 6 6 6 9h12c0-3-3-6-6-6z" fill="white" fillOpacity="0.2" />
-    {/* Minaret left */}
     <rect x="3" y="7" width="2" height="11" rx="0.5" fill="white" fillOpacity="0.3" />
     <circle cx="4" cy="6" r="1" fill="white" fillOpacity="0.4" />
-    {/* Minaret right */}
     <rect x="19" y="7" width="2" height="11" rx="0.5" fill="white" fillOpacity="0.3" />
     <circle cx="20" cy="6" r="1" fill="white" fillOpacity="0.4" />
-    {/* Building */}
     <rect x="6" y="9" width="12" height="9" fill="white" fillOpacity="0.15" />
-    {/* Door */}
     <path d="M10 18h4v-4a2 2 0 0 0-4 0v4z" fill="white" fillOpacity="0.25" />
-    {/* Base */}
     <line x1="2" y1="18" x2="22" y2="18" />
   </svg>
 );
@@ -89,6 +81,7 @@ const PrayerIcon = () => (
 export const usePrayerTimes = () => {
   const [nextPrayer, setNextPrayer] = useState<NextPrayerInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     const fetchPrayers = async () => {
@@ -111,6 +104,7 @@ export const usePrayerTimes = () => {
             Isha: data.data.timings.Isha,
           };
           setNextPrayer(getNextPrayer(times));
+          setLastUpdated(new Date());
         }
       } catch (e) {
         console.error("Prayer times fetch failed:", e);
@@ -120,17 +114,11 @@ export const usePrayerTimes = () => {
     };
 
     fetchPrayers();
-
-    // Update remaining time every minute
-    const interval = setInterval(() => {
-      // Re-trigger to update remaining
-      fetchPrayers();
-    }, 60000);
-
+    const interval = setInterval(fetchPrayers, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  return { nextPrayer, loading };
+  return { nextPrayer, loading, lastUpdated };
 };
 
 const NextPrayerBox = () => {
@@ -138,26 +126,31 @@ const NextPrayerBox = () => {
 
   if (loading || !nextPrayer) {
     return (
-      <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 flex items-center gap-3 border border-white/10">
-        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
-          <PrayerIcon />
-        </div>
-        <div className="space-y-1">
-          <div className="w-12 h-3 bg-white/20 rounded animate-pulse" />
-          <div className="w-16 h-4 bg-white/20 rounded animate-pulse" />
+      <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+            <PrayerIcon />
+          </div>
+          <div className="space-y-1 flex-1">
+            <div className="w-20 h-3 bg-white/20 rounded animate-pulse" />
+            <div className="w-16 h-3 bg-white/20 rounded animate-pulse" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 flex items-center gap-3 border border-white/10">
-      <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-        <PrayerIcon />
+    <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+          <PrayerIcon />
+        </div>
+        <p className="text-xs font-semibold text-white/70">باقي لصلاة {nextPrayer.name}</p>
       </div>
-      <div>
-        <p className="text-base font-bold">{nextPrayer.name}</p>
-        <p className="text-[10px] font-semibold text-white/60">{nextPrayer.remaining}</p>
+      <div className="flex items-center justify-between pr-1">
+        <span className="text-lg font-bold">{nextPrayer.remaining}</span>
+        <span className="text-xs text-white/50">الأذان {nextPrayer.time}</span>
       </div>
     </div>
   );
