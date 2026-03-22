@@ -1,4 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Lock, KeyRound, Users, ChevronLeft, CheckCircle2, Circle,
   Shield, Eye, EyeOff, Trash2, RotateCcw, ScrollText, UserCheck
@@ -32,28 +35,62 @@ interface FamilyMember {
 }
 
 const DEFAULT_SECTIONS: WillSection[] = [
-  { id: "property", icon: "🏠", label: "توزيع الممتلكات", completed: true, content: "الشقة في الرياض لزوجتي، والأرض في جدة توزع بالتساوي بين الأبناء حسب الشرع." },
-  { id: "messages", icon: "💌", label: "رسائل لأفراد العائلة", completed: true, content: "رسالة لزوجتي ورسالة لكل من أبنائي." },
-  { id: "guardian", icon: "👨‍👧‍👦", label: "الوصي على الأطفال", completed: true, content: "أخي محمد هو الوصي على أطفالي في حال وفاتي." },
+  { id: "property", icon: "🏠", label: "توزيع الممتلكات", completed: false, content: "" },
+  { id: "messages", icon: "💌", label: "رسائل لأفراد العائلة", completed: false, content: "" },
+  { id: "guardian", icon: "👨‍👧‍👦", label: "الوصي على الأطفال", completed: false, content: "" },
   { id: "charity", icon: "🕌", label: "الوصايا الخيرية", completed: false, content: "" },
-  { id: "funeral", icon: "🌿", label: "تعليمات الجنازة", completed: true, content: "أرغب بالدفن في مقبرة البقيع إن أمكن، والصلاة عليّ في المسجد الحرام." },
+  { id: "funeral", icon: "🌿", label: "تعليمات الجنازة", completed: false, content: "" },
 ];
 
-const FAMILY_MEMBERS: FamilyMember[] = [
-  { id: "1", name: "أحمد محمد", role: "أب", hasWill: true },
-  { id: "2", name: "فاطمة أحمد", role: "أم", hasWill: true },
-  { id: "3", name: "خالد أحمد", role: "ابن", hasWill: false },
-  { id: "4", name: "نورة أحمد", role: "ابنة", hasWill: false },
-];
+// Family members are now fetched from DB inside the component
 
 const Will = () => {
   const { will, isLoading, upsertWill, deleteWill, createOpenRequest } = useWill();
+  const { user } = useAuth();
+  const { familyId } = useFamilyId();
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [sections, setSections] = useState<WillSection[]>(DEFAULT_SECTIONS);
   const [passwordDrawer, setPasswordDrawer] = useState(false);
   const [requestDrawer, setRequestDrawer] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+
+  // Fetch family members from DB
+  useEffect(() => {
+    if (!familyId) return;
+    supabase
+      .from("family_members")
+      .select("user_id, role")
+      .eq("family_id", familyId)
+      .eq("status", "active")
+      .then(async ({ data }) => {
+        if (!data) return;
+        const memberIds = data.map((m) => m.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, name")
+          .in("id", memberIds);
+        if (profiles) {
+          const roleMap: Record<string, string> = {};
+          data.forEach((m) => { roleMap[m.user_id] = m.role; });
+          const ROLE_LABELS: Record<string, string> = {
+            father: "أب", mother: "أم", son: "ابن", daughter: "ابنة",
+            husband: "زوج", wife: "زوجة", brother: "أخ", sister: "أخت",
+            grandfather: "جد", grandmother: "جدة", worker: "عامل",
+            maid: "خادمة", driver: "سائق",
+          };
+          setFamilyMembers(
+            profiles.map((p) => ({
+              id: p.id,
+              name: p.name || "بدون اسم",
+              role: ROLE_LABELS[roleMap[p.id]] || roleMap[p.id] || "فرد",
+              hasWill: false, // Will be determined by actual will data
+            }))
+          );
+        }
+      });
+  }, [familyId]);
 
   // Section editing
   const [editingSection, setEditingSection] = useState<WillSection | null>(null);
@@ -247,7 +284,7 @@ const Will = () => {
             وصايا أفراد العائلة
           </h2>
           <div className="space-y-2">
-            {FAMILY_MEMBERS.filter(m => m.hasWill).map((member) => (
+            {familyMembers.filter(m => m.hasWill).map((member) => (
               <div
                 key={member.id}
                 className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5"
@@ -270,7 +307,7 @@ const Will = () => {
                 </Button>
               </div>
             ))}
-            {FAMILY_MEMBERS.filter(m => !m.hasWill).map((member) => (
+            {familyMembers.filter(m => !m.hasWill).map((member) => (
               <div
                 key={member.id}
                 className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 opacity-50"

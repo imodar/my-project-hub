@@ -10,6 +10,9 @@ import {
   Radio, PhoneCall, MessageSquare, Check, AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmergencyContact {
   id: string;
@@ -21,16 +24,12 @@ interface EmergencyContact {
 const STORAGE_KEY = "sos_emergency_contacts";
 const SOS_DISABLED_KEY = "sos_disabled_members";
 
-const FAMILY_MEMBERS = [
-  { id: "1", name: "أحمد" },
-  { id: "2", name: "سارة" },
-  { id: "3", name: "ياسين" },
-  { id: "4", name: "لينا" },
-];
-
 type SOSPhase = "idle" | "holding" | "countdown" | "active";
 
 const SOSButton = () => {
+  const { user } = useAuth();
+  const { familyId } = useFamilyId();
+  const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string }[]>([]);
   const [phase, setPhase] = useState<SOSPhase>("idle");
   const [holdProgress, setHoldProgress] = useState(0);
   const [countdown, setCountdown] = useState(3);
@@ -40,12 +39,30 @@ const SOSButton = () => {
   const [addContactDrawer, setAddContactDrawer] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
+  // Fetch family members from DB
+  useEffect(() => {
+    if (!familyId) return;
+    supabase
+      .from("family_members")
+      .select("user_id")
+      .eq("family_id", familyId)
+      .eq("status", "active")
+      .then(async ({ data }) => {
+        if (!data) return;
+        const memberIds = data.map((m) => m.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, name")
+          .in("id", memberIds);
+        if (profiles) {
+          setFamilyMembers(profiles.map((p) => ({ id: p.id, name: p.name || "بدون اسم" })));
+        }
+      });
+  }, [familyId]);
+
   const [contacts, setContacts] = useState<EmergencyContact[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [
-      { id: "1", name: "الجدّ أبو محمد", phone: "+966501234567", relation: "جد" },
-      { id: "2", name: "العم خالد", phone: "+966559876543", relation: "عم" },
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [newName, setNewName] = useState("");
@@ -296,7 +313,7 @@ const SOSButton = () => {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-white/60">إشعارات العائلة</p>
-                <p className="text-sm text-white font-bold">{FAMILY_MEMBERS.length} أفراد تم إشعارهم</p>
+                <p className="text-sm text-white font-bold">{familyMembers.length} أفراد تم إشعارهم</p>
               </div>
               <Check size={16} className="text-green-400" />
             </div>
@@ -419,7 +436,7 @@ const SOSButton = () => {
             <div>
               <h4 className="text-sm font-bold text-foreground mb-3">أفراد العائلة (إشعار تلقائي)</h4>
               <div className="space-y-2">
-                {FAMILY_MEMBERS.map((member) => (
+                {familyMembers.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 bg-card rounded-xl border border-border/50 p-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                       <span className="text-xs font-bold text-primary">{member.name[0]}</span>

@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import ProfileSheet from "./ProfileSheet";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import NextPrayerBox from "./NextPrayerBox";
 
 interface WeatherData {
@@ -223,10 +225,25 @@ const formatLastUpdated = (date: Date): string => {
 
 const HeroSection = () => {
   const { islamicMode } = useIslamicMode();
+  const { user } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
-  const mockUser = { name: "أحمد", role: "parent" as const };
+  const [profileName, setProfileName] = useState("");
   const hijriDate = "٤ شوّال ١٤٤٧";
   const gregorianDate = "٢٣ مارس ٢٠٢٦";
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.name) setProfileName(data.name);
+      });
+  }, [user]);
+
+  const currentUser = { name: profileName || "مستخدم", role: "parent" as const };
 
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentHour] = useState(() => new Date().getHours());
@@ -324,7 +341,7 @@ const HeroSection = () => {
             className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-primary/30"
             style={{ background: "hsl(var(--primary) / 0.1)" }}
           >
-            <span className="text-sm font-bold text-primary">{mockUser.name.charAt(0)}</span>
+            <span className="text-sm font-bold text-primary">{currentUser.name.charAt(0)}</span>
           </button>
           <span className="text-xl font-bold text-primary tracking-tight">عائلتنا</span>
         </div>
@@ -428,7 +445,7 @@ const HeroSection = () => {
             {/* Greeting */}
             <div>
               <h1 className="text-xl font-bold tracking-tight mb-1">
-                {greeting}، {mockUser.name}
+                {greeting}، {currentUser.name}
               </h1>
               <p className="text-white/75 font-medium text-xs whitespace-nowrap">
                 {gregorianDate} {islamicMode && `• ${hijriDate}`}
@@ -469,7 +486,7 @@ const HeroSection = () => {
         </motion.div>
       </section>
 
-      <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={mockUser} />
+      <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={currentUser} />
     </>
   );
 };

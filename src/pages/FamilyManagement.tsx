@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife" | "worker" | "maid" | "driver";
 type InviteStatus = "active" | "pending";
@@ -67,15 +69,25 @@ const SWIPE_THRESHOLD = 40;
 const SWIPE_WIDTH = 144; // wider for 2 buttons
 
 const getProfileName = (): string => {
-  // Try to get name from profile/localStorage
-  const saved = localStorage.getItem("profile_name");
-  if (saved) return saved;
-  return "أحمد"; // fallback - same as Profile page default
+  return "";
 };
 
 const FamilyManagement = () => {
   const navigate = useNavigate();
-  const profileName = getProfileName();
+  const { user } = useAuth();
+  const [profileName, setProfileName] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.name) setProfileName(data.name);
+      });
+  }, [user]);
 
   const [creatorRole, setCreatorRole] = useState<FamilyRole | null>(() => {
     const saved = localStorage.getItem("family_creator_role");
