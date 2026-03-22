@@ -83,8 +83,8 @@ const Profile = () => {
             </div>
           ) : (
             <button onClick={() => setEditing(true)} className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-right transition-colors active:bg-muted/50">
-              <span className="text-xs text-primary">تعديل</span>
               <span className="text-sm font-semibold text-foreground">{name}</span>
+              <span className="text-xs text-primary">تعديل</span>
             </button>
           )}
         </div>
