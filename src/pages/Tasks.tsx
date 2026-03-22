@@ -331,21 +331,15 @@ const Tasks = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    const newList: TaskList = {
-      id: crypto.randomUUID(),
+    createListMutation.mutate({
       name: newListName.trim(),
       type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-      sharedWith: newListType === "family" ? newListShareMembers : undefined,
-      lastUpdatedBy: "أنت",
-      lastUpdatedAt: "الآن",
-      items: [],
-    };
-    setLists((prev) => [...prev, newList]);
-    setActiveListId(newList.id);
+      shared_with: newListType === "family" ? newListShareMembers : [],
+    });
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers]);
+  }, [newListName, newListType, newListShareMembers, createListMutation]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
