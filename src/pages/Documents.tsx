@@ -77,13 +77,34 @@ const SWIPE_WIDTH = 140;
 const Documents = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [lists, setLists] = useState<DocList[]>(() =>
-    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
-  );
-  const [activeListId, setActiveListId] = useState(() => {
-    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
-    return filtered[0]?.id || "";
-  });
+  const { lists: dbDocLists, isLoading: docsLoading, createList: createDocListMut, deleteList: deleteDocListMut, addItem: addDocItemMut, updateItem: updateDocItemMut, deleteItem: deleteDocItemMut } = useDocumentLists();
+
+  const lists: DocList[] = useMemo(() => {
+    const mapped = (dbDocLists || []).map((l: any) => ({
+      id: l.id,
+      name: l.name,
+      type: l.type || "family",
+      sharedWith: l.shared_with || [],
+      lastUpdatedBy: "",
+      lastUpdatedAt: "",
+      items: (l.document_items || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        category: (item.category || "other") as DocCategory,
+        files: (item.document_files || []).map((f: any) => ({
+          id: f.id, name: f.name, type: f.type || "pdf", url: f.file_url || "", size: f.size?.toString() || "0", addedAt: f.added_at,
+        })),
+        expiryDate: item.expiry_date,
+        reminderEnabled: item.reminder_enabled || false,
+        note: item.note || "",
+        addedBy: item.added_by || "",
+        addedAt: item.added_at,
+      })),
+    }));
+    return featureAccess.isStaff ? mapped.filter((l: DocList) => l.type !== "family") : mapped;
+  }, [dbDocLists, featureAccess.isStaff]);
+
+  const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<DocCategory | "all">("all");
   const [showAddItem, setShowAddItem] = useState(false);
