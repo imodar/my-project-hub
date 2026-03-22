@@ -346,7 +346,7 @@ const Zakat = () => {
         </div>
       </PageHeader>
 
-      <PullToRefresh onRefresh={async () => { setAssets(loadAssets()); }}>
+      <PullToRefresh onRefresh={async () => { /* React Query auto-refetches */ }}>
         <div className="px-4 mt-2 space-y-4">
 
           {/* Privacy notice */}
