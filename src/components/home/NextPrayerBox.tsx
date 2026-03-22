@@ -142,10 +142,10 @@ const NextPrayerBox = () => {
   }
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10">
+    <div className="bg-white/10 backdrop-blur-md rounded-xl px-3 py-1.5 border border-white/10">
       <div className="flex items-center gap-3">
-        {/* Icon centered vertically */}
-        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+          <PrayerIcon />
           <PrayerIcon />
         </div>
         {/* 3 lines */}
