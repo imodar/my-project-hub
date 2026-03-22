@@ -867,7 +867,7 @@ const Zakat = () => {
                 <Button
                   onClick={() => {
                     if (reminderAsset && customReminderDays) {
-                      updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: true } : a));
+                      updateAssetMut.mutate({ id: reminderAsset, reminder: true });
                       haptic.medium();
                       setReminderAsset(null);
                       setCustomReminderDays("");
