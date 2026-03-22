@@ -260,6 +260,7 @@ const Zakat = () => {
     setAddLabel("");
     setAddAmount("");
     setAddKarat(24);
+    setAddCurrency("SAR");
     setAddDate(new Date().toISOString().split("T")[0]);
     setEditingAssetId(null);
   };
