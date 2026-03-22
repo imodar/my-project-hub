@@ -775,7 +775,7 @@ const Zakat = () => {
                 className="flex-1 h-12 rounded-xl"
                 onClick={() => {
                   if (zakatPaidAsset) {
-                    updateAssets(assets.filter(a => a.id !== zakatPaidAsset));
+                    deleteAssetMut.mutate(zakatPaidAsset);
                     haptic.medium();
                     setZakatPaidAsset(null);
                   }
