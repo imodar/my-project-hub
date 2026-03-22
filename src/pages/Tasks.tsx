@@ -306,24 +306,18 @@ const Tasks = () => {
   }, [editTarget, editName, editNote, editPriority, editAssignedTo, editRepeatEnabled, editRepeatDays, editRepeatCount, updateItemMutation]);
 
   const addItem = useCallback(() => {
-    if (!newItemName.trim()) return;
+    if (!newItemName.trim() || !activeListId) return;
     haptic.medium();
-    const newItem: TaskItem = {
-      id: crypto.randomUUID(),
+    addItemMutation.mutate({
+      list_id: activeListId,
       name: newItemName.trim(),
       note: newItemNote.trim(),
       priority: newItemPriority,
-      assignedTo: newItemAssignedTo || "أنت",
-      done: false,
-      repeat: newItemRepeatEnabled ? { enabled: true, days: newItemRepeatDays, count: newItemRepeatCount } : undefined,
-    };
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: [...list.items, newItem], lastUpdatedBy: "أنت", lastUpdatedAt: "الآن" }
-          : list
-      )
-    );
+      assigned_to: newItemAssignedTo || null,
+      repeat_enabled: newItemRepeatEnabled,
+      repeat_days: newItemRepeatDays,
+      repeat_count: newItemRepeatCount,
+    });
     setNewItemName("");
     setNewItemNote("");
     setNewItemPriority("medium");
@@ -332,7 +326,7 @@ const Tasks = () => {
     setNewItemRepeatDays([]);
     setNewItemRepeatCount(1);
     setShowAddItem(false);
-  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, newItemRepeatEnabled, newItemRepeatDays, newItemRepeatCount]);
+  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, newItemRepeatEnabled, newItemRepeatDays, newItemRepeatCount, addItemMutation]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
