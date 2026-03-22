@@ -20,6 +20,7 @@ const actions = [
   { icon: BookOpen, label: "القرآن", path: "/" },
   { icon: TasbihIcon, label: "المسبحة", path: "/tasbih" },
   { icon: Heart, label: "الأذكار", path: "/athkar" },
+  { icon: Bell, label: "التنبيهات", path: "/islamic-reminders" },
 ];
 
 const IslamicQuickActions = () => {
