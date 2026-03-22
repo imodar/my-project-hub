@@ -292,22 +292,18 @@ const Tasks = () => {
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? {
-              ...list,
-              items: list.items.map((item) =>
-                item.id === editTarget.id
-                  ? { ...item, name: editName.trim(), note: editNote.trim(), priority: editPriority, assignedTo: editAssignedTo || item.assignedTo, repeat: editRepeatEnabled ? { enabled: true, days: editRepeatDays, count: editRepeatCount } : undefined }
-                  : item
-              ),
-            }
-          : list
-      )
-    );
+    updateItemMutation.mutate({
+      id: editTarget.id,
+      name: editName.trim(),
+      note: editNote.trim(),
+      priority: editPriority,
+      assigned_to: editAssignedTo || null,
+      repeat_enabled: editRepeatEnabled,
+      repeat_days: editRepeatDays,
+      repeat_count: editRepeatCount,
+    });
     setEditTarget(null);
-  }, [activeListId, editTarget, editName, editNote, editPriority, editAssignedTo, editRepeatEnabled, editRepeatDays, editRepeatCount]);
+  }, [editTarget, editName, editNote, editPriority, editAssignedTo, editRepeatEnabled, editRepeatDays, editRepeatCount, updateItemMutation]);
 
   const addItem = useCallback(() => {
     if (!newItemName.trim()) return;
