@@ -35,6 +35,7 @@ const Auth = () => {
   }, [countdown]);
 
   const fullPhone = phone.startsWith("+") ? phone : `+966${phone.replace(/^0/, "")}`;
+  const isTestNumber = fullPhone === "+966539998666";
 
   const sendOtp = async () => {
     if (!phone || phone.replace(/\D/g, "").length < 9) {
@@ -44,6 +45,19 @@ const Auth = () => {
 
     setLoading(true);
     try {
+      // Test number bypass - direct login
+      if (isTestNumber) {
+        const res = await supabase.functions.invoke("test-login", {
+          body: { phone: fullPhone },
+        });
+        if (res.error) throw res.error;
+        const { access_token, refresh_token } = res.data;
+        if (!access_token) throw new Error(res.data?.error || "فشل الدخول التجريبي");
+        await supabase.auth.setSession({ access_token, refresh_token });
+        toast({ title: "تم الدخول بنجاح ✓" });
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithOtp({ phone: fullPhone });
       if (error) throw error;
 
