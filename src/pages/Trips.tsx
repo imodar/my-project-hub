@@ -302,38 +302,24 @@ const Trips = () => {
   const handleSaveTrip = () => {
     if (!tripName.trim() || !tripDest.trim()) return;
     if (editingTripId) {
-      const newType = tripParticipants.length > 1 ? "family" : "personal";
-      const existingTrip = trips.find(t => t.id === editingTripId);
-      setTrips((prev) => prev.map((t) => t.id === editingTripId ? {
-        ...t, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
-        budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
-      } : t));
-      if (selectedTrip?.id === editingTripId) {
-        setSelectedTrip((prev) => prev ? {
-          ...prev, name: tripName, destination: tripDest, startDate: tripStart, endDate: tripEnd,
-          budget: Number(tripBudget) || 0, participants: tripParticipants, type: newType,
-        } : null);
-      }
-      // Sync budget with updated trip info
-      if (existingTrip) {
-        syncTripToBudget({ id: editingTripId, name: tripName, budget: Number(tripBudget) || 0, expenses: existingTrip.expenses });
-      }
-      toast.success(newType !== existingTrip?.type
-        ? newType === "family" ? "تم تحويل الرحلة إلى عائلية" : "تم تحويل الرحلة إلى شخصية"
-        : "تم تعديل الرحلة"
-      );
+      updateTrip.mutate({
+        id: editingTripId,
+        name: tripName,
+        destination: tripDest,
+        start_date: tripStart,
+        end_date: tripEnd,
+        budget: Number(tripBudget) || 0,
+      });
+      toast.success("تم تعديل الرحلة");
     } else {
-      const newTrip: Trip = {
-        id: Date.now().toString(), name: tripName, destination: tripDest,
-        startDate: tripStart, endDate: tripEnd,
-        participants: tripParticipants,
-        budget: Number(tripBudget) || 0, status: "planning",
-        type: tripParticipants.length > 1 ? "family" : "personal",
-        days: [], suggestions: [], packingList: [], expenses: [], documents: [],
-      };
-      setTrips((prev) => [...prev, newTrip]);
-      // Create trip budget entry
-      syncTripToBudget({ id: newTrip.id, name: newTrip.name, budget: newTrip.budget, expenses: [] });
+      createTrip.mutate({
+        name: tripName,
+        destination: tripDest,
+        start_date: tripStart,
+        end_date: tripEnd,
+        budget: Number(tripBudget) || 0,
+        status: "planning",
+      });
       toast.success("تم إنشاء الرحلة");
     }
     resetTripForm();
