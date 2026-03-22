@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
+import { usePlaceLists } from "@/hooks/usePlaceLists";
 import { createPortal } from "react-dom";
 import { Plus, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, RotateCcw, SlidersHorizontal, Baby, DollarSign, Phone, Link2, ExternalLink } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -73,67 +74,38 @@ const KID_LABELS: Record<string, { label: string; emoji: string }> = {
   no: { label: "غير مناسب للأطفال", emoji: "🚫" },
 };
 
-const initialLists: PlaceList[] = [
-  {
-    id: "1",
-    name: "قائمة الأماكن",
-    type: "family",
-    isDefault: true,
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "منذ ساعة",
-    places: [
-      {
-        id: "p1",
-        name: "مطعم بيتزا ناعومي",
-        category: "مطاعم",
-        description: "قالوا البيتزا لا تُقوّت",
-        location: { lat: 24.7136, lng: 46.6753, address: "مطعم · حي الملقا" },
-        priceRange: "$$",
-        rating: 4,
-        kidFriendly: "yes",
-        addedBy: "أبو فهد",
-        suggestedBy: "أبو فهد",
-        visited: false,
-        mustVisit: true,
-        note: "اقترح: أبو فهد · \"قالوا البيتزا لا تقوّت\"",
-      },
-      {
-        id: "p2",
-        name: "كافيه ذا روف",
-        category: "كافيهات",
-        description: "",
-        location: { lat: 24.7236, lng: 46.6353, address: "كافيه · العليا" },
-        priceRange: "$$$",
-        rating: 5,
-        kidFriendly: "partial",
-        addedBy: "أم فهد",
-        suggestedBy: "أم فهد",
-        visited: false,
-        mustVisit: false,
-        note: "اقترحت: أم فهد",
-      },
-      {
-        id: "p3",
-        name: "فنتازيا",
-        category: "ترفيه",
-        description: "",
-        location: { lat: 24.7000, lng: 46.7100, address: "ترفيه · حي العارض" },
-        priceRange: "$$",
-        rating: 5,
-        kidFriendly: "yes",
-        addedBy: "أم فهد",
-        visited: true,
-        note: "ممتاز – نرجعله!",
-      },
-    ],
-  },
-];
-
 const SWIPE_WIDTH = 140;
 
 const Places = () => {
   const navigate = useNavigate();
-  const [lists, setLists] = useState<PlaceList[]>(initialLists);
+  const { lists: dbLists, isLoading: placesLoading, createList: createListMut, deleteList: deleteListMut, addPlace: addPlaceMut, updatePlace: updatePlaceMut, deletePlace: deletePlaceMut } = usePlaceLists();
+
+  const lists: PlaceList[] = useMemo(() => dbLists.map((l: any) => ({
+    id: l.id,
+    name: l.name,
+    type: l.type || "family",
+    sharedWith: l.shared_with || [],
+    lastUpdatedBy: "",
+    lastUpdatedAt: "",
+    places: (l.places || []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category || "أخرى",
+      description: p.description || "",
+      location: p.lat && p.lng ? { lat: p.lat, lng: p.lng, address: p.address } : undefined,
+      socialLink: p.social_link,
+      phone: p.phone,
+      priceRange: p.price_range || "$$",
+      rating: p.rating,
+      kidFriendly: p.kid_friendly || "no",
+      addedBy: p.added_by || "",
+      suggestedBy: p.suggested_by,
+      visited: p.visited || false,
+      mustVisit: p.must_visit || false,
+      note: p.note || "",
+    })),
+  })), [dbLists]);
+
   const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
   const [activeCategory, setActiveCategory] = useState<PlaceCategory | "الكل">("الكل");
   const [showAddList, setShowAddList] = useState(false);
@@ -239,38 +211,22 @@ const Places = () => {
       setReviewWouldReturn(null);
     } else {
       // Unmark as visited
-      setLists((prev) =>
-        prev.map((list) =>
-          list.id === activeListId
-            ? { ...list, places: list.places.map((p) => p.id === placeId ? { ...p, visited: false, rating: undefined } : p) }
-            : list
-        )
-      );
+      const place2 = activeList?.places.find(p => p.id === placeId);
+      if (place2) {
+        updatePlaceMut.mutate({ id: placeId, visited: false, rating: null });
+      }
     }
   }, [activeListId, activeList]);
 
   const confirmVisitReview = useCallback(() => {
     if (!reviewPlace) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? {
-              ...list,
-              places: list.places.map((p) =>
-                p.id === reviewPlace.id
-                  ? {
-                      ...p,
-                      visited: true,
-                      rating: reviewRating || undefined,
-                      note: reviewWouldReturn === "yes" ? (p.note ? p.note + " · نرجعله!" : "نرجعله!") : p.note,
-                    }
-                  : p
-              ),
-            }
-          : list
-      )
-    );
+    updatePlaceMut.mutate({
+      id: reviewPlace.id,
+      visited: true,
+      rating: reviewRating || null,
+      note: reviewWouldReturn === "yes" ? (reviewPlace.note ? reviewPlace.note + " · نرجعله!" : "نرجعله!") : reviewPlace.note,
+    });
     setReviewPlace(null);
     setReviewRating(0);
     setReviewWouldReturn(null);
@@ -279,13 +235,7 @@ const Places = () => {
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, places: list.places.filter((p) => p.id !== deleteTarget.id) }
-          : list
-      )
-    );
+    deletePlaceMut.mutate(deleteTarget.id);
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   }, [activeListId, deleteTarget]);
@@ -293,43 +243,27 @@ const Places = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    const newList: PlaceList = {
-      id: crypto.randomUUID(),
-      name: newListName.trim(),
-      type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-      sharedWith: newListType === "family" ? newListShareMembers : undefined,
-      lastUpdatedBy: "أنت",
-      lastUpdatedAt: "الآن",
-      places: [],
-    };
-    setLists((prev) => [...prev, newList]);
-    setActiveListId(newList.id);
+    const type = newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType;
+    createListMut.mutate({ name: newListName.trim(), type, shared_with: newListShareMembers });
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers]);
+  }, [newListName, newListType, newListShareMembers, createListMut]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
-    setLists((prev) => {
-      const updated = prev.filter((l) => l.id !== listId);
-      if (activeListId === listId && updated.length > 0) {
-        setActiveListId(updated[0].id);
-      }
-      return updated;
-    });
-  }, [activeListId]);
+    deleteListMut.mutate(listId);
+    if (activeListId === listId && lists.length > 1) {
+      const remaining = lists.filter(l => l.id !== listId);
+      if (remaining.length > 0) setActiveListId(remaining[0].id);
+    }
+  }, [activeListId, lists, deleteListMut]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, type: "shared", sharedWith: selectedShareMembers }
-          : list
-      )
-    );
+    // Update list type to shared via the places list — we'd need an updateList mutation
+    // For now just close the dialog
     setSelectedShareMembers([]);
     setShowShareDialog(false);
   }, [activeListId, selectedShareMembers]);

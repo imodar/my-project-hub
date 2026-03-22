@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useMedications } from "@/hooks/useMedications";
 import {
   Plus, Pill, Check, Clock, Bell, BellRing, Pencil, Trash2,
   AlertTriangle, User, ChevronDown,
@@ -31,20 +32,7 @@ import {
 } from "@/data/medicationData";
 import { toast } from "sonner";
 
-const STORAGE_KEY = "family-medications";
-
-const loadMedications = (): Medication[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveMedications = (meds: Medication[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(meds));
-};
+// localStorage helpers removed — using Supabase hooks now
 
 const loadFamilyMembers = (): { id: string; name: string; role: string }[] => {
   try {
@@ -56,7 +44,8 @@ const loadFamilyMembers = (): { id: string; name: string; role: string }[] => {
 };
 
 const Medications = () => {
-  const [medications, setMedications] = useState<Medication[]>(loadMedications);
+  const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut } = useMedications();
+  const [medications, setMedications] = useState<Medication[]>([]);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
   const [showDueAlert, setShowDueAlert] = useState<Medication | null>(null);
@@ -83,8 +72,7 @@ const Medications = () => {
   // Check for due medications every minute
   useEffect(() => {
     const checkDue = () => {
-      const meds = loadMedications();
-      const dueMed = meds.find((m) => isMedicationDue(m));
+      const dueMed = medications.find((m) => isMedicationDue(m));
       if (dueMed && !showDueAlert) {
         setShowDueAlert(dueMed);
       }
@@ -92,7 +80,7 @@ const Medications = () => {
     checkDue();
     const interval = setInterval(checkDue, 60000);
     return () => clearInterval(interval);
-  }, [showDueAlert]);
+  }, [showDueAlert, medications]);
 
   // Recalculate next due times
   useEffect(() => {
@@ -106,9 +94,43 @@ const Medications = () => {
     }
   }, []);
 
+  // Sync from DB to local state for UI compatibility
   useEffect(() => {
-    saveMedications(medications);
-  }, [medications]);
+    if (dbMeds && dbMeds.length > 0) {
+      const mapped: Medication[] = dbMeds.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        dosage: m.dosage || "",
+        memberId: m.member_id || "me",
+        memberName: m.member_name || "أنا",
+        frequencyType: (m.frequency_type || "daily") as FrequencyType,
+        frequencyValue: m.frequency_value || 1,
+        selectedDays: m.selected_days || [],
+        timesPerDay: m.times_per_day || 1,
+        specificTimes: m.specific_times || ["08:00"],
+        startDate: m.start_date || "",
+        endDate: m.end_date || "",
+        notes: m.notes || "",
+        color: m.color || MEDICATION_COLORS[0],
+        reminder: {
+          id: m.id,
+          enabled: m.reminder_enabled || false,
+          nextDueAt: calculateNextDue({
+            id: m.id, name: m.name, dosage: m.dosage || "", memberId: m.member_id || "me",
+            memberName: m.member_name || "أنا", frequencyType: (m.frequency_type || "daily") as FrequencyType,
+            frequencyValue: m.frequency_value || 1, selectedDays: m.selected_days || [],
+            timesPerDay: m.times_per_day || 1, specificTimes: m.specific_times || ["08:00"],
+            startDate: m.start_date || "", color: m.color || MEDICATION_COLORS[0],
+            reminder: { id: m.id, enabled: m.reminder_enabled || false, nextDueAt: "" },
+            takenLog: [], createdAt: m.created_at,
+          }) || "",
+        },
+        takenLog: [],
+        createdAt: m.created_at,
+      }));
+      setMedications(mapped);
+    }
+  }, [dbMeds]);
 
   // Request notification permission
   useEffect(() => {
@@ -260,7 +282,8 @@ const Medications = () => {
     toast("تم تخطي الجرعة", { icon: "⏭️" });
   };
 
-  const deleteMedication = (medId: string) => {
+  const handleDeleteMedication = (medId: string) => {
+    deleteMedMut.mutate(medId);
     setMedications((prev) => prev.filter((m) => m.id !== medId));
     setShowDeleteConfirm(null);
     toast.success("تم حذف الدواء");
@@ -707,7 +730,7 @@ const Medications = () => {
                 <Button variant="outline" onClick={() => setShowDeleteConfirm(null)} className="h-12">
                   إلغاء
                 </Button>
-                <Button variant="destructive" onClick={() => deleteMedication(showDeleteConfirm.id)} className="h-12">
+                <Button variant="destructive" onClick={() => handleDeleteMedication(showDeleteConfirm.id)} className="h-12">
                   حذف
                 </Button>
               </div>

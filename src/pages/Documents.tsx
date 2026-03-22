@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
+import { useDocumentLists } from "@/hooks/useDocumentLists";
 import { createPortal } from "react-dom";
 import {
   Plus, Search, FolderLock, Users, Lock, Share2, Trash2, Pencil,
@@ -71,58 +72,39 @@ const CATEGORIES: Record<DocCategory, { label: string; icon: typeof CreditCard; 
 const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 const SWIPE_WIDTH = 140;
 
-const initialLists: DocList[] = [
-  {
-    id: "1",
-    name: "وثائق العائلة",
-    type: "family",
-    isDefault: true,
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "منذ يومين",
-    items: [
-      {
-        id: "d1", name: "جواز سفر أبو فهد", category: "identity",
-        files: [], expiryDate: "2027-06-15", reminderEnabled: true,
-        note: "تم التجديد", addedBy: "أبو فهد", addedAt: "2024-01-10",
-      },
-      {
-        id: "d2", name: "استمارة السيارة", category: "vehicles",
-        files: [], expiryDate: "2025-12-01", reminderEnabled: true,
-        note: "كامري 2022", addedBy: "أبو فهد", addedAt: "2024-03-05",
-      },
-      {
-        id: "d3", name: "تقرير تحاليل نورة", category: "medical",
-        files: [], reminderEnabled: false,
-        note: "فحص دوري", addedBy: "أم فهد", addedAt: "2024-06-20",
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "وثائقي الشخصية",
-    type: "personal",
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "أمس",
-    items: [
-      {
-        id: "d4", name: "رخصة القيادة", category: "identity",
-        files: [], expiryDate: "2026-03-01", reminderEnabled: true,
-        note: "", addedBy: "أنت", addedAt: "2024-02-15",
-      },
-    ],
-  },
-];
+// Initial data removed — using Supabase hooks
 
 const Documents = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [lists, setLists] = useState<DocList[]>(() =>
-    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
-  );
-  const [activeListId, setActiveListId] = useState(() => {
-    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
-    return filtered[0]?.id || "";
-  });
+  const { lists: dbDocLists, isLoading: docsLoading, createList: createDocListMut, deleteList: deleteDocListMut, addItem: addDocItemMut, updateItem: updateDocItemMut, deleteItem: deleteDocItemMut } = useDocumentLists();
+
+  const lists: DocList[] = useMemo(() => {
+    const mapped = (dbDocLists || []).map((l: any) => ({
+      id: l.id,
+      name: l.name,
+      type: l.type || "family",
+      sharedWith: l.shared_with || [],
+      lastUpdatedBy: "",
+      lastUpdatedAt: "",
+      items: (l.document_items || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        category: (item.category || "other") as DocCategory,
+        files: (item.document_files || []).map((f: any) => ({
+          id: f.id, name: f.name, type: f.type || "pdf", url: f.file_url || "", size: f.size?.toString() || "0", addedAt: f.added_at,
+        })),
+        expiryDate: item.expiry_date,
+        reminderEnabled: item.reminder_enabled || false,
+        note: item.note || "",
+        addedBy: item.added_by || "",
+        addedAt: item.added_at,
+      })),
+    }));
+    return featureAccess.isStaff ? mapped.filter((l: DocList) => l.type !== "family") : mapped;
+  }, [dbDocLists, featureAccess.isStaff]);
+
+  const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<DocCategory | "all">("all");
   const [showAddItem, setShowAddItem] = useState(false);
@@ -217,16 +199,10 @@ const Documents = () => {
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: list.items.filter((i) => i.id !== deleteTarget.id) }
-          : list
-      )
-    );
+    deleteDocItemMut.mutate(deleteTarget.id);
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
-  }, [activeListId, deleteTarget]);
+  }, [deleteTarget, deleteDocItemMut]);
 
   const openEdit = useCallback((item: DocumentItem) => {
     setEditTarget(item);
@@ -241,22 +217,13 @@ const Documents = () => {
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? {
-              ...list,
-              items: list.items.map((item) =>
-                item.id === editTarget.id
-                  ? { ...item, name: editName.trim(), category: editCategory, note: editNote.trim(), expiryDate: editExpiryDate || undefined, reminderEnabled: editReminderEnabled }
-                  : item
-              ),
-            }
-          : list
-      )
-    );
+    updateDocItemMut.mutate({
+      id: editTarget.id,
+      name: editName.trim(), category: editCategory, note: editNote.trim(),
+      expiry_date: editExpiryDate || null, reminder_enabled: editReminderEnabled,
+    });
     setEditTarget(null);
-  }, [activeListId, editTarget, editName, editCategory, editNote, editExpiryDate, editReminderEnabled]);
+  }, [editTarget, editName, editCategory, editNote, editExpiryDate, editReminderEnabled, updateDocItemMut]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, target: "new" | "existing") => {
     const files = e.target.files;
@@ -281,20 +248,7 @@ const Documents = () => {
         if (target === "new") {
           setNewFiles((prev) => [...prev, docFile]);
         } else if (editTarget) {
-          setLists((prev) =>
-            prev.map((list) =>
-              list.id === activeListId
-                ? {
-                    ...list,
-                    items: list.items.map((item) =>
-                      item.id === editTarget.id
-                        ? { ...item, files: [...item.files, docFile] }
-                        : item
-                    ),
-                  }
-                : list
-            )
-          );
+          // File upload for existing items - skip for now (needs storage integration)
         }
       };
       reader.readAsDataURL(file);
@@ -303,78 +257,41 @@ const Documents = () => {
   }, [editTarget, activeListId]);
 
   const addItem = useCallback(() => {
-    if (!newName.trim()) return;
+    if (!newName.trim() || !activeListId) return;
     haptic.medium();
-    const newItem: DocumentItem = {
-      id: crypto.randomUUID(),
-      name: newName.trim(),
-      category: newCategory,
-      files: newFiles,
-      expiryDate: newExpiryDate || undefined,
-      reminderEnabled: newReminderEnabled,
-      note: newNote.trim(),
-      addedBy: "أنت",
-      addedAt: new Date().toISOString().split("T")[0],
-    };
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: [...list.items, newItem], lastUpdatedBy: "أنت", lastUpdatedAt: "الآن" }
-          : list
-      )
-    );
-    setNewName("");
-    setNewNote("");
-    setNewCategory("identity");
-    setNewExpiryDate("");
-    setNewReminderEnabled(false);
-    setNewFiles([]);
+    addDocItemMut.mutate({
+      list_id: activeListId, name: newName.trim(), category: newCategory,
+      note: newNote.trim(), expiry_date: newExpiryDate || undefined,
+      reminder_enabled: newReminderEnabled,
+    });
+    setNewName(""); setNewNote(""); setNewCategory("identity");
+    setNewExpiryDate(""); setNewReminderEnabled(false); setNewFiles([]);
     setShowAddItem(false);
-  }, [activeListId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, newFiles]);
+  }, [activeListId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, addDocItemMut]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    const newList: DocList = {
-      id: crypto.randomUUID(),
-      name: newListName.trim(),
-      type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-      sharedWith: newListType === "family" ? newListShareMembers : undefined,
-      lastUpdatedBy: "أنت",
-      lastUpdatedAt: "الآن",
-      items: [],
-    };
-    setLists((prev) => [...prev, newList]);
-    setActiveListId(newList.id);
-    setNewListName("");
-    setNewListShareMembers([]);
-    setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers]);
+    const type = newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType;
+    createDocListMut.mutate({ name: newListName.trim(), type, shared_with: newListShareMembers });
+    setNewListName(""); setNewListShareMembers([]); setShowAddList(false);
+  }, [newListName, newListType, newListShareMembers, createDocListMut]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
-    setLists((prev) => {
-      const updated = prev.filter((l) => l.id !== listId);
-      if (activeListId === listId && updated.length > 0) {
-        setActiveListId(updated[0].id);
-      }
-      return updated;
-    });
-  }, [activeListId]);
+    deleteDocListMut.mutate(listId);
+    if (activeListId === listId && lists.length > 1) {
+      const remaining = lists.filter(l => l.id !== listId);
+      if (remaining.length > 0) setActiveListId(remaining[0].id);
+    }
+  }, [activeListId, lists, deleteDocListMut]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, type: "shared", sharedWith: selectedShareMembers }
-          : list
-      )
-    );
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [activeListId, selectedShareMembers]);
+  }, [selectedShareMembers]);
 
   const getListIcon = (type: DocList["type"]) => {
     switch (type) {

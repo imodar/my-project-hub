@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useVehicles } from "@/hooks/useVehicles";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search, Users, UserPlus } from "lucide-react";
@@ -155,17 +156,7 @@ const MAINTENANCE_TYPES = [
   { id: "other", label: "أخرى", icon: Wrench, color: "hsl(210 30% 45%)" },
 ];
 
-const STORAGE_KEY = "family-cars";
-
-const loadCars = (): CarData[] => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch { return []; }
-};
-
-const saveCars = (cars: CarData[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cars));
-};
+// localStorage helpers removed — using Supabase hooks
 
 // ─── Car Logo Component ───
 const CarLogo = ({ manufacturer, size = 40 }: { manufacturer: string; size?: number }) => {
@@ -243,7 +234,31 @@ const SwipeableRow = ({ children, onDelete, onEdit, onReminder }: {
 // ─── Main Component ───
 const Vehicle = () => {
   const navigate = useNavigate();
-  const [cars, setCars] = useState<CarData[]>(loadCars);
+  const { vehicles: dbVehicles, isLoading: vehiclesLoading, addVehicle: addVehicleMut, updateVehicle: updateVehicleMut, deleteVehicle: deleteVehicleMut, addMaintenance: addMaintMut, updateMaintenance: updateMaintMut, deleteMaintenance: deleteMaintMut } = useVehicles();
+
+  const cars: CarData[] = useMemo(() => (dbVehicles || []).map((v: any) => ({
+    id: v.id,
+    manufacturer: v.manufacturer,
+    model: v.model,
+    year: v.year || "",
+    mileage: v.mileage || 0,
+    mileageUnit: v.mileage_unit || "km",
+    color: v.color || "",
+    plateNumber: v.plate_number || "",
+    sharedWith: v.shared_with || [],
+    createdAt: v.created_at,
+    maintenance: (v.vehicle_maintenance || []).map((m: any) => ({
+      id: m.id,
+      type: m.type,
+      label: m.label,
+      date: m.date || "",
+      mileageAtService: m.mileage_at_service || 0,
+      nextMileage: m.next_mileage || 0,
+      nextDate: m.next_date || "",
+      notes: m.notes || "",
+    })),
+  })), [dbVehicles]);
+
   const [selectedCar, setSelectedCar] = useState<CarData | null>(null);
   const [addCarOpen, setAddCarOpen] = useState(false);
   const [addMaintenanceOpen, setAddMaintenanceOpen] = useState(false);
@@ -279,7 +294,7 @@ const Vehicle = () => {
   const [maintNotes, setMaintNotes] = useState("");
   const [oilWithFilter, setOilWithFilter] = useState(false);
 
-  useEffect(() => { saveCars(cars); }, [cars]);
+  // Syncing handled by React Query
 
   const filteredManufacturers = useMemo(() => {
     const search = manufacturerSearch.toLowerCase().trim();
@@ -319,27 +334,23 @@ const Vehicle = () => {
       toast.error("الممشى يجب أن يكون أكبر من 0");
       return;
     }
-    const car: CarData = {
-      id: Date.now().toString(),
+    addVehicleMut.mutate({
       manufacturer: newManufacturer,
       model: newModel,
       year: newYear,
       mileage: Number(newMileage) || 0,
-      mileageUnit: newMileageUnit,
+      mileage_unit: newMileageUnit,
       color: newColor,
-      plateNumber: newPlate,
-      sharedWith: newSharedWith,
-      maintenance: [],
-      createdAt: new Date().toISOString(),
-    };
-    setCars(prev => [car, ...prev]);
+      plate_number: newPlate,
+      shared_with: newSharedWith,
+    });
     setAddCarOpen(false);
     resetAddForm();
     toast.success("تمت إضافة المركبة بنجاح");
   };
 
   const handleDeleteCar = (carId: string) => {
-    setCars(prev => prev.filter(c => c.id !== carId));
+    deleteVehicleMut.mutate(carId);
     if (selectedCar?.id === carId) setSelectedCar(null);
     toast.success("تم حذف المركبة");
   };
@@ -348,46 +359,36 @@ const Vehicle = () => {
     if (!selectedCar || !maintType) return;
     const typeInfo = MAINTENANCE_TYPES.find(t => t.id === maintType);
 
-    const records: MaintenanceRecord[] = [];
-    records.push({
-      id: editMaintenanceRecord?.id || Date.now().toString(),
+    const mainRecord = {
+      vehicle_id: selectedCar.id,
       type: maintType,
       label: typeInfo?.label || maintType,
       date: maintDate,
-      mileageAtService: Number(maintMileage) || selectedCar.mileage,
-      nextMileage: Number(maintNextMileage) || 0,
-      nextDate: maintNextDate,
+      mileage_at_service: Number(maintMileage) || selectedCar.mileage,
+      next_mileage: Number(maintNextMileage) || 0,
+      next_date: maintNextDate,
       notes: maintNotes,
-    });
+    };
 
-    if (maintType === "oil_change" && oilWithFilter) {
-      records.push({
-        id: (Date.now() + 1).toString(),
-        type: "oil_filter",
-        label: "فلتر الزيت",
-        date: maintDate,
-        mileageAtService: Number(maintMileage) || selectedCar.mileage,
-        nextMileage: Number(maintNextMileage) || 0,
-        nextDate: maintNextDate,
-        notes: "تم التغيير مع الزيت",
-      });
-    }
-
-    const updatedCar = { ...selectedCar };
     if (editMaintenanceRecord) {
-      updatedCar.maintenance = updatedCar.maintenance.map(m =>
-        m.id === editMaintenanceRecord.id ? records[0] : m
-      );
+      updateMaintMut.mutate({ id: editMaintenanceRecord.id, ...mainRecord });
     } else {
-      updatedCar.maintenance = [...records, ...updatedCar.maintenance];
+      addMaintMut.mutate(mainRecord);
+      if (maintType === "oil_change" && oilWithFilter) {
+        addMaintMut.mutate({
+          ...mainRecord,
+          type: "oil_filter",
+          label: "فلتر الزيت",
+          notes: "تم التغيير مع الزيت",
+        });
+      }
     }
 
     if (Number(maintMileage) > selectedCar.mileage) {
-      updatedCar.mileage = Number(maintMileage);
+      updateVehicleMut.mutate({ id: selectedCar.id, mileage: Number(maintMileage) });
     }
 
-    setCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
-    setSelectedCar(updatedCar);
+    setSelectedCar(null); // will re-select from refreshed data
     setAddMaintenanceOpen(false);
     resetMaintForm();
     toast.success(editMaintenanceRecord ? "تم تعديل السجل" : "تمت إضافة سجل الصيانة");
@@ -395,12 +396,8 @@ const Vehicle = () => {
 
   const handleDeleteMaintenance = (recordId: string) => {
     if (!selectedCar) return;
-    const updatedCar = {
-      ...selectedCar,
-      maintenance: selectedCar.maintenance.filter(m => m.id !== recordId),
-    };
-    setCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
-    setSelectedCar(updatedCar);
+    deleteMaintMut.mutate(recordId);
+    setSelectedCar(prev => prev ? { ...prev, maintenance: prev.maintenance.filter(m => m.id !== recordId) } : null);
     toast.success("تم حذف السجل");
   };
 
@@ -426,9 +423,8 @@ const Vehicle = () => {
 
   const handleSaveShare = () => {
     if (!selectedCar) return;
-    const updatedCar = { ...selectedCar, sharedWith: shareWith };
-    setCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
-    setSelectedCar(updatedCar);
+    updateVehicleMut.mutate({ id: selectedCar.id, shared_with: shareWith });
+    setSelectedCar(prev => prev ? { ...prev, sharedWith: shareWith } : null);
     setShareDrawerOpen(false);
     toast.success("تم تحديث المشاركة");
   };
@@ -458,7 +454,7 @@ const Vehicle = () => {
 
   const handleRefresh = async () => {
     await new Promise(resolve => setTimeout(resolve, 600));
-    setCars(loadCars());
+    // React Query will auto-refetch
   };
 
   // ─── Car Detail View ───

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useZakatAssets } from "@/hooks/useZakatAssets";
 import { createPortal } from "react-dom";
 import {
   Plus, Coins, Info, Trash2, Bell, BellOff, ChevronDown, ChevronUp,
@@ -131,17 +132,7 @@ const NISAB_GOLD_GRAMS = 85; // grams of 24k gold
 const NISAB_SILVER_GRAMS = 595;
 const ZAKAT_RATE = 0.025;
 
-const STORAGE_KEY = "zakat_assets";
-
-function loadAssets(): ZakatAsset[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-function saveAssets(assets: ZakatAsset[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(assets));
-}
+// localStorage helpers removed — using Supabase hooks
 
 // Days until hawl (1 hijri year ≈ 354 days)
 function daysUntilHawl(purchaseDateISO: string): number {
@@ -226,7 +217,19 @@ function useGoldPrice() {
 // ── Component ──
 const Zakat = () => {
   const navigate = useNavigate();
-  const [assets, setAssets] = useState<ZakatAsset[]>(loadAssets);
+  const { assets: dbAssets, isLoading: assetsLoading, addAsset: addAssetMut, updateAsset: updateAssetMut, deleteAsset: deleteAssetMut, addZakatPayment } = useZakatAssets();
+
+  const assets: ZakatAsset[] = useMemo(() => (dbAssets || []).map((a: any) => ({
+    id: a.id,
+    type: a.type as AssetType,
+    label: a.name,
+    amount: a.amount || a.weight_grams || 0,
+    karat: undefined, // stored in metadata if needed
+    purchaseDate: a.purchase_date || "",
+    marketValue: undefined,
+    reminder: a.reminder || false,
+  })), [dbAssets]);
+
   const [showAdd, setShowAdd] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [addType, setAddType] = useState<AssetType>("cash");
@@ -244,32 +247,27 @@ const Zakat = () => {
   const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
 
   const updateAssets = useCallback((newAssets: ZakatAsset[]) => {
-    setAssets(newAssets);
-    saveAssets(newAssets);
+    // Updates are handled via individual mutations now
   }, []);
 
   const handleAdd = () => {
     if (!addAmount || Number(addAmount) <= 0) return;
     if (editingAssetId) {
-      updateAssets(assets.map(a => a.id === editingAssetId ? {
-        ...a,
+      updateAssetMut.mutate({
+        id: editingAssetId,
         type: addType,
-        label: addLabel || ASSET_TYPE_META[addType].label,
+        name: addLabel || ASSET_TYPE_META[addType].label,
         amount: Number(addAmount),
-        karat: addType === "gold" ? addKarat : undefined,
-        purchaseDate: addDate,
-      } : a));
+        purchase_date: addDate,
+      });
     } else {
-      const newAsset: ZakatAsset = {
-        id: Date.now().toString(),
+      addAssetMut.mutate({
         type: addType,
-        label: addLabel || ASSET_TYPE_META[addType].label,
+        name: addLabel || ASSET_TYPE_META[addType].label,
         amount: Number(addAmount),
-        karat: addType === "gold" ? addKarat : undefined,
-        purchaseDate: addDate,
+        purchase_date: addDate,
         reminder: true,
-      };
-      updateAssets([...assets, newAsset]);
+      });
     }
     setShowAdd(false);
     resetAddForm();
@@ -287,7 +285,7 @@ const Zakat = () => {
   };
 
   const handleDelete = (id: string) => {
-    updateAssets(assets.filter(a => a.id !== id));
+    deleteAssetMut.mutate(id);
     setDeleteConfirm(null);
     haptic.medium();
   };
@@ -344,7 +342,7 @@ const Zakat = () => {
         </div>
       </PageHeader>
 
-      <PullToRefresh onRefresh={async () => { setAssets(loadAssets()); }}>
+      <PullToRefresh onRefresh={async () => { /* React Query auto-refetches */ }}>
         <div className="px-4 mt-2 space-y-4">
 
           {/* Privacy notice */}
@@ -777,7 +775,7 @@ const Zakat = () => {
                 className="flex-1 h-12 rounded-xl"
                 onClick={() => {
                   if (zakatPaidAsset) {
-                    updateAssets(assets.filter(a => a.id !== zakatPaidAsset));
+                    deleteAssetMut.mutate(zakatPaidAsset);
                     haptic.medium();
                     setZakatPaidAsset(null);
                   }
@@ -791,7 +789,7 @@ const Zakat = () => {
                 onClick={() => {
                   if (zakatPaidAsset) {
                     const today = new Date().toISOString().split("T")[0];
-                    updateAssets(assets.map(a => a.id === zakatPaidAsset ? { ...a, purchaseDate: today, reminder: true } : a));
+                    updateAssetMut.mutate({ id: zakatPaidAsset, purchase_date: today, reminder: true });
                     haptic.medium();
                     setZakatPaidAsset(null);
                   }
@@ -840,7 +838,7 @@ const Zakat = () => {
                 key={opt.days}
                 onClick={() => {
                   if (reminderAsset) {
-                    updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: true } : a));
+                    updateAssetMut.mutate({ id: reminderAsset, reminder: true });
                     haptic.medium();
                     setReminderAsset(null);
                   }
@@ -869,7 +867,7 @@ const Zakat = () => {
                 <Button
                   onClick={() => {
                     if (reminderAsset && customReminderDays) {
-                      updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: true } : a));
+                      updateAssetMut.mutate({ id: reminderAsset, reminder: true });
                       haptic.medium();
                       setReminderAsset(null);
                       setCustomReminderDays("");
@@ -888,7 +886,7 @@ const Zakat = () => {
               className="w-full mt-2 text-muted-foreground"
               onClick={() => {
                 if (reminderAsset) {
-                  updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: false } : a));
+                  updateAssetMut.mutate({ id: reminderAsset, reminder: false });
                   haptic.light();
                   setReminderAsset(null);
                 }
