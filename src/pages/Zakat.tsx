@@ -32,7 +32,7 @@ const CASH_CURRENCIES = [
 
 // ── Swipeable Card (RTL: swipe left to reveal actions on right) ──
 const ACTION_WIDTH = 280;
-function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit: () => void; onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
+function SwipeableAssetCard({ onEdit, onReminder, onDelete, onZakatPaid, children }: { onEdit: () => void; onReminder: () => void; onDelete: () => void; onZakatPaid: () => void; children: React.ReactNode }) {
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
   const isOpenRef = useRef(false);
