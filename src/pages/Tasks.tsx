@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useTaskLists } from "@/hooks/useTaskLists";
 import { createPortal } from "react-dom";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, Repeat } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -61,44 +62,39 @@ const PRIORITY_INFO: Record<string, { label: string; bg: string; text: string; e
 const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 const SWIPE_WIDTH = 140;
 
-const initialLists: TaskList[] = [
-  {
-    id: "1",
-    name: "مهام عائلية",
-    type: "family",
-    isDefault: true,
-    lastUpdatedBy: "أم فهد",
-    lastUpdatedAt: "منذ ساعة",
-    items: [
-      { id: "t1", name: "ترتيب غرفة المعيشة", note: "قبل المغرب", priority: "high", assignedTo: "سارة", done: false },
-      { id: "t2", name: "غسل السيارة", note: "يوم السبت", priority: "medium", assignedTo: "فهد", done: false },
-      { id: "t3", name: "شراء تمر وحليب", note: "للإفطار", priority: "high", assignedTo: "أم فهد", done: false },
-      { id: "t4", name: "إصلاح باب الحديقة", note: "", priority: "low", assignedTo: "أبو فهد", done: true },
-    ],
-  },
-  {
-    id: "2",
-    name: "مهامي الشخصية",
-    type: "personal",
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "أمس",
-    items: [
-      { id: "t5", name: "مراجعة الطبيب", note: "الأربعاء الساعة 4", priority: "high", assignedTo: "أنت", done: false },
-      { id: "t6", name: "تجديد الاستمارة", note: "", priority: "medium", assignedTo: "أنت", done: false },
-    ],
-  },
-];
-
 const Tasks = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [lists, setLists] = useState<TaskList[]>(() =>
-    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
-  );
-  const [activeListId, setActiveListId] = useState(() => {
-    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
-    return filtered[0]?.id || "";
-  });
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useTaskLists();
+
+  const lists: TaskList[] = useMemo(() => {
+    const mapped = (dbLists || []).map((l: any) => ({
+      id: l.id,
+      name: l.name,
+      type: (l.type || "family") as "family" | "personal" | "shared",
+      sharedWith: l.shared_with || [],
+      lastUpdatedBy: "",
+      lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
+      items: (l.task_items || []).map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        note: i.note || "",
+        priority: (i.priority || "none") as TaskItem["priority"],
+        assignedTo: i.assigned_to || "",
+        done: i.done,
+        repeat: i.repeat_enabled ? { enabled: true, days: i.repeat_days || [], count: i.repeat_count || 0 } : undefined,
+      })),
+    }));
+    return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
+  }, [dbLists, featureAccess.isStaff]);
+
+  const [activeListId, setActiveListId] = useState("");
+
+  useEffect(() => {
+    if (lists.length > 0 && (!activeListId || !lists.find(l => l.id === activeListId))) {
+      setActiveListId(lists[0].id);
+    }
+  }, [lists, activeListId]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
@@ -193,18 +189,8 @@ const Tasks = () => {
       return;
     }
     haptic.light();
-    setLists((prev) =>
-      prev.map((list) => {
-        if (list.id !== activeListId) return list;
-        const items = [...list.items];
-        const fromIdx = items.findIndex((i) => i.id === dragActiveId);
-        const toIdx = items.findIndex((i) => i.id === targetId);
-        if (fromIdx === -1 || toIdx === -1) return list;
-        const [moved] = items.splice(fromIdx, 1);
-        items.splice(toIdx, 0, moved);
-        return { ...list, items };
-      })
-    );
+    // Drag reorder is local-only for now (no server-side ordering)
+    // TODO: implement server-side task ordering
     setDragActiveId(null);
     setDragOverId(null);
     isLongPressingRef.current = false;
@@ -269,28 +255,17 @@ const Tasks = () => {
 
   const toggleItem = useCallback((itemId: string) => {
     haptic.light();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: list.items.map((item) => item.id === itemId ? { ...item, done: !item.done } : item) }
-          : list
-      )
-    );
-  }, [activeListId]);
+    const item = activeList?.items.find(i => i.id === itemId);
+    if (item) updateItemMutation.mutate({ id: itemId, done: !item.done });
+  }, [activeList, updateItemMutation]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: list.items.filter((i) => i.id !== deleteTarget.id) }
-          : list
-      )
-    );
+    deleteItemMutation.mutate(deleteTarget.id);
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
-  }, [activeListId, deleteTarget]);
+  }, [deleteTarget, deleteItemMutation]);
 
   const openEdit = useCallback((item: TaskItem) => {
     setEditTarget(item);
@@ -307,42 +282,32 @@ const Tasks = () => {
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? {
-              ...list,
-              items: list.items.map((item) =>
-                item.id === editTarget.id
-                  ? { ...item, name: editName.trim(), note: editNote.trim(), priority: editPriority, assignedTo: editAssignedTo || item.assignedTo, repeat: editRepeatEnabled ? { enabled: true, days: editRepeatDays, count: editRepeatCount } : undefined }
-                  : item
-              ),
-            }
-          : list
-      )
-    );
+    updateItemMutation.mutate({
+      id: editTarget.id,
+      name: editName.trim(),
+      note: editNote.trim(),
+      priority: editPriority,
+      assigned_to: editAssignedTo || null,
+      repeat_enabled: editRepeatEnabled,
+      repeat_days: editRepeatDays,
+      repeat_count: editRepeatCount,
+    });
     setEditTarget(null);
-  }, [activeListId, editTarget, editName, editNote, editPriority, editAssignedTo, editRepeatEnabled, editRepeatDays, editRepeatCount]);
+  }, [editTarget, editName, editNote, editPriority, editAssignedTo, editRepeatEnabled, editRepeatDays, editRepeatCount, updateItemMutation]);
 
   const addItem = useCallback(() => {
-    if (!newItemName.trim()) return;
+    if (!newItemName.trim() || !activeListId) return;
     haptic.medium();
-    const newItem: TaskItem = {
-      id: crypto.randomUUID(),
+    addItemMutation.mutate({
+      list_id: activeListId,
       name: newItemName.trim(),
       note: newItemNote.trim(),
       priority: newItemPriority,
-      assignedTo: newItemAssignedTo || "أنت",
-      done: false,
-      repeat: newItemRepeatEnabled ? { enabled: true, days: newItemRepeatDays, count: newItemRepeatCount } : undefined,
-    };
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: [...list.items, newItem], lastUpdatedBy: "أنت", lastUpdatedAt: "الآن" }
-          : list
-      )
-    );
+      assigned_to: newItemAssignedTo || null,
+      repeat_enabled: newItemRepeatEnabled,
+      repeat_days: newItemRepeatDays,
+      repeat_count: newItemRepeatCount,
+    });
     setNewItemName("");
     setNewItemNote("");
     setNewItemPriority("medium");
@@ -351,51 +316,32 @@ const Tasks = () => {
     setNewItemRepeatDays([]);
     setNewItemRepeatCount(1);
     setShowAddItem(false);
-  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, newItemRepeatEnabled, newItemRepeatDays, newItemRepeatCount]);
+  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, newItemRepeatEnabled, newItemRepeatDays, newItemRepeatCount, addItemMutation]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    const newList: TaskList = {
-      id: crypto.randomUUID(),
+    createListMutation.mutate({
       name: newListName.trim(),
       type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-      sharedWith: newListType === "family" ? newListShareMembers : undefined,
-      lastUpdatedBy: "أنت",
-      lastUpdatedAt: "الآن",
-      items: [],
-    };
-    setLists((prev) => [...prev, newList]);
-    setActiveListId(newList.id);
+      shared_with: newListType === "family" ? newListShareMembers : [],
+    });
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers]);
+  }, [newListName, newListType, newListShareMembers, createListMutation]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
-    setLists((prev) => {
-      const updated = prev.filter((l) => l.id !== listId);
-      if (activeListId === listId && updated.length > 0) {
-        setActiveListId(updated[0].id);
-      }
-      return updated;
-    });
-  }, [activeListId]);
+    deleteListMutation.mutate(listId);
+  }, [deleteListMutation]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, type: "shared", sharedWith: selectedShareMembers }
-          : list
-      )
-    );
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [activeListId, selectedShareMembers]);
+  }, [selectedShareMembers]);
 
   const getListIcon = (type: TaskList["type"]) => {
     switch (type) {

@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useMemo } from "react";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { createPortal } from "react-dom";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
@@ -34,10 +35,10 @@ interface FamilyEvent {
   id: string;
   title: string;
   date: string;
-  icon: string;
-  reminderBefore?: string[];
-  addedBy: string;
-  personalReminders?: string[]; // personal reminder keys for this user
+  icon: string | null;
+  reminder_before: string[] | null;
+  added_by: string;
+  personal_reminders: string[] | null;
 }
 
 const REMINDER_OPTIONS = [
@@ -56,7 +57,7 @@ const ICON_OPTIONS = [
   { key: "calendar", label: "📅" },
 ];
 
-const EVENTS_KEY = "family_calendar_events";
+const EVENTS_KEY = "family_calendar_events"; // kept for reference only
 
 const ARABIC_MONTHS = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
@@ -89,34 +90,22 @@ function daysLabel(d: number) {
   return `${toArabicNum(d)} يوم`;
 }
 
-const initialEvents: FamilyEvent[] = [
-  { id: "1", title: "عيد ميلاد نورة", date: "2026-03-15", icon: "cake", reminderBefore: ["1d"], addedBy: "أم فهد" },
-  { id: "2", title: "ذكرى الزواج", date: "2026-03-22", icon: "heart", reminderBefore: ["7d"], addedBy: "أبو فهد" },
-  { id: "3", title: "رحلة أبها", date: "2026-04-01", icon: "plane", reminderBefore: ["3d"], addedBy: "فهد" },
-  { id: "4", title: "تخرج سارة", date: "2026-05-10", icon: "graduation", reminderBefore: ["30d"], addedBy: "سارة" },
-];
+// initialEvents removed - data now comes from Supabase via useCalendarEvents hook
 
 const CalendarPage = () => {
   const navigate = useNavigate();
   const { addToTrash } = useTrash();
   const today = new Date();
+  const { events, isLoading, addEvent: addEventMutation, updateEvent: updateEventMutation, deleteEvent: deleteEventMutation } = useCalendarEvents();
 
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  const [events, setEvents] = useState<FamilyEvent[]>(() => {
-    try {
-      const saved = localStorage.getItem(EVENTS_KEY);
-      return saved ? JSON.parse(saved) : initialEvents;
-    } catch {
-      return initialEvents;
-    }
-  });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newEvent, setNewEvent] = useState({
     title: "",
     hasReminder: false,
-    reminderBefore: [] as string[],
+    reminder_before: [] as string[],
   });
 
   // Swipe
@@ -129,15 +118,13 @@ const CalendarPage = () => {
 
   // Edit dialog
   const [editTarget, setEditTarget] = useState<FamilyEvent | null>(null);
-  const [editForm, setEditForm] = useState({ title: "", date: "", hasReminder: false, reminderBefore: [] as string[] });
+  const [editForm, setEditForm] = useState({ title: "", date: "", hasReminder: false, reminder_before: [] as string[] });
 
   // Personal reminders dialog
   const [reminderTarget, setReminderTarget] = useState<FamilyEvent | null>(null);
   const [personalReminders, setPersonalReminders] = useState<string[]>([]);
 
-  useEffect(() => {
-    localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
-  }, [events]);
+  // Events are now synced via React Query - no localStorage needed
 
   const prevMonth = () => {
     if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear((y) => y - 1); }
@@ -172,18 +159,15 @@ const CalendarPage = () => {
 
   const handleAddEvent = () => {
     if (!newEvent.title.trim()) return;
-    if (newEvent.hasReminder && newEvent.reminderBefore.length === 0) return;
+    if (newEvent.hasReminder && newEvent.reminder_before.length === 0) return;
     const dateStr = selectedDay || todayStr;
-    const ev: FamilyEvent = {
-      id: crypto.randomUUID(),
+    addEventMutation.mutate({
       title: newEvent.title.trim(),
       date: dateStr,
       icon: "calendar",
-      reminderBefore: newEvent.hasReminder ? newEvent.reminderBefore : undefined,
-      addedBy: "أنا",
-    };
-    setEvents((prev) => [...prev, ev]);
-    setNewEvent({ title: "", hasReminder: false, reminderBefore: [] });
+      reminder_before: newEvent.hasReminder ? newEvent.reminder_before : [],
+    });
+    setNewEvent({ title: "", hasReminder: false, reminder_before: [] });
     setShowAddDialog(false);
   };
 
@@ -198,7 +182,7 @@ const CalendarPage = () => {
       isShared: true,
       originalData: deleteTarget,
     });
-    setEvents((prev) => prev.filter((e) => e.id !== deleteTarget.id));
+    deleteEventMutation.mutate(deleteTarget.id);
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   };
@@ -209,43 +193,34 @@ const CalendarPage = () => {
     setEditForm({
       title: ev.title,
       date: ev.date,
-      hasReminder: !!(ev.reminderBefore && ev.reminderBefore.length > 0),
-      reminderBefore: ev.reminderBefore || [],
+      hasReminder: !!(ev.reminder_before && ev.reminder_before.length > 0),
+      reminder_before: ev.reminder_before || [],
     });
     closeSwipe(ev.id);
   };
   const saveEdit = () => {
     if (!editTarget || !editForm.title.trim()) return;
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === editTarget.id
-          ? {
-              ...e,
-              title: editForm.title.trim(),
-              date: editForm.date,
-              reminderBefore: editForm.hasReminder && editForm.reminderBefore.length > 0 ? editForm.reminderBefore : undefined,
-            }
-          : e
-      )
-    );
+    updateEventMutation.mutate({
+      id: editTarget.id,
+      title: editForm.title.trim(),
+      date: editForm.date,
+      reminder_before: editForm.hasReminder && editForm.reminder_before.length > 0 ? editForm.reminder_before : [],
+    });
     setEditTarget(null);
   };
 
   // Personal reminders
   const openPersonalReminders = (ev: FamilyEvent) => {
     setReminderTarget(ev);
-    setPersonalReminders(ev.personalReminders || []);
+    setPersonalReminders(ev.personal_reminders || []);
     closeSwipe(ev.id);
   };
   const savePersonalReminders = () => {
     if (!reminderTarget) return;
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === reminderTarget.id
-          ? { ...e, personalReminders: personalReminders.length > 0 ? personalReminders : undefined }
-          : e
-      )
-    );
+    updateEventMutation.mutate({
+      id: reminderTarget.id,
+      personal_reminders: personalReminders.length > 0 ? personalReminders : [],
+    });
     setReminderTarget(null);
   };
   const togglePersonalReminder = (key: string) => {
@@ -281,8 +256,8 @@ const CalendarPage = () => {
   };
 
   const getMonthShort = (dateStr: string) => ARABIC_MONTHS[new Date(dateStr).getMonth()];
-  const getEventIcon = (iconKey: string) => ICON_OPTIONS.find((o) => o.key === iconKey)?.label || "📅";
-  const getReminderLabel = (value?: string[]) => {
+  const getEventIcon = (iconKey: string | null) => ICON_OPTIONS.find((o) => o.key === iconKey)?.label || "📅";
+  const getReminderLabel = (value?: string[] | null) => {
     if (!value || value.length === 0) return null;
     return value.map((item) => REMINDER_OPTIONS.find((o) => o.key === item)?.label || item).join(" • ");
   };
@@ -374,8 +349,8 @@ const CalendarPage = () => {
             const offset = swipeOffset[ev.id] || 0;
             const d = daysUntil(ev.date);
             const dayNum = new Date(ev.date).getDate();
-            const reminderText = getReminderLabel(ev.reminderBefore);
-            const hasPersonalReminder = ev.personalReminders && ev.personalReminders.length > 0;
+            const reminderText = getReminderLabel(ev.reminder_before);
+            const hasPersonalReminder = ev.personal_reminders && ev.personal_reminders.length > 0;
 
             return (
               <div key={ev.id} className="relative overflow-hidden rounded-2xl select-none">
@@ -461,8 +436,8 @@ const CalendarPage = () => {
               <p className="text-center text-sm text-muted-foreground py-4">لا توجد مناسبات في هذا اليوم</p>
             )}
             {selectedDay && eventsForDay(selectedDay).map((ev) => {
-              const rt = getReminderLabel(ev.reminderBefore);
-              const hasP = ev.personalReminders && ev.personalReminders.length > 0;
+              const rt = getReminderLabel(ev.reminder_before);
+              const hasP = ev.personal_reminders && ev.personal_reminders.length > 0;
               const drawerKey = `drawer_${ev.id}`;
               const offset = swipeOffset[drawerKey] || 0;
               return (
@@ -545,7 +520,7 @@ const CalendarPage = () => {
               <label className="text-xs font-semibold text-muted-foreground block">التذكير</label>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
-                  onClick={() => setNewEvent((p) => ({ ...p, hasReminder: false, reminderBefore: [] }))}
+                  onClick={() => setNewEvent((p) => ({ ...p, hasReminder: false, reminder_before: [] }))}
                   className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${!newEvent.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
                   <BellOff size={16} />
                   بدون تذكير
@@ -563,7 +538,7 @@ const CalendarPage = () => {
                   {REMINDER_OPTIONS.map((opt) => (
                     <label key={opt.key} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 cursor-pointer hover:bg-muted/40">
                       <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                      <Checkbox checked={newEvent.reminderBefore.includes(opt.key)}
+                      <Checkbox checked={newEvent.reminder_before.includes(opt.key)}
                         onCheckedChange={() => toggleReminderOption(opt.key, setNewEvent)} />
                     </label>
                   ))}
@@ -571,7 +546,7 @@ const CalendarPage = () => {
               )}
             </div>
             <button onClick={handleAddEvent}
-              disabled={newEvent.hasReminder && newEvent.reminderBefore.length === 0}
+              disabled={newEvent.hasReminder && newEvent.reminder_before.length === 0}
               className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-sm active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed">
               إضافة المناسبة
             </button>
@@ -628,7 +603,7 @@ const CalendarPage = () => {
               <label className="text-xs font-semibold text-muted-foreground block">التذكير</label>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
-                  onClick={() => setEditForm((p) => ({ ...p, hasReminder: false, reminderBefore: [] }))}
+                  onClick={() => setEditForm((p) => ({ ...p, hasReminder: false, reminder_before: [] }))}
                   className={`rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${!editForm.hasReminder ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-foreground"}`}>
                   بدون تذكير
                 </button>
@@ -643,7 +618,7 @@ const CalendarPage = () => {
                   {REMINDER_OPTIONS.map((opt) => (
                     <label key={opt.key} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2 cursor-pointer hover:bg-muted/40">
                       <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                      <Checkbox checked={editForm.reminderBefore.includes(opt.key)}
+                      <Checkbox checked={editForm.reminder_before.includes(opt.key)}
                         onCheckedChange={() => toggleReminderOption(opt.key, setEditForm)} />
                     </label>
                   ))}

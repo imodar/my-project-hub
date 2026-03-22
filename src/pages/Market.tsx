@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useMarketLists } from "@/hooks/useMarketLists";
 import { createPortal } from "react-dom";
 import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -55,49 +56,41 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; emoji: string 
 const CATEGORIES = ["الكل", ...Object.keys(CATEGORY_COLORS)];
 const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
-const initialLists: MarketList[] = [
-  {
-    id: "1",
-    name: "قائمة التسوق",
-    type: "family",
-    isDefault: true,
-    lastUpdatedBy: "أم فهد",
-    lastUpdatedAt: "منذ ساعة",
-    items: [
-      { id: "i1", name: "حليب نادك 1 لتر", category: "ألبان", quantity: "3", addedBy: "أم فهد", checked: false },
-      { id: "i2", name: "خيار وطماطم", category: "خضار وفاكهة", quantity: "كيلو من كل", addedBy: "أبو فهد", checked: false },
-      { id: "i3", name: "دجاج كامل", category: "لحوم", quantity: "قطعتان", addedBy: "أم فهد", checked: false },
-      { id: "i4", name: "زيت زيتون", category: "مؤونة", quantity: "750 مل", addedBy: "أبو فهد", checked: false },
-      { id: "i5", name: "خبز تميس", category: "مخبوزات", quantity: "3 أرغفة", addedBy: "أم فهد", checked: true },
-      { id: "i6", name: "عصير برتقال", category: "مشروبات", quantity: "7 لتر", addedBy: "أم فهد", checked: true },
-    ],
-  },
-  {
-    id: "2",
-    name: "أغراضي الشخصية",
-    type: "personal",
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "أمس",
-    items: [
-      { id: "i7", name: "شامبو", category: "أخرى", quantity: "1", addedBy: "أبو فهد", checked: false },
-      { id: "i8", name: "معجون أسنان", category: "أخرى", quantity: "2", addedBy: "أبو فهد", checked: false },
-    ],
-  },
-];
-
 const SWIPE_WIDTH = 140;
 
 const Market = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [lists, setLists] = useState<MarketList[]>(() =>
-    featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists
-  );
-  const [activeListId, setActiveListId] = useState(() => {
-    const filtered = featureAccess.isStaff ? initialLists.filter(l => l.type !== "family") : initialLists;
-    return filtered[0]?.id || "";
-  });
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useMarketLists();
+
+  const lists: MarketList[] = useMemo(() => {
+    const mapped = (dbLists || []).map((l: any) => ({
+      id: l.id,
+      name: l.name,
+      type: (l.type || "family") as "family" | "personal" | "shared",
+      sharedWith: l.shared_with || [],
+      lastUpdatedBy: "",
+      lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
+      items: (l.market_items || []).map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        category: i.category || "أخرى",
+        quantity: i.quantity || "1",
+        addedBy: "",
+        checked: i.checked,
+      })),
+    }));
+    return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
+  }, [dbLists, featureAccess.isStaff]);
+  const [activeListId, setActiveListId] = useState("");
   const [activeCategory, setActiveCategory] = useState("الكل");
+
+  // Auto-select first list when data loads
+  useEffect(() => {
+    if (lists.length > 0 && (!activeListId || !lists.find(l => l.id === activeListId))) {
+      setActiveListId(lists[0].id);
+    }
+  }, [lists, activeListId]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
@@ -177,28 +170,17 @@ const Market = () => {
 
   const toggleItem = useCallback((itemId: string) => {
     haptic.light();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: list.items.map((item) => item.id === itemId ? { ...item, checked: !item.checked } : item) }
-          : list
-      )
-    );
-  }, [activeListId]);
+    const item = activeList?.items.find(i => i.id === itemId);
+    if (item) updateItemMutation.mutate({ id: itemId, checked: !item.checked });
+  }, [activeList, updateItemMutation]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: list.items.filter((i) => i.id !== deleteTarget.id) }
-          : list
-      )
-    );
+    deleteItemMutation.mutate(deleteTarget.id);
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
-  }, [activeListId, deleteTarget]);
+  }, [deleteTarget, deleteItemMutation]);
 
   const openEdit = useCallback((item: MarketItem) => {
     setEditTarget(item);
@@ -211,92 +193,46 @@ const Market = () => {
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? {
-              ...list,
-              items: list.items.map((item) =>
-                item.id === editTarget.id
-                  ? { ...item, name: editName.trim(), quantity: editQuantity.trim() || "1", category: editCategory }
-                  : item
-              ),
-            }
-          : list
-      )
-    );
+    updateItemMutation.mutate({ id: editTarget.id, name: editName.trim(), quantity: editQuantity.trim() || "1", category: editCategory });
     setEditTarget(null);
-  }, [activeListId, editTarget, editName, editQuantity, editCategory]);
+  }, [editTarget, editName, editQuantity, editCategory, updateItemMutation]);
 
   const addItem = useCallback(() => {
-    if (!newItemName.trim()) return;
+    if (!newItemName.trim() || !activeListId) return;
     haptic.medium();
-    const newItem: MarketItem = {
-      id: crypto.randomUUID(),
-      name: newItemName.trim(),
-      category: newItemCategory,
-      quantity: newItemQuantity.trim() || "1",
-      addedBy: "أنت",
-      checked: false,
-    };
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, items: [...list.items, newItem], lastUpdatedBy: "أنت", lastUpdatedAt: "الآن" }
-          : list
-      )
-    );
+    addItemMutation.mutate({ list_id: activeListId, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || "1" });
     setNewItemName("");
     setNewItemQuantity("");
     setNewItemCategory("أخرى");
     setShowAddItem(false);
-  }, [activeListId, newItemName, newItemCategory, newItemQuantity]);
+  }, [activeListId, newItemName, newItemCategory, newItemQuantity, addItemMutation]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    const newList: MarketList = {
-      id: crypto.randomUUID(),
+    createListMutation.mutate({
       name: newListName.trim(),
       type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-      sharedWith: newListType === "family" ? newListShareMembers : undefined,
-      useDefaultCategories: newListType === "personal" ? newListUseCategories : true,
-      lastUpdatedBy: "أنت",
-      lastUpdatedAt: "الآن",
-      items: [],
-    };
-    setLists((prev) => [...prev, newList]);
-    setActiveListId(newList.id);
+      shared_with: newListType === "family" ? newListShareMembers : [],
+    });
     setNewListName("");
     setNewListShareMembers([]);
     setNewListUseCategories(false);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, newListUseCategories]);
+  }, [newListName, newListType, newListShareMembers, createListMutation]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
-    setLists((prev) => {
-      const updated = prev.filter((l) => l.id !== listId);
-      if (activeListId === listId && updated.length > 0) {
-        setActiveListId(updated[0].id);
-      }
-      return updated;
-    });
-  }, [activeListId]);
+    deleteListMutation.mutate(listId);
+  }, [deleteListMutation]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, type: "shared", sharedWith: selectedShareMembers }
-          : list
-      )
-    );
+    // TODO: add updateList mutation for sharing
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [activeListId, selectedShareMembers]);
+  }, [selectedShareMembers]);
 
   const getListIcon = (type: MarketList["type"]) => {
     switch (type) {
