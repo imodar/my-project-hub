@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Sparkles, Trophy, RotateCcw, Lock, Users } from "lucide-react";
@@ -8,9 +8,10 @@ import { toast } from "@/hooks/use-toast";
 import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
 import {
   categories, allItems, TOTAL_ITEMS,
-  type MonthData, type ChildProfile,
-  loadData, saveData, getMonthLabel, loadChildren,
+  type ChildProfile,
+  getMonthLabel, loadChildren,
 } from "@/components/kids-worship/worshipData";
+import { useKidsWorshipData } from "@/hooks/useKidsWorshipData";
 
 const KidsWorship = () => {
   const navigate = useNavigate();
@@ -18,36 +19,28 @@ const KidsWorship = () => {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   
-  // Load children and default to first child
   const children = loadChildren();
   const [activeChildId, setActiveChildId] = useState(children[0]?.id || "default");
   
-  const [data, setData] = useState<MonthData>(() => loadData(activeChildId, now.getFullYear(), now.getMonth()));
+  const { data, isLoading, saveDayData, resetDay } = useKidsWorshipData(activeChildId, selectedYear, selectedMonth);
   const [selectedDay, setSelectedDay] = useState(now.getDate());
   const [showConfetti, setShowConfetti] = useState(false);
 
   const totalDays = new Date(selectedYear, selectedMonth + 1, 0).getDate();
   const isCurrentMonth = now.getFullYear() === selectedYear && now.getMonth() === selectedMonth;
   const isToday = isCurrentMonth && selectedDay === now.getDate();
-  
-  // Child can only edit today's data
   const canEdit = isToday;
-
-  useEffect(() => {
-    saveData(activeChildId, selectedYear, selectedMonth, data);
-  }, [data, activeChildId, selectedYear, selectedMonth]);
 
   const handleMonthChange = useCallback((year: number, month: number) => {
     setSelectedYear(year);
     setSelectedMonth(month);
-    setData(loadData(activeChildId, year, month));
     const n = new Date();
     if (n.getFullYear() === year && n.getMonth() === month) {
       setSelectedDay(n.getDate());
     } else {
       setSelectedDay(1);
     }
-  }, [activeChildId]);
+  }, []);
 
   const getDayStatus = useCallback((day: number): "full" | "partial" | "empty" => {
     const dd = data[day] || {};
@@ -65,8 +58,7 @@ const KidsWorship = () => {
       return;
     }
     const newDayData = { ...dayData, [itemId]: !dayData[itemId] };
-    const newData = { ...data, [selectedDay]: newDayData };
-    setData(newData);
+    saveDayData.mutate({ day: selectedDay, items: newDayData });
 
     const doneCount = Object.values(newDayData).filter(Boolean).length;
     if (doneCount === TOTAL_ITEMS && !dayData[itemId]) {
@@ -90,14 +82,12 @@ const KidsWorship = () => {
 
   const incompleteItems = allItems.filter((item) => !dayData[item.id]);
 
-  const resetDay = () => {
+  const handleResetDay = () => {
     if (!canEdit) {
       toast({ title: "⏰ لا يمكن التعديل على أيام سابقة" });
       return;
     }
-    const newData = { ...data };
-    delete newData[selectedDay];
-    setData(newData);
+    resetDay.mutate(selectedDay);
     toast({ title: "تم إعادة تعيين اليوم" });
   };
 
@@ -144,22 +134,19 @@ const KidsWorship = () => {
           },
           {
             icon: <RotateCcw size={18} className="text-white" />,
-            onClick: resetDay,
+            onClick: handleResetDay,
           },
         ]}
       />
 
-      {/* Child selector (if multiple children) */}
+      {/* Child selector */}
       {children.length > 1 && (
         <div className="px-4 -mt-1 mb-2">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
             {children.map((child) => (
               <button
                 key={child.id}
-                onClick={() => {
-                  setActiveChildId(child.id);
-                  setData(loadData(child.id, selectedYear, selectedMonth));
-                }}
+                onClick={() => setActiveChildId(child.id)}
                 className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${
                   child.id === activeChildId
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -173,7 +160,7 @@ const KidsWorship = () => {
         </div>
       )}
 
-      {/* Stars & Progress Summary */}
+      {/* Stars & Progress */}
       <div className="px-4 mt-1">
         <div className="bg-white rounded-2xl p-4 shadow-md border border-purple-100/50">
           <div className="flex items-center justify-between mb-3">
@@ -184,9 +171,7 @@ const KidsWorship = () => {
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              {!canEdit && (
-                <Lock size={14} className="text-muted-foreground" />
-              )}
+              {!canEdit && <Lock size={14} className="text-muted-foreground" />}
               <Sparkles size={16} style={{ color: "hsl(270 55% 50%)" }} />
               <span className="text-xs font-semibold text-muted-foreground">
                 {doneCount}/{TOTAL_ITEMS}
@@ -244,7 +229,7 @@ const KidsWorship = () => {
         />
       </div>
 
-      {/* Worship Grid by Category */}
+      {/* Worship Grid */}
       <div className="px-4 mt-5 space-y-4">
         {categories.map((cat) => (
           <motion.div
@@ -310,7 +295,7 @@ const KidsWorship = () => {
         ))}
       </div>
 
-      {/* Incomplete Items Motivation */}
+      {/* Incomplete Items */}
       {canEdit && incompleteItems.length > 0 && incompleteItems.length < TOTAL_ITEMS && (
         <div className="px-4 mt-5">
           <div className="rounded-2xl p-4 border" style={{ background: "hsl(35 80% 96%)", borderColor: "hsl(35 60% 85%)" }}>
