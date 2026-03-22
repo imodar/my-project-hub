@@ -250,8 +250,8 @@ const AmountEditor = ({
 const Debts = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"given" | "taken">("given");
-  const [givenDebts, setGivenDebts] = useState<Debt[]>(initialGiven);
-  const [takenDebts, setTakenDebts] = useState<Debt[]>(initialTaken);
+  const [givenDebts, setGivenDebts] = useState<Debt[]>([]);
+  const [takenDebts, setTakenDebts] = useState<Debt[]>([]);
   const [expandedDebt, setExpandedDebt] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addFormType, setAddFormType] = useState<"given" | "taken">("given");
