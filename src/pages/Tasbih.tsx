@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, RotateCcw, MoreVertical, BarChart3, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -9,56 +9,17 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-
-interface TasbihSession {
-  id: string;
-  count: number;
-  date: string;
-}
-
-const STATS_KEY = "tasbih_stats";
-
-const loadStats = (): TasbihSession[] => {
-  try {
-    const stored = localStorage.getItem(STATS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveStats = (sessions: TasbihSession[]) => {
-  localStorage.setItem(STATS_KEY, JSON.stringify(sessions));
-};
+import { useTasbihSessions } from "@/hooks/useTasbihSessions";
 
 const Tasbih = () => {
   const navigate = useNavigate();
   const [count, setCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
-  const [sessions, setSessions] = useState<TasbihSession[]>(loadStats);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
 
-  // Save current session on reset
-  const saveCurrentSession = useCallback(() => {
-    if (count > 0) {
-      const newSession: TasbihSession = {
-        id: Date.now().toString(),
-        count,
-        date: new Date().toLocaleString("ar-SA", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      const updated = [newSession, ...sessions];
-      setSessions(updated);
-      saveStats(updated);
-    }
-  }, [count, sessions]);
+  const { sessions, isLoading, saveSession, clearAll } = useTasbihSessions();
 
   const handleTap = useCallback(() => {
     setCount((prev) => prev + 1);
@@ -81,16 +42,31 @@ const Tasbih = () => {
   }, [soundEnabled, vibrationEnabled]);
 
   const handleReset = () => {
-    saveCurrentSession();
+    if (count > 0) {
+      saveSession.mutate(count);
+    }
     setCount(0);
   };
 
-  const clearAllStats = () => {
-    setSessions([]);
-    localStorage.removeItem(STATS_KEY);
+  const handleClearAll = () => {
+    clearAll.mutate();
   };
 
   const totalAllTime = sessions.reduce((sum, s) => sum + s.count, 0) + count;
+
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString("ar-SA", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return iso;
+    }
+  };
 
   return (
     <div
@@ -102,7 +78,6 @@ const Tasbih = () => {
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 relative z-10">
-        {/* Back button - RIGHT side (RTL) */}
         <button
           className="flex items-center gap-2 px-3 py-2 rounded-2xl"
           style={{ background: "hsla(0,0%,0%,0.05)" }}
@@ -115,7 +90,6 @@ const Tasbih = () => {
           <ChevronRight size={18} className="text-foreground" />
         </button>
 
-        {/* Menu + Stats - LEFT side (RTL) */}
         <div className="flex items-center gap-2">
           {/* Stats button */}
           <Drawer open={statsOpen} onOpenChange={setStatsOpen}>
@@ -157,18 +131,23 @@ const Tasbih = () => {
                   </div>
                 )}
 
+                {/* Loading */}
+                {isLoading && (
+                  <p className="text-center text-sm text-muted-foreground py-4">جاري التحميل...</p>
+                )}
+
                 {/* Past sessions */}
                 {sessions.length > 0 ? (
                   <div className="space-y-2">
                     {sessions.map((session) => (
                       <div key={session.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                        <span className="text-xs text-muted-foreground">{session.date}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(session.created_at)}</span>
                         <span className="text-sm font-bold text-foreground">{session.count}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  !count && (
+                  !count && !isLoading && (
                     <p className="text-center text-sm text-muted-foreground py-8">
                       لا توجد إحصائيات بعد
                     </p>
@@ -179,7 +158,7 @@ const Tasbih = () => {
                 {sessions.length > 0 && (
                   <button
                     className="w-full mt-4 flex items-center justify-center gap-2 p-3 rounded-xl text-destructive hover:bg-destructive/10 transition-colors"
-                    onClick={clearAllStats}
+                    onClick={handleClearAll}
                   >
                     <Trash2 size={16} />
                     <span className="text-sm font-semibold">مسح كافة الإحصائيات</span>
