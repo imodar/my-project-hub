@@ -267,6 +267,53 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          created_at: string
+          encrypted_text: string
+          family_id: string
+          id: string
+          iv: string
+          mention_user_id: string | null
+          pinned: boolean
+          reactions: Json | null
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_text: string
+          family_id: string
+          id?: string
+          iv: string
+          mention_user_id?: string | null
+          pinned?: boolean
+          reactions?: Json | null
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_text?: string
+          family_id?: string
+          id?: string
+          iv?: string
+          mention_user_id?: string | null
+          pinned?: boolean
+          reactions?: Json | null
+          sender_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consent_log: {
         Row: {
           accepted: boolean
@@ -558,6 +605,38 @@ export type Database = {
           },
         ]
       }
+      emergency_contacts: {
+        Row: {
+          created_by: string
+          family_id: string
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          created_by: string
+          family_id: string
+          id?: string
+          name: string
+          phone: string
+        }
+        Update: {
+          created_by?: string
+          family_id?: string
+          id?: string
+          name?: string
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_contacts_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       families: {
         Row: {
           created_at: string
@@ -737,6 +816,54 @@ export type Database = {
           },
         ]
       }
+      islamic_reminder_prefs: {
+        Row: {
+          enabled: boolean
+          id: string
+          reminder_id: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: string
+          reminder_id: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          reminder_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kids_worship_data: {
+        Row: {
+          child_id: string
+          day: number
+          id: string
+          items: Json | null
+          month: number
+          year: number
+        }
+        Insert: {
+          child_id: string
+          day: number
+          id?: string
+          items?: Json | null
+          month: number
+          year: number
+        }
+        Update: {
+          child_id?: string
+          day?: number
+          id?: string
+          items?: Json | null
+          month?: number
+          year?: number
+        }
+        Relationships: []
+      }
       market_items: {
         Row: {
           added_by: string | null
@@ -815,6 +942,112 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "market_lists_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medication_logs: {
+        Row: {
+          created_at: string
+          id: string
+          medication_id: string
+          notes: string | null
+          skipped: boolean
+          taken_at: string
+          taken_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          medication_id: string
+          notes?: string | null
+          skipped?: boolean
+          taken_at?: string
+          taken_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          medication_id?: string
+          notes?: string | null
+          skipped?: boolean
+          taken_at?: string
+          taken_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_logs_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          color: string | null
+          created_at: string
+          dosage: string | null
+          end_date: string | null
+          family_id: string
+          frequency_type: string | null
+          frequency_value: number | null
+          id: string
+          member_id: string | null
+          member_name: string | null
+          name: string
+          notes: string | null
+          reminder_enabled: boolean | null
+          selected_days: number[] | null
+          specific_times: string[] | null
+          start_date: string | null
+          times_per_day: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          dosage?: string | null
+          end_date?: string | null
+          family_id: string
+          frequency_type?: string | null
+          frequency_value?: number | null
+          id?: string
+          member_id?: string | null
+          member_name?: string | null
+          name: string
+          notes?: string | null
+          reminder_enabled?: boolean | null
+          selected_days?: number[] | null
+          specific_times?: string[] | null
+          start_date?: string | null
+          times_per_day?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          dosage?: string | null
+          end_date?: string | null
+          family_id?: string
+          frequency_type?: string | null
+          frequency_value?: number | null
+          id?: string
+          member_id?: string | null
+          member_name?: string | null
+          name?: string
+          notes?: string | null
+          reminder_enabled?: boolean | null
+          selected_days?: number[] | null
+          specific_times?: string[] | null
+          start_date?: string | null
+          times_per_day?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medications_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
@@ -978,6 +1211,33 @@ export type Database = {
           },
         ]
       }
+      prayer_logs: {
+        Row: {
+          child_id: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          prayers: Json | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          date: string
+          id?: string
+          notes?: string | null
+          prayers?: Json | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          prayers?: Json | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1017,6 +1277,27 @@ export type Database = {
           subscription_expires_at?: string | null
           subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tasbih_sessions: {
+        Row: {
+          count: number
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1415,6 +1696,176 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vaccination_children: {
+        Row: {
+          birth_date: string | null
+          completed_vaccines: Json | null
+          created_at: string
+          family_id: string
+          gender: string | null
+          id: string
+          name: string
+          reminder_settings: Json | null
+        }
+        Insert: {
+          birth_date?: string | null
+          completed_vaccines?: Json | null
+          created_at?: string
+          family_id: string
+          gender?: string | null
+          id?: string
+          name: string
+          reminder_settings?: Json | null
+        }
+        Update: {
+          birth_date?: string | null
+          completed_vaccines?: Json | null
+          created_at?: string
+          family_id?: string
+          gender?: string | null
+          id?: string
+          name?: string
+          reminder_settings?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccination_children_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vaccine_notes: {
+        Row: {
+          child_id: string
+          created_at: string
+          id: string
+          note: string
+          vaccine_id: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          id?: string
+          note: string
+          vaccine_id: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          vaccine_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccine_notes_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "vaccination_children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_maintenance: {
+        Row: {
+          date: string | null
+          id: string
+          label: string | null
+          mileage_at_service: number | null
+          next_date: string | null
+          next_mileage: number | null
+          notes: string | null
+          type: string
+          vehicle_id: string
+        }
+        Insert: {
+          date?: string | null
+          id?: string
+          label?: string | null
+          mileage_at_service?: number | null
+          next_date?: string | null
+          next_mileage?: number | null
+          notes?: string | null
+          type: string
+          vehicle_id: string
+        }
+        Update: {
+          date?: string | null
+          id?: string
+          label?: string | null
+          mileage_at_service?: number | null
+          next_date?: string | null
+          next_mileage?: number | null
+          notes?: string | null
+          type?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_maintenance_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string
+          family_id: string
+          id: string
+          manufacturer: string | null
+          mileage: number | null
+          mileage_unit: string | null
+          model: string | null
+          plate_number: string | null
+          shared_with: string[] | null
+          year: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by: string
+          family_id: string
+          id?: string
+          manufacturer?: string | null
+          mileage?: number | null
+          mileage_unit?: string | null
+          model?: string | null
+          plate_number?: string | null
+          shared_with?: string[] | null
+          year?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          family_id?: string
+          id?: string
+          manufacturer?: string | null
+          mileage?: number | null
+          mileage_unit?: string | null
+          model?: string | null
+          plate_number?: string | null
+          shared_with?: string[] | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       will_open_requests: {
         Row: {
