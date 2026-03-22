@@ -95,6 +95,7 @@ const AnimatedRoutes = () => {
         <Route path="/vaccinations" element={<AuthGuard><Vaccinations /></AuthGuard>} />
         <Route path="/medications" element={<AuthGuard><Medications /></AuthGuard>} />
         <Route path="/islamic-reminders" element={<AuthGuard><IslamicReminders /></AuthGuard>} />
+        <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
