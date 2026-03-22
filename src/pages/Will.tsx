@@ -35,11 +35,11 @@ interface FamilyMember {
 }
 
 const DEFAULT_SECTIONS: WillSection[] = [
-  { id: "property", icon: "🏠", label: "توزيع الممتلكات", completed: true, content: "الشقة في الرياض لزوجتي، والأرض في جدة توزع بالتساوي بين الأبناء حسب الشرع." },
-  { id: "messages", icon: "💌", label: "رسائل لأفراد العائلة", completed: true, content: "رسالة لزوجتي ورسالة لكل من أبنائي." },
-  { id: "guardian", icon: "👨‍👧‍👦", label: "الوصي على الأطفال", completed: true, content: "أخي محمد هو الوصي على أطفالي في حال وفاتي." },
+  { id: "property", icon: "🏠", label: "توزيع الممتلكات", completed: false, content: "" },
+  { id: "messages", icon: "💌", label: "رسائل لأفراد العائلة", completed: false, content: "" },
+  { id: "guardian", icon: "👨‍👧‍👦", label: "الوصي على الأطفال", completed: false, content: "" },
   { id: "charity", icon: "🕌", label: "الوصايا الخيرية", completed: false, content: "" },
-  { id: "funeral", icon: "🌿", label: "تعليمات الجنازة", completed: true, content: "أرغب بالدفن في مقبرة البقيع إن أمكن، والصلاة عليّ في المسجد الحرام." },
+  { id: "funeral", icon: "🌿", label: "تعليمات الجنازة", completed: false, content: "" },
 ];
 
 // Family members are now fetched from DB inside the component
