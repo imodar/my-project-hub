@@ -164,39 +164,83 @@ function SwipeableCard({ onEdit, onDelete, children }: {
 
 const Trips = () => {
   const navigate = useNavigate();
-  const [trips, setTripsState] = useState<Trip[]>([]);
+  const {
+    trips: dbTrips, isLoading: tripsLoading,
+    createTrip, updateTrip, deleteTrip: deleteTripMut,
+    addDayPlan, addActivity, updateActivity,
+    addExpense, deleteExpense,
+    addPackingItem, updatePackingItem,
+    addSuggestion, updateSuggestion,
+    addDocument, deleteDocument,
+  } = useTripsHook();
 
-  // Wrapper to persist trips and sync budgets
-  const setTrips: typeof setTripsState = useCallback((updater) => {
-    setTripsState((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveTripsToStorage(next);
-      return next;
-    });
-  }, []);
-  // Save initial trips to localStorage and sync budgets on mount
-  useEffect(() => {
-    saveTripsToStorage(trips);
-    trips.forEach(t => {
-      if (t.expenses.length > 0 || t.budget > 0) {
-        syncTripToBudget({ id: t.id, name: t.name, budget: t.budget, expenses: t.expenses });
-      }
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Map DB trips to UI format
+  const trips: Trip[] = useMemo(() => {
+    return dbTrips.map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      destination: t.destination || "",
+      startDate: t.start_date || "",
+      endDate: t.end_date || "",
+      participants: [],
+      budget: t.budget || 0,
+      status: t.status || "planning",
+      type: "family" as const,
+      days: (t.trip_day_plans || []).map((d: any) => ({
+        id: d.id,
+        dayNumber: d.day_number,
+        city: d.city || "",
+        activities: (d.trip_activities || []).map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          time: a.time || "",
+          location: a.location || "",
+          cost: a.cost || 0,
+          completed: a.completed || false,
+        })),
+      })),
+      suggestions: (t.trip_suggestions || []).map((s: any) => ({
+        id: s.id,
+        placeName: s.place_name,
+        type: s.type || "",
+        reason: s.reason || "",
+        location: s.location || "",
+        suggestedBy: s.suggested_by || "",
+        status: s.status || "pending",
+      })),
+      packingList: (t.trip_packing || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        packed: p.packed || false,
+      })),
+      expenses: (t.trip_expenses || []).map((e: any) => ({
+        id: e.id,
+        name: e.name,
+        amount: e.amount || 0,
+      })),
+      documents: (t.trip_documents || []).map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        type: d.type || "other",
+        fileUrl: d.file_url || "",
+        fileName: d.file_name || "",
+        addedAt: d.added_at?.split("T")[0] || "",
+        notes: d.notes,
+      })),
+    }));
+  }, [dbTrips]);
+
+  // Local state wrappers for UI (selected trip sync)
+  const [tripsLocal, setTripsLocal] = useState<Trip[]>([]);
+  useEffect(() => { setTripsLocal(trips); }, [trips]);
+  const setTrips = setTripsLocal;
 
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album" | "documents">("itinerary");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
-  // Load family members
-  const familyMembers: { id: string; name: string; role: string }[] = (() => {
-    try {
-      const saved = localStorage.getItem("family_members");
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  })();
+  const familyMembers: { id: string; name: string; role: string }[] = [];
 
   // Drawers
   const [newExpenseDrawer, setNewExpenseDrawer] = useState(false);
