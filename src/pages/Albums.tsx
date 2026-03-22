@@ -140,7 +140,7 @@ const PhotoThumb = ({ photo, size = "md", onClick }: { photo: Photo; size?: "sm"
 const Albums = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [albums, setAlbums] = useState<Album[]>(INITIAL_ALBUMS);
+  const [albums, setAlbums] = useState<Album[]>([]);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
