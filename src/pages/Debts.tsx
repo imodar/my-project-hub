@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import PageHeader from "@/components/PageHeader";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { useDebts } from "@/hooks/useDebts";
 
 type PaymentType = "cash" | "item" | "installment";
 
@@ -58,68 +59,7 @@ interface Debt {
   postponements: Postponement[];
 }
 
-const initialGiven: Debt[] = [
-  {
-    id: "1",
-    personName: "خالد العمري",
-    amounts: [{ amount: 5000, currency: "SAR" }],
-    date: "2025-01-15",
-    dueDate: "2025-03-28",
-    note: "قرض شخصي",
-    payments: [{ id: "p1", amounts: [{ amount: 3000, currency: "SAR" }], date: "2025-02-20", type: "cash" }],
-    isFullyPaid: false, isArchived: false, hasReminder: false,
-    postponements: [],
-  },
-  {
-    id: "2",
-    personName: "محمد الغامدي",
-    amounts: [{ amount: 2500, currency: "SAR" }],
-    date: "2025-02-01",
-    dueDate: "2025-03-10",
-    note: "رجع عسل – قيمة 800 ر",
-    payments: [{ id: "p2", amounts: [{ amount: 800, currency: "SAR" }], date: "2025-03-01", type: "item", itemDescription: "عسل" }],
-    isFullyPaid: false, isArchived: false, hasReminder: false,
-    postponements: [],
-  },
-  {
-    id: "3",
-    personName: "عبدالله الشمري",
-    amounts: [{ amount: 1000, currency: "SAR" }, { amount: 100, currency: "USD" }],
-    date: "2025-01-10",
-    dueDate: "2025-03-15",
-    note: "مصاريف مشتركة",
-    payments: [
-      { id: "p3a", amounts: [{ amount: 1000, currency: "SAR" }], date: "2025-03-10", type: "cash" },
-      { id: "p3b", amounts: [{ amount: 100, currency: "USD" }], date: "2025-03-15", type: "cash" },
-    ],
-    isFullyPaid: true, isArchived: false, hasReminder: false,
-    postponements: [],
-  },
-];
-
-const initialTaken: Debt[] = [
-  {
-    id: "4",
-    personName: "سعد الحربي",
-    amounts: [{ amount: 3200, currency: "SAR" }],
-    date: "2025-02-10",
-    dueDate: "2025-04-15",
-    note: "سلفة شخصية",
-    payments: [{ id: "p4", amounts: [{ amount: 1200, currency: "SAR" }], date: "2025-03-05", type: "cash" }],
-    isFullyPaid: false, isArchived: false, hasReminder: false,
-    postponements: [],
-  },
-  {
-    id: "5",
-    personName: "فهد الدوسري",
-    amounts: [{ amount: 2, currency: "GOLD_OZ" }],
-    date: "2025-01-20",
-    dueDate: "2025-06-01",
-    note: "أونصتين ذهب",
-    payments: [], isFullyPaid: false, isArchived: false, hasReminder: false,
-    postponements: [],
-  },
-];
+// No more hardcoded initial data - using Supabase
 
 // Swipeable card with Edit + Delete
 const ACTION_WIDTH = 140;

@@ -1,5 +1,5 @@
 // Budget Page
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane, CalendarIcon } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
@@ -12,12 +12,12 @@ import {
 import { haptic } from "@/lib/haptics";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
-import { loadBudgets as loadBudgetsFromStorage, saveBudgets as saveBudgetsToStorage, syncBudgetToTrip, loadTrips } from "@/lib/tripBudgetSync";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { useBudgets } from "@/hooks/useBudgets";
 
 interface ExpenseItem {
   id: string;
@@ -211,42 +211,30 @@ const BudgetCard = ({ b, onSelect, remaining, spentPercent }: {
 };
 
 
-const STORAGE_KEY = "budgets_data";
-
-const loadBudgets = (): MonthBudget[] => {
-  try {
-    const d = localStorage.getItem(STORAGE_KEY);
-    return d ? JSON.parse(d) : [];
-  } catch { return []; }
-};
-
-const saveBudgets = (b: MonthBudget[]) => localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
-
-// Merge trip budgets from trips_data into budgets
-const mergeWithTripBudgets = (budgets: MonthBudget[]): MonthBudget[] => {
-  const trips = loadTrips();
-  const tripBudgets: MonthBudget[] = trips.map((trip: any) => {
-    const existing = budgets.find(b => b.tripId === trip.id);
-    return {
-      id: existing?.id || `trip-budget-${trip.id}`,
-      type: "trip" as BudgetType,
-      month: `trip-${trip.id}`,
-      label: trip.name,
-      income: trip.budget || 0,
-      expenses: (trip.expenses || []).map((e: any) => ({ id: e.id, name: e.name, amount: e.amount })),
-      sharedWith: [],
-      tripId: trip.id,
-    };
-  });
-  // Keep non-trip budgets + fresh trip budgets
-  const nonTripBudgets = budgets.filter(b => b.type !== "trip");
-  return [...nonTripBudgets, ...tripBudgets];
-};
-
 const Budget = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [budgets, setBudgets] = useState<MonthBudget[]>(() => mergeWithTripBudgets(loadBudgets()));
+  const { budgets: dbBudgets, isLoading, createBudget, updateBudget, deleteBudget: deleteBudgetMut, addExpense: addExpenseMut, updateExpense: updateExpenseMut, deleteExpense: deleteExpenseMut } = useBudgets();
+
+  // Map DB data to UI format
+  const budgets: MonthBudget[] = useMemo(() => {
+    return dbBudgets.map((b: any) => ({
+      id: b.id,
+      type: b.type as BudgetType,
+      month: b.month || "",
+      label: b.label,
+      income: Number(b.income) || 0,
+      expenses: (b.budget_expenses || []).map((e: any) => ({
+        id: e.id,
+        name: e.name,
+        amount: Number(e.amount),
+        date: e.date,
+      })),
+      sharedWith: b.shared_with || [],
+      tripId: b.trip_id,
+    })).sort((a: MonthBudget, b: MonthBudget) => (a.month || "").localeCompare(b.month || ""));
+  }, [dbBudgets]);
+
   const [selectedBudget, setSelectedBudget] = useState<MonthBudget | null>(null);
   const [showAddMonth, setShowAddMonth] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -272,15 +260,11 @@ const Budget = () => {
 
   const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
-  const update = useCallback((newBudgets: MonthBudget[]) => {
-    const sorted = [...newBudgets].sort((a, b) => a.month.localeCompare(b.month));
-    setBudgets(sorted);
-    saveBudgets(sorted);
-    // Sync trip budgets back to trips localStorage
-    sorted.filter(b => b.type === "trip" && b.tripId).forEach(b => {
-      syncBudgetToTrip(b.tripId!, b.expenses, b.income);
-    });
-  }, []);
+  // Keep selectedBudget in sync with latest data
+  const currentSelectedBudget = useMemo(() => {
+    if (!selectedBudget) return null;
+    return budgets.find(b => b.id === selectedBudget.id) || null;
+  }, [budgets, selectedBudget]);
 
   const handleAddBudget = () => {
     if (!newIncome || parseFloat(newIncome) <= 0) return;
@@ -289,27 +273,21 @@ const Budget = () => {
     if (budgetType === "month") {
       const monthStr = `${newYear}-${String(parseInt(newMonthIdx) + 1).padStart(2, "0")}`;
       if (budgets.some(b => b.month === monthStr && b.type === "month")) return;
-      const b: MonthBudget = {
-        id: Date.now().toString(),
+      createBudget.mutate({
         type: "month",
         month: monthStr,
         income: parseFloat(newIncome),
-        expenses: [],
-        sharedWith: [...shareNames],
-      };
-      update([...budgets, b]);
+        shared_with: [...shareNames],
+      });
     } else {
       if (!projectLabel.trim()) return;
-      const b: MonthBudget = {
-        id: Date.now().toString(),
+      createBudget.mutate({
         type: "project",
         month: `project-${Date.now()}`,
         label: projectLabel.trim(),
         income: parseFloat(newIncome),
-        expenses: [],
-        sharedWith: [...shareNames],
-      };
-      update([...budgets, b]);
+        shared_with: [...shareNames],
+      });
     }
 
     setShowAddMonth(false);
@@ -319,20 +297,14 @@ const Budget = () => {
   };
 
   const handleAddExpense = () => {
-    if (!selectedBudget || !expenseName.trim() || !expenseAmount || parseFloat(expenseAmount) <= 0) return;
+    if (!currentSelectedBudget || !expenseName.trim() || !expenseAmount || parseFloat(expenseAmount) <= 0) return;
     haptic.light();
-    const expense: ExpenseItem = {
-      id: Date.now().toString(),
+    addExpenseMut.mutate({
+      budget_id: currentSelectedBudget.id,
       name: expenseName.trim(),
       amount: parseFloat(expenseAmount),
       date: expenseDate ? expenseDate.toISOString().split("T")[0] : undefined,
-    };
-    const updated = budgets.map(b =>
-      b.id === selectedBudget.id ? { ...b, expenses: [...b.expenses, expense] } : b
-    );
-    update(updated);
-    const updatedBudget = updated.find(b => b.id === selectedBudget.id)!;
-    setSelectedBudget(updatedBudget);
+    });
     setShowAddExpense(false);
     setExpenseName("");
     setExpenseAmount("");
@@ -340,35 +312,23 @@ const Budget = () => {
   };
 
   const handleEditIncome = () => {
-    if (!selectedBudget || !editIncomeVal || parseFloat(editIncomeVal) <= 0) return;
+    if (!currentSelectedBudget || !editIncomeVal || parseFloat(editIncomeVal) <= 0) return;
     haptic.light();
-    const updated = budgets.map(b =>
-      b.id === selectedBudget.id ? { ...b, income: parseFloat(editIncomeVal) } : b
-    );
-    update(updated);
-    setSelectedBudget(updated.find(b => b.id === selectedBudget.id)!);
+    updateBudget.mutate({ id: currentSelectedBudget.id, income: parseFloat(editIncomeVal) });
     setShowEditIncome(false);
   };
 
   const handleDeleteExpense = () => {
     if (!showDeleteExpense) return;
     haptic.medium();
-    const updated = budgets.map(b =>
-      b.id === showDeleteExpense.budgetId
-        ? { ...b, expenses: b.expenses.filter(e => e.id !== showDeleteExpense.expenseId) }
-        : b
-    );
-    update(updated);
-    if (selectedBudget?.id === showDeleteExpense.budgetId) {
-      setSelectedBudget(updated.find(b => b.id === showDeleteExpense.budgetId)!);
-    }
+    deleteExpenseMut.mutate(showDeleteExpense.expenseId);
     setShowDeleteExpense(null);
   };
 
   const handleDeleteBudget = () => {
     if (!showDeleteBudget) return;
     haptic.medium();
-    update(budgets.filter(b => b.id !== showDeleteBudget));
+    deleteBudgetMut.mutate(showDeleteBudget);
     if (selectedBudget?.id === showDeleteBudget) setSelectedBudget(null);
     setShowDeleteBudget(null);
   };
@@ -376,34 +336,24 @@ const Budget = () => {
   const handleEditExpense = () => {
     if (!showEditExpense || !editExpenseName.trim() || !editExpenseAmount || parseFloat(editExpenseAmount) <= 0) return;
     haptic.light();
-    const updated = budgets.map(b =>
-      b.id === showEditExpense.budgetId
-        ? {
-            ...b,
-            expenses: b.expenses.map(e =>
-              e.id === showEditExpense.expense.id
-                ? { ...e, name: editExpenseName.trim(), amount: parseFloat(editExpenseAmount), date: editExpenseDate ? editExpenseDate.toISOString().split("T")[0] : e.date }
-                : e
-            ),
-          }
-        : b
-    );
-    update(updated);
-    if (selectedBudget?.id === showEditExpense.budgetId) {
-      setSelectedBudget(updated.find(b => b.id === showEditExpense.budgetId)!);
-    }
+    updateExpenseMut.mutate({
+      id: showEditExpense.expense.id,
+      name: editExpenseName.trim(),
+      amount: parseFloat(editExpenseAmount),
+      date: editExpenseDate ? editExpenseDate.toISOString().split("T")[0] : undefined,
+    });
     setShowEditExpense(null);
   };
 
   const handleEditBudgetSave = () => {
     if (!showEditBudget || !newIncome || parseFloat(newIncome) <= 0) return;
     haptic.light();
-    const updated = budgets.map(b =>
-      b.id === showEditBudget.id
-        ? { ...b, income: parseFloat(newIncome), label: b.type === "project" ? projectLabel.trim() || b.label : b.label, sharedWith: [...shareNames] }
-        : b
-    );
-    update(updated);
+    updateBudget.mutate({
+      id: showEditBudget.id,
+      income: parseFloat(newIncome),
+      label: showEditBudget.type === "project" ? projectLabel.trim() || showEditBudget.label : showEditBudget.label,
+      shared_with: [...shareNames],
+    });
     setShowEditBudget(null);
     setNewIncome("");
     setProjectLabel("");
@@ -416,11 +366,9 @@ const Budget = () => {
   const remaining = (b: MonthBudget) => b.income - totalExpenses(b);
   const spentPercent = (b: MonthBudget) => b.income > 0 ? Math.min((totalExpenses(b) / b.income) * 100, 100) : 0;
 
-  
-
   // Detail view
-  if (selectedBudget) {
-    const b = selectedBudget;
+  if (currentSelectedBudget) {
+    const b = currentSelectedBudget;
     const rem = remaining(b);
     const spent = totalExpenses(b);
     const pct = spentPercent(b);
