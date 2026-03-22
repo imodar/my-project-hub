@@ -78,7 +78,7 @@ const SWIPE_WIDTH = 140;
 
 const Places = () => {
   const navigate = useNavigate();
-  const { lists: dbLists, isLoading: placesLoading, addList: addListMut, deleteList: deleteListMut, addPlace: addPlaceMut, updatePlace: updatePlaceMut, deletePlace: deletePlaceMut } = usePlaceLists();
+  const { lists: dbLists, isLoading: placesLoading, createList: createListMut, deleteList: deleteListMut, addPlace: addPlaceMut, updatePlace: updatePlaceMut, deletePlace: deletePlaceMut } = usePlaceLists();
 
   const lists: PlaceList[] = useMemo(() => dbLists.map((l: any) => ({
     id: l.id,
