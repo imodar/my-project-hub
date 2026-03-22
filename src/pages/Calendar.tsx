@@ -166,15 +166,12 @@ const CalendarPage = () => {
     if (!newEvent.title.trim()) return;
     if (newEvent.hasReminder && newEvent.reminderBefore.length === 0) return;
     const dateStr = selectedDay || todayStr;
-    const ev: FamilyEvent = {
-      id: crypto.randomUUID(),
+    addEventMutation.mutate({
       title: newEvent.title.trim(),
       date: dateStr,
       icon: "calendar",
-      reminderBefore: newEvent.hasReminder ? newEvent.reminderBefore : undefined,
-      addedBy: "أنا",
-    };
-    setEvents((prev) => [...prev, ev]);
+      reminder_before: newEvent.hasReminder ? newEvent.reminderBefore : [],
+    });
     setNewEvent({ title: "", hasReminder: false, reminderBefore: [] });
     setShowAddDialog(false);
   };
