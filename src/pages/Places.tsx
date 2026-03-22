@@ -221,25 +221,12 @@ const Places = () => {
   const confirmVisitReview = useCallback(() => {
     if (!reviewPlace) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? {
-              ...list,
-              places: list.places.map((p) =>
-                p.id === reviewPlace.id
-                  ? {
-                      ...p,
-                      visited: true,
-                      rating: reviewRating || undefined,
-                      note: reviewWouldReturn === "yes" ? (p.note ? p.note + " · نرجعله!" : "نرجعله!") : p.note,
-                    }
-                  : p
-              ),
-            }
-          : list
-      )
-    );
+    updatePlaceMut.mutate({
+      id: reviewPlace.id,
+      visited: true,
+      rating: reviewRating || null,
+      note: reviewWouldReturn === "yes" ? (reviewPlace.note ? reviewPlace.note + " · نرجعله!" : "نرجعله!") : reviewPlace.note,
+    });
     setReviewPlace(null);
     setReviewRating(0);
     setReviewWouldReturn(null);
