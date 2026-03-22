@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
+import { usePlaceLists } from "@/hooks/usePlaceLists";
 import { createPortal } from "react-dom";
 import { Plus, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, RotateCcw, SlidersHorizontal, Baby, DollarSign, Phone, Link2, ExternalLink } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
