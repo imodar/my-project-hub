@@ -316,7 +316,7 @@ const SOSButton = () => {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-white/60">إشعارات العائلة</p>
-                <p className="text-sm text-white font-bold">{FAMILY_MEMBERS.length} أفراد تم إشعارهم</p>
+                <p className="text-sm text-white font-bold">{familyMembers.length} أفراد تم إشعارهم</p>
               </div>
               <Check size={16} className="text-green-400" />
             </div>
