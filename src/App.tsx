@@ -13,6 +13,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Auth from "./pages/Auth.tsx";
+import GetStarted from "./pages/GetStarted.tsx";
 import Index from "./pages/Index.tsx";
 import Tasbih from "./pages/Tasbih.tsx";
 import Settings from "./pages/Settings.tsx";
@@ -63,7 +64,8 @@ const AnimatedRoutes = () => {
   return (
     <PageTransition key={location.pathname}>
       <Routes location={location}>
-        {/* Public route */}
+        {/* Public routes */}
+        <Route path="/get-started" element={<GetStarted />} />
         <Route path="/auth" element={<Auth />} />
 
         {/* Protected routes */}

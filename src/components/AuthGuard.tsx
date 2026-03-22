@@ -17,7 +17,16 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!session) {
+    const hasSeenOnboarding = localStorage.getItem("onboarding_seen") === "true";
+    if (!hasSeenOnboarding) {
+      return <Navigate to="/get-started" replace />;
+    }
     return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  // Mark that user has logged in at least once (so onboarding won't show again)
+  if (!localStorage.getItem("onboarding_seen")) {
+    localStorage.setItem("onboarding_seen", "true");
   }
 
   return <>{children}</>;
