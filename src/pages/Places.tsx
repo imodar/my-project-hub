@@ -74,62 +74,6 @@ const KID_LABELS: Record<string, { label: string; emoji: string }> = {
   no: { label: "غير مناسب للأطفال", emoji: "🚫" },
 };
 
-const initialLists: PlaceList[] = [
-  {
-    id: "1",
-    name: "قائمة الأماكن",
-    type: "family",
-    isDefault: true,
-    lastUpdatedBy: "أبو فهد",
-    lastUpdatedAt: "منذ ساعة",
-    places: [
-      {
-        id: "p1",
-        name: "مطعم بيتزا ناعومي",
-        category: "مطاعم",
-        description: "قالوا البيتزا لا تُقوّت",
-        location: { lat: 24.7136, lng: 46.6753, address: "مطعم · حي الملقا" },
-        priceRange: "$$",
-        rating: 4,
-        kidFriendly: "yes",
-        addedBy: "أبو فهد",
-        suggestedBy: "أبو فهد",
-        visited: false,
-        mustVisit: true,
-        note: "اقترح: أبو فهد · \"قالوا البيتزا لا تقوّت\"",
-      },
-      {
-        id: "p2",
-        name: "كافيه ذا روف",
-        category: "كافيهات",
-        description: "",
-        location: { lat: 24.7236, lng: 46.6353, address: "كافيه · العليا" },
-        priceRange: "$$$",
-        rating: 5,
-        kidFriendly: "partial",
-        addedBy: "أم فهد",
-        suggestedBy: "أم فهد",
-        visited: false,
-        mustVisit: false,
-        note: "اقترحت: أم فهد",
-      },
-      {
-        id: "p3",
-        name: "فنتازيا",
-        category: "ترفيه",
-        description: "",
-        location: { lat: 24.7000, lng: 46.7100, address: "ترفيه · حي العارض" },
-        priceRange: "$$",
-        rating: 5,
-        kidFriendly: "yes",
-        addedBy: "أم فهد",
-        visited: true,
-        note: "ممتاز – نرجعله!",
-      },
-    ],
-  },
-];
-
 const SWIPE_WIDTH = 140;
 
 const Places = () => {
