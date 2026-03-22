@@ -838,7 +838,7 @@ const Zakat = () => {
                 key={opt.days}
                 onClick={() => {
                   if (reminderAsset) {
-                    updateAssets(assets.map(a => a.id === reminderAsset ? { ...a, reminder: true } : a));
+                    updateAssetMut.mutate({ id: reminderAsset, reminder: true });
                     haptic.medium();
                     setReminderAsset(null);
                   }
