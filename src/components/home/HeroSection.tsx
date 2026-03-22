@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import ProfileSheet from "./ProfileSheet";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import NextPrayerBox from "./NextPrayerBox";
 
 interface WeatherData {
