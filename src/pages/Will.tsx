@@ -284,7 +284,7 @@ const Will = () => {
             وصايا أفراد العائلة
           </h2>
           <div className="space-y-2">
-            {FAMILY_MEMBERS.filter(m => m.hasWill).map((member) => (
+            {familyMembers.filter(m => m.hasWill).map((member) => (
               <div
                 key={member.id}
                 className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5"
