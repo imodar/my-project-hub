@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -14,6 +14,8 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
 import { useUserRole } from "@/contexts/UserRoleContext";
+import { useAlbums } from "@/hooks/useAlbums";
+import { useTrips } from "@/hooks/useTrips";
 
 interface Photo {
   id: string;
@@ -43,57 +45,6 @@ const COVER_PALETTES = [
   "linear-gradient(135deg, hsl(0 0% 30%), hsl(0 0% 50%))",
   "linear-gradient(135deg, hsl(15 75% 45%), hsl(5 80% 55%))",
 ];
-
-// Sample placeholder photos (using gradient squares as placeholders)
-const SAMPLE_PHOTOS: Photo[] = [
-  { id: "sp1", url: "", date: "2026-03-15", caption: "لحظة عائلية" },
-  { id: "sp2", url: "", date: "2026-03-15", caption: "في الحديقة" },
-  { id: "sp3", url: "", date: "2026-03-10", caption: "عشاء عائلي" },
-  { id: "sp4", url: "", date: "2026-02-20", caption: "يوم ممطر" },
-  { id: "sp5", url: "", date: "2026-02-14", caption: "ذكريات جميلة" },
-  { id: "sp6", url: "", date: "2026-01-01", caption: "بداية السنة" },
-];
-
-const INITIAL_ALBUMS: Album[] = [
-  {
-    id: "a1",
-    name: "ذكريات عائلية",
-    coverColor: COVER_PALETTES[0],
-    photos: SAMPLE_PHOTOS.slice(0, 4),
-    createdAt: "2026-03-01",
-  },
-  {
-    id: "a2",
-    name: "رحلة إسطنبول",
-    coverColor: COVER_PALETTES[1],
-    photos: SAMPLE_PHOTOS.slice(1, 6),
-    createdAt: "2026-04-15",
-    linkedTripId: "1",
-    linkedTripName: "رحلة إسطنبول",
-  },
-  {
-    id: "a3",
-    name: "مناسبات",
-    coverColor: COVER_PALETTES[3],
-    photos: SAMPLE_PHOTOS.slice(2, 5),
-    createdAt: "2026-02-10",
-  },
-];
-
-// Get saved trips from localStorage
-function getSavedTrips(): { id: string; name: string; type: string }[] {
-  try {
-    const stored = localStorage.getItem("family-trips");
-    if (stored) {
-      const trips = JSON.parse(stored);
-      return trips.map((t: any) => ({ id: t.id, name: t.name, type: t.type }));
-    }
-  } catch {}
-  return [
-    { id: "1", name: "رحلة إسطنبول", type: "family" },
-    { id: "2", name: "استراحة نهاية الأسبوع", type: "personal" },
-  ];
-}
 
 // Check if an album's linked trip is personal (non-shared)
 function isPersonalTripAlbum(album: Album, trips: { id: string; type: string }[]): boolean {
