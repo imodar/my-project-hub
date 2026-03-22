@@ -223,14 +223,8 @@ const Market = () => {
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
-    setLists((prev) => {
-      const updated = prev.filter((l) => l.id !== listId);
-      if (activeListId === listId && updated.length > 0) {
-        setActiveListId(updated[0].id);
-      }
-      return updated;
-    });
-  }, [activeListId]);
+    deleteListMutation.mutate(listId);
+  }, [deleteListMutation]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
