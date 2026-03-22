@@ -359,46 +359,36 @@ const Vehicle = () => {
     if (!selectedCar || !maintType) return;
     const typeInfo = MAINTENANCE_TYPES.find(t => t.id === maintType);
 
-    const records: MaintenanceRecord[] = [];
-    records.push({
-      id: editMaintenanceRecord?.id || Date.now().toString(),
+    const mainRecord = {
+      vehicle_id: selectedCar.id,
       type: maintType,
       label: typeInfo?.label || maintType,
       date: maintDate,
-      mileageAtService: Number(maintMileage) || selectedCar.mileage,
-      nextMileage: Number(maintNextMileage) || 0,
-      nextDate: maintNextDate,
+      mileage_at_service: Number(maintMileage) || selectedCar.mileage,
+      next_mileage: Number(maintNextMileage) || 0,
+      next_date: maintNextDate,
       notes: maintNotes,
-    });
+    };
 
-    if (maintType === "oil_change" && oilWithFilter) {
-      records.push({
-        id: (Date.now() + 1).toString(),
-        type: "oil_filter",
-        label: "فلتر الزيت",
-        date: maintDate,
-        mileageAtService: Number(maintMileage) || selectedCar.mileage,
-        nextMileage: Number(maintNextMileage) || 0,
-        nextDate: maintNextDate,
-        notes: "تم التغيير مع الزيت",
-      });
-    }
-
-    const updatedCar = { ...selectedCar };
     if (editMaintenanceRecord) {
-      updatedCar.maintenance = updatedCar.maintenance.map(m =>
-        m.id === editMaintenanceRecord.id ? records[0] : m
-      );
+      updateMaintMut.mutate({ id: editMaintenanceRecord.id, ...mainRecord });
     } else {
-      updatedCar.maintenance = [...records, ...updatedCar.maintenance];
+      addMaintMut.mutate(mainRecord);
+      if (maintType === "oil_change" && oilWithFilter) {
+        addMaintMut.mutate({
+          ...mainRecord,
+          type: "oil_filter",
+          label: "فلتر الزيت",
+          notes: "تم التغيير مع الزيت",
+        });
+      }
     }
 
     if (Number(maintMileage) > selectedCar.mileage) {
-      updatedCar.mileage = Number(maintMileage);
+      updateVehicleMut.mutate({ id: selectedCar.id, mileage: Number(maintMileage) });
     }
 
-    setCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
-    setSelectedCar(updatedCar);
+    setSelectedCar(null); // will re-select from refreshed data
     setAddMaintenanceOpen(false);
     resetMaintForm();
     toast.success(editMaintenanceRecord ? "تم تعديل السجل" : "تمت إضافة سجل الصيانة");
