@@ -339,8 +339,7 @@ const Trips = () => {
 
   const handleDeleteTrip = () => {
     if (!deleteTarget) return;
-    removeTripBudget(deleteTarget);
-    setTrips((prev) => prev.filter((t) => t.id !== deleteTarget));
+    deleteTripMut.mutate(deleteTarget);
     if (selectedTrip?.id === deleteTarget) setSelectedTrip(null);
     setDeleteTarget(null);
     setDeleteDrawer(false);
