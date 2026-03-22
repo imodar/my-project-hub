@@ -436,8 +436,9 @@ const Zakat = () => {
                         setShowAdd(true);
                       }}
                       onReminder={() => { setReminderAsset(asset.id); }}
-                      onDelete={() => setDeleteConfirm(asset.id)}
-                    >
+                       onDelete={() => setDeleteConfirm(asset.id)}
+                       onZakatPaid={() => setZakatPaidAsset(asset.id)}
+                     >
                       <div className="rounded-2xl bg-background border border-border p-4">
                         <div className="flex items-start gap-3">
                           <div
