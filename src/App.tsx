@@ -6,10 +6,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
 import { UserRoleProvider } from "@/contexts/UserRoleContext";
 import { TrashProvider } from "@/contexts/TrashContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import AuthGuard from "@/components/AuthGuard";
 import ScrollToTop from "@/components/ScrollToTop";
 import OfflineBanner from "@/components/OfflineBanner";
 import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import Auth from "./pages/Auth.tsx";
 import Index from "./pages/Index.tsx";
 import Tasbih from "./pages/Tasbih.tsx";
 import Settings from "./pages/Settings.tsx";
@@ -59,34 +62,38 @@ const AnimatedRoutes = () => {
   return (
     <PageTransition key={location.pathname}>
       <Routes location={location}>
-        <Route path="/" element={<Index />} />
-        <Route path="/tasbih" element={<Tasbih />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/map" element={<Map />} />
-        <Route path="/debts" element={<Debts />} />
-        <Route path="/family" element={<FamilyManagement />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/calendar" element={<CalendarPage />} />
-        <Route path="/trash" element={<Trash />} />
-        <Route path="/market" element={<Market />} />
-        <Route path="/places" element={<Places />} />
-        <Route path="/places/add" element={<AddPlace />} />
-        <Route path="/places/edit/:id" element={<AddPlace />} />
-        <Route path="/budget" element={<Budget />} />
-        <Route path="/tasks" element={<Tasks />} />
-        <Route path="/documents" element={<Documents />} />
-        <Route path="/zakat" element={<Zakat />} />
-        <Route path="/will" element={<Will />} />
-        <Route path="/trips" element={<Trips />} />
-        <Route path="/albums" element={<Albums />} />
-        <Route path="/kids-worship" element={<KidsWorship />} />
-        <Route path="/parent-dashboard" element={<ParentDashboard />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/athkar" element={<Athkar />} />
-        <Route path="/vehicle" element={<Vehicle />} />
-        <Route path="/vaccinations" element={<Vaccinations />} />
-        <Route path="/medications" element={<Medications />} />
-        <Route path="/islamic-reminders" element={<IslamicReminders />} />
+        {/* Public route */}
+        <Route path="/auth" element={<Auth />} />
+
+        {/* Protected routes */}
+        <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+        <Route path="/tasbih" element={<AuthGuard><Tasbih /></AuthGuard>} />
+        <Route path="/chat" element={<AuthGuard><Chat /></AuthGuard>} />
+        <Route path="/map" element={<AuthGuard><Map /></AuthGuard>} />
+        <Route path="/debts" element={<AuthGuard><Debts /></AuthGuard>} />
+        <Route path="/family" element={<AuthGuard><FamilyManagement /></AuthGuard>} />
+        <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+        <Route path="/calendar" element={<AuthGuard><CalendarPage /></AuthGuard>} />
+        <Route path="/trash" element={<AuthGuard><Trash /></AuthGuard>} />
+        <Route path="/market" element={<AuthGuard><Market /></AuthGuard>} />
+        <Route path="/places" element={<AuthGuard><Places /></AuthGuard>} />
+        <Route path="/places/add" element={<AuthGuard><AddPlace /></AuthGuard>} />
+        <Route path="/places/edit/:id" element={<AuthGuard><AddPlace /></AuthGuard>} />
+        <Route path="/budget" element={<AuthGuard><Budget /></AuthGuard>} />
+        <Route path="/tasks" element={<AuthGuard><Tasks /></AuthGuard>} />
+        <Route path="/documents" element={<AuthGuard><Documents /></AuthGuard>} />
+        <Route path="/zakat" element={<AuthGuard><Zakat /></AuthGuard>} />
+        <Route path="/will" element={<AuthGuard><Will /></AuthGuard>} />
+        <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
+        <Route path="/albums" element={<AuthGuard><Albums /></AuthGuard>} />
+        <Route path="/kids-worship" element={<AuthGuard><KidsWorship /></AuthGuard>} />
+        <Route path="/parent-dashboard" element={<AuthGuard><ParentDashboard /></AuthGuard>} />
+        <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
+        <Route path="/athkar" element={<AuthGuard><Athkar /></AuthGuard>} />
+        <Route path="/vehicle" element={<AuthGuard><Vehicle /></AuthGuard>} />
+        <Route path="/vaccinations" element={<AuthGuard><Vaccinations /></AuthGuard>} />
+        <Route path="/medications" element={<AuthGuard><Medications /></AuthGuard>} />
+        <Route path="/islamic-reminders" element={<AuthGuard><IslamicReminders /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
@@ -96,22 +103,24 @@ const AnimatedRoutes = () => {
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <UserRoleProvider>
-        <IslamicModeProvider>
-          <TrashProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <OfflineBanner />
-                <ScrollToTop />
-                <AnimatedRoutes />
-                <BottomNav />
-              </BrowserRouter>
-            </TooltipProvider>
-          </TrashProvider>
-        </IslamicModeProvider>
-      </UserRoleProvider>
+      <AuthProvider>
+        <UserRoleProvider>
+          <IslamicModeProvider>
+            <TrashProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <OfflineBanner />
+                  <ScrollToTop />
+                  <AnimatedRoutes />
+                  <BottomNav />
+                </BrowserRouter>
+              </TooltipProvider>
+            </TrashProvider>
+          </IslamicModeProvider>
+        </UserRoleProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );
