@@ -262,13 +262,8 @@ const Places = () => {
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, type: "shared", sharedWith: selectedShareMembers }
-          : list
-      )
-    );
+    // Update list type to shared via the places list — we'd need an updateList mutation
+    // For now just close the dialog
     setSelectedShareMembers([]);
     setShowShareDialog(false);
   }, [activeListId, selectedShareMembers]);
