@@ -217,22 +217,13 @@ const Documents = () => {
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? {
-              ...list,
-              items: list.items.map((item) =>
-                item.id === editTarget.id
-                  ? { ...item, name: editName.trim(), category: editCategory, note: editNote.trim(), expiryDate: editExpiryDate || undefined, reminderEnabled: editReminderEnabled }
-                  : item
-              ),
-            }
-          : list
-      )
-    );
+    updateDocItemMut.mutate({
+      id: editTarget.id,
+      name: editName.trim(), category: editCategory, note: editNote.trim(),
+      expiry_date: editExpiryDate || null, reminder_enabled: editReminderEnabled,
+    });
     setEditTarget(null);
-  }, [activeListId, editTarget, editName, editCategory, editNote, editExpiryDate, editReminderEnabled]);
+  }, [editTarget, editName, editCategory, editNote, editExpiryDate, editReminderEnabled, updateDocItemMut]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, target: "new" | "existing") => {
     const files = e.target.files;
