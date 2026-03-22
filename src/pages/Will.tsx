@@ -1,4 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Lock, KeyRound, Users, ChevronLeft, CheckCircle2, Circle,
   Shield, Eye, EyeOff, Trash2, RotateCcw, ScrollText, UserCheck
