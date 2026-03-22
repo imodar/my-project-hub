@@ -103,11 +103,9 @@ const Medications = () => {
         dosage: m.dosage || "",
         memberId: m.member_id || "me",
         memberName: m.member_name || "أنا",
-        frequency: {
-          type: (m.frequency_type || "daily") as FrequencyType,
-          value: m.frequency_value || 1,
-          selectedDays: m.selected_days || [],
-        },
+        frequencyType: (m.frequency_type || "daily") as FrequencyType,
+        frequencyValue: m.frequency_value || 1,
+        selectedDays: m.selected_days || [],
         timesPerDay: m.times_per_day || 1,
         specificTimes: m.specific_times || ["08:00"],
         startDate: m.start_date || "",
@@ -115,9 +113,20 @@ const Medications = () => {
         notes: m.notes || "",
         color: m.color || MEDICATION_COLORS[0],
         reminder: {
+          id: m.id,
           enabled: m.reminder_enabled || false,
-          nextDueAt: null,
+          nextDueAt: calculateNextDue({
+            id: m.id, name: m.name, dosage: m.dosage || "", memberId: m.member_id || "me",
+            memberName: m.member_name || "أنا", frequencyType: (m.frequency_type || "daily") as FrequencyType,
+            frequencyValue: m.frequency_value || 1, selectedDays: m.selected_days || [],
+            timesPerDay: m.times_per_day || 1, specificTimes: m.specific_times || ["08:00"],
+            startDate: m.start_date || "", color: m.color || MEDICATION_COLORS[0],
+            reminder: { id: m.id, enabled: m.reminder_enabled || false, nextDueAt: "" },
+            takenLog: [], createdAt: m.created_at,
+          }) || "",
         },
+        takenLog: [],
+        createdAt: m.created_at,
       }));
       setMedications(mapped);
     }
