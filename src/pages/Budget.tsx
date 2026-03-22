@@ -273,27 +273,21 @@ const Budget = () => {
     if (budgetType === "month") {
       const monthStr = `${newYear}-${String(parseInt(newMonthIdx) + 1).padStart(2, "0")}`;
       if (budgets.some(b => b.month === monthStr && b.type === "month")) return;
-      const b: MonthBudget = {
-        id: Date.now().toString(),
+      createBudget.mutate({
         type: "month",
         month: monthStr,
         income: parseFloat(newIncome),
-        expenses: [],
-        sharedWith: [...shareNames],
-      };
-      update([...budgets, b]);
+        shared_with: [...shareNames],
+      });
     } else {
       if (!projectLabel.trim()) return;
-      const b: MonthBudget = {
-        id: Date.now().toString(),
+      createBudget.mutate({
         type: "project",
         month: `project-${Date.now()}`,
         label: projectLabel.trim(),
         income: parseFloat(newIncome),
-        expenses: [],
-        sharedWith: [...shareNames],
-      };
-      update([...budgets, b]);
+        shared_with: [...shareNames],
+      });
     }
 
     setShowAddMonth(false);
@@ -303,20 +297,14 @@ const Budget = () => {
   };
 
   const handleAddExpense = () => {
-    if (!selectedBudget || !expenseName.trim() || !expenseAmount || parseFloat(expenseAmount) <= 0) return;
+    if (!currentSelectedBudget || !expenseName.trim() || !expenseAmount || parseFloat(expenseAmount) <= 0) return;
     haptic.light();
-    const expense: ExpenseItem = {
-      id: Date.now().toString(),
+    addExpenseMut.mutate({
+      budget_id: currentSelectedBudget.id,
       name: expenseName.trim(),
       amount: parseFloat(expenseAmount),
       date: expenseDate ? expenseDate.toISOString().split("T")[0] : undefined,
-    };
-    const updated = budgets.map(b =>
-      b.id === selectedBudget.id ? { ...b, expenses: [...b.expenses, expense] } : b
-    );
-    update(updated);
-    const updatedBudget = updated.find(b => b.id === selectedBudget.id)!;
-    setSelectedBudget(updatedBudget);
+    });
     setShowAddExpense(false);
     setExpenseName("");
     setExpenseAmount("");
@@ -324,35 +312,23 @@ const Budget = () => {
   };
 
   const handleEditIncome = () => {
-    if (!selectedBudget || !editIncomeVal || parseFloat(editIncomeVal) <= 0) return;
+    if (!currentSelectedBudget || !editIncomeVal || parseFloat(editIncomeVal) <= 0) return;
     haptic.light();
-    const updated = budgets.map(b =>
-      b.id === selectedBudget.id ? { ...b, income: parseFloat(editIncomeVal) } : b
-    );
-    update(updated);
-    setSelectedBudget(updated.find(b => b.id === selectedBudget.id)!);
+    updateBudget.mutate({ id: currentSelectedBudget.id, income: parseFloat(editIncomeVal) });
     setShowEditIncome(false);
   };
 
   const handleDeleteExpense = () => {
     if (!showDeleteExpense) return;
     haptic.medium();
-    const updated = budgets.map(b =>
-      b.id === showDeleteExpense.budgetId
-        ? { ...b, expenses: b.expenses.filter(e => e.id !== showDeleteExpense.expenseId) }
-        : b
-    );
-    update(updated);
-    if (selectedBudget?.id === showDeleteExpense.budgetId) {
-      setSelectedBudget(updated.find(b => b.id === showDeleteExpense.budgetId)!);
-    }
+    deleteExpenseMut.mutate(showDeleteExpense.expenseId);
     setShowDeleteExpense(null);
   };
 
   const handleDeleteBudget = () => {
     if (!showDeleteBudget) return;
     haptic.medium();
-    update(budgets.filter(b => b.id !== showDeleteBudget));
+    deleteBudgetMut.mutate(showDeleteBudget);
     if (selectedBudget?.id === showDeleteBudget) setSelectedBudget(null);
     setShowDeleteBudget(null);
   };
@@ -360,34 +336,24 @@ const Budget = () => {
   const handleEditExpense = () => {
     if (!showEditExpense || !editExpenseName.trim() || !editExpenseAmount || parseFloat(editExpenseAmount) <= 0) return;
     haptic.light();
-    const updated = budgets.map(b =>
-      b.id === showEditExpense.budgetId
-        ? {
-            ...b,
-            expenses: b.expenses.map(e =>
-              e.id === showEditExpense.expense.id
-                ? { ...e, name: editExpenseName.trim(), amount: parseFloat(editExpenseAmount), date: editExpenseDate ? editExpenseDate.toISOString().split("T")[0] : e.date }
-                : e
-            ),
-          }
-        : b
-    );
-    update(updated);
-    if (selectedBudget?.id === showEditExpense.budgetId) {
-      setSelectedBudget(updated.find(b => b.id === showEditExpense.budgetId)!);
-    }
+    updateExpenseMut.mutate({
+      id: showEditExpense.expense.id,
+      name: editExpenseName.trim(),
+      amount: parseFloat(editExpenseAmount),
+      date: editExpenseDate ? editExpenseDate.toISOString().split("T")[0] : undefined,
+    });
     setShowEditExpense(null);
   };
 
   const handleEditBudgetSave = () => {
     if (!showEditBudget || !newIncome || parseFloat(newIncome) <= 0) return;
     haptic.light();
-    const updated = budgets.map(b =>
-      b.id === showEditBudget.id
-        ? { ...b, income: parseFloat(newIncome), label: b.type === "project" ? projectLabel.trim() || b.label : b.label, sharedWith: [...shareNames] }
-        : b
-    );
-    update(updated);
+    updateBudget.mutate({
+      id: showEditBudget.id,
+      income: parseFloat(newIncome),
+      label: showEditBudget.type === "project" ? projectLabel.trim() || showEditBudget.label : showEditBudget.label,
+      shared_with: [...shareNames],
+    });
     setShowEditBudget(null);
     setNewIncome("");
     setProjectLabel("");
@@ -400,11 +366,9 @@ const Budget = () => {
   const remaining = (b: MonthBudget) => b.income - totalExpenses(b);
   const spentPercent = (b: MonthBudget) => b.income > 0 ? Math.min((totalExpenses(b) / b.income) * 100, 100) : 0;
 
-  
-
   // Detail view
-  if (selectedBudget) {
-    const b = selectedBudget;
+  if (currentSelectedBudget) {
+    const b = currentSelectedBudget;
     const rem = remaining(b);
     const spent = totalExpenses(b);
     const pct = spentPercent(b);
