@@ -86,6 +86,7 @@ const AnimatedRoutes = () => {
         <Route path="/vehicle" element={<Vehicle />} />
         <Route path="/vaccinations" element={<Vaccinations />} />
         <Route path="/medications" element={<Medications />} />
+        <Route path="/islamic-reminders" element={<IslamicReminders />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
