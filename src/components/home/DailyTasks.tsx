@@ -4,7 +4,7 @@ import { useTaskLists } from "@/hooks/useTaskLists";
 
 const DailyTasks = () => {
   const navigate = useNavigate();
-  const { taskLists, isLoading } = useTaskLists();
+  const { lists: taskLists, isLoading } = useTaskLists();
 
   // Flatten all task items from all lists
   const allTasks = (taskLists || []).flatMap((list) =>
