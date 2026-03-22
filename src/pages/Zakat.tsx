@@ -740,6 +740,62 @@ const Zakat = () => {
         </DrawerContent>
       </Drawer>
 
+      {/* Zakat paid drawer */}
+      <Drawer open={!!zakatPaidAsset} onOpenChange={(open) => !open && setZakatPaidAsset(null)}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>تمت التزكية ✅</DrawerTitle>
+            <DrawerDescription>
+              الحمد لله، تم تسجيل أنك أخرجت زكاة هذا الأصل. هل تريد تذكيرك بالزكاة للحول القادم؟
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-3">
+            {zakatPaidAsset && (() => {
+              const asset = assets.find(a => a.id === zakatPaidAsset);
+              if (!asset) return null;
+              const zakat = getZakatAmount(asset);
+              return (
+                <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-4 py-3">
+                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                    {asset.label} — زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
+                  </p>
+                </div>
+              );
+            })()}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-xl"
+                onClick={() => {
+                  if (zakatPaidAsset) {
+                    updateAssets(assets.filter(a => a.id !== zakatPaidAsset));
+                    haptic.medium();
+                    setZakatPaidAsset(null);
+                  }
+                }}
+              >
+                <BellOff size={16} className="ml-2" />
+                لا، إزالة الأصل
+              </Button>
+              <Button
+                className="flex-1 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => {
+                  if (zakatPaidAsset) {
+                    const today = new Date().toISOString().split("T")[0];
+                    updateAssets(assets.map(a => a.id === zakatPaidAsset ? { ...a, purchaseDate: today, reminder: true } : a));
+                    haptic.medium();
+                    setZakatPaidAsset(null);
+                  }
+                }}
+              >
+                <Bell size={16} className="ml-2" />
+                نعم، ذكّرني للحول القادم
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
       {/* Delete confirm drawer */}
       <Drawer open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
         <DrawerContent>
