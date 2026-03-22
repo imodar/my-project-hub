@@ -66,7 +66,7 @@ const getNextPrayer = (times: PrayerTimes): NextPrayerInfo => {
 };
 
 const PrayerIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
     <path d="M12 3C9 3 6 6 6 9h12c0-3-3-6-6-6z" fill="white" fillOpacity="0.2" />
     <rect x="3" y="7" width="2" height="11" rx="0.5" fill="white" fillOpacity="0.3" />
     <circle cx="4" cy="6" r="1" fill="white" fillOpacity="0.4" />
@@ -127,13 +127,14 @@ const NextPrayerBox = () => {
   if (loading || !nextPrayer) {
     return (
       <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
             <PrayerIcon />
           </div>
-          <div className="space-y-1 flex-1">
+          <div className="space-y-1.5 flex-1">
+            <div className="w-24 h-3 bg-white/20 rounded animate-pulse" />
+            <div className="w-16 h-4 bg-white/20 rounded animate-pulse" />
             <div className="w-20 h-3 bg-white/20 rounded animate-pulse" />
-            <div className="w-16 h-3 bg-white/20 rounded animate-pulse" />
           </div>
         </div>
       </div>
@@ -142,15 +143,17 @@ const NextPrayerBox = () => {
 
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
-      <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+      <div className="flex items-center gap-3">
+        {/* Icon centered vertically */}
+        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
           <PrayerIcon />
         </div>
-        <p className="text-xs font-semibold text-white/70">باقي لصلاة {nextPrayer.name}</p>
-      </div>
-      <div className="flex items-center justify-between pr-1">
-        <span className="text-lg font-bold">{nextPrayer.remaining}</span>
-        <span className="text-xs text-white/50">الأذان {nextPrayer.time}</span>
+        {/* 3 lines */}
+        <div className="flex flex-col gap-0.5">
+          <p className="text-[11px] font-semibold text-white/70">باقي لصلاة {nextPrayer.name}</p>
+          <p className="text-base font-bold leading-tight">{nextPrayer.remaining}</p>
+          <p className="text-[10px] text-white/50">الأذان {nextPrayer.time}</p>
+        </div>
       </div>
     </div>
   );
