@@ -187,7 +187,7 @@ const CalendarPage = () => {
       isShared: true,
       originalData: deleteTarget,
     });
-    setEvents((prev) => prev.filter((e) => e.id !== deleteTarget.id));
+    deleteEventMutation.mutate(deleteTarget.id);
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   };
