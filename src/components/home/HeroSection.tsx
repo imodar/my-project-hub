@@ -445,7 +445,7 @@ const HeroSection = () => {
             {/* Greeting */}
             <div>
               <h1 className="text-xl font-bold tracking-tight mb-1">
-                {greeting}، {mockUser.name}
+                {greeting}، {currentUser.name}
               </h1>
               <p className="text-white/75 font-medium text-xs whitespace-nowrap">
                 {gregorianDate} {islamicMode && `• ${hijriDate}`}
