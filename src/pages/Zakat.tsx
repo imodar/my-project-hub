@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Plus, Coins, Info, Trash2, Bell, BellOff, ChevronDown, ChevronUp,
-  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock, Pencil
+  ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock, Pencil, CalendarIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
 import { Button } from "@/components/ui/button";
@@ -13,7 +15,20 @@ import { Progress } from "@/components/ui/progress";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription,
 } from "@/components/ui/drawer";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
+
+const CASH_CURRENCIES = [
+  { code: "SAR", label: "ريال سعودي", symbol: "ر.س" },
+  { code: "QAR", label: "ريال قطري", symbol: "ر.ق" },
+  { code: "USD", label: "دولار أمريكي", symbol: "$" },
+  { code: "EUR", label: "يورو", symbol: "€" },
+  { code: "GBP", label: "جنيه إسترليني", symbol: "£" },
+  { code: "AED", label: "درهم إماراتي", symbol: "د.إ" },
+  { code: "KWD", label: "دينار كويتي", symbol: "د.ك" },
+] as const;
 
 // ── Swipeable Card ──
 const ACTION_WIDTH = 210;
@@ -198,6 +213,7 @@ const Zakat = () => {
   const [addLabel, setAddLabel] = useState("");
   const [addAmount, setAddAmount] = useState("");
   const [addKarat, setAddKarat] = useState(24);
+  const [addCurrency, setAddCurrency] = useState("SAR");
   const [addDate, setAddDate] = useState(new Date().toISOString().split("T")[0]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
@@ -244,6 +260,7 @@ const Zakat = () => {
     setAddLabel("");
     setAddAmount("");
     setAddKarat(24);
+    setAddCurrency("SAR");
     setAddDate(new Date().toISOString().split("T")[0]);
     setEditingAssetId(null);
   };
@@ -530,16 +547,29 @@ const Zakat = () => {
             {/* Amount */}
             <div>
               <label className="text-xs font-bold text-foreground mb-1.5 block">
-                {addType === "gold" || addType === "silver" ? "الوزن (جرام)" : "المبلغ (ر.س)"}
+                {addType === "gold" || addType === "silver" ? "الوزن (جرام)" : "المبلغ"}
               </label>
-              <Input
-                type="number"
-                value={addAmount}
-                onChange={e => setAddAmount(e.target.value)}
-                placeholder={addType === "gold" ? "مثال: 100" : "مثال: 50000"}
-                className="text-right"
-                inputMode="decimal"
-              />
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={addAmount}
+                  onChange={e => setAddAmount(e.target.value)}
+                  placeholder={addType === "gold" ? "مثال: 100" : "مثال: 50000"}
+                  className="flex-1 min-w-0 text-right"
+                  inputMode="decimal"
+                />
+                {addType === "cash" && (
+                  <select
+                    value={addCurrency}
+                    onChange={e => setAddCurrency(e.target.value)}
+                    className="w-20 shrink-0 rounded-xl border border-input bg-background px-1.5 py-2.5 text-[11px]"
+                  >
+                    {CASH_CURRENCIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.symbol} {c.label}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
 
             {/* Karat for gold */}
@@ -595,12 +625,29 @@ const Zakat = () => {
             {/* Purchase date */}
             <div>
               <label className="text-xs font-bold text-foreground mb-1.5 block">تاريخ الاقتناء / الشراء</label>
-              <Input
-                type="date"
-                value={addDate}
-                onChange={e => setAddDate(e.target.value)}
-                className="text-right"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-right font-normal rounded-xl",
+                      !addDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                    {addDate ? format(new Date(addDate), "d MMMM yyyy", { locale: ar }) : "اختر التاريخ"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={addDate ? new Date(addDate) : undefined}
+                    onSelect={(date) => date && setAddDate(date.toISOString().split("T")[0])}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
               <p className="text-[10px] text-muted-foreground mt-1">يُحسب الحول (354 يوم) من هذا التاريخ</p>
             </div>
 
