@@ -42,12 +42,7 @@ const DEFAULT_SECTIONS: WillSection[] = [
   { id: "funeral", icon: "🌿", label: "تعليمات الجنازة", completed: true, content: "أرغب بالدفن في مقبرة البقيع إن أمكن، والصلاة عليّ في المسجد الحرام." },
 ];
 
-const FAMILY_MEMBERS: FamilyMember[] = [
-  { id: "1", name: "أحمد محمد", role: "أب", hasWill: true },
-  { id: "2", name: "فاطمة أحمد", role: "أم", hasWill: true },
-  { id: "3", name: "خالد أحمد", role: "ابن", hasWill: false },
-  { id: "4", name: "نورة أحمد", role: "ابنة", hasWill: false },
-];
+// Family members are now fetched from DB inside the component
 
 const Will = () => {
   const { will, isLoading, upsertWill, deleteWill, createOpenRequest } = useWill();
