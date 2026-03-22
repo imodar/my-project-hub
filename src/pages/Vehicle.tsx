@@ -234,7 +234,31 @@ const SwipeableRow = ({ children, onDelete, onEdit, onReminder }: {
 // ─── Main Component ───
 const Vehicle = () => {
   const navigate = useNavigate();
-  const [cars, setCars] = useState<CarData[]>(loadCars);
+  const { vehicles: dbVehicles, isLoading: vehiclesLoading, addVehicle: addVehicleMut, updateVehicle: updateVehicleMut, deleteVehicle: deleteVehicleMut, addMaintenance: addMaintMut, updateMaintenance: updateMaintMut, deleteMaintenance: deleteMaintMut } = useVehicles();
+
+  const cars: CarData[] = useMemo(() => (dbVehicles || []).map((v: any) => ({
+    id: v.id,
+    manufacturer: v.manufacturer,
+    model: v.model,
+    year: v.year || "",
+    mileage: v.mileage || 0,
+    mileageUnit: v.mileage_unit || "km",
+    color: v.color || "",
+    plateNumber: v.plate_number || "",
+    sharedWith: v.shared_with || [],
+    createdAt: v.created_at,
+    maintenance: (v.vehicle_maintenance || []).map((m: any) => ({
+      id: m.id,
+      type: m.type,
+      label: m.label,
+      date: m.date || "",
+      mileageAtService: m.mileage_at_service || 0,
+      nextMileage: m.next_mileage || 0,
+      nextDate: m.next_date || "",
+      notes: m.notes || "",
+    })),
+  })), [dbVehicles]);
+
   const [selectedCar, setSelectedCar] = useState<CarData | null>(null);
   const [addCarOpen, setAddCarOpen] = useState(false);
   const [addMaintenanceOpen, setAddMaintenanceOpen] = useState(false);
