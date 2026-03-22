@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_transfer_requests: {
+        Row: {
+          approvals: Json
+          created_at: string
+          family_id: string
+          id: string
+          reason: string | null
+          requested_by: string
+          required_approvals: number
+          status: string
+        }
+        Insert: {
+          approvals?: Json
+          created_at?: string
+          family_id: string
+          id?: string
+          reason?: string | null
+          requested_by: string
+          required_approvals?: number
+          status?: string
+        }
+        Update: {
+          approvals?: Json
+          created_at?: string
+          family_id?: string
+          id?: string
+          reason?: string | null
+          requested_by?: string
+          required_approvals?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_transfer_requests_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consent_log: {
         Row: {
           accepted: boolean
@@ -43,6 +84,229 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      families: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          invite_code: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          invite_code?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          invite_code?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      family_deletions: {
+        Row: {
+          deleted_at: string
+          deleted_by: string
+          family_id: string
+          id: string
+          permanent_delete_at: string
+          reason: string | null
+          restored_at: string | null
+          status: string
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by: string
+          family_id: string
+          id?: string
+          permanent_delete_at?: string
+          reason?: string | null
+          restored_at?: string | null
+          status?: string
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string
+          family_id?: string
+          id?: string
+          permanent_delete_at?: string
+          reason?: string | null
+          restored_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_deletions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_invites: {
+        Row: {
+          created_at: string
+          expires_at: string
+          family_id: string
+          id: string
+          invite_type: string
+          invited_by: string
+          role_assigned: Database["public"]["Enums"]["family_role"] | null
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          family_id: string
+          id?: string
+          invite_type?: string
+          invited_by: string
+          role_assigned?: Database["public"]["Enums"]["family_role"] | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          family_id?: string
+          id?: string
+          invite_type?: string
+          invited_by?: string
+          role_assigned?: Database["public"]["Enums"]["family_role"] | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invites_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_keys: {
+        Row: {
+          created_at: string
+          encrypted_key: string
+          family_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_key: string
+          family_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_key?: string
+          family_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_keys_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_members: {
+        Row: {
+          family_id: string
+          id: string
+          is_admin: boolean
+          joined_at: string
+          role: Database["public"]["Enums"]["family_role"]
+          status: string
+          user_id: string
+        }
+        Insert: {
+          family_id: string
+          id?: string
+          is_admin?: boolean
+          joined_at?: string
+          role?: Database["public"]["Enums"]["family_role"]
+          status?: string
+          user_id: string
+        }
+        Update: {
+          family_id?: string
+          id?: string
+          is_admin?: boolean
+          joined_at?: string
+          role?: Database["public"]["Enums"]["family_role"]
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_removals: {
+        Row: {
+          deleted_at: string
+          family_id: string
+          id: string
+          permanent_delete_at: string
+          personal_data_migrated: boolean
+          reason: string | null
+          removed_by: string
+          removed_user_id: string
+          restored_at: string | null
+        }
+        Insert: {
+          deleted_at?: string
+          family_id: string
+          id?: string
+          permanent_delete_at?: string
+          personal_data_migrated?: boolean
+          reason?: string | null
+          removed_by: string
+          removed_user_id: string
+          restored_at?: string | null
+        }
+        Update: {
+          deleted_at?: string
+          family_id?: string
+          id?: string
+          permanent_delete_at?: string
+          personal_data_migrated?: boolean
+          reason?: string | null
+          removed_by?: string
+          removed_user_id?: string
+          restored_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_removals_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -142,6 +406,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_family_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -149,6 +414,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_family_admin: {
+        Args: { _family_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_family_member: {
+        Args: { _family_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_staff_member: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
