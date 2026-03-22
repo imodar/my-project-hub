@@ -111,6 +111,7 @@ const Will = () => {
 
   const handleDeleteWill = () => {
     haptic.heavy();
+    deleteWill.mutate();
     setSections(DEFAULT_SECTIONS.map(s => ({ ...s, completed: false, content: "" })));
     setDeleteDrawer(false);
     toast({ title: "تم حذف الوصية", description: "تم مسح جميع محتويات الوصية" });
