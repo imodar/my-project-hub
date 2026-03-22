@@ -150,8 +150,8 @@ const Auth = () => {
         {step === "phone" && (
           <div className="space-y-4">
             <div className="relative" dir="ltr">
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none">
-                966+
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none">
+                +966
               </span>
               <Input
                 type="tel"
@@ -159,7 +159,7 @@ const Auth = () => {
                 placeholder="5XXXXXXXX"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ""))}
-                className="pr-14 text-left"
+                className="pl-14 text-left"
                 maxLength={10}
                 autoFocus
               />
