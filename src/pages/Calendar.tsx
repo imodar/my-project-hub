@@ -90,12 +90,7 @@ function daysLabel(d: number) {
   return `${toArabicNum(d)} يوم`;
 }
 
-const initialEvents: FamilyEvent[] = [
-  { id: "1", title: "عيد ميلاد نورة", date: "2026-03-15", icon: "cake", reminder_before: ["1d"], added_by: "أم فهد" },
-  { id: "2", title: "ذكرى الزواج", date: "2026-03-22", icon: "heart", reminder_before: ["7d"], added_by: "أبو فهد" },
-  { id: "3", title: "رحلة أبها", date: "2026-04-01", icon: "plane", reminder_before: ["3d"], added_by: "فهد" },
-  { id: "4", title: "تخرج سارة", date: "2026-05-10", icon: "graduation", reminder_before: ["30d"], added_by: "سارة" },
-];
+// initialEvents removed - data now comes from Supabase via useCalendarEvents hook
 
 const CalendarPage = () => {
   const navigate = useNavigate();
