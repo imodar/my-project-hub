@@ -230,6 +230,7 @@ const Zakat = () => {
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [reminderAsset, setReminderAsset] = useState<string | null>(null);
   const [customReminderDays, setCustomReminderDays] = useState("");
+  const [zakatPaidAsset, setZakatPaidAsset] = useState<string | null>(null);
 
   const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
 
