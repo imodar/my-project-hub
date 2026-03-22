@@ -273,46 +273,26 @@ const Documents = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    const newList: DocList = {
-      id: crypto.randomUUID(),
-      name: newListName.trim(),
-      type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-      sharedWith: newListType === "family" ? newListShareMembers : undefined,
-      lastUpdatedBy: "أنت",
-      lastUpdatedAt: "الآن",
-      items: [],
-    };
-    setLists((prev) => [...prev, newList]);
-    setActiveListId(newList.id);
-    setNewListName("");
-    setNewListShareMembers([]);
-    setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers]);
+    const type = newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType;
+    createDocListMut.mutate({ name: newListName.trim(), type, shared_with: newListShareMembers });
+    setNewListName(""); setNewListShareMembers([]); setShowAddList(false);
+  }, [newListName, newListType, newListShareMembers, createDocListMut]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
-    setLists((prev) => {
-      const updated = prev.filter((l) => l.id !== listId);
-      if (activeListId === listId && updated.length > 0) {
-        setActiveListId(updated[0].id);
-      }
-      return updated;
-    });
-  }, [activeListId]);
+    deleteDocListMut.mutate(listId);
+    if (activeListId === listId && lists.length > 1) {
+      const remaining = lists.filter(l => l.id !== listId);
+      if (remaining.length > 0) setActiveListId(remaining[0].id);
+    }
+  }, [activeListId, lists, deleteDocListMut]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, type: "shared", sharedWith: selectedShareMembers }
-          : list
-      )
-    );
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [activeListId, selectedShareMembers]);
+  }, [selectedShareMembers]);
 
   const getListIcon = (type: DocList["type"]) => {
     switch (type) {
