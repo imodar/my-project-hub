@@ -156,17 +156,7 @@ const MAINTENANCE_TYPES = [
   { id: "other", label: "أخرى", icon: Wrench, color: "hsl(210 30% 45%)" },
 ];
 
-const STORAGE_KEY = "family-cars";
-
-const loadCars = (): CarData[] => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch { return []; }
-};
-
-const saveCars = (cars: CarData[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cars));
-};
+// localStorage helpers removed — using Supabase hooks
 
 // ─── Car Logo Component ───
 const CarLogo = ({ manufacturer, size = 40 }: { manufacturer: string; size?: number }) => {
