@@ -307,7 +307,7 @@ const Will = () => {
                 </Button>
               </div>
             ))}
-            {FAMILY_MEMBERS.filter(m => !m.hasWill).map((member) => (
+            {familyMembers.filter(m => !m.hasWill).map((member) => (
               <div
                 key={member.id}
                 className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 opacity-50"
