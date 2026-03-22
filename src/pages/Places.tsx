@@ -235,13 +235,7 @@ const Places = () => {
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     haptic.medium();
-    setLists((prev) =>
-      prev.map((list) =>
-        list.id === activeListId
-          ? { ...list, places: list.places.filter((p) => p.id !== deleteTarget.id) }
-          : list
-      )
-    );
+    deletePlaceMut.mutate(deleteTarget.id);
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   }, [activeListId, deleteTarget]);
