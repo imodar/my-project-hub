@@ -31,8 +31,8 @@ const CASH_CURRENCIES = [
 ] as const;
 
 // ── Swipeable Card (RTL: swipe left to reveal actions on right) ──
-const ACTION_WIDTH = 210;
-function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit: () => void; onReminder: () => void; onDelete: () => void; children: React.ReactNode }) {
+const ACTION_WIDTH = 280;
+function SwipeableAssetCard({ onEdit, onReminder, onDelete, onZakatPaid, children }: { onEdit: () => void; onReminder: () => void; onDelete: () => void; onZakatPaid: () => void; children: React.ReactNode }) {
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
   const isOpenRef = useRef(false);
@@ -62,6 +62,13 @@ function SwipeableAssetCard({ onEdit, onReminder, onDelete, children }: { onEdit
   return (
     <div className="relative overflow-hidden rounded-2xl" ref={containerRef}>
       <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
+        <button
+          onClick={() => { haptic.light(); onZakatPaid(); }}
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-emerald-600 text-white"
+        >
+          <Check size={18} />
+          <span className="text-[10px] font-bold">تمت التزكية</span>
+        </button>
         <button
           onClick={() => { haptic.light(); onEdit(); }}
           className="flex-1 flex flex-col items-center justify-center gap-1 bg-primary text-white"
@@ -223,6 +230,7 @@ const Zakat = () => {
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [reminderAsset, setReminderAsset] = useState<string | null>(null);
   const [customReminderDays, setCustomReminderDays] = useState("");
+  const [zakatPaidAsset, setZakatPaidAsset] = useState<string | null>(null);
 
   const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
 
@@ -428,8 +436,9 @@ const Zakat = () => {
                         setShowAdd(true);
                       }}
                       onReminder={() => { setReminderAsset(asset.id); }}
-                      onDelete={() => setDeleteConfirm(asset.id)}
-                    >
+                       onDelete={() => setDeleteConfirm(asset.id)}
+                       onZakatPaid={() => setZakatPaidAsset(asset.id)}
+                     >
                       <div className="rounded-2xl bg-background border border-border p-4">
                         <div className="flex items-start gap-3">
                           <div
@@ -726,6 +735,62 @@ const Zakat = () => {
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 <span className="font-bold text-foreground">مثال:</span> إذا امتلكت 100 جرام من الذهب عيار 21، يتم حساب قيمتها الحالية بضرب الوزن في سعر الجرام مع مراعاة العيار. إذا تجاوزت القيمة نصاب 85 جراماً من عيار 24، تخرج 2.5% من القيمة.
               </p>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Zakat paid drawer */}
+      <Drawer open={!!zakatPaidAsset} onOpenChange={(open) => !open && setZakatPaidAsset(null)}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>تمت التزكية ✅</DrawerTitle>
+            <DrawerDescription>
+              الحمد لله، تم تسجيل أنك أخرجت زكاة هذا الأصل. هل تريد تذكيرك بالزكاة للحول القادم؟
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-3">
+            {zakatPaidAsset && (() => {
+              const asset = assets.find(a => a.id === zakatPaidAsset);
+              if (!asset) return null;
+              const zakat = getZakatAmount(asset);
+              return (
+                <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-4 py-3">
+                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                    {asset.label} — زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
+                  </p>
+                </div>
+              );
+            })()}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-xl"
+                onClick={() => {
+                  if (zakatPaidAsset) {
+                    updateAssets(assets.filter(a => a.id !== zakatPaidAsset));
+                    haptic.medium();
+                    setZakatPaidAsset(null);
+                  }
+                }}
+              >
+                <BellOff size={16} className="ml-2" />
+                لا، إزالة الأصل
+              </Button>
+              <Button
+                className="flex-1 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => {
+                  if (zakatPaidAsset) {
+                    const today = new Date().toISOString().split("T")[0];
+                    updateAssets(assets.map(a => a.id === zakatPaidAsset ? { ...a, purchaseDate: today, reminder: true } : a));
+                    haptic.medium();
+                    setZakatPaidAsset(null);
+                  }
+                }}
+              >
+                <Bell size={16} className="ml-2" />
+                نعم، ذكّرني للحول القادم
+              </Button>
             </div>
           </div>
         </DrawerContent>
