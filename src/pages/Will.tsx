@@ -72,6 +72,13 @@ const Will = () => {
   const [familyRequestDrawer, setFamilyRequestDrawer] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
 
+  // Sync DB will data into local sections state
+  useEffect(() => {
+    if (will?.sections && Array.isArray(will.sections)) {
+      setSections(will.sections as WillSection[]);
+    }
+  }, [will]);
+
   const handleRefresh = async () => {
     await new Promise((r) => setTimeout(r, 800));
   };
