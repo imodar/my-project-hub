@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Lock, KeyRound, Users, ChevronLeft, CheckCircle2, Circle,
   Shield, Eye, EyeOff, Trash2, RotateCcw, ScrollText, UserCheck
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/drawer";
 import { haptic } from "@/lib/haptics";
 import { toast } from "@/hooks/use-toast";
+import { useWill } from "@/hooks/useWill";
 
 // ── Types ──
 interface WillSection {
