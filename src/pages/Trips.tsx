@@ -104,74 +104,7 @@ const SUGGESTION_STATUS: Record<string, { label: string; icon: typeof Check; col
   reviewing: { label: "قيد الدراسة", icon: HelpCircle, color: "hsl(215 70% 50%)" },
 };
 
-const INITIAL_TRIPS: Trip[] = [
-  {
-    id: "1",
-    name: "رحلة إسطنبول",
-    destination: "إسطنبول، تركيا",
-    startDate: "2026-04-15",
-    endDate: "2026-04-22",
-    participants: ["أحمد", "سارة", "ياسين", "لينا"],
-    budget: 12000,
-    status: "confirmed",
-    type: "family",
-    expenses: [
-      { id: "e1", name: "الإقامة", amount: 3500 },
-      { id: "e2", name: "المواصلات", amount: 2800 },
-      { id: "e3", name: "تذاكر طيران", amount: 4200 },
-    ],
-    days: [
-      {
-        id: "d1", dayNumber: 1, city: "إسطنبول — السلطان أحمد",
-        activities: [
-          { id: "a1", name: "زيارة آيا صوفيا", time: "09:00", location: "السلطان أحمد", cost: 200, completed: false },
-          { id: "a2", name: "جامع السلطان أحمد", time: "11:30", location: "السلطان أحمد", cost: 0, completed: false },
-          { id: "a3", name: "غداء بمطعم فاتح", time: "13:00", location: "الفاتح", cost: 350, completed: false },
-        ]
-      },
-      {
-        id: "d2", dayNumber: 2, city: "إسطنبول — تقسيم",
-        activities: [
-          { id: "a4", name: "شارع الاستقلال", time: "10:00", location: "تقسيم", cost: 0, completed: false },
-          { id: "a5", name: "برج غلطة", time: "14:00", location: "غلطة", cost: 150, completed: false },
-        ]
-      }
-    ],
-    suggestions: [
-      { id: "s1", placeName: "البازار الكبير", type: "تسوق", reason: "أسعار ممتازة للهدايا", location: "الفاتح", suggestedBy: "ياسين", status: "accepted" },
-      { id: "s2", placeName: "جزر الأميرات", type: "طبيعة", reason: "مناظر خلابة", location: "بحر مرمرة", suggestedBy: "لينا", status: "pending" },
-    ],
-    packingList: [
-      { id: "p1", name: "جوازات السفر", packed: true },
-      { id: "p2", name: "شواحن الأجهزة", packed: true },
-      { id: "p3", name: "أدوية الطوارئ", packed: false },
-      { id: "p4", name: "ملابس شتوية خفيفة", packed: false },
-    ],
-    documents: [
-      { id: "doc1", name: "تذاكر الطيران", type: "ticket", fileUrl: "", fileName: "tickets.pdf", addedAt: "2026-03-20" },
-      { id: "doc2", name: "حجز الفندق", type: "hotel", fileUrl: "", fileName: "hotel-booking.pdf", addedAt: "2026-03-18" },
-    ],
-  },
-  {
-    id: "2",
-    name: "استراحة نهاية الأسبوع",
-    destination: "العُلا",
-    startDate: "2026-05-01",
-    endDate: "2026-05-03",
-    participants: ["أحمد"],
-    budget: 3000,
-    status: "planning",
-    type: "personal",
-    expenses: [
-      { id: "e4", name: "الإقامة", amount: 1200 },
-      { id: "e5", name: "المواصلات", amount: 600 },
-    ],
-    days: [],
-    suggestions: [],
-    packingList: [],
-    documents: [],
-  },
-];
+const INITIAL_TRIPS: Trip[] = [];
 
 // Swipeable card component
 const ACTION_WIDTH = 140;
