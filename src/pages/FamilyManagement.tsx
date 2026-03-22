@@ -74,7 +74,20 @@ const getProfileName = (): string => {
 
 const FamilyManagement = () => {
   const navigate = useNavigate();
-  const profileName = getProfileName();
+  const { user } = useAuth();
+  const [profileName, setProfileName] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.name) setProfileName(data.name);
+      });
+  }, [user]);
 
   const [creatorRole, setCreatorRole] = useState<FamilyRole | null>(() => {
     const saved = localStorage.getItem("family_creator_role");
