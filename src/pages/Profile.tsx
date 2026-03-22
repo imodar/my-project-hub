@@ -96,10 +96,10 @@ const Profile = () => {
         }}>
           <label className="text-xs font-semibold text-muted-foreground block mb-2">الدور</label>
           <div className="flex items-center justify-between px-3 py-2">
+            <span className="text-sm font-semibold text-foreground">ولي الأمر</span>
             <span className="text-xs px-2 py-1 rounded-full font-semibold" style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}>
               مشرف
             </span>
-            <span className="text-sm font-semibold text-foreground">ولي الأمر</span>
           </div>
         </div>
       </div>
