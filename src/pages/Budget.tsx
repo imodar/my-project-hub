@@ -211,42 +211,30 @@ const BudgetCard = ({ b, onSelect, remaining, spentPercent }: {
 };
 
 
-const STORAGE_KEY = "budgets_data";
-
-const loadBudgets = (): MonthBudget[] => {
-  try {
-    const d = localStorage.getItem(STORAGE_KEY);
-    return d ? JSON.parse(d) : [];
-  } catch { return []; }
-};
-
-const saveBudgets = (b: MonthBudget[]) => localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
-
-// Merge trip budgets from trips_data into budgets
-const mergeWithTripBudgets = (budgets: MonthBudget[]): MonthBudget[] => {
-  const trips = loadTrips();
-  const tripBudgets: MonthBudget[] = trips.map((trip: any) => {
-    const existing = budgets.find(b => b.tripId === trip.id);
-    return {
-      id: existing?.id || `trip-budget-${trip.id}`,
-      type: "trip" as BudgetType,
-      month: `trip-${trip.id}`,
-      label: trip.name,
-      income: trip.budget || 0,
-      expenses: (trip.expenses || []).map((e: any) => ({ id: e.id, name: e.name, amount: e.amount })),
-      sharedWith: [],
-      tripId: trip.id,
-    };
-  });
-  // Keep non-trip budgets + fresh trip budgets
-  const nonTripBudgets = budgets.filter(b => b.type !== "trip");
-  return [...nonTripBudgets, ...tripBudgets];
-};
-
 const Budget = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
-  const [budgets, setBudgets] = useState<MonthBudget[]>(() => mergeWithTripBudgets(loadBudgets()));
+  const { budgets: dbBudgets, isLoading, createBudget, updateBudget, deleteBudget: deleteBudgetMut, addExpense: addExpenseMut, updateExpense: updateExpenseMut, deleteExpense: deleteExpenseMut } = useBudgets();
+
+  // Map DB data to UI format
+  const budgets: MonthBudget[] = useMemo(() => {
+    return dbBudgets.map((b: any) => ({
+      id: b.id,
+      type: b.type as BudgetType,
+      month: b.month || "",
+      label: b.label,
+      income: Number(b.income) || 0,
+      expenses: (b.budget_expenses || []).map((e: any) => ({
+        id: e.id,
+        name: e.name,
+        amount: Number(e.amount),
+        date: e.date,
+      })),
+      sharedWith: b.shared_with || [],
+      tripId: b.trip_id,
+    })).sort((a: MonthBudget, b: MonthBudget) => (a.month || "").localeCompare(b.month || ""));
+  }, [dbBudgets]);
+
   const [selectedBudget, setSelectedBudget] = useState<MonthBudget | null>(null);
   const [showAddMonth, setShowAddMonth] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -272,15 +260,11 @@ const Budget = () => {
 
   const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
 
-  const update = useCallback((newBudgets: MonthBudget[]) => {
-    const sorted = [...newBudgets].sort((a, b) => a.month.localeCompare(b.month));
-    setBudgets(sorted);
-    saveBudgets(sorted);
-    // Sync trip budgets back to trips localStorage
-    sorted.filter(b => b.type === "trip" && b.tripId).forEach(b => {
-      syncBudgetToTrip(b.tripId!, b.expenses, b.income);
-    });
-  }, []);
+  // Keep selectedBudget in sync with latest data
+  const currentSelectedBudget = useMemo(() => {
+    if (!selectedBudget) return null;
+    return budgets.find(b => b.id === selectedBudget.id) || null;
+  }, [budgets, selectedBudget]);
 
   const handleAddBudget = () => {
     if (!newIncome || parseFloat(newIncome) <= 0) return;
