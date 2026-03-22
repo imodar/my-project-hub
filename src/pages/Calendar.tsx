@@ -222,13 +222,10 @@ const CalendarPage = () => {
   };
   const savePersonalReminders = () => {
     if (!reminderTarget) return;
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === reminderTarget.id
-          ? { ...e, personalReminders: personalReminders.length > 0 ? personalReminders : undefined }
-          : e
-      )
-    );
+    updateEventMutation.mutate({
+      id: reminderTarget.id,
+      personal_reminders: personalReminders.length > 0 ? personalReminders : [],
+    });
     setReminderTarget(null);
   };
   const togglePersonalReminder = (key: string) => {
