@@ -150,8 +150,8 @@ const NextPrayerBox = () => {
         </div>
         {/* 3 lines */}
         <div className="flex flex-col gap-0.5">
-          <p className="text-[11px] font-semibold text-white/70">باقي لصلاة {nextPrayer.name}</p>
-          <p className="text-base font-bold leading-tight">{nextPrayer.remaining}</p>
+          <p className="text-[10px] font-semibold text-white/70">باقي لصلاة {nextPrayer.name}</p>
+          <p className="text-sm font-bold leading-tight">{nextPrayer.remaining}</p>
           <p className="text-[10px] text-white/50">الأذان {nextPrayer.time}</p>
         </div>
       </div>
