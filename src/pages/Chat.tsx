@@ -1,57 +1,38 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Pin, Lock, Smile, Check, CheckCheck } from "lucide-react";
+import { Send, Pin, Lock, Smile, Check, CheckCheck, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
-
+import { useChat } from "@/hooks/useChat";
 
 type MessageStatus = "sent" | "delivered" | "read";
 
-interface Message {
-  id: string;
-  sender: string;
-  text: string;
-  time: string;
-  isMe: boolean;
-  pinned?: boolean;
-  reactions?: { emoji: string; count: number }[];
-  mention?: string;
-  status?: MessageStatus;
-}
-
-const familyMembers = ["أبي", "أمي", "أحمد", "سارة", "خالد"];
-
-const mockMessages: Message[] = [
-  { id: "1", sender: "أبي", text: "السلام عليكم يا أولاد، كيف حالكم اليوم؟", time: "9:30 ص", isMe: false, reactions: [{ emoji: "❤️", count: 3 }] },
-  { id: "2", sender: "أنا", text: "وعليكم السلام يا بابا، الحمد لله بخير 😊", time: "9:32 ص", isMe: true, status: "read" },
-  { id: "3", sender: "أمي", text: "الغداء جاهز الساعة 2، لا تتأخروا", time: "9:35 ص", isMe: false, pinned: true, reactions: [{ emoji: "👍", count: 4 }] },
-  { id: "4", sender: "سارة", text: "@أحمد لا تنسى تجيب الخبز وانت راجع", time: "9:40 ص", isMe: false, mention: "أحمد" },
-  { id: "5", sender: "أحمد", text: "إن شاء الله يا سارة، في شي ثاني تبونه؟", time: "9:42 ص", isMe: false },
-  { id: "6", sender: "أنا", text: "جيب حليب لو سمحت 🥛", time: "9:43 ص", isMe: true, status: "read" },
-  { id: "7", sender: "خالد", text: "وأنا أبي شوكولاتة 😄", time: "9:45 ص", isMe: false, reactions: [{ emoji: "😂", count: 2 }] },
-  { id: "8", sender: "أمي", text: "الله يعطيكم العافية، أحبكم كلكم ❤️", time: "9:50 ص", isMe: false, reactions: [{ emoji: "❤️", count: 5 }] },
-];
-
 const emojiOptions = ["❤️", "👍", "😂", "😮", "😢", "🤲"];
 
-const StatusIcon = ({ status }: { status: MessageStatus }) => {
-  if (status === "sent") {
-    return <Check size={14} className="text-white/50" />;
-  }
-  if (status === "delivered") {
-    return <CheckCheck size={14} className="text-white/50" />;
-  }
-  // read
+const StatusIcon = ({ status }: { status: string }) => {
+  if (status === "sent") return <Check size={14} className="text-white/50" />;
+  if (status === "delivered") return <CheckCheck size={14} className="text-white/50" />;
   return <CheckCheck size={14} className="text-blue-400" />;
 };
 
 const Chat = () => {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const {
+    messages,
+    isReady,
+    sendMessage,
+    togglePin,
+    addReaction,
+    profiles,
+    familyKey: hasKey,
+  } = useChat();
+
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showMentions, setShowMentions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const memberNames = Object.values(profiles);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,44 +40,14 @@ const Chat = () => {
 
   const handleSend = () => {
     if (!newMessage.trim()) return;
-    const msgId = Date.now().toString();
-    const msg: Message = {
-      id: msgId,
-      sender: "أنا",
-      text: newMessage,
-      time: new Date().toLocaleTimeString("ar-SA", { hour: "numeric", minute: "2-digit", hour12: true }),
-      isMe: true,
-      status: "sent",
-    };
-    setMessages((prev) => [...prev, msg]);
+    sendMessage(newMessage);
     setNewMessage("");
     setShowMentions(false);
-
-    // Simulate delivery after 1s, read after 3s
-    setTimeout(() => {
-      setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: "delivered" as MessageStatus } : m));
-    }, 1000);
-    setTimeout(() => {
-      setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: "read" as MessageStatus } : m));
-    }, 3000);
   };
 
   const handleReaction = (msgId: string, emoji: string) => {
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== msgId) return m;
-        const existing = m.reactions?.find((r) => r.emoji === emoji);
-        if (existing) {
-          return { ...m, reactions: m.reactions!.map((r) => r.emoji === emoji ? { ...r, count: r.count + 1 } : r) };
-        }
-        return { ...m, reactions: [...(m.reactions || []), { emoji, count: 1 }] };
-      })
-    );
+    addReaction(msgId, emoji);
     setShowEmojiPicker(null);
-  };
-
-  const togglePin = (msgId: string) => {
-    setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, pinned: !m.pinned } : m));
   };
 
   const handleInputChange = (value: string) => {
@@ -115,11 +66,24 @@ const Chat = () => {
 
   const pinnedMessages = messages.filter((m) => m.pinned);
 
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto animate-pulse">
+            <ShieldCheck size={24} className="text-primary" />
+          </div>
+          <p className="text-sm text-muted-foreground font-bold">جاري تهيئة التشفير...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
       <PageHeader
         title="محادثة العائلة"
-        subtitle={`${familyMembers.length} أعضاء • متصل الآن`}
+        subtitle={`${memberNames.length || 0} أعضاء`}
         onBack={() => navigate("/")}
         actions={[
           {
@@ -133,7 +97,9 @@ const Chat = () => {
         {/* Encryption label */}
         <div className="flex items-center justify-center gap-1.5 py-1.5 mt-2 rounded-lg" style={{ background: "hsla(0,0%,100%,0.08)" }}>
           <Lock size={12} className="text-white/60" />
-          <span className="text-[11px] text-white/60">التشفير بين جميع الأطراف مضمون</span>
+          <span className="text-[11px] text-white/60">
+            {hasKey ? "🔐 تشفير طرف لطرف مفعّل (AES-256-GCM)" : "التشفير غير مفعّل"}
+          </span>
         </div>
       </PageHeader>
 
@@ -142,7 +108,9 @@ const Chat = () => {
         <div className="px-4 py-2 border-b border-border bg-accent/10 flex items-center gap-2">
           <Pin size={14} className="text-accent shrink-0" />
           <p className="text-xs text-muted-foreground truncate flex-1">
-            <span className="font-semibold text-foreground">{pinnedMessages[pinnedMessages.length - 1].sender}:</span>{" "}
+            <span className="font-semibold text-foreground">
+              {pinnedMessages[pinnedMessages.length - 1].senderName}:
+            </span>{" "}
             {pinnedMessages[pinnedMessages.length - 1].text}
           </p>
           <span className="text-[10px] text-muted-foreground shrink-0">{pinnedMessages.length} مثبتة</span>
@@ -150,14 +118,25 @@ const Chat = () => {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-44"
+      <div
+        className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-44"
         style={{ backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--muted) / 0.5), transparent 70%)" }}
       >
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mb-3">
+              <Lock size={28} className="text-muted-foreground" />
+            </div>
+            <p className="text-sm font-bold text-muted-foreground">لا توجد رسائل</p>
+            <p className="text-xs text-muted-foreground/60">ابدأ محادثة مشفرة مع عائلتك</p>
+          </div>
+        )}
+
         {messages.map((msg) => (
           <div key={msg.id} className={`flex flex-col ${msg.isMe ? "items-start" : "items-end"} mb-1 group`}>
             {/* Sender name */}
             {!msg.isMe && (
-              <span className="text-[11px] font-semibold text-primary px-2 mb-0.5">{msg.sender}</span>
+              <span className="text-[11px] font-semibold text-primary px-2 mb-0.5">{msg.senderName}</span>
             )}
             <div className="relative max-w-[80%]">
               <div
@@ -183,11 +162,11 @@ const Chat = () => {
                 </p>
                 <div className={`flex items-center gap-1 mt-0.5 ${msg.isMe ? "justify-start" : "justify-end"}`}>
                   <span className={`text-[10px] ${msg.isMe ? "text-white/50" : "text-muted-foreground"}`}>{msg.time}</span>
-                  {msg.isMe && msg.status && <StatusIcon status={msg.status} />}
+                  {msg.isMe && <StatusIcon status={msg.status} />}
                 </div>
               </div>
 
-              {/* Action buttons (visible on hover/tap) */}
+              {/* Action buttons */}
               <div className={`absolute top-0 ${msg.isMe ? "-left-16" : "-right-16"} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1`}>
                 <button
                   onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
@@ -216,16 +195,16 @@ const Chat = () => {
             </div>
 
             {/* Reactions */}
-            {msg.reactions && msg.reactions.length > 0 && (
+            {msg.reactions && Object.keys(msg.reactions).length > 0 && (
               <div className={`flex gap-1 mt-0.5 px-2 ${msg.isMe ? "justify-start" : "justify-end"}`}>
-                {msg.reactions.map((r, i) => (
+                {Object.entries(msg.reactions).map(([emoji, count]) => (
                   <button
-                    key={i}
-                    onClick={() => handleReaction(msg.id, r.emoji)}
+                    key={emoji}
+                    onClick={() => handleReaction(msg.id, emoji)}
                     className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-muted border border-border text-xs hover:bg-accent/20 transition-colors"
                   >
-                    <span>{r.emoji}</span>
-                    <span className="text-muted-foreground">{r.count}</span>
+                    <span>{emoji}</span>
+                    <span className="text-muted-foreground">{count}</span>
                   </button>
                 ))}
               </div>
@@ -236,9 +215,9 @@ const Chat = () => {
       </div>
 
       {/* Mentions dropdown */}
-      {showMentions && (
+      {showMentions && memberNames.length > 0 && (
         <div className="absolute bottom-36 right-4 left-4 max-w-2xl mx-auto bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-          {familyMembers.map((name) => (
+          {memberNames.map((name) => (
             <button
               key={name}
               onClick={() => insertMention(name)}
@@ -284,7 +263,6 @@ const Chat = () => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };
