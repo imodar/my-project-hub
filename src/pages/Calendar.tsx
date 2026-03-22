@@ -35,10 +35,10 @@ interface FamilyEvent {
   id: string;
   title: string;
   date: string;
-  icon: string;
-  reminderBefore?: string[];
-  addedBy: string;
-  personalReminders?: string[]; // personal reminder keys for this user
+  icon: string | null;
+  reminder_before: string[] | null;
+  added_by: string;
+  personal_reminders: string[] | null;
 }
 
 const REMINDER_OPTIONS = [
