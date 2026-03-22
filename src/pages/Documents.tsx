@@ -248,20 +248,8 @@ const Documents = () => {
         if (target === "new") {
           setNewFiles((prev) => [...prev, docFile]);
         } else if (editTarget) {
-          setLists((prev) =>
-            prev.map((list) =>
-              list.id === activeListId
-                ? {
-                    ...list,
-                    items: list.items.map((item) =>
-                      item.id === editTarget.id
-                        ? { ...item, files: [...item.files, docFile] }
-                        : item
-                    ),
-                  }
-                : list
-            )
-          );
+          // File upload for existing items - skip for now (needs storage integration)
+        }
         }
       };
       reader.readAsDataURL(file);
