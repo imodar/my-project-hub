@@ -1,30 +1,24 @@
+## المرحلة 0 — Schema ✅ مكتمل
 
+### تم إنشاء:
+- 3 Enums: `app_role`, `family_role`, `subscription_plan`
+- 40+ جدول مع RLS على كل جدول
+- 5 Security Definer Functions: `has_role`, `is_family_member`, `is_family_admin`, `get_user_family_id`, `is_staff_member`
+- 4 Storage Buckets: `avatars`, `documents`, `album-photos`, `trip-documents`
+- Realtime enabled: `chat_messages`, `market_items`, `task_items`
+- Auto-create profile trigger on signup
 
-## إضافة قسم الرقية الشرعية للأذكار
+### ملاحظات:
+- `otp_codes` و `rate_limit_counters`: بدون RLS policies (تُدار من Edge Functions فقط)
+- Vault + pg_cron: يُعدّان يدوياً من Dashboard (Pro plan)
 
-### ملخص
-إضافة قسم جديد "الرقية الشرعية" إلى بيانات الأذكار يحتوي على آيات وأدعية الرقية المعروفة من القرآن والسنة.
+---
 
-### التنفيذ
+## المرحلة التالية: المرحلة 1 — المصادقة
 
-**ملف واحد: `src/data/athkarData.ts`**
-
-إضافة قسم جديد في مصفوفة `athkarSections` بعد القسم الأخير (أدعية جامعة) يحتوي على:
-
-- **العنوان**: الرقية الشرعية
-- **الأيقونة**: 🛡️
-- **التدرج اللوني**: درجات خضراء/زرقاء مميزة
-
-**محتوى الرقية الشرعية:**
-1. سورة الفاتحة (1 مرة)
-2. أول 5 آيات من سورة البقرة (1 مرة)
-3. آية الكرسي - البقرة 255 (1 مرة)
-4. آخر آيتين من سورة البقرة 285-286 (1 مرة)
-5. سورة الإخلاص (3 مرات)
-6. سورة الفلق (3 مرات)
-7. سورة الناس (3 مرات)
-8. دعاء "أعوذ بكلمات الله التامات من شر ما خلق" (3 مرات)
-9. دعاء "بسم الله الذي لا يضر مع اسمه شيء..." (3 مرات)
-10. دعاء الرقية "اللهم رب الناس أذهب البأس اشف أنت الشافي..." (7 مرات)
-11. دعاء "أعوذ بكلمات الله التامة من كل شيطان وهامة..." (1 مرة)
-
+### المطلوب:
+1. صفحة Auth.tsx (OTP + Google)
+2. AuthContext.tsx (إدارة الجلسة)
+3. AuthGuard.tsx (حماية المسارات)
+4. تفعيل Phone Auth + Google OAuth من Dashboard
+5. ربط Twilio
