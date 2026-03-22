@@ -396,12 +396,8 @@ const Vehicle = () => {
 
   const handleDeleteMaintenance = (recordId: string) => {
     if (!selectedCar) return;
-    const updatedCar = {
-      ...selectedCar,
-      maintenance: selectedCar.maintenance.filter(m => m.id !== recordId),
-    };
-    setCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
-    setSelectedCar(updatedCar);
+    deleteMaintMut.mutate(recordId);
+    setSelectedCar(prev => prev ? { ...prev, maintenance: prev.maintenance.filter(m => m.id !== recordId) } : null);
     toast.success("تم حذف السجل");
   };
 
