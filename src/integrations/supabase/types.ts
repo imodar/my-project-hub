@@ -55,6 +55,222 @@ export type Database = {
           },
         ]
       }
+      album_photos: {
+        Row: {
+          album_id: string
+          caption: string | null
+          created_at: string
+          date: string | null
+          id: string
+          url: string
+        }
+        Insert: {
+          album_id: string
+          caption?: string | null
+          created_at?: string
+          date?: string | null
+          id?: string
+          url: string
+        }
+        Update: {
+          album_id?: string
+          caption?: string | null
+          created_at?: string
+          date?: string | null
+          id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "album_photos_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      albums: {
+        Row: {
+          cover_color: string | null
+          created_at: string
+          created_by: string
+          family_id: string
+          id: string
+          linked_trip_id: string | null
+          name: string
+        }
+        Insert: {
+          cover_color?: string | null
+          created_at?: string
+          created_by: string
+          family_id: string
+          id?: string
+          linked_trip_id?: string | null
+          name: string
+        }
+        Update: {
+          cover_color?: string | null
+          created_at?: string
+          created_by?: string
+          family_id?: string
+          id?: string
+          linked_trip_id?: string | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "albums_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "albums_linked_trip_id_fkey"
+            columns: ["linked_trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_expenses: {
+        Row: {
+          amount: number
+          budget_id: string
+          created_at: string
+          currency: string
+          date: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          amount?: number
+          budget_id: string
+          created_at?: string
+          currency?: string
+          date?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          amount?: number
+          budget_id?: string
+          created_at?: string
+          currency?: string
+          date?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_expenses_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budgets: {
+        Row: {
+          created_at: string
+          created_by: string
+          family_id: string
+          id: string
+          income: number | null
+          label: string | null
+          month: string | null
+          shared_with: string[] | null
+          trip_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          family_id: string
+          id?: string
+          income?: number | null
+          label?: string | null
+          month?: string | null
+          shared_with?: string[] | null
+          trip_id?: string | null
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          family_id?: string
+          id?: string
+          income?: number | null
+          label?: string | null
+          month?: string | null
+          shared_with?: string[] | null
+          trip_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_events: {
+        Row: {
+          added_by: string
+          created_at: string
+          date: string
+          family_id: string
+          icon: string | null
+          id: string
+          personal_reminders: string[] | null
+          reminder_before: string[] | null
+          title: string
+        }
+        Insert: {
+          added_by: string
+          created_at?: string
+          date: string
+          family_id: string
+          icon?: string | null
+          id?: string
+          personal_reminders?: string[] | null
+          reminder_before?: string[] | null
+          title: string
+        }
+        Update: {
+          added_by?: string
+          created_at?: string
+          date?: string
+          family_id?: string
+          icon?: string | null
+          id?: string
+          personal_reminders?: string[] | null
+          reminder_before?: string[] | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consent_log: {
         Row: {
           accepted: boolean
@@ -84,6 +300,264 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      debt_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          date: string | null
+          debt_id: string
+          id: string
+          item_description: string | null
+          payment_details: Json | null
+          type: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          date?: string | null
+          debt_id: string
+          id?: string
+          item_description?: string | null
+          payment_details?: Json | null
+          type?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          date?: string | null
+          debt_id?: string
+          id?: string
+          item_description?: string | null
+          payment_details?: Json | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_payments_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debt_postponements: {
+        Row: {
+          created_at: string
+          debt_id: string
+          id: string
+          new_date: string | null
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          debt_id: string
+          id?: string
+          new_date?: string | null
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          debt_id?: string
+          id?: string
+          new_date?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_postponements_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debts: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          date: string | null
+          direction: string
+          due_date: string | null
+          family_id: string
+          has_reminder: boolean
+          id: string
+          is_archived: boolean
+          is_fully_paid: boolean
+          note: string | null
+          payment_details: Json | null
+          person_name: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          date?: string | null
+          direction: string
+          due_date?: string | null
+          family_id: string
+          has_reminder?: boolean
+          id?: string
+          is_archived?: boolean
+          is_fully_paid?: boolean
+          note?: string | null
+          payment_details?: Json | null
+          person_name: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          date?: string | null
+          direction?: string
+          due_date?: string | null
+          family_id?: string
+          has_reminder?: boolean
+          id?: string
+          is_archived?: boolean
+          is_fully_paid?: boolean
+          note?: string | null
+          payment_details?: Json | null
+          person_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debts_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_files: {
+        Row: {
+          added_at: string
+          document_id: string
+          file_url: string | null
+          id: string
+          name: string
+          size: number | null
+          type: string | null
+        }
+        Insert: {
+          added_at?: string
+          document_id: string
+          file_url?: string | null
+          id?: string
+          name: string
+          size?: number | null
+          type?: string | null
+        }
+        Update: {
+          added_at?: string
+          document_id?: string
+          file_url?: string | null
+          id?: string
+          name?: string
+          size?: number | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_files_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_items: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          category: string | null
+          expiry_date: string | null
+          id: string
+          list_id: string
+          name: string
+          note: string | null
+          reminder_enabled: boolean
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          category?: string | null
+          expiry_date?: string | null
+          id?: string
+          list_id: string
+          name: string
+          note?: string | null
+          reminder_enabled?: boolean
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          category?: string | null
+          expiry_date?: string | null
+          id?: string
+          list_id?: string
+          name?: string
+          note?: string | null
+          reminder_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "document_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_lists: {
+        Row: {
+          created_by: string
+          family_id: string
+          id: string
+          name: string
+          shared_with: string[] | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_by: string
+          family_id: string
+          id?: string
+          name: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_by?: string
+          family_id?: string
+          id?: string
+          name?: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_lists_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       families: {
         Row: {
@@ -264,6 +738,91 @@ export type Database = {
           },
         ]
       }
+      market_items: {
+        Row: {
+          added_by: string | null
+          category: string | null
+          checked: boolean
+          checked_by: string | null
+          created_at: string
+          id: string
+          list_id: string
+          name: string
+          quantity: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          category?: string | null
+          checked?: boolean
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          list_id: string
+          name: string
+          quantity?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          category?: string | null
+          checked?: boolean
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          list_id?: string
+          name?: string
+          quantity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "market_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_lists: {
+        Row: {
+          created_at: string
+          created_by: string
+          family_id: string
+          id: string
+          name: string
+          shared_with: string[] | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          family_id: string
+          id?: string
+          name: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          family_id?: string
+          id?: string
+          name?: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_lists_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_removals: {
         Row: {
           deleted_at: string
@@ -304,6 +863,115 @@ export type Database = {
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_lists: {
+        Row: {
+          created_by: string
+          family_id: string
+          id: string
+          name: string
+          shared_with: string[] | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_by: string
+          family_id: string
+          id?: string
+          name: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_by?: string
+          family_id?: string
+          id?: string
+          name?: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_lists_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      places: {
+        Row: {
+          added_by: string | null
+          address: string | null
+          category: string | null
+          description: string | null
+          id: string
+          kid_friendly: string | null
+          lat: number | null
+          list_id: string
+          lng: number | null
+          must_visit: boolean
+          name: string
+          note: string | null
+          phone: string | null
+          price_range: string | null
+          rating: number | null
+          social_link: string | null
+          suggested_by: string | null
+          visited: boolean
+        }
+        Insert: {
+          added_by?: string | null
+          address?: string | null
+          category?: string | null
+          description?: string | null
+          id?: string
+          kid_friendly?: string | null
+          lat?: number | null
+          list_id: string
+          lng?: number | null
+          must_visit?: boolean
+          name: string
+          note?: string | null
+          phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          social_link?: string | null
+          suggested_by?: string | null
+          visited?: boolean
+        }
+        Update: {
+          added_by?: string | null
+          address?: string | null
+          category?: string | null
+          description?: string | null
+          id?: string
+          kid_friendly?: string | null
+          lat?: number | null
+          list_id?: string
+          lng?: number | null
+          must_visit?: boolean
+          name?: string
+          note?: string | null
+          phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          social_link?: string | null
+          suggested_by?: string | null
+          visited?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "places_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "place_lists"
             referencedColumns: ["id"]
           },
         ]
@@ -349,6 +1017,348 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      task_items: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          done: boolean
+          id: string
+          list_id: string
+          name: string
+          note: string | null
+          priority: string
+          repeat_count: number | null
+          repeat_days: number[] | null
+          repeat_enabled: boolean
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          list_id: string
+          name: string
+          note?: string | null
+          priority?: string
+          repeat_count?: number | null
+          repeat_days?: number[] | null
+          repeat_enabled?: boolean
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          list_id?: string
+          name?: string
+          note?: string | null
+          priority?: string
+          repeat_count?: number | null
+          repeat_days?: number[] | null
+          repeat_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "task_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_lists: {
+        Row: {
+          created_by: string
+          family_id: string
+          id: string
+          name: string
+          shared_with: string[] | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_by: string
+          family_id: string
+          id?: string
+          name: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_by?: string
+          family_id?: string
+          id?: string
+          name?: string
+          shared_with?: string[] | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_lists_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_activities: {
+        Row: {
+          completed: boolean
+          cost: number | null
+          day_plan_id: string
+          id: string
+          location: string | null
+          name: string
+          time: string | null
+        }
+        Insert: {
+          completed?: boolean
+          cost?: number | null
+          day_plan_id: string
+          id?: string
+          location?: string | null
+          name: string
+          time?: string | null
+        }
+        Update: {
+          completed?: boolean
+          cost?: number | null
+          day_plan_id?: string
+          id?: string
+          location?: string | null
+          name?: string
+          time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_activities_day_plan_id_fkey"
+            columns: ["day_plan_id"]
+            isOneToOne: false
+            referencedRelation: "trip_day_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_day_plans: {
+        Row: {
+          city: string | null
+          day_number: number
+          id: string
+          trip_id: string
+        }
+        Insert: {
+          city?: string | null
+          day_number: number
+          id?: string
+          trip_id: string
+        }
+        Update: {
+          city?: string | null
+          day_number?: number
+          id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_day_plans_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_documents: {
+        Row: {
+          added_at: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          name: string
+          notes: string | null
+          trip_id: string
+          type: string | null
+        }
+        Insert: {
+          added_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          trip_id: string
+          type?: string | null
+        }
+        Update: {
+          added_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          trip_id?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_documents_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_expenses: {
+        Row: {
+          amount: number
+          id: string
+          name: string
+          trip_id: string
+        }
+        Insert: {
+          amount?: number
+          id?: string
+          name: string
+          trip_id: string
+        }
+        Update: {
+          amount?: number
+          id?: string
+          name?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_packing: {
+        Row: {
+          id: string
+          name: string
+          packed: boolean
+          trip_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          packed?: boolean
+          trip_id: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          packed?: boolean
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_packing_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_suggestions: {
+        Row: {
+          id: string
+          location: string | null
+          place_name: string
+          reason: string | null
+          status: string
+          suggested_by: string | null
+          trip_id: string
+          type: string | null
+        }
+        Insert: {
+          id?: string
+          location?: string | null
+          place_name: string
+          reason?: string | null
+          status?: string
+          suggested_by?: string | null
+          trip_id: string
+          type?: string | null
+        }
+        Update: {
+          id?: string
+          location?: string | null
+          place_name?: string
+          reason?: string | null
+          status?: string
+          suggested_by?: string | null
+          trip_id?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_suggestions_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          budget: number | null
+          created_at: string
+          created_by: string
+          destination: string | null
+          end_date: string | null
+          family_id: string
+          id: string
+          name: string
+          start_date: string | null
+          status: string
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          created_by: string
+          destination?: string | null
+          end_date?: string | null
+          family_id: string
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: string
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          created_by?: string
+          destination?: string | null
+          end_date?: string | null
+          family_id?: string
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_keypairs: {
         Row: {
