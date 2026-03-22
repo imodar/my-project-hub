@@ -72,8 +72,7 @@ const Medications = () => {
   // Check for due medications every minute
   useEffect(() => {
     const checkDue = () => {
-      const meds = loadMedications();
-      const dueMed = meds.find((m) => isMedicationDue(m));
+      const dueMed = medications.find((m) => isMedicationDue(m));
       if (dueMed && !showDueAlert) {
         setShowDueAlert(dueMed);
       }
@@ -81,7 +80,7 @@ const Medications = () => {
     checkDue();
     const interval = setInterval(checkDue, 60000);
     return () => clearInterval(interval);
-  }, [showDueAlert]);
+  }, [showDueAlert, medications]);
 
   // Recalculate next due times
   useEffect(() => {
