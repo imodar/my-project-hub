@@ -217,7 +217,19 @@ function useGoldPrice() {
 // ── Component ──
 const Zakat = () => {
   const navigate = useNavigate();
-  const [assets, setAssets] = useState<ZakatAsset[]>(loadAssets);
+  const { assets: dbAssets, isLoading: assetsLoading, addAsset: addAssetMut, updateAsset: updateAssetMut, deleteAsset: deleteAssetMut, addZakatPayment } = useZakatAssets();
+
+  const assets: ZakatAsset[] = useMemo(() => (dbAssets || []).map((a: any) => ({
+    id: a.id,
+    type: a.type as AssetType,
+    label: a.name,
+    amount: a.amount || a.weight_grams || 0,
+    karat: undefined, // stored in metadata if needed
+    purchaseDate: a.purchase_date || "",
+    marketValue: undefined,
+    reminder: a.reminder || false,
+  })), [dbAssets]);
+
   const [showAdd, setShowAdd] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [addType, setAddType] = useState<AssetType>("cash");
