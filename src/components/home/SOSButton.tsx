@@ -10,6 +10,9 @@ import {
   Radio, PhoneCall, MessageSquare, Check, AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmergencyContact {
   id: string;
@@ -20,13 +23,6 @@ interface EmergencyContact {
 
 const STORAGE_KEY = "sos_emergency_contacts";
 const SOS_DISABLED_KEY = "sos_disabled_members";
-
-const FAMILY_MEMBERS = [
-  { id: "1", name: "أحمد" },
-  { id: "2", name: "سارة" },
-  { id: "3", name: "ياسين" },
-  { id: "4", name: "لينا" },
-];
 
 type SOSPhase = "idle" | "holding" | "countdown" | "active";
 

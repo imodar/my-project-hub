@@ -67,10 +67,7 @@ const SWIPE_THRESHOLD = 40;
 const SWIPE_WIDTH = 144; // wider for 2 buttons
 
 const getProfileName = (): string => {
-  // Try to get name from profile/localStorage
-  const saved = localStorage.getItem("profile_name");
-  if (saved) return saved;
-  return "أحمد"; // fallback - same as Profile page default
+  return "";
 };
 
 const FamilyManagement = () => {
