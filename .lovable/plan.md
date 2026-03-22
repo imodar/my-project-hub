@@ -8,17 +8,70 @@
 - Realtime enabled: `chat_messages`, `market_items`, `task_items`
 - Auto-create profile trigger on signup
 
-### ملاحظات:
-- `otp_codes` و `rate_limit_counters`: بدون RLS policies (تُدار من Edge Functions فقط)
-- Vault + pg_cron: يُعدّان يدوياً من Dashboard (Pro plan)
+---
+
+## المرحلة 1 — المصادقة ✅ مكتمل
+
+- Auth.tsx (OTP + Google OAuth)
+- AuthContext + AuthGuard
+- Phone Auth + Google OAuth
 
 ---
 
-## المرحلة التالية: المرحلة 1 — المصادقة
+## المرحلة 2 — Edge Functions + API Layer ✅ مكتمل
 
-### المطلوب:
-1. صفحة Auth.tsx (OTP + Google)
-2. AuthContext.tsx (إدارة الجلسة)
-3. AuthGuard.tsx (حماية المسارات)
-4. تفعيل Phone Auth + Google OAuth من Dashboard
-5. ربط Twilio
+- 25 Edge Function مُنشأة
+- `apiClient` موحّد في `src/lib/api.ts`
+
+---
+
+## المرحلة 3 — React Query Hooks ✅ مكتمل
+
+- hooks لكل ميزة (16 hook)
+
+---
+
+## المرحلة 4 — ربط الصفحات بالـ Hooks ✅ مكتمل
+
+- جميع الصفحات محوّلة من localStorage إلى Supabase
+
+---
+
+## المرحلة 5 — Stripe + الاشتراكات 🔲
+
+---
+
+## المرحلة 6 — E2EE التشفير ✅ مكتمل
+
+- `src/lib/crypto.ts`: ECDH P-256 + AES-256-GCM
+- IndexedDB للمفاتيح الخاصة (لا تغادر الجهاز)
+- `family_keys` لتخزين المفتاح المشترك
+- `useChat` hook مع تشفير/فك تشفير تلقائي
+- Realtime subscription مشفر
+
+---
+
+## المرحلة 7 — Push Notifications 🔲 (مؤجّل - يحتاج Firebase)
+
+---
+
+## المرحلة 8 — File Upload + Storage ✅ مكتمل
+
+- `src/lib/storage.ts`: upload, signed URLs, delete, validation
+- Storage RLS policies لجميع الـ buckets
+- دعم public (avatars) و private (documents, albums, trips)
+
+---
+
+## المرحلة 9 — لوحة الإدارة ✅ مكتمل
+
+- `AdminDashboard.tsx` مع:
+  - إحصائيات (مستخدمين، عائلات، نشاط، حذف)
+  - قائمة المستخدمين مع الاشتراكات
+  - سجل التدقيق (Audit Log)
+  - حماية بـ `user_roles` + `has_role`
+  - Route: `/admin`
+
+---
+
+## المرحلة 10 — Testing + Deployment 🔲
