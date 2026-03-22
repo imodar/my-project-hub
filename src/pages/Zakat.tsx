@@ -253,25 +253,21 @@ const Zakat = () => {
   const handleAdd = () => {
     if (!addAmount || Number(addAmount) <= 0) return;
     if (editingAssetId) {
-      updateAssets(assets.map(a => a.id === editingAssetId ? {
-        ...a,
+      updateAssetMut.mutate({
+        id: editingAssetId,
         type: addType,
-        label: addLabel || ASSET_TYPE_META[addType].label,
+        name: addLabel || ASSET_TYPE_META[addType].label,
         amount: Number(addAmount),
-        karat: addType === "gold" ? addKarat : undefined,
-        purchaseDate: addDate,
-      } : a));
+        purchase_date: addDate,
+      });
     } else {
-      const newAsset: ZakatAsset = {
-        id: Date.now().toString(),
+      addAssetMut.mutate({
         type: addType,
-        label: addLabel || ASSET_TYPE_META[addType].label,
+        name: addLabel || ASSET_TYPE_META[addType].label,
         amount: Number(addAmount),
-        karat: addType === "gold" ? addKarat : undefined,
-        purchaseDate: addDate,
+        purchase_date: addDate,
         reminder: true,
-      };
-      updateAssets([...assets, newAsset]);
+      });
     }
     setShowAdd(false);
     resetAddForm();
