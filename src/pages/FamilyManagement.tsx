@@ -375,8 +375,6 @@ const FamilyManagement = () => {
     setAddStep("choose-type");
     setSelectedType(null);
     setNewName("");
-    setCodeTimer(300);
-    setInviteCode(generateInviteCode());
   };
 
   // Simulate incoming join request (for demo - triggered by button)
