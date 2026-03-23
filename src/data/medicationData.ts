@@ -50,25 +50,41 @@ export const WEEKDAYS = [
 
 export const calculateNextDue = (med: Medication): string => {
   const now = new Date();
+  const lastTaken = med.reminder.lastConfirmedAt ? new Date(med.reminder.lastConfirmedAt) : null;
+  const sortedTimes = med.specificTimes && med.specificTimes.length > 0
+    ? [...med.specificTimes].sort()
+    : [];
 
-  const getNextTimeToday = (): string | null => {
-    if (med.specificTimes && med.specificTimes.length > 0) {
-      for (const time of [...med.specificTimes].sort()) {
-        const [h, m] = time.split(":").map(Number);
-        const candidate = new Date(now);
-        candidate.setHours(h, m, 0, 0);
-        if (candidate > now) return candidate.toISOString();
+  // Helper: check if a specific dose time was already taken today
+  // A dose is considered taken if lastConfirmedAt is on the same day and
+  // within 60 minutes before or after the dose time
+  const isDoseTimeTaken = (doseDate: Date): boolean => {
+    if (!lastTaken) return false;
+    const diff = Math.abs(doseDate.getTime() - lastTaken.getTime());
+    // Same day and within 60 min window
+    return doseDate.toDateString() === lastTaken.toDateString() && diff < 60 * 60 * 1000;
+  };
+
+  const getNextTimeOnDay = (day: Date): string | null => {
+    if (sortedTimes.length === 0) return null;
+    for (const time of sortedTimes) {
+      const [h, m] = time.split(":").map(Number);
+      const candidate = new Date(day);
+      candidate.setHours(h, m, 0, 0);
+      // Must be in the future AND not already taken
+      if (candidate > now && !isDoseTimeTaken(candidate)) {
+        return candidate.toISOString();
       }
     }
     return null;
   };
 
   if (med.frequencyType === "daily") {
-    const todayTime = getNextTimeToday();
+    const todayTime = getNextTimeOnDay(now);
     if (todayTime) return todayTime;
-    // All times passed today, next is tomorrow first time
-    if (med.specificTimes && med.specificTimes.length > 0) {
-      const [h, m] = [...med.specificTimes].sort()[0].split(":").map(Number);
+    // All times passed or taken today, next is tomorrow first time
+    if (sortedTimes.length > 0) {
+      const [h, m] = sortedTimes[0].split(":").map(Number);
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(h, m, 0, 0);
@@ -78,15 +94,13 @@ export const calculateNextDue = (med: Medication): string => {
   }
 
   if (med.frequencyType === "specific_days" && med.selectedDays && med.selectedDays.length > 0) {
-    // JS: 0=Sun,1=Mon...6=Sat. Our mapping: 0=Sat,1=Sun,...6=Fri
-    // Convert our day index to JS day: ourDay 0(Sat)=JS 6, ourDay 1(Sun)=JS 0, etc.
     const ourToJs = (d: number) => (d + 6) % 7;
     const jsDays = med.selectedDays.map(ourToJs);
     const currentJsDay = now.getDay();
 
     // Check if today is a selected day
     if (jsDays.includes(currentJsDay)) {
-      const todayTime = getNextTimeToday();
+      const todayTime = getNextTimeOnDay(now);
       if (todayTime) return todayTime;
     }
 
@@ -96,8 +110,8 @@ export const calculateNextDue = (med: Medication): string => {
       if (jsDays.includes(checkDay)) {
         const next = new Date(now);
         next.setDate(next.getDate() + (offset === 0 ? 7 : offset));
-        if (med.specificTimes && med.specificTimes.length > 0) {
-          const [h, m] = [...med.specificTimes].sort()[0].split(":").map(Number);
+        if (sortedTimes.length > 0) {
+          const [h, m] = sortedTimes[0].split(":").map(Number);
           next.setHours(h, m, 0, 0);
         } else {
           next.setHours(9, 0, 0, 0);

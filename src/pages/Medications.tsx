@@ -117,7 +117,7 @@ const SwipeableMedCard = ({
 
 const Medications = () => {
   const { members: familyMembers } = useFamilyMembers();
-  const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut } = useMedications();
+  const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut, addLog: addLogMut } = useMedications();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
@@ -292,15 +292,24 @@ const Medications = () => {
 
   const markAsTaken = (medId: string) => {
     const now = new Date().toISOString();
+    // Log to DB
+    addLogMut.mutate({ medication_id: medId });
+
     setMedications((prev) =>
       prev.map((m) => {
         if (m.id !== medId) return m;
-        const updated = { ...m, takenLog: [...m.takenLog, now], reminder: { ...m.reminder, lastConfirmedAt: now } };
+        const updated = {
+          ...m,
+          takenLog: [...m.takenLog, now],
+          reminder: { ...m.reminder, lastConfirmedAt: now },
+        };
+        // Recalculate next due — will skip the dose that was just taken
         updated.reminder.nextDueAt = calculateNextDue(updated);
         return updated;
       })
     );
-    setShowDueAlert(null);
+    // Dismiss alert if this med was shown
+    setShowDueAlert((prev) => (prev?.id === medId ? null : prev));
     toast.success("تم تسجيل تناول الدواء ✅");
   };
 
