@@ -219,8 +219,8 @@ const SwipeableCarCard = ({ children, onDelete, onEdit }: {
   };
 
   const handleTouchEnd = () => {
-    if (offset < -80) {
-      setOffset(-140); // snap open
+    if (offset > 80) {
+      setOffset(140); // snap open
     } else {
       setOffset(0);
     }
