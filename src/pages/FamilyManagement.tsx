@@ -76,6 +76,7 @@ const getProfileName = (): string => {
 const FamilyManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { familyId } = useFamilyId();
   const [profileName, setProfileName] = useState("");
 
   useEffect(() => {
