@@ -519,7 +519,7 @@ const FamilyManagement = () => {
       </div>
 
       {/* Members List */}
-      <div className="flex-1 px-4 pb-40">
+      <div className="flex-1 px-4 pb-32">
         <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
         <div className="space-y-2">
           {members.map((member) => {
