@@ -36,11 +36,9 @@ import { toast } from "sonner";
 /* ─── Swipeable Card ─── */
 const SwipeableMedCard = ({
   children,
-  onEdit,
   onDelete,
 }: {
   children: React.ReactNode;
-  onEdit: () => void;
   onDelete: () => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -59,19 +57,15 @@ const SwipeableMedCard = ({
     if (!isSwiping.current) return;
     currentX.current = e.touches[0].clientX;
     const diff = currentX.current - startX.current;
-    // Clamp between -threshold*1.5 and +threshold*1.5
-    const clamped = Math.max(-threshold * 1.5, Math.min(threshold * 1.5, diff));
+    // Only allow right swipe (positive) for delete
+    const clamped = Math.max(0, Math.min(threshold * 1.5, diff));
     setOffset(clamped);
   };
 
   const handleTouchEnd = () => {
     isSwiping.current = false;
     if (offset > threshold) {
-      // Swiped right → delete (RTL: right = delete)
       onDelete();
-    } else if (offset < -threshold) {
-      // Swiped left → edit (RTL: left = edit)
-      onEdit();
     }
     setOffset(0);
   };
@@ -81,7 +75,6 @@ const SwipeableMedCard = ({
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      {/* Background actions */}
       {offset > 0 && (
         <div
           className="absolute inset-y-0 right-0 flex items-center justify-end pr-5 bg-destructive rounded-2xl"
@@ -90,15 +83,6 @@ const SwipeableMedCard = ({
           <Trash2 className="w-5 h-5 text-destructive-foreground" />
         </div>
       )}
-      {offset < 0 && (
-        <div
-          className="absolute inset-y-0 left-0 flex items-center justify-start pl-5 bg-primary rounded-2xl"
-          style={{ width: `${absOffset}px`, opacity: actionOpacity }}
-        >
-          <Pencil className="w-5 h-5 text-primary-foreground" />
-        </div>
-      )}
-      {/* Card content */}
       <div
         ref={containerRef}
         onTouchStart={handleTouchStart}
@@ -432,7 +416,6 @@ const Medications = () => {
             return (
               <SwipeableMedCard
                 key={med.id}
-                onEdit={() => { setShowDetailSheet(null); openEditDrawer(med); }}
                 onDelete={() => setShowDeleteConfirm(med)}
               >
                 <div
@@ -474,7 +457,20 @@ const Medications = () => {
                       <Clock className="w-3.5 h-3.5" />
                       <span>{getTimeUntilNext(med.reminder.nextDueAt)}</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEditDrawer(med); }}
+                        className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(med); }}
+                        className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </button>
+                      <div className="w-px h-4 bg-border/50 mx-1" />
                       {med.reminder.enabled ? (
                         <Bell className="w-3.5 h-3.5 text-primary" />
                       ) : (
