@@ -769,15 +769,15 @@ const FamilyManagement = () => {
               </button>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Approval Dialog - When someone scans QR or enters code */}
-      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <DialogContent className="max-w-sm rounded-3xl" style={{ direction: "rtl" }}>
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg">طلب انضمام جديد</DialogTitle>
-          </DialogHeader>
+      {/* Approval Drawer - When someone scans QR or enters code */}
+      <Drawer open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">طلب انضمام جديد</DrawerTitle>
+          </DrawerHeader>
 
           <div className="space-y-4 mt-2">
             {/* Notification */}
