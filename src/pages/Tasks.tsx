@@ -401,7 +401,7 @@ const Tasks = () => {
           onPointerCancel={() => { cancelLongPress(); closeSwipe(item.id); setDragActiveId(null); setDragOverId(null); isLongPressingRef.current = false; }}
         >
           <div className="relative shrink-0 w-7 h-7">
-            {activeList?.type === "family" && pendingItemIds.includes(item.id) && (
+            {pendingItemIds.includes(item.id) && (
               <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
             )}
             <button
