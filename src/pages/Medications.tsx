@@ -38,6 +38,7 @@ import { toast } from "sonner";
 // localStorage helper removed — using useFamilyMembers hook
 
 const Medications = () => {
+  const { members: familyMembers } = useFamilyMembers();
   const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut } = useMedications();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
