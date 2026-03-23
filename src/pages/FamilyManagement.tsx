@@ -150,10 +150,11 @@ const FamilyManagement = () => {
   const [addStep, setAddStep] = useState<"choose-type" | "enter-name" | "invite-method">("choose-type");
   const [selectedType, setSelectedType] = useState<FamilyRole | null>(null);
   const [newName, setNewName] = useState("");
-  const [inviteCode, setInviteCode] = useState(generateInviteCode);
+  const [inviteCode, setInviteCode] = useState("");
   const [codeTimer, setCodeTimer] = useState(300);
   const [codeCopied, setCodeCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
   // Swipe state
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
@@ -161,19 +162,56 @@ const FamilyManagement = () => {
   const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
   const isDragging = useRef(false);
 
+  // Fetch invite code from server on mount
+  const fetchInviteCode = useCallback(async () => {
+    if (!familyId) return;
+    const { data } = await supabase.functions.invoke("family-management", {
+      body: { action: "get-invite-code", family_id: familyId },
+    });
+    if (data?.data?.invite_code) {
+      setInviteCode(data.data.invite_code);
+    }
+  }, [familyId]);
+
+  const regenerateCode = useCallback(async () => {
+    if (!familyId || isRegeneratingCode) return;
+    setIsRegeneratingCode(true);
+    try {
+      const { data } = await supabase.functions.invoke("family-management", {
+        body: { action: "regenerate-code", family_id: familyId },
+      });
+      if (data?.data?.invite_code) {
+        setInviteCode(data.data.invite_code);
+        setCodeTimer(300);
+      }
+    } catch {
+      toast({ title: "فشل تجديد الكود", variant: "destructive" });
+    } finally {
+      setIsRegeneratingCode(false);
+    }
+  }, [familyId, isRegeneratingCode]);
+
+  // Fetch code when family is ready
   useEffect(() => {
-    if (!showAddDialog || addStep !== "invite-method") return;
+    if (familyId && creatorRole) {
+      fetchInviteCode();
+    }
+  }, [familyId, creatorRole, fetchInviteCode]);
+
+  // Countdown timer - always runs when we have a code
+  useEffect(() => {
+    if (!inviteCode || !creatorRole) return;
     const interval = setInterval(() => {
       setCodeTimer((t) => {
         if (t <= 1) {
-          setInviteCode(generateInviteCode());
+          regenerateCode();
           return 300;
         }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [showAddDialog, addStep]);
+  }, [inviteCode, creatorRole, regenerateCode]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
