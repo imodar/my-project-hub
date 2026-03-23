@@ -225,23 +225,10 @@ const formatLastUpdated = (date: Date): string => {
 
 const HeroSection = () => {
   const { islamicMode } = useIslamicMode();
-  const { user } = useAuth();
+  const { profileName } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
-  const [profileName, setProfileName] = useState("");
   const hijriDate = "٤ شوّال ١٤٤٧";
   const gregorianDate = "٢٣ مارس ٢٠٢٦";
-
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data?.name) setProfileName(data.name);
-      });
-  }, [user]);
 
   const currentUser = { name: profileName, role: "parent" as const };
 
