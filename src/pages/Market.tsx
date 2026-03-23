@@ -56,7 +56,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; emoji: string 
 };
 
 const CATEGORIES = ["الكل", ...Object.keys(CATEGORY_COLORS)];
-const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
+const FAMILY_MEMBERS: string[] = [];
 
 const SWIPE_WIDTH = 140;
 
