@@ -838,11 +838,10 @@ const Vehicle = () => {
                 const soonCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "soon").length;
 
                 return (
-                  <SwipeableRow
+                  <SwipeableCarCard
                     key={car.id}
-                    onDelete={() => handleDeleteCar(car.id)}
+                    onDelete={() => setDeleteConfirmCar(car)}
                     onEdit={() => setSelectedCar(car)}
-                    onReminder={() => {}}
                   >
                     <button
                       onClick={() => setSelectedCar(car)}
@@ -885,7 +884,7 @@ const Vehicle = () => {
                         </div>
                       </div>
                     </button>
-                  </SwipeableRow>
+                  </SwipeableCarCard>
                 );
               })}
             </div>
