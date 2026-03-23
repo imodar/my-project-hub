@@ -37,7 +37,7 @@ interface MarketList {
   name: string;
   type: "family" | "personal" | "shared";
   isDefault?: boolean;
-  useDefaultCategories?: boolean;
+  useCategories: boolean;
   sharedWith?: string[];
   items: MarketItem[];
   lastUpdatedBy: string;
@@ -72,6 +72,7 @@ const Market = () => {
       id: l.id,
       name: l.name,
       type: (l.type || "family") as "family" | "personal" | "shared",
+      useCategories: l.use_categories ?? true,
       sharedWith: l.shared_with || [],
       lastUpdatedBy: "",
       lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
@@ -222,6 +223,7 @@ const Market = () => {
       name: newListName.trim(),
       type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
       shared_with: newListType === "family" ? newListShareMembers : [],
+      use_categories: newListUseCategories,
     });
     setNewListName("");
     setNewListShareMembers([]);
@@ -395,8 +397,8 @@ const Market = () => {
         </div>
       </div>
 
-      {/* Category filters - only show when there are items */}
-      {totalItems > 0 && (
+      {/* Category filters - show based on list's useCategories setting */}
+      {activeList?.useCategories && (
       <div className="px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
         {CATEGORIES.map((cat) => {
           const isAll = cat === "الكل";

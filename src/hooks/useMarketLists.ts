@@ -25,7 +25,7 @@ export function useMarketLists() {
   });
 
   const createList = useMutation({
-    mutationFn: async (input: { name: string; type?: string; shared_with?: string[] }) => {
+    mutationFn: async (input: { name: string; type?: string; shared_with?: string[]; use_categories?: boolean }) => {
       if (!familyId || !user) throw new Error("No family");
       const { error } = await supabase.from("market_lists").insert({
         name: input.name,
@@ -33,6 +33,7 @@ export function useMarketLists() {
         shared_with: input.shared_with || [],
         family_id: familyId,
         created_by: user.id,
+        use_categories: input.use_categories ?? true,
       });
       if (error) throw error;
     },
