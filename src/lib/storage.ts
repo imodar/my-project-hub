@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-type BucketName = "avatars" | "documents" | "album-photos" | "trip-documents";
+type BucketName = "avatars" | "documents" | "album-photos" | "trip-documents" | "chat-media";
 
 interface UploadResult {
   url: string;
