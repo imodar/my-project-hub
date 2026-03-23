@@ -623,20 +623,39 @@ const FamilyManagement = () => {
               {/* Invite Code */}
               <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-muted-foreground">ينتهي خلال {formatTime(codeTimer)}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">ينتهي خلال {formatTime(codeTimer)}</span>
+                    <button
+                      onClick={regenerateCode}
+                      disabled={isRegeneratingCode}
+                      className="p-1 rounded-full transition-colors active:bg-muted"
+                    >
+                      <RefreshCw size={14} className={`text-muted-foreground ${isRegeneratingCode ? "animate-spin" : ""}`} />
+                    </button>
+                  </div>
                   <span className="text-sm font-semibold text-foreground">كود الانضمام</span>
+                </div>
+                {/* Timer progress bar */}
+                <div className="w-full h-1 rounded-full bg-muted mb-3 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-1000 ease-linear"
+                    style={{
+                      width: `${(codeTimer / 300) * 100}%`,
+                      background: codeTimer < 60 ? "hsl(var(--destructive))" : "hsl(var(--primary))",
+                    }}
+                  />
                 </div>
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <div className="flex gap-1.5" style={{ direction: "ltr" }}>
-                    {inviteCode.split("").map((char, i) => (
-                      <div key={i} className="w-10 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-foreground bg-muted border border-border">
-                        {char}
+                    {(inviteCode || "--------").split("").map((char, i) => (
+                      <div key={i} className="w-9 h-11 rounded-xl flex items-center justify-center text-base font-bold text-foreground bg-muted border border-border">
+                        {isRegeneratingCode ? "·" : char}
                       </div>
                     ))}
                   </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground/70 text-center mb-2">عند إدخال الكود، ستظهر شاشة قبول على جهازك لاختيار الدور</p>
-                <button onClick={handleCopyCode} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10" style={{ background: "hsl(var(--primary) / 0.08)" }}>
+                <p className="text-[10px] text-muted-foreground/70 text-center mb-2">كود فريد يتجدد تلقائياً كل ٥ دقائق • عند إدخاله ستظهر شاشة قبول</p>
+                <button onClick={handleCopyCode} disabled={!inviteCode || isRegeneratingCode} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10 disabled:opacity-40" style={{ background: "hsl(var(--primary) / 0.08)" }}>
                   {codeCopied ? <Check size={16} /> : <Copy size={16} />}
                   {codeCopied ? "تم النسخ" : "نسخ الكود"}
                 </button>
