@@ -547,6 +547,7 @@ const Market = () => {
           </div>
         )}
       </div>
+      </>
       )}
       </PullToRefresh>
 
