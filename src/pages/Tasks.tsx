@@ -768,12 +768,12 @@ const Tasks = () => {
               )}
               {/* Repeat section */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Switch checked={newItemRepeatEnabled} onCheckedChange={setNewItemRepeatEnabled} />
+                <div className="flex items-center justify-between flex-row-reverse">
                   <span className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <Repeat size={16} className="text-primary" />
                     تكرار المهمة
                   </span>
+                  <Switch checked={newItemRepeatEnabled} onCheckedChange={setNewItemRepeatEnabled} />
                 </div>
                 {newItemRepeatEnabled && (
                   <>
