@@ -62,7 +62,7 @@ const Medications = () => {
   const [formColor, setFormColor] = useState(MEDICATION_COLORS[0]);
   const [formReminderEnabled, setFormReminderEnabled] = useState(true);
 
-  const familyMembers = useMemo(loadFamilyMembers, []);
+  // familyMembers now from useFamilyMembers hook above
 
   // Check for due medications every minute
   useEffect(() => {
