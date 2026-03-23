@@ -20,12 +20,6 @@ interface FamilyMember {
   avatar?: string;
 }
 
-const generateInviteCode = () => {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-};
 
 const ROLE_LABELS: Record<string, string> = {
   father: "الأب",
