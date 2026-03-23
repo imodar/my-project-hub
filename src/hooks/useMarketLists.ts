@@ -72,7 +72,24 @@ export function useMarketLists() {
       const { error } = await supabase.from("market_items").update(updates).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onMutate: async (input) => {
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData(key);
+      qc.setQueryData(key, (old: any) => {
+        if (!old) return old;
+        return old.map((list: any) => ({
+          ...list,
+          market_items: list.market_items.map((item: any) =>
+            item.id === input.id ? { ...item, ...input } : item
+          ),
+        }));
+      });
+      return { prev };
+    },
+    onError: (_err, _input, ctx) => {
+      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const deleteItem = useMutation({
