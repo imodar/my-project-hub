@@ -371,7 +371,10 @@ export type Database = {
           family_id: string
           id: string
           iv: string | null
+          media_metadata: Json | null
+          media_url: string | null
           mention_user_id: string | null
+          message_type: string
           pinned: boolean
           reactions: Json | null
           sender_id: string
@@ -383,7 +386,10 @@ export type Database = {
           family_id: string
           id?: string
           iv?: string | null
+          media_metadata?: Json | null
+          media_url?: string | null
           mention_user_id?: string | null
+          message_type?: string
           pinned?: boolean
           reactions?: Json | null
           sender_id: string
@@ -395,7 +401,10 @@ export type Database = {
           family_id?: string
           id?: string
           iv?: string | null
+          media_metadata?: Json | null
+          media_url?: string | null
           mention_user_id?: string | null
+          message_type?: string
           pinned?: boolean
           reactions?: Json | null
           sender_id?: string
