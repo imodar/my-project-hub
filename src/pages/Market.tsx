@@ -356,7 +356,8 @@ const Market = () => {
           onPointerCancel={() => closeSwipe(item.id)}
         >
           <button
-            onClick={() => toggleItem(item.id)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
             className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
               isChecked
                 ? "bg-primary"
