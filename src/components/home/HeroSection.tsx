@@ -485,6 +485,7 @@ const HeroSection = () => {
       </section>
 
       <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={currentUser} />
+      <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
     </>
   );
 };
