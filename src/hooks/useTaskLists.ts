@@ -17,7 +17,7 @@ export function useTaskLists() {
         .from("task_lists")
         .select("*, task_items(*)")
         .eq("family_id", familyId)
-        .order("created_at", { ascending: true });
+        .order("updated_at", { ascending: true });
       if (error) throw error;
       return data || [];
     },
