@@ -210,17 +210,17 @@ const SwipeableCarCard = ({ children, onDelete, onEdit }: {
     }
     if (isVertical.current) return;
 
-    // RTL: only allow negative dx (drag left to reveal actions on right)
-    if (dx < 0) {
-      setOffset(Math.max(dx, -160));
+    // RTL: allow positive dx (drag right to reveal actions on left)
+    if (dx > 0) {
+      setOffset(Math.min(dx, 160));
     } else {
       setOffset(0);
     }
   };
 
   const handleTouchEnd = () => {
-    if (offset < -80) {
-      setOffset(-140); // snap open
+    if (offset > 80) {
+      setOffset(140); // snap open
     } else {
       setOffset(0);
     }
@@ -230,7 +230,7 @@ const SwipeableCarCard = ({ children, onDelete, onEdit }: {
   return (
     <div className="relative overflow-hidden rounded-2xl">
       {/* Actions behind */}
-      <div className="absolute inset-y-0 left-0 flex items-stretch z-0" style={{ width: 140 }}>
+      <div className="absolute inset-y-0 right-0 flex items-stretch z-0" style={{ width: 140 }}>
         <button onClick={onEdit} className="flex-1 flex flex-col items-center justify-center bg-primary text-primary-foreground">
           <Pencil size={18} />
           <span className="text-[10px] mt-1">تعديل</span>
