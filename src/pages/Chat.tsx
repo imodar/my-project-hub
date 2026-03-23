@@ -373,7 +373,7 @@ const Chat = () => {
 
       {/* Messages */}
       <div
-        className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-44"
+        className="flex-1 overflow-y-auto px-3 py-4 space-y-1"
         style={{ backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--muted) / 0.5), transparent 70%)" }}
       >
         {/* Encryption notice */}
