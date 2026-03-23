@@ -434,7 +434,7 @@ const Places = () => {
                     : "bg-white/15 text-white/80 hover:bg-white/25"
                 }`}
               >
-                {getListIcon(list.type)}
+                {getListIcon(list.type, activeListId === list.id)}
                 {list.name}
                 {list.type === "personal" && <Lock size={10} />}
               </button>
