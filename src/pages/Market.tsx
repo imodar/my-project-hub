@@ -67,7 +67,7 @@ const Market = () => {
   const { featureAccess } = useUserRole();
   const { familyId } = useFamilyId();
   const { toast } = useToast();
-  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useMarketLists();
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useMarketLists();
   const createdDefaultListRef = useRef<string | null>(null);
 
   const lists: MarketList[] = useMemo(() => {
