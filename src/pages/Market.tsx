@@ -712,20 +712,19 @@ const Market = () => {
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {FAMILY_MEMBERS.map((member) => (
                     <button
-                      key={member}
-                      onClick={() =>
+                      key={member.id}                      onClick={() =>
                         setNewListShareMembers((prev) =>
-                          prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                          prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
                         )
                       }
                       className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                        newListShareMembers.includes(member)
+                        newListShareMembers.includes(member.name)
                           ? "border-primary bg-primary/10"
                           : "border-border bg-card"
                       }`}
                     >
-                      <span className="font-medium text-foreground">{member}</span>
-                      {newListShareMembers.includes(member) && <Check size={14} className="text-primary" />}
+                      <span className="font-medium text-foreground">{member.name}</span>
+                      {newListShareMembers.includes(member.name) && <Check size={14} className="text-primary" />}
                     </button>
                   ))}
                 </div>
@@ -749,18 +748,17 @@ const Market = () => {
           <div className="space-y-2 px-4">
             {FAMILY_MEMBERS.map((member) => (
               <button
-                key={member}
-                onClick={() =>
+                key={member.id}                onClick={() =>
                   setSelectedShareMembers((prev) =>
-                    prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                    prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
                   )
                 }
                 className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-all ${
-                  selectedShareMembers.includes(member) ? "border-primary bg-primary/10" : "border-border bg-card"
+                  selectedShareMembers.includes(member.name) ? "border-primary bg-primary/10" : "border-border bg-card"
                 }`}
               >
-                <span className="font-medium text-foreground">{member}</span>
-                {selectedShareMembers.includes(member) && <Check size={16} className="text-primary" />}
+                <span className="font-medium text-foreground">{member.name}</span>
+                {selectedShareMembers.includes(member.name) && <Check size={16} className="text-primary" />}
               </button>
             ))}
           </div>
