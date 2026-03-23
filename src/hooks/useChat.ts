@@ -17,7 +17,9 @@ import {
   type EncryptedPayload,
 } from "@/lib/crypto";
 
-interface ChatMessage {
+export type MessageType = "text" | "image" | "voice" | "location";
+
+export interface ChatMessage {
   id: string;
   senderId: string;
   senderName: string;
@@ -28,6 +30,17 @@ interface ChatMessage {
   reactions: Record<string, number>;
   mentionUserId?: string;
   status: string;
+  messageType: MessageType;
+  mediaUrl?: string;
+  mediaMetadata?: {
+    width?: number;
+    height?: number;
+    duration?: number;
+    lat?: number;
+    lng?: number;
+    fileName?: string;
+    fileSize?: number;
+  };
 }
 
 export function useChat() {
