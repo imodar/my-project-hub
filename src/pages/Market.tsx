@@ -623,7 +623,36 @@ const Market = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Item Drawer */}
+      {/* Delete List Confirmation */}
+      <Drawer open={!!deleteListTarget} onOpenChange={(open) => !open && setDeleteListTarget(null)}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>حذف القائمة</DrawerTitle>
+            <DrawerDescription>
+              هل أنت متأكد من حذف هذه القائمة وجميع منتجاتها؟ لا يمكن التراجع عن هذا الإجراء.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter className="flex-row gap-2 pb-6">
+            <Button
+              variant="destructive"
+              className="flex-1 rounded-xl"
+              onClick={confirmDeleteList}
+            >
+              <Trash2 size={16} className="ml-2" />
+              حذف القائمة
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={() => setDeleteListTarget(null)}
+            >
+              إلغاء
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+
       <Drawer open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
         <DrawerContent dir="rtl">
           <DrawerHeader className="text-right">
