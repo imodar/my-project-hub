@@ -37,7 +37,7 @@ interface MarketList {
   name: string;
   type: "family" | "personal" | "shared";
   isDefault?: boolean;
-  useDefaultCategories?: boolean;
+  useCategories: boolean;
   sharedWith?: string[];
   items: MarketItem[];
   lastUpdatedBy: string;
