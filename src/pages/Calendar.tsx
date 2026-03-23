@@ -148,12 +148,12 @@ const CalendarPage = () => {
 
   const handleDayClick = (d: number) => setSelectedDay(formatDate(currentYear, currentMonth, d));
 
-  const toggleReminderOption = useCallback((key: string, setter: React.Dispatch<React.SetStateAction<any>>, field: string = "reminderBefore") => {
+  const toggleReminderOption = useCallback((key: string, setter: React.Dispatch<React.SetStateAction<any>>, field: string = "reminder_before") => {
     setter((prev: any) => ({
       ...prev,
-      [field]: prev[field].includes(key)
-        ? prev[field].filter((i: string) => i !== key)
-        : [...prev[field], key],
+      [field]: (prev[field] || []).includes(key)
+        ? (prev[field] || []).filter((i: string) => i !== key)
+        : [...(prev[field] || []), key],
     }));
   }, []);
 
