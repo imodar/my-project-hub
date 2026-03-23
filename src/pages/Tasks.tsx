@@ -115,7 +115,7 @@ const Tasks = () => {
   const [editTarget, setEditTarget] = useState<TaskItem | null>(null);
   const [editName, setEditName] = useState("");
   const [editNote, setEditNote] = useState("");
-  const [editPriority, setEditPriority] = useState<TaskItem["priority"]>("medium");
+  const [editPriority, setEditPriority] = useState<TaskItem["priority"]>("none");
   const [editAssignedTo, setEditAssignedTo] = useState("");
   const [editRepeatEnabled, setEditRepeatEnabled] = useState(false);
   const [editRepeatDays, setEditRepeatDays] = useState<number[]>([]);
@@ -124,7 +124,7 @@ const Tasks = () => {
   // New item form
   const [newItemName, setNewItemName] = useState("");
   const [newItemNote, setNewItemNote] = useState("");
-  const [newItemPriority, setNewItemPriority] = useState<TaskItem["priority"]>("medium");
+  const [newItemPriority, setNewItemPriority] = useState<TaskItem["priority"]>("none");
   const [newItemAssignedTo, setNewItemAssignedTo] = useState("");
   const [newItemRepeatEnabled, setNewItemRepeatEnabled] = useState(false);
   const [newItemRepeatDays, setNewItemRepeatDays] = useState<number[]>([]);
