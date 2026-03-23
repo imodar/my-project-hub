@@ -51,15 +51,16 @@ export function useMarketLists() {
   const createList = useMutation({
     mutationFn: async (input: { name: string; type?: string; shared_with?: string[]; use_categories?: boolean }) => {
       if (!familyId || !user) throw new Error("No family");
-      const { error } = await supabase.from("market_lists").insert({
+      const { data, error } = await supabase.from("market_lists").insert({
         name: input.name,
         type: input.type || "family",
         shared_with: input.shared_with || [],
         family_id: familyId,
         created_by: user.id,
         use_categories: input.use_categories ?? true,
-      });
+      }).select("id").single();
       if (error) throw error;
+      return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });

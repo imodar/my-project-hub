@@ -292,12 +292,19 @@ const Market = () => {
       return;
     }
     haptic.medium();
-    createListMutation.mutate({
-      name: newListName.trim(),
-      type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-      shared_with: newListType === "family" ? newListShareMembers : [],
-      use_categories: newListUseCategories,
-    });
+    createListMutation.mutate(
+      {
+        name: newListName.trim(),
+        type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
+        shared_with: newListType === "family" ? newListShareMembers : [],
+        use_categories: newListUseCategories,
+      },
+      {
+        onSuccess: (data) => {
+          if (data?.id) setActiveListId(data.id);
+        },
+      }
+    );
     setNewListName("");
     setNewListShareMembers([]);
     setNewListUseCategories(false);
