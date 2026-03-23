@@ -660,7 +660,7 @@ const Tasks = () => {
                             : "border-border bg-card text-foreground"
                         }`}
                       >
-                        {member}
+                        {member.name}
                       </button>
                     ))}
                   </div>
