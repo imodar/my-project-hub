@@ -42,9 +42,20 @@ import Athkar from "./pages/Athkar.tsx";
 import Vehicle from "./pages/Vehicle.tsx";
 import Vaccinations from "./pages/Vaccinations.tsx";
 import Medications from "./pages/Medications.tsx";
-import AdminDashboard from "./pages/AdminDashboard.tsx";
 import IslamicReminders from "./pages/IslamicReminders.tsx";
 import BottomNav from "@/components/home/BottomNav";
+
+// Admin Panel
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminFamilies from "./pages/admin/AdminFamilies";
+import AdminContent from "./pages/admin/AdminContent";
+import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
+import AdminSystem from "./pages/admin/AdminSystem";
+import AdminAudit from "./pages/admin/AdminAudit";
+import AdminSecurity from "./pages/admin/AdminSecurity";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,6 +72,25 @@ const queryClient = new QueryClient({
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const isAdminPanel = location.pathname.startsWith("/admin-panel");
+
+  if (isAdminPanel) {
+    return (
+      <Routes>
+        <Route path="/admin-panel" element={<AuthGuard><AdminLayout /></AuthGuard>}>
+          <Route index element={<AdminOverview />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="families" element={<AdminFamilies />} />
+          <Route path="content" element={<AdminContent />} />
+          <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="subscriptions" element={<AdminSubscriptions />} />
+          <Route path="system" element={<AdminSystem />} />
+          <Route path="audit" element={<AdminAudit />} />
+          <Route path="security" element={<AdminSecurity />} />
+        </Route>
+      </Routes>
+    );
+  }
 
   return (
     <PageTransition key={location.pathname}>
@@ -99,7 +129,6 @@ const AnimatedRoutes = () => {
         <Route path="/vaccinations" element={<AuthGuard><Vaccinations /></AuthGuard>} />
         <Route path="/medications" element={<AuthGuard><Medications /></AuthGuard>} />
         <Route path="/islamic-reminders" element={<AuthGuard><IslamicReminders /></AuthGuard>} />
-        <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>

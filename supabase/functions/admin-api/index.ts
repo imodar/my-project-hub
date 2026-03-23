@@ -48,32 +48,71 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
-    // --- DASHBOARD ---
-    if (action === "dashboard") {
-      const { count: userCount } = await adminClient
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("is_deleted", false);
+    const logAudit = async (actionName: string, targetType?: string, targetId?: string, details?: unknown) => {
+      await adminClient.from("admin_audit_log").insert({
+        admin_id: userId,
+        action: actionName,
+        target_type: targetType,
+        target_id: targetId,
+        details: details || {},
+      });
+    };
 
-      const { count: familyCount } = await adminClient
-        .from("families")
-        .select("*", { count: "exact", head: true });
+    // ─── FULL DASHBOARD ───
+    if (action === "dashboard-full") {
+      const now = new Date();
+      const todayStr = now.toISOString().split("T")[0];
+      const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
 
-      const { count: activeToday } = await adminClient
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .gte("last_login_at", new Date(Date.now() - 86400000).toISOString());
+      const [
+        { count: userCount },
+        { count: familyCount },
+        { count: activeToday },
+        { count: newUsers7d },
+      ] = await Promise.all([
+        adminClient.from("profiles").select("*", { count: "exact", head: true }).eq("is_deleted", false),
+        adminClient.from("families").select("*", { count: "exact", head: true }),
+        adminClient.from("profiles").select("*", { count: "exact", head: true }).gte("last_login_at", `${todayStr}T00:00:00Z`),
+        adminClient.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", weekAgo),
+      ]);
+
+      // Subscription breakdown
+      const { data: profiles } = await adminClient.from("profiles").select("subscription_plan").eq("is_deleted", false);
+      const planCounts: Record<string, number> = {};
+      (profiles || []).forEach((p: any) => {
+        const plan = p.subscription_plan || "free";
+        planCounts[plan] = (planCounts[plan] || 0) + 1;
+      });
+      const subscription_breakdown = Object.entries(planCounts).map(([plan, count]) => ({ plan, count }));
+
+      // Top features
+      const { data: featureData } = await adminClient
+        .from("feature_usage")
+        .select("feature_name")
+        .gte("created_at", weekAgo);
+
+      const featureCounts: Record<string, number> = {};
+      (featureData || []).forEach((f: any) => {
+        featureCounts[f.feature_name] = (featureCounts[f.feature_name] || 0) + 1;
+      });
+      const top_features = Object.entries(featureCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
 
       return json({
         data: {
           total_users: userCount || 0,
           total_families: familyCount || 0,
           active_today: activeToday || 0,
+          new_users_7d: newUsers7d || 0,
+          subscription_breakdown,
+          top_features,
         },
       });
     }
 
-    // --- USERS ---
+    // ─── USERS ───
     if (action === "get-users") {
       const { page = 1, limit = 20, search } = body;
       let query = adminClient
@@ -92,7 +131,127 @@ Deno.serve(async (req) => {
       return json({ data, total: count });
     }
 
-    // --- AUDIT LOG ---
+    // ─── FAMILIES ───
+    if (action === "get-families") {
+      const { page = 1, limit = 20, search } = body;
+      let query = adminClient
+        .from("families")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+
+      if (search) {
+        query = query.ilike("name", `%${search}%`);
+      }
+
+      const { data: families, error, count } = await query;
+      if (error) return json({ error: error.message }, 400);
+
+      // Get member counts
+      const familyIds = (families || []).map((f: any) => f.id);
+      const enriched = [];
+
+      for (const f of families || []) {
+        const { count: mc } = await adminClient
+          .from("family_members")
+          .select("*", { count: "exact", head: true })
+          .eq("family_id", f.id)
+          .eq("status", "active");
+
+        // Get members with profiles for detail view
+        const { data: members } = await adminClient
+          .from("family_members")
+          .select("id, user_id, role, is_admin, status")
+          .eq("family_id", f.id)
+          .eq("status", "active");
+
+        const membersWithNames = [];
+        for (const m of members || []) {
+          const { data: profile } = await adminClient
+            .from("profiles")
+            .select("name")
+            .eq("id", m.user_id)
+            .maybeSingle();
+          membersWithNames.push({ ...m, profile_name: profile?.name || null });
+        }
+
+        enriched.push({ ...f, member_count: mc || 0, members: membersWithNames });
+      }
+
+      return json({ data: enriched, total: count });
+    }
+
+    // ─── CONTENT STATS ───
+    if (action === "content-stats") {
+      const now = new Date();
+      const in7Days = new Date(now.getTime() + 7 * 86400000).toISOString().split("T")[0];
+
+      const counts = await Promise.all([
+        adminClient.from("calendar_events").select("*", { count: "exact", head: true }),
+        adminClient.from("task_items").select("*", { count: "exact", head: true }),
+        adminClient.from("task_items").select("*", { count: "exact", head: true }).eq("done", true),
+        adminClient.from("market_lists").select("*", { count: "exact", head: true }),
+        adminClient.from("market_items").select("*", { count: "exact", head: true }),
+        adminClient.from("medications").select("*", { count: "exact", head: true }),
+        adminClient.from("medication_logs").select("*", { count: "exact", head: true }),
+        adminClient.from("debts").select("*", { count: "exact", head: true }).eq("is_fully_paid", false),
+        adminClient.from("debts").select("*", { count: "exact", head: true }).eq("is_fully_paid", true),
+        adminClient.from("trips").select("*", { count: "exact", head: true }),
+        adminClient.from("document_items").select("*", { count: "exact", head: true }),
+        adminClient.from("document_items").select("*", { count: "exact", head: true }).lte("expiry_date", in7Days).gte("expiry_date", now.toISOString().split("T")[0]),
+        adminClient.from("albums").select("*", { count: "exact", head: true }),
+        adminClient.from("album_photos").select("*", { count: "exact", head: true }),
+        adminClient.from("chat_messages").select("*", { count: "exact", head: true }),
+        adminClient.from("places").select("*", { count: "exact", head: true }),
+        adminClient.from("vaccination_children").select("*", { count: "exact", head: true }),
+      ]);
+
+      // Vehicle count - check if table exists
+      let vehicleCount = 0;
+      try {
+        const { count } = await adminClient.from("vehicles").select("*", { count: "exact", head: true });
+        vehicleCount = count || 0;
+      } catch {}
+
+      let willCount = 0;
+      try {
+        const { count } = await adminClient.from("wills").select("*", { count: "exact", head: true });
+        willCount = count || 0;
+      } catch {}
+
+      let zakatCount = 0;
+      try {
+        const { count } = await adminClient.from("zakat_assets").select("*", { count: "exact", head: true });
+        zakatCount = count || 0;
+      } catch {}
+
+      return json({
+        data: {
+          events: counts[0].count || 0,
+          tasks: counts[1].count || 0,
+          tasks_done: counts[2].count || 0,
+          market_lists: counts[3].count || 0,
+          market_items: counts[4].count || 0,
+          medications: counts[5].count || 0,
+          med_logs: counts[6].count || 0,
+          debts: counts[7].count || 0,
+          debts_paid: counts[8].count || 0,
+          trips: counts[9].count || 0,
+          documents: counts[10].count || 0,
+          docs_expiring: counts[11].count || 0,
+          albums: counts[12].count || 0,
+          photos: counts[13].count || 0,
+          chat_messages: counts[14].count || 0,
+          places: counts[15].count || 0,
+          vacc_children: counts[16].count || 0,
+          vehicles: vehicleCount,
+          wills: willCount,
+          zakat: zakatCount,
+        },
+      });
+    }
+
+    // ─── AUDIT LOG ───
     if (action === "get-audit-log") {
       const { page = 1, limit = 50 } = body;
       const { data, error } = await adminClient
@@ -104,18 +263,127 @@ Deno.serve(async (req) => {
       return json({ data });
     }
 
-    // --- LOG ACTION ---
-    const logAudit = async (actionName: string, targetType?: string, targetId?: string, details?: unknown) => {
-      await adminClient.from("admin_audit_log").insert({
-        admin_id: userId,
-        action: actionName,
-        target_type: targetType,
-        target_id: targetId,
-        details: details || {},
-      });
-    };
+    // ─── NOTIFICATION LOG ───
+    if (action === "get-notification-log") {
+      const { page = 1, limit = 50 } = body;
+      const { data, error } = await adminClient
+        .from("notification_log")
+        .select("*")
+        .order("sent_at", { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+      if (error) return json({ error: error.message }, 400);
+      return json({ data });
+    }
 
-    // --- SUSPEND USER ---
+    // ─── SUBSCRIPTIONS ───
+    if (action === "get-subscriptions") {
+      const { data: profiles } = await adminClient.from("profiles").select("subscription_plan").eq("is_deleted", false);
+      const planCounts: Record<string, number> = {};
+      let paid = 0, free = 0;
+      (profiles || []).forEach((p: any) => {
+        const plan = p.subscription_plan || "free";
+        planCounts[plan] = (planCounts[plan] || 0) + 1;
+        if (plan === "free") free++; else paid++;
+      });
+
+      const { data: events } = await adminClient
+        .from("subscription_events")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      const totalRevenue = (events || []).reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+
+      return json({
+        data: {
+          breakdown: Object.entries(planCounts).map(([plan, count]) => ({ plan, count })),
+          paid_count: paid,
+          free_count: free,
+          total_revenue: totalRevenue,
+          recent_events: events || [],
+        },
+      });
+    }
+
+    // ─── SETTINGS ───
+    if (action === "get-settings") {
+      const { data, error } = await adminClient.from("system_settings").select("*").order("updated_at", { ascending: false });
+      if (error) return json({ error: error.message }, 400);
+      return json({ data });
+    }
+
+    if (action === "update-setting") {
+      const { key, value } = body;
+      const { data: existing } = await adminClient.from("system_settings").select("id").eq("key", key).maybeSingle();
+      if (existing) {
+        await adminClient.from("system_settings").update({ value, updated_by: userId }).eq("id", existing.id);
+      } else {
+        await adminClient.from("system_settings").insert({ key, value, updated_by: userId });
+      }
+      await logAudit("update_setting", "setting", key, { value });
+      return json({ success: true });
+    }
+
+    // ─── VERSIONS ───
+    if (action === "get-versions") {
+      const { data, error } = await adminClient.from("app_versions").select("*").order("created_at", { ascending: false });
+      if (error) return json({ error: error.message }, 400);
+      return json({ data });
+    }
+
+    if (action === "add-version") {
+      const { version, release_notes, force_update, min_supported_version, update_message } = body;
+      const { error } = await adminClient.from("app_versions").insert({
+        version, release_notes, force_update: force_update || false,
+        min_supported_version: min_supported_version || null,
+        update_message: update_message || null,
+      });
+      if (error) return json({ error: error.message }, 400);
+      await logAudit("add_version", "app_version", version, { release_notes });
+      return json({ success: true });
+    }
+
+    // ─── SECURITY ───
+    if (action === "get-security") {
+      const todayStr = new Date().toISOString().split("T")[0];
+
+      const [
+        { count: otpToday },
+        { count: consentCount },
+        { count: exportReqs },
+        { count: deletionReqs },
+      ] = await Promise.all([
+        adminClient.from("otp_codes").select("*", { count: "exact", head: true }).gte("created_at", `${todayStr}T00:00:00Z`),
+        adminClient.from("consent_log").select("*", { count: "exact", head: true }),
+        adminClient.from("data_export_requests").select("*", { count: "exact", head: true }),
+        adminClient.from("account_deletions").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      ]);
+
+      const { data: recentOtps } = await adminClient
+        .from("otp_codes")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      const { data: deletionList } = await adminClient
+        .from("account_deletions")
+        .select("*")
+        .order("requested_at", { ascending: false })
+        .limit(20);
+
+      return json({
+        data: {
+          otp_today: otpToday || 0,
+          consent_count: consentCount || 0,
+          export_requests: exportReqs || 0,
+          deletion_requests: deletionReqs || 0,
+          recent_otps: recentOtps || [],
+          deletion_list: deletionList || [],
+        },
+      });
+    }
+
+    // ─── SUSPEND / UNSUSPEND ───
     if (action === "suspend-user") {
       const { target_user_id, reason } = body;
       await adminClient.auth.admin.updateUserById(target_user_id, { ban_duration: "876000h" });
@@ -123,7 +391,6 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // --- UNSUSPEND USER ---
     if (action === "unsuspend-user") {
       const { target_user_id } = body;
       await adminClient.auth.admin.updateUserById(target_user_id, { ban_duration: "none" });
@@ -131,27 +398,17 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // --- SYSTEM SETTINGS ---
-    if (action === "get-settings") {
-      const { data, error } = await adminClient.from("system_settings").select("*");
-      if (error) return json({ error: error.message }, 400);
-      return json({ data });
-    }
-
-    if (action === "update-setting") {
-      const { key, value } = body;
-      const { data: existing } = await adminClient
-        .from("system_settings")
-        .select("id")
-        .eq("key", key)
-        .maybeSingle();
-
-      if (existing) {
-        await adminClient.from("system_settings").update({ value, updated_by: userId }).eq("id", existing.id);
-      } else {
-        await adminClient.from("system_settings").insert({ key, value, updated_by: userId });
-      }
-      await logAudit("update_setting", "setting", key, { value });
+    // ─── BROADCAST ───
+    if (action === "send-broadcast") {
+      const { title, body: notifBody } = body;
+      // Log the broadcast
+      await adminClient.from("notification_log").insert({
+        title,
+        body: notifBody,
+        sent_by: userId,
+        target_type: "broadcast",
+      });
+      await logAudit("send_broadcast", "notification", null, { title });
       return json({ success: true });
     }
 
