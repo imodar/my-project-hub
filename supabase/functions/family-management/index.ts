@@ -45,6 +45,12 @@ Deno.serve(async (req) => {
     }
     const userId = authUser.id;
 
+    // Use service role for DB operations (user already authenticated above)
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
