@@ -45,6 +45,12 @@ Deno.serve(async (req) => {
     }
     const userId = authUser.id;
 
+    // Use service role for DB operations (user already authenticated above)
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
@@ -62,7 +68,7 @@ Deno.serve(async (req) => {
         .single();
       if (famErr) return json({ error: famErr.message }, 400);
 
-      const { error: memErr } = await supabase.from("family_members").insert({
+      const { error: memErr } = await adminClient.from("family_members").insert({
         family_id: family.id,
         user_id: userId,
         role: role || "father",
@@ -95,7 +101,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (existing) return json({ error: "أنت عضو بالفعل في هذه العائلة" }, 400);
 
-      const { error: joinErr } = await supabase.from("family_members").insert({
+      const { error: joinErr } = await adminClient.from("family_members").insert({
         family_id: family.id,
         user_id: userId,
         role: role || "son",
@@ -152,7 +158,7 @@ Deno.serve(async (req) => {
       const { family_id, target_user_id, reason } = body;
 
       // Record removal
-      await supabase.from("member_removals").insert({
+      await adminClient.from("member_removals").insert({
         family_id,
         removed_user_id: target_user_id,
         removed_by: userId,
