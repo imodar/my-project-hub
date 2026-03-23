@@ -67,7 +67,7 @@ const Tasks = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
-  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useTaskLists();
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useTaskLists();
 
   const lists: TaskList[] = useMemo(() => {
     const mapped = (dbLists || []).map((l: any) => ({
@@ -400,16 +400,21 @@ const Tasks = () => {
           onPointerUp={(e) => handlePointerUp(e, item.id)}
           onPointerCancel={() => { cancelLongPress(); closeSwipe(item.id); setDragActiveId(null); setDragOverId(null); isLongPressingRef.current = false; }}
         >
-          <button
-            onClick={() => !dragActiveId && toggleItem(item.id)}
-            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-              isDone
-                ? "bg-primary"
-                : "border-2 border-border hover:border-primary"
-            }`}
-          >
-            {isDone && <Check size={14} className="text-primary-foreground" />}
-          </button>
+          <div className="relative shrink-0 w-7 h-7">
+            {activeList?.type === "family" && pendingItemIds.includes(item.id) && (
+              <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
+            )}
+            <button
+              onClick={() => !dragActiveId && toggleItem(item.id)}
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                isDone
+                  ? "bg-primary"
+                  : "border-2 border-border hover:border-primary"
+              }`}
+            >
+              {isDone && <Check size={14} className="text-primary-foreground" />}
+            </button>
+          </div>
           <div className="flex-1 min-w-0">
             <p className={`font-semibold text-sm text-foreground truncate ${isDone ? "line-through" : ""}`}>
               {item.name}
