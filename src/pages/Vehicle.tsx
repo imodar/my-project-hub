@@ -423,6 +423,47 @@ const Vehicle = () => {
     toast.success("تمت إضافة المركبة بنجاح");
   };
 
+  const openEditCar = (car: CarData) => {
+    setEditingCar(car);
+    setNewManufacturer(car.manufacturer);
+    setNewModel(car.model);
+    setNewYear(car.year);
+    setNewMileage(String(car.mileage));
+    setNewMileageUnit(car.mileageUnit);
+    setNewColor(car.color || "");
+    setNewPlate(car.plateNumber || "");
+    setNewSharedWith(car.sharedWith);
+    setManufacturerSearch("");
+    setEditCarOpen(true);
+  };
+
+  const handleEditCar = () => {
+    if (!editingCar || !newManufacturer || !newModel || !newYear) {
+      toast.error("يرجى تعبئة الحقول المطلوبة");
+      return;
+    }
+    const yearNum = Number(newYear);
+    if (yearNum < 1900 || yearNum > maxYear) {
+      toast.error(`السنة يجب أن تكون بين 1900 و ${maxYear}`);
+      return;
+    }
+    updateVehicleMut.mutate({
+      id: editingCar.id,
+      manufacturer: newManufacturer,
+      model: newModel,
+      year: newYear,
+      mileage: Number(newMileage) || 0,
+      mileage_unit: newMileageUnit,
+      color: newColor,
+      plate_number: newPlate,
+      shared_with: newSharedWith,
+    });
+    setEditCarOpen(false);
+    setEditingCar(null);
+    resetAddForm();
+    toast.success("تم تعديل المركبة بنجاح");
+  };
+
   const handleDeleteCar = (car: CarData) => {
     const carInfo = CAR_MANUFACTURERS[car.manufacturer] || CAR_MANUFACTURERS.other;
     // Add to trash with all maintenance records
