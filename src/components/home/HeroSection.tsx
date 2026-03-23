@@ -228,7 +228,9 @@ const formatLastUpdated = (date: Date): string => {
 const HeroSection = () => {
   const { islamicMode } = useIslamicMode();
   const { profileName } = useAuth();
+  const { unreadCount } = useNotifications();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const hijriDate = "٤ شوّال ١٤٤٧";
   const gregorianDate = "٢٣ مارس ٢٠٢٦";
 
