@@ -293,8 +293,7 @@ const Medications = () => {
   const markAsTaken = (medId: string) => {
     const now = new Date().toISOString();
     // Log to DB
-    const { addLog } = useMedicationsRef.current;
-    addLog.mutate({ medication_id: medId });
+    addLogMut.mutate({ medication_id: medId });
 
     setMedications((prev) =>
       prev.map((m) => {
