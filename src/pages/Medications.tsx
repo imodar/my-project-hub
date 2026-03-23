@@ -162,40 +162,60 @@ const Medications = () => {
 
   useEffect(() => {
     if (dbMeds && dbMeds.length > 0) {
-      const mapped: Medication[] = dbMeds.map((m: any) => ({
-        id: m.id,
-        name: m.name,
-        dosage: m.dosage || "",
-        memberId: m.member_id || "me",
-        memberName: m.member_name || "أنا",
-        frequencyType: (m.frequency_type || "daily") as FrequencyType,
-        frequencyValue: m.frequency_value || 1,
-        selectedDays: m.selected_days || [],
-        timesPerDay: m.times_per_day || 1,
-        specificTimes: m.specific_times || ["08:00"],
-        startDate: m.start_date || "",
-        endDate: m.end_date || "",
-        notes: m.notes || "",
-        color: m.color || MEDICATION_COLORS[0],
-        reminder: {
+      const mapped: Medication[] = dbMeds.map((m: any) => {
+        const takenLog = Array.isArray(m.medication_logs)
+          ? m.medication_logs
+              .filter((log: any) => !log.skipped)
+              .map((log: any) => log.taken_at || log.created_at)
+              .sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())
+          : [];
+
+        const mappedMedication: Medication = {
           id: m.id,
-          enabled: m.reminder_enabled || false,
-          nextDueAt: calculateNextDue({
-            id: m.id, name: m.name, dosage: m.dosage || "", memberId: m.member_id || "me",
-            memberName: m.member_name || "أنا", frequencyType: (m.frequency_type || "daily") as FrequencyType,
-            frequencyValue: m.frequency_value || 1, selectedDays: m.selected_days || [],
-            timesPerDay: m.times_per_day || 1, specificTimes: m.specific_times || ["08:00"],
-            startDate: m.start_date || "", color: m.color || MEDICATION_COLORS[0],
-            reminder: { id: m.id, enabled: m.reminder_enabled || false, nextDueAt: "" },
-            takenLog: [], createdAt: m.created_at,
-          }) || "",
-        },
-        takenLog: [],
-        createdAt: m.created_at,
-      }));
+          name: m.name,
+          dosage: m.dosage || "",
+          memberId: m.member_id || "me",
+          memberName: m.member_name || "أنا",
+          frequencyType: (m.frequency_type || "daily") as FrequencyType,
+          frequencyValue: m.frequency_value || 1,
+          selectedDays: m.selected_days || [],
+          timesPerDay: m.times_per_day || 1,
+          specificTimes: m.specific_times || ["08:00"],
+          startDate: m.start_date || "",
+          endDate: m.end_date || "",
+          notes: m.notes || "",
+          color: m.color || MEDICATION_COLORS[0],
+          reminder: {
+            id: m.id,
+            enabled: m.reminder_enabled || false,
+            lastConfirmedAt: takenLog[0],
+            nextDueAt: "",
+          },
+          takenLog,
+          createdAt: m.created_at,
+        };
+
+        mappedMedication.reminder.nextDueAt = calculateNextDue(mappedMedication);
+        return mappedMedication;
+      });
       setMedications(mapped);
     }
   }, [dbMeds]);
+
+  useEffect(() => {
+    if (!showDetailSheet) return;
+    const latestMedication = medications.find((m) => m.id === showDetailSheet.id);
+    if (!latestMedication) return;
+
+    const hasChanged =
+      latestMedication.reminder.nextDueAt !== showDetailSheet.reminder.nextDueAt ||
+      latestMedication.reminder.lastConfirmedAt !== showDetailSheet.reminder.lastConfirmedAt ||
+      latestMedication.takenLog.length !== showDetailSheet.takenLog.length;
+
+    if (hasChanged) {
+      setShowDetailSheet(latestMedication);
+    }
+  }, [medications, showDetailSheet]);
 
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
@@ -292,7 +312,6 @@ const Medications = () => {
 
   const markAsTaken = (medId: string) => {
     const now = new Date().toISOString();
-    // Log to DB
     addLogMut.mutate({ medication_id: medId });
 
     setMedications((prev) =>
@@ -303,12 +322,10 @@ const Medications = () => {
           takenLog: [...m.takenLog, now],
           reminder: { ...m.reminder, lastConfirmedAt: now },
         };
-        // Recalculate next due — will skip the dose that was just taken
         updated.reminder.nextDueAt = calculateNextDue(updated);
         return updated;
       })
     );
-    // Dismiss alert if this med was shown
     setShowDueAlert((prev) => (prev?.id === medId ? null : prev));
     toast.success("تم تسجيل تناول الدواء ✅");
   };
