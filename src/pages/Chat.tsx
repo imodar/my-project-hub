@@ -255,12 +255,16 @@ const Chat = () => {
     const err = validateFile(file, { maxSizeMB: 5, allowedTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"] });
     if (err) { toast.error(err); return; }
 
+    setShowAttachments(false);
     setUploading(true);
     const ext = file.name.split(".").pop() || "jpg";
+    const localUrl = URL.createObjectURL(file);
+    // Show optimistic with local URL, upload in background
     const url = await uploadChatMedia(file, ext);
     if (url) {
       await sendMediaMessage("image", url, { fileName: file.name, fileSize: file.size });
-      toast.success("تم إرسال الصورة");
+    } else {
+      toast.error("فشل رفع الصورة");
     }
     setUploading(false);
   }, [uploadChatMedia, sendMediaMessage]);
@@ -273,7 +277,8 @@ const Chat = () => {
     const url = await uploadChatMedia(blob, ext);
     if (url) {
       await sendMediaMessage("voice", url, { fileSize: blob.size });
-      toast.success("تم إرسال التسجيل الصوتي");
+    } else {
+      toast.error("فشل رفع التسجيل");
     }
     setUploading(false);
   }, [uploadChatMedia, sendMediaMessage]);
@@ -283,12 +288,10 @@ const Chat = () => {
     setShowAttachments(false);
     if (!navigator.geolocation) { toast.error("المتصفح لا يدعم تحديد الموقع"); return; }
 
-    toast.info("جاري تحديد موقعك...");
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
         await sendMediaMessage("location", `https://www.google.com/maps?q=${lat},${lng}`, { lat, lng });
-        toast.success("تم مشاركة الموقع");
       },
       () => toast.error("تعذر تحديد الموقع، تأكد من تفعيل GPS"),
       { enableHighAccuracy: true, timeout: 10000 }
