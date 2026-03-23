@@ -1,7 +1,7 @@
 import { BookOpen, Heart, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
-import islamicPattern from "@/assets/islamic-pattern.png";
+import islamicPattern from "@/assets/islamic-pattern.webp";
 
 const TasbihIcon = ({ size = 22, className = "" }: { size?: number; className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
