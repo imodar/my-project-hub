@@ -29,10 +29,12 @@ const Chat = () => {
   } = useChat();
 
   const [newMessage, setNewMessage] = useState("");
+  const [showAttachments, setShowAttachments] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showMentions, setShowMentions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const memberNames = Object.values(profiles);
 
