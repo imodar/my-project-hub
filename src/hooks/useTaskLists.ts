@@ -81,5 +81,5 @@ export function useTaskLists() {
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
-  return { lists: listsQuery.data || [], isLoading: listsQuery.isLoading, createList, deleteList, addItem, updateItem, deleteItem };
+  return { lists: listsQuery.data || [], isLoading: listsQuery.isLoading, createList, deleteList, addItem, updateItem, deleteItem, pendingItemIds: updateItem.variables?.id && updateItem.isPending ? [updateItem.variables.id] : [] };
 }
