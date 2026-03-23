@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       const { name, role } = body;
       if (!name) return json({ error: "اسم العائلة مطلوب" }, 400);
 
-      const inviteCode = generateInviteCode();
+      const inviteCode = await generateUniqueInviteCode(adminClient);
 
       const { data: family, error: famErr } = await adminClient
         .from("families")
