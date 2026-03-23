@@ -243,7 +243,7 @@ const HeroSection = () => {
       });
   }, [user]);
 
-  const currentUser = { name: profileName || "مستخدم", role: "parent" as const };
+  const currentUser = { name: profileName, role: "parent" as const };
 
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentHour] = useState(() => new Date().getHours());
