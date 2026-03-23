@@ -532,12 +532,12 @@ const FamilyManagement = () => {
         )}
       </div>
 
-      {/* Setup Dialog */}
-      <Dialog open={showSetupDialog} onOpenChange={() => {}}>
-        <DialogContent className="max-w-sm rounded-3xl [&>button]:hidden" style={{ direction: "rtl" }}>
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg">إعداد الأسرة</DialogTitle>
-          </DialogHeader>
+      {/* Setup Drawer */}
+      <Drawer open={showSetupDialog} onOpenChange={() => {}}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">إعداد الأسرة</DrawerTitle>
+          </DrawerHeader>
           <p className="text-sm text-muted-foreground text-center">اختر دورك في الأسرة لإنشاء مجموعتك العائلية</p>
 
           <div className="space-y-4 mt-2">
