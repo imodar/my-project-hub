@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { useMarketLists } from "@/hooks/useMarketLists";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { useToast } from "@/hooks/use-toast";
 import { createPortal } from "react-dom";
 import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -54,13 +56,15 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; emoji: string 
 };
 
 const CATEGORIES = ["الكل", ...Object.keys(CATEGORY_COLORS)];
-const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
+const FAMILY_MEMBERS: string[] = [];
 
 const SWIPE_WIDTH = 140;
 
 const Market = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
+  const { familyId } = useFamilyId();
+  const { toast } = useToast();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useMarketLists();
 
   const lists: MarketList[] = useMemo(() => {
@@ -209,6 +213,10 @@ const Market = () => {
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
+    if (!familyId) {
+      toast({ title: "يجب الانضمام لعائلة أولاً", variant: "destructive" });
+      return;
+    }
     haptic.medium();
     createListMutation.mutate({
       name: newListName.trim(),
@@ -219,7 +227,7 @@ const Market = () => {
     setNewListShareMembers([]);
     setNewListUseCategories(false);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, createListMutation]);
+  }, [newListName, newListType, newListShareMembers, createListMutation, familyId]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
@@ -387,7 +395,8 @@ const Market = () => {
         </div>
       </div>
 
-      {/* Category filters */}
+      {/* Category filters - only show when there are items */}
+      {totalItems > 0 && (
       <div className="px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
         {CATEGORIES.map((cat) => {
           const isAll = cat === "الكل";
@@ -413,6 +422,7 @@ const Market = () => {
           );
         })}
       </div>
+      )}
 
       {/* Items list */}
       <div className="px-4 pt-4 space-y-2 pb-4">
