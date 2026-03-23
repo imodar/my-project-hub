@@ -334,10 +334,34 @@ const Tasks = () => {
     setShowAddList(false);
   }, [newListName, newListType, newListShareMembers, createListMutation]);
 
+  const { addToTrash } = useTrash();
+
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
+
+    // Save to trash with full data
+    const listToDelete = dbLists.find((l: any) => l.id === listId);
+    if (listToDelete) {
+      addToTrash({
+        type: "task_list",
+        title: listToDelete.name,
+        description: `${(listToDelete as any).task_items?.length || 0} مهمة`,
+        deletedBy: "",
+        isShared: listToDelete.type === "family",
+        originalData: {
+          id: listToDelete.id,
+          name: listToDelete.name,
+          type: listToDelete.type,
+          family_id: listToDelete.family_id,
+          created_by: listToDelete.created_by,
+          shared_with: listToDelete.shared_with,
+        },
+        relatedRecords: (listToDelete as any).task_items || [],
+      });
+    }
+
     deleteListMutation.mutate(listId);
-  }, [deleteListMutation]);
+  }, [deleteListMutation, dbLists, addToTrash]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
