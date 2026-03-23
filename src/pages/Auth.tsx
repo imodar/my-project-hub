@@ -122,8 +122,8 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir="rtl">
-      {/* Top area - branding (1/4 of screen) */}
-      <div className="h-[25vh] flex flex-col items-center justify-center px-6">
+      {/* Top area - branding (1/3 of screen) */}
+      <div className="h-[33vh] flex flex-col items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
