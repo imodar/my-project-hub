@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 export interface TrashItem {
   id: string;
-  type: "event" | "debt" | "family_member" | "market_list" | "task_list";
+  type: "event" | "debt" | "family_member" | "market_list" | "task_list" | "vehicle";
   title: string;
   description?: string;
   deletedAt: Date;
