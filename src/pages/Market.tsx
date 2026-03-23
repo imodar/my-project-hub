@@ -59,6 +59,8 @@ const CATEGORIES = ["الكل", ...Object.keys(CATEGORY_COLORS)];
 const FAMILY_MEMBERS: string[] = [];
 
 const SWIPE_WIDTH = 140;
+const DEFAULT_FAMILY_LIST_ID = "default-family-list";
+const DEFAULT_FAMILY_LIST_NAME = "قائمة العائلة";
 
 const Market = () => {
   const navigate = useNavigate();
@@ -66,29 +68,84 @@ const Market = () => {
   const { familyId } = useFamilyId();
   const { toast } = useToast();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useMarketLists();
+  const createdDefaultListRef = useRef<string | null>(null);
 
   const lists: MarketList[] = useMemo(() => {
-    const mapped = (dbLists || []).map((l: any) => ({
-      id: l.id,
-      name: l.name,
-      type: (l.type || "family") as "family" | "personal" | "shared",
-      useCategories: l.use_categories ?? true,
-      sharedWith: l.shared_with || [],
+    const mapped = (dbLists || []).map((l: any) => {
+      const listType = (l.type || "family") as "family" | "personal" | "shared";
+      const isDefaultFamilyList = listType === "family" && l.name === DEFAULT_FAMILY_LIST_NAME;
+
+      return {
+        id: l.id,
+        name: l.name,
+        type: listType,
+        isDefault: isDefaultFamilyList,
+        useCategories: isDefaultFamilyList ? true : l.use_categories ?? true,
+        sharedWith: l.shared_with || [],
+        lastUpdatedBy: "",
+        lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
+        items: (l.market_items || []).map((i: any) => ({
+          id: i.id,
+          name: i.name,
+          category: i.category || "أخرى",
+          quantity: i.quantity || "1",
+          addedBy: "",
+          checked: i.checked,
+        })),
+      };
+    });
+
+    const filtered = featureAccess.isStaff ? mapped.filter((list) => list.type !== "family") : mapped;
+
+    if (filtered.length > 0 || featureAccess.isStaff) {
+      return filtered;
+    }
+
+    return [{
+      id: DEFAULT_FAMILY_LIST_ID,
+      name: DEFAULT_FAMILY_LIST_NAME,
+      type: "family",
+      isDefault: true,
+      useCategories: true,
+      sharedWith: [],
+      items: [],
       lastUpdatedBy: "",
-      lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
-      items: (l.market_items || []).map((i: any) => ({
-        id: i.id,
-        name: i.name,
-        category: i.category || "أخرى",
-        quantity: i.quantity || "1",
-        addedBy: "",
-        checked: i.checked,
-      })),
-    }));
-    return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
+      lastUpdatedAt: "",
+    }];
   }, [dbLists, featureAccess.isStaff]);
   const [activeListId, setActiveListId] = useState("");
   const [activeCategory, setActiveCategory] = useState("الكل");
+
+  useEffect(() => {
+    createdDefaultListRef.current = null;
+  }, [familyId]);
+
+  useEffect(() => {
+    if (
+      featureAccess.isStaff ||
+      !familyId ||
+      isLoading ||
+      (dbLists?.length ?? 0) > 0 ||
+      createdDefaultListRef.current === familyId
+    ) {
+      return;
+    }
+
+    createdDefaultListRef.current = familyId;
+    createListMutation.mutate(
+      {
+        name: DEFAULT_FAMILY_LIST_NAME,
+        type: "family",
+        shared_with: [],
+        use_categories: true,
+      },
+      {
+        onError: () => {
+          createdDefaultListRef.current = null;
+        },
+      }
+    );
+  }, [familyId, featureAccess.isStaff, isLoading, dbLists, createListMutation]);
 
   // Auto-select first list when data loads
   useEffect(() => {
@@ -203,14 +260,23 @@ const Market = () => {
   }, [editTarget, editName, editQuantity, editCategory, updateItemMutation]);
 
   const addItem = useCallback(() => {
-    if (!newItemName.trim() || !activeListId) return;
+    if (!newItemName.trim() || !activeList) return;
+
+    if (!familyId || activeList.id === DEFAULT_FAMILY_LIST_ID) {
+      toast({
+        title: familyId ? "جارٍ تجهيز القائمة العائلية" : "يجب الانضمام لعائلة أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
     haptic.medium();
-    addItemMutation.mutate({ list_id: activeListId, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || "1" });
+    addItemMutation.mutate({ list_id: activeList.id, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || "1" });
     setNewItemName("");
     setNewItemQuantity("");
     setNewItemCategory("أخرى");
     setShowAddItem(false);
-  }, [activeListId, newItemName, newItemCategory, newItemQuantity, addItemMutation]);
+  }, [activeList, newItemName, newItemCategory, newItemQuantity, addItemMutation, familyId, toast]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
@@ -229,7 +295,7 @@ const Market = () => {
     setNewListShareMembers([]);
     setNewListUseCategories(false);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, createListMutation, familyId]);
+  }, [newListName, newListType, newListShareMembers, createListMutation, familyId, toast]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
