@@ -117,7 +117,7 @@ const SwipeableMedCard = ({
 
 const Medications = () => {
   const { members: familyMembers } = useFamilyMembers();
-  const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut } = useMedications();
+  const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut, addLog: addLogMut } = useMedications();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
