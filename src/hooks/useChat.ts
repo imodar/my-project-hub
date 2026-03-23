@@ -355,9 +355,11 @@ export function useChat() {
     messages,
     isReady,
     sendMessage,
+    sendMediaMessage,
     togglePin,
     addReaction,
     profiles,
+    familyId,
     familyKey: !!familyKey,
   };
 }
