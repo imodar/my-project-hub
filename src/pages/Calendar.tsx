@@ -350,6 +350,7 @@ const CalendarPage = () => {
             const d = daysUntil(ev.date);
             const dayNum = new Date(ev.date).getDate();
             const reminderText = getReminderLabel(ev.reminder_before);
+            const hasReminder = ev.reminder_before && ev.reminder_before.length > 0;
             const hasPersonalReminder = ev.personal_reminders && ev.personal_reminders.length > 0;
 
             return (
@@ -399,6 +400,9 @@ const CalendarPage = () => {
                     <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
                       <span>{getEventIcon(ev.icon)}</span>
                       <span className="truncate">{ev.title}</span>
+                      {hasReminder && !hasPersonalReminder && (
+                        <Bell size={13} className="text-primary shrink-0" />
+                      )}
                       {hasPersonalReminder && (
                         <BellRing size={13} className="text-amber-500 shrink-0" />
                       )}
