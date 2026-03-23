@@ -168,6 +168,9 @@ const Market = () => {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<MarketItem | null>(null);
 
+  // Delete list confirmation
+  const [deleteListTarget, setDeleteListTarget] = useState<string | null>(null);
+
   // Edit item
   const [editTarget, setEditTarget] = useState<MarketItem | null>(null);
   const [editName, setEditName] = useState("");
