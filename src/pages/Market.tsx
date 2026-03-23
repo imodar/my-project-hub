@@ -395,7 +395,8 @@ const Market = () => {
         </div>
       </div>
 
-      {/* Category filters */}
+      {/* Category filters - only show when there are items */}
+      {totalItems > 0 && (
       <div className="px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
         {CATEGORIES.map((cat) => {
           const isAll = cat === "الكل";
