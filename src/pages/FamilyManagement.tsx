@@ -276,11 +276,21 @@ const FamilyManagement = () => {
   };
 
   const handleShareLink = async () => {
-    const link = `https://app.example.com/join/${inviteCode}`;
-    if (navigator.share) {
-      await navigator.share({ title: "دعوة انضمام للأسرة", url: link });
-    } else {
-      handleCopyLink();
+    const link = `https://ailti.lovable.app/join?code=${inviteCode}`;
+    const text = `انضم لأسرتنا في عيلتي!\n\nكود الانضمام: ${inviteCode}\n\nأو من خلال الرابط:\n${link}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "دعوة انضمام للأسرة", text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast({ title: "تم نسخ رسالة الدعوة" });
+      }
+    } catch {
+      // User cancelled or share failed - fallback to copy
+      try {
+        await navigator.clipboard.writeText(text);
+        toast({ title: "تم نسخ رسالة الدعوة" });
+      } catch {}
     }
   };
 
