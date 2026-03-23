@@ -258,8 +258,8 @@ const Tasks = () => {
   const toggleItem = useCallback((itemId: string) => {
     haptic.light();
     const item = activeList?.items.find(i => i.id === itemId);
-    if (item) updateItemMutation.mutate({ id: itemId, done: !item.done });
-  }, [activeList, updateItemMutation]);
+    if (item) toggleItemMutation.mutate({ id: itemId, done: !item.done });
+  }, [activeList, toggleItemMutation]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
