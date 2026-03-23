@@ -67,7 +67,34 @@ const getProfileName = (): string => {
   return "";
 };
 
-const FamilyManagement = () => {
+// Stable QR-like pattern that only changes when the code changes
+const QrPattern = React.memo(({ code }: { code: string }) => {
+  const pattern = useMemo(() => {
+    // Generate deterministic pattern from code string
+    let seed = 0;
+    for (let i = 0; i < code.length; i++) {
+      seed = ((seed << 5) - seed + code.charCodeAt(i)) | 0;
+    }
+    const seededRandom = (i: number) => {
+      const x = Math.sin(seed + i * 9301 + 49297) * 49297;
+      return x - Math.floor(x);
+    };
+    return Array.from({ length: 25 }, (_, i) => seededRandom(i) > 0.4);
+  }, [code]);
+
+  return (
+    <div className="w-40 h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 bg-muted border-2 border-border">
+      <div className="grid grid-cols-5 gap-1">
+        {pattern.map((filled, i) => (
+          <div key={i} className="w-5 h-5 rounded-sm" style={{
+            background: filled ? "hsl(var(--foreground))" : "transparent",
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+});
+
   const navigate = useNavigate();
   const { user } = useAuth();
   const { familyId } = useFamilyId();
