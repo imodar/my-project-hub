@@ -720,7 +720,7 @@ const Medications = () => {
 
             <div className="space-y-2">
               <Label className="text-right block">لون الدواء</Label>
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-2 flex-wrap">
                 {MEDICATION_COLORS.map((c) => (
                   <button key={c} onClick={() => setFormColor(c)}
                     className={`w-8 h-8 rounded-full border-2 transition-transform shrink-0 ${formColor === c ? "border-foreground scale-110" : c === "hsl(0, 0%, 100%)" ? "border-border" : "border-transparent"}`}
