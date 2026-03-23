@@ -355,17 +355,22 @@ const Market = () => {
           onPointerUp={(e) => handlePointerUp(e, item.id)}
           onPointerCancel={() => closeSwipe(item.id)}
         >
-          <button
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
-            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-              isChecked
-                ? "bg-primary"
-                : "border-2 border-border hover:border-primary"
-            }`}
-          >
-            {isChecked && <Check size={14} className="text-primary-foreground" />}
-          </button>
+          <div className="relative shrink-0 w-7 h-7">
+            {pendingItemIds.includes(item.id) && (
+              <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
+            )}
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                isChecked
+                  ? "bg-primary"
+                  : "border-2 border-border hover:border-primary"
+              }`}
+            >
+              {isChecked && <Check size={14} className="text-primary-foreground" />}
+            </button>
+          </div>
           <div className="flex-1 min-w-0">
             <p className={`font-semibold text-sm text-foreground truncate ${isChecked ? "line-through" : ""}`}>
               {item.name}
