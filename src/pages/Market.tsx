@@ -63,6 +63,8 @@ const SWIPE_WIDTH = 140;
 const Market = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
+  const { familyId } = useFamilyId();
+  const { toast } = useToast();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useMarketLists();
 
   const lists: MarketList[] = useMemo(() => {
