@@ -335,6 +335,8 @@ const Vehicle = () => {
 
   const [selectedCar, setSelectedCar] = useState<CarData | null>(null);
   const [addCarOpen, setAddCarOpen] = useState(false);
+  const [editCarOpen, setEditCarOpen] = useState(false);
+  const [editingCar, setEditingCar] = useState<CarData | null>(null);
   const [addMaintenanceOpen, setAddMaintenanceOpen] = useState(false);
   const [editMaintenanceRecord, setEditMaintenanceRecord] = useState<MaintenanceRecord | null>(null);
   const [shareDrawerOpen, setShareDrawerOpen] = useState(false);
