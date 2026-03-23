@@ -69,6 +69,7 @@ const Tasks = () => {
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useTaskLists();
+  const { addToTrash } = useTrash();
 
   const lists: TaskList[] = useMemo(() => {
     const mapped = (dbLists || []).map((l: any) => ({
