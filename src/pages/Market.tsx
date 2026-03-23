@@ -547,6 +547,7 @@ const Market = () => {
           </div>
         )}
       </div>
+      )}
       </PullToRefresh>
 
       {/* Floating add button - portal to escape transform context */}
