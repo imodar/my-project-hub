@@ -345,9 +345,16 @@ const HeroSection = () => {
           >
             <Play size={18} />
           </button>
-          <button className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors">
+          <button
+            onClick={() => setNotificationsOpen(true)}
+            className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
+          >
             <Bell size={22} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-[10px] font-bold text-white flex items-center justify-center">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </button>
         </div>
       </header>
