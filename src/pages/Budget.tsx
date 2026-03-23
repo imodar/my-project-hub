@@ -295,7 +295,7 @@ const Budget = () => {
   const [expenseDate, setExpenseDate] = useState<Date | undefined>(undefined);
   const [editExpenseDate, setEditExpenseDate] = useState<Date | undefined>(undefined);
 
-  const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
+  // FAMILY_MEMBERS now comes from DB query above
 
   // Keep selectedBudget in sync with latest data
   const currentSelectedBudget = useMemo(() => {
