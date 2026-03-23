@@ -396,8 +396,8 @@ const Market = () => {
         </div>
       </div>
 
-      {/* Category filters - only show when there are items */}
-      {totalItems > 0 && (
+      {/* Category filters - show based on list's useCategories setting */}
+      {activeList?.useCategories && (
       <div className="px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
         {CATEGORIES.map((cat) => {
           const isAll = cat === "الكل";
