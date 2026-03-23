@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -532,12 +532,12 @@ const FamilyManagement = () => {
         )}
       </div>
 
-      {/* Setup Dialog */}
-      <Dialog open={showSetupDialog} onOpenChange={() => {}}>
-        <DialogContent className="max-w-sm rounded-3xl [&>button]:hidden" style={{ direction: "rtl" }}>
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg">إعداد الأسرة</DialogTitle>
-          </DialogHeader>
+      {/* Setup Drawer */}
+      <Drawer open={showSetupDialog} onOpenChange={() => {}}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">إعداد الأسرة</DrawerTitle>
+          </DrawerHeader>
           <p className="text-sm text-muted-foreground text-center">اختر دورك في الأسرة لإنشاء مجموعتك العائلية</p>
 
           <div className="space-y-4 mt-2">
@@ -620,19 +620,19 @@ const FamilyManagement = () => {
               إنشاء الأسرة
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Add Member Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={(open) => !open && resetDialog()}>
-        <DialogContent className="max-w-sm rounded-3xl" style={{ direction: "rtl" }}>
-          <DialogHeader>
-            <DialogTitle className="text-center">
+      {/* Add Member Drawer */}
+      <Drawer open={showAddDialog} onOpenChange={(open) => !open && resetDialog()}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center">
               {addStep === "choose-type" && "إضافة فرد جديد"}
               {addStep === "enter-name" && `إضافة ${ROLE_LABELS[selectedType || "son"]}`}
               {addStep === "invite-method" && "تم الإضافة ✓"}
-            </DialogTitle>
-          </DialogHeader>
+            </DrawerTitle>
+          </DrawerHeader>
 
           {addStep === "choose-type" && (
             <div className="space-y-3 mt-2">
@@ -769,15 +769,15 @@ const FamilyManagement = () => {
               </button>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Approval Dialog - When someone scans QR or enters code */}
-      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <DialogContent className="max-w-sm rounded-3xl" style={{ direction: "rtl" }}>
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg">طلب انضمام جديد</DialogTitle>
-          </DialogHeader>
+      {/* Approval Drawer - When someone scans QR or enters code */}
+      <Drawer open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">طلب انضمام جديد</DrawerTitle>
+          </DrawerHeader>
 
           <div className="space-y-4 mt-2">
             {/* Notification */}
@@ -879,8 +879,8 @@ const FamilyManagement = () => {
               </button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
