@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Trash2, RotateCcw, Clock, CalendarDays, CreditCard, Users, AlertTriangle } from "lucide-react";
+import { ChevronRight, Trash2, RotateCcw, Clock, CalendarDays, CreditCard, Users, AlertTriangle, ShoppingCart, ListChecks } from "lucide-react";
 import { useTrash, TrashItem } from "@/contexts/TrashContext";
 import {
   AlertDialog,
