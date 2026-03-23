@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useVehicles } from "@/hooks/useVehicles";
+import { useTrash } from "@/contexts/TrashContext";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search, Users, UserPlus } from "lucide-react";
@@ -180,7 +181,79 @@ const CarLogo = ({ manufacturer, size = 40 }: { manufacturer: string; size?: num
   return <Car size={size * 0.6} className="text-muted-foreground" />;
 };
 
-// ─── Swipeable Row ───
+// ─── Swipeable Car Card (right swipe only in RTL = drag left to reveal actions) ───
+const SwipeableCarCard = ({ children, onDelete, onEdit }: {
+  children: React.ReactNode;
+  onDelete: () => void;
+  onEdit: () => void;
+}) => {
+  const [offset, setOffset] = useState(0);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const isSwiping = useRef(false);
+  const isVertical = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+    isVertical.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const dx = e.touches[0].clientX - startX.current;
+    const dy = e.touches[0].clientY - startY.current;
+
+    if (!isSwiping.current && !isVertical.current) {
+      if (Math.abs(dy) > Math.abs(dx)) { isVertical.current = true; return; }
+      if (Math.abs(dx) > 10) isSwiping.current = true;
+    }
+    if (isVertical.current) return;
+
+    // RTL: only allow negative dx (drag left to reveal actions on right)
+    if (dx < 0) {
+      setOffset(Math.max(dx, -160));
+    } else {
+      setOffset(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (offset < -80) {
+      setOffset(-140); // snap open
+    } else {
+      setOffset(0);
+    }
+    isSwiping.current = false;
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Actions behind */}
+      <div className="absolute inset-y-0 left-0 flex items-stretch z-0" style={{ width: 140 }}>
+        <button onClick={onEdit} className="flex-1 flex flex-col items-center justify-center bg-primary text-primary-foreground">
+          <Pencil size={18} />
+          <span className="text-[10px] mt-1">تعديل</span>
+        </button>
+        <button onClick={onDelete} className="flex-1 flex flex-col items-center justify-center bg-destructive text-destructive-foreground">
+          <Trash2 size={18} />
+          <span className="text-[10px] mt-1">حذف</span>
+        </button>
+      </div>
+      <div
+        className="relative z-10 transition-transform"
+        style={{ transform: `translateX(${offset}px)`, transitionDuration: isSwiping.current ? "0ms" : "200ms" }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// ─── Swipeable Row (for maintenance records) ───
 const SwipeableRow = ({ children, onDelete, onEdit, onReminder }: {
   children: React.ReactNode;
   onDelete: () => void;
@@ -271,6 +344,9 @@ const Vehicle = () => {
   // Family members for sharing
   const { members: familyMembers } = useFamilyMembers();
 
+  const { addToTrash } = useTrash();
+  const [deleteConfirmCar, setDeleteConfirmCar] = useState<CarData | null>(null);
+
   // Add car form
   const [newManufacturer, setNewManufacturer] = useState("");
   const [newModel, setNewModel] = useState("");
@@ -345,10 +421,22 @@ const Vehicle = () => {
     toast.success("تمت إضافة المركبة بنجاح");
   };
 
-  const handleDeleteCar = (carId: string) => {
-    deleteVehicleMut.mutate(carId);
-    if (selectedCar?.id === carId) setSelectedCar(null);
-    toast.success("تم حذف المركبة");
+  const handleDeleteCar = (car: CarData) => {
+    const carInfo = CAR_MANUFACTURERS[car.manufacturer] || CAR_MANUFACTURERS.other;
+    // Add to trash with all maintenance records
+    addToTrash({
+      type: "vehicle" as any,
+      title: `${carInfo.name} ${car.model} ${car.year}`,
+      description: `${car.mileage.toLocaleString()} ${car.mileageUnit === "km" ? "كم" : "ميل"} • لوحة: ${car.plateNumber || "—"}`,
+      deletedBy: "",
+      isShared: car.sharedWith.length > 0,
+      originalData: car,
+      relatedRecords: car.maintenance,
+    });
+    deleteVehicleMut.mutate(car.id);
+    if (selectedCar?.id === car.id) setSelectedCar(null);
+    setDeleteConfirmCar(null);
+    toast.success("تم نقل المركبة إلى سلة المحذوفات");
   };
 
   const handleAddMaintenance = () => {
@@ -750,11 +838,10 @@ const Vehicle = () => {
                 const soonCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "soon").length;
 
                 return (
-                  <SwipeableRow
+                  <SwipeableCarCard
                     key={car.id}
-                    onDelete={() => handleDeleteCar(car.id)}
+                    onDelete={() => setDeleteConfirmCar(car)}
                     onEdit={() => setSelectedCar(car)}
-                    onReminder={() => {}}
                   >
                     <button
                       onClick={() => setSelectedCar(car)}
@@ -797,7 +884,7 @@ const Vehicle = () => {
                         </div>
                       </div>
                     </button>
-                  </SwipeableRow>
+                  </SwipeableCarCard>
                 );
               })}
             </div>
@@ -942,6 +1029,41 @@ const Vehicle = () => {
               <Button onClick={handleAddCar} disabled={!newManufacturer || !newModel || !newYear}
                 className="w-full rounded-xl h-12">
                 إضافة المركبة
+              </Button>
+              <DrawerClose asChild>
+                <Button variant="outline" className="w-full rounded-xl">إلغاء</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+
+        {/* Delete Confirmation Drawer */}
+        <Drawer open={!!deleteConfirmCar} onOpenChange={() => setDeleteConfirmCar(null)}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>حذف المركبة</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-4 text-center space-y-3" dir="rtl">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                <Trash2 size={28} className="text-destructive" />
+              </div>
+              {deleteConfirmCar && (
+                <>
+                  <p className="font-bold text-foreground">
+                    {CAR_MANUFACTURERS[deleteConfirmCar.manufacturer]?.name || deleteConfirmCar.manufacturer} {deleteConfirmCar.model}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    سيتم نقل المركبة مع كل سجلات صيانتها ({deleteConfirmCar.maintenance.length} سجل) إلى سلة المحذوفات
+                  </p>
+                  <p className="text-xs text-muted-foreground/70">
+                    يمكنك استعادتها خلال 30 يوماً من سلة المحذوفات
+                  </p>
+                </>
+              )}
+            </div>
+            <DrawerFooter>
+              <Button variant="destructive" onClick={() => deleteConfirmCar && handleDeleteCar(deleteConfirmCar)} className="w-full rounded-xl h-12">
+                حذف المركبة
               </Button>
               <DrawerClose asChild>
                 <Button variant="outline" className="w-full rounded-xl">إلغاء</Button>
