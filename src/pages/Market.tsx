@@ -223,6 +223,7 @@ const Market = () => {
       name: newListName.trim(),
       type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
       shared_with: newListType === "family" ? newListShareMembers : [],
+      use_categories: newListUseCategories,
     });
     setNewListName("");
     setNewListShareMembers([]);
