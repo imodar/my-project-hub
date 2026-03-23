@@ -943,23 +943,25 @@ const Budget = () => {
                 مشاركة مع
               </label>
               <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                {FAMILY_MEMBERS.map((member) => (
+                {FAMILY_MEMBERS.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">لا يوجد أفراد عائلة للمشاركة معهم</p>
+                ) : FAMILY_MEMBERS.map((member) => (
                   <button
-                    key={member}
+                    key={member.id}
                     type="button"
                     onClick={() =>
                       setShareNames((prev) =>
-                        prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                        prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
                       )
                     }
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                      shareNames.includes(member)
+                      shareNames.includes(member.name)
                         ? "border-primary bg-primary/10"
                         : "border-border bg-card"
                     }`}
                   >
-                    <span className="font-medium text-foreground">{member}</span>
-                    {shareNames.includes(member) && <Check size={14} className="text-primary" />}
+                    <span className="font-medium text-foreground">{member.name}</span>
+                    {shareNames.includes(member.name) && <Check size={14} className="text-primary" />}
                   </button>
                 ))}
               </div>
