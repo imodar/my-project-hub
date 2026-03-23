@@ -240,12 +240,15 @@ export function useChat() {
         reactions: (row.reactions as Record<string, number>) || {},
         mentionUserId: row.mention_user_id || undefined,
         status: row.status || "sent",
+        messageType: (row.message_type as MessageType) || "text",
+        mediaUrl: row.media_url || undefined,
+        mediaMetadata: row.media_metadata as ChatMessage["mediaMetadata"] || undefined,
       };
     },
     [user, familyKey, profiles]
   );
 
-  // ─── Send message ───
+  // ─── Send text message ───
   const sendMessage = useCallback(
     async (plaintext: string, mentionUserId?: string) => {
       if (!user || !familyId || !plaintext.trim()) return;
@@ -260,7 +263,6 @@ export function useChat() {
           iv = payload.iv;
         } catch (err) {
           console.error("Encryption error:", err);
-          // Fallback: send unencrypted
         }
       }
 
@@ -272,9 +274,45 @@ export function useChat() {
         mention_user_id: mentionUserId || null,
         pinned: false,
         status: "sent",
+        message_type: "text",
       });
 
       if (error) console.error("Send error:", error);
+    },
+    [user, familyId, familyKey]
+  );
+
+  // ─── Send media message (image/voice/location) ───
+  const sendMediaMessage = useCallback(
+    async (type: MessageType, mediaUrl: string, metadata?: ChatMessage["mediaMetadata"], caption?: string) => {
+      if (!user || !familyId) return;
+
+      let encrypted_text = caption || "";
+      let iv: string | null = null;
+
+      if (familyKey && encrypted_text) {
+        try {
+          const payload = await encryptMessage(familyKey, encrypted_text);
+          encrypted_text = payload.ciphertext;
+          iv = payload.iv;
+        } catch (err) {
+          console.error("Encryption error:", err);
+        }
+      }
+
+      const { error } = await supabase.from("chat_messages").insert({
+        family_id: familyId,
+        sender_id: user.id,
+        encrypted_text: encrypted_text || type,
+        iv,
+        pinned: false,
+        status: "sent",
+        message_type: type,
+        media_url: mediaUrl,
+        media_metadata: metadata as any,
+      });
+
+      if (error) console.error("Send media error:", error);
     },
     [user, familyId, familyKey]
   );
