@@ -198,6 +198,37 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // REGENERATE invite code (unique)
+    if (action === "regenerate-code") {
+      const { family_id } = body;
+      if (!family_id) return json({ error: "family_id مطلوب" }, 400);
+
+      const newCode = await generateUniqueInviteCode(adminClient);
+
+      const { data, error } = await adminClient
+        .from("families")
+        .update({ invite_code: newCode })
+        .eq("id", family_id)
+        .select("invite_code")
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data: { invite_code: data.invite_code } });
+    }
+
+    // GET current invite code
+    if (action === "get-invite-code") {
+      const { family_id } = body;
+      if (!family_id) return json({ error: "family_id مطلوب" }, 400);
+
+      const { data, error } = await adminClient
+        .from("families")
+        .select("invite_code")
+        .eq("id", family_id)
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data: { invite_code: data.invite_code } });
+    }
+
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
     return json({ error: err.message }, 500);
