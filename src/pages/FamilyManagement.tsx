@@ -250,6 +250,86 @@ const FamilyManagement = () => {
     }
   };
 
+  const stopScanner = useCallback(() => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    if (scanStreamRef.current) {
+      scanStreamRef.current.getTracks().forEach((t) => t.stop());
+      scanStreamRef.current = null;
+    }
+  }, []);
+
+  const startScanner = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+      scanStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+
+      // Use BarcodeDetector if available
+      if ("BarcodeDetector" in window) {
+        const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
+        scanIntervalRef.current = setInterval(async () => {
+          if (!videoRef.current || videoRef.current.readyState < 2) return;
+          try {
+            const barcodes = await detector.detect(videoRef.current);
+            if (barcodes.length > 0) {
+              const code = barcodes[0].rawValue;
+              if (code) {
+                stopScanner();
+                setShowScanner(false);
+                setJoinCode(code);
+                // Auto-submit join request
+                handleJoinByCode(code);
+              }
+            }
+          } catch {}
+        }, 500);
+      }
+    } catch {
+      toast({ title: "لا يمكن الوصول للكاميرا", variant: "destructive" });
+      setShowScanner(false);
+    }
+  }, []);
+
+  const handleJoinByCode = async (code: string) => {
+    if (!code.trim()) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "join", invite_code: code.trim(), role: "son" },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل الانضمام", variant: "destructive" });
+      } else {
+        toast({ title: "تم إرسال طلب الانضمام بنجاح!" });
+      }
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
+  };
+
+  const handleManualJoin = () => {
+    if (!joinCode.trim()) return;
+    handleJoinByCode(joinCode);
+    setShowScanner(false);
+    setJoinCode("");
+  };
+
+  useEffect(() => {
+    if (showScanner) {
+      startScanner();
+    } else {
+      stopScanner();
+    }
+    return () => stopScanner();
+  }, [showScanner, startScanner, stopScanner]);
+
   const resetDialog = () => {
     setShowAddDialog(false);
     setAddStep("choose-type");
