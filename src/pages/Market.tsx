@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
+import { useTrash } from "@/contexts/TrashContext";
 import { useMarketLists } from "@/hooks/useMarketLists";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useToast } from "@/hooks/use-toast";
