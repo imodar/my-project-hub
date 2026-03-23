@@ -231,6 +231,7 @@ const Auth = () => {
                 Google
               </Button>
 
+              <div className="flex-1" />
               {/* Terms */}
               <p className="text-[11px] text-muted-foreground/60 text-center leading-relaxed pt-2 pb-2">
                 بتسجيل دخولك تكون قد وافقت على{" "}
