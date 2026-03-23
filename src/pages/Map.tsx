@@ -20,38 +20,7 @@ interface FamilyMember {
   y: number;
 }
 
-const mockMembers: FamilyMember[] = [
-  {
-    id: "1", name: "أبو فهد", emoji: "👨", emojiColor: "hsl(var(--primary))",
-    isOnline: true, lastSeen: "الآن", location: "العمل - شارع الملك فهد",
-    locationIcon: "🏢", isLocationHidden: false, isInSafeZone: false,
-    x: 45, y: 55,
-  },
-  {
-    id: "2", name: "أم فهد", emoji: "👩", emojiColor: "hsl(145, 30%, 80%)",
-    isOnline: true, lastSeen: "الآن", location: "المنزل - حي النخيل",
-    locationIcon: "🏡", isLocationHidden: false, isInSafeZone: true, safeZoneName: "المنزل",
-    x: 72, y: 42,
-  },
-  {
-    id: "3", name: "فهد", emoji: "👦", emojiColor: "hsl(200, 40%, 80%)",
-    isOnline: true, lastSeen: "منذ 3 د", location: "مدرسة الأمل",
-    locationIcon: "🏫", isLocationHidden: false, isInSafeZone: true, safeZoneName: "المدرسة",
-    x: 60, y: 25,
-  },
-  {
-    id: "4", name: "نورة", emoji: "👧", emojiColor: "hsl(50, 60%, 80%)",
-    isOnline: false, lastSeen: "منذ 2 س", location: "آخر موقع: المنزل",
-    locationIcon: "📍", isLocationHidden: false, isInSafeZone: false,
-    x: 30, y: 70,
-  },
-  {
-    id: "5", name: "سارة", emoji: "👶", emojiColor: "hsl(320, 40%, 85%)",
-    isOnline: false, lastSeen: "منذ 1 س", location: "الموقع مخفي",
-    locationIcon: "🔒", isLocationHidden: true, isInSafeZone: false,
-    x: 0, y: 0,
-  },
-];
+// No mock data — real data will come from backend when location tracking is implemented
 
 // Sheet positions (from top of map area)
 const SHEET_PEEK = 220; // how much sheet peeks up from bottom
@@ -61,7 +30,7 @@ const Map = () => {
   const navigate = useNavigate();
   const [updateInterval, setUpdateInterval] = useState(5);
   const [showSettings, setShowSettings] = useState(false);
-  const [members] = useState<FamilyMember[]>(mockMembers);
+  const [members] = useState<FamilyMember[]>([]);
   const [myLocationEnabled, setMyLocationEnabled] = useState(true);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
