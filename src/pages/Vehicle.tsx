@@ -344,6 +344,9 @@ const Vehicle = () => {
   // Family members for sharing
   const { members: familyMembers } = useFamilyMembers();
 
+  const { addToTrash } = useTrash();
+  const [deleteConfirmCar, setDeleteConfirmCar] = useState<CarData | null>(null);
+
   // Add car form
   const [newManufacturer, setNewManufacturer] = useState("");
   const [newModel, setNewModel] = useState("");
