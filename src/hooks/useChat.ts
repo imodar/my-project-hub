@@ -159,22 +159,31 @@ export function useChat() {
 
   // ─── 3. Load messages ───
   useEffect(() => {
-    if (!familyId || !isReady) return;
+    if (!familyId || !isReady || !user) return;
     loadMessages();
     async function loadMessages() {
-      const { data, error } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("family_id", familyId!)
-        .order("created_at", { ascending: true })
-        .limit(200);
-      if (error || !data) return;
-      const decrypted = await Promise.all(
-        data.map((m) => decryptDbMessage(m))
-      );
-      setMessages(decrypted.filter(Boolean) as ChatMessage[]);
+      try {
+        const { data, error } = await supabase
+          .from("chat_messages")
+          .select("*")
+          .eq("family_id", familyId!)
+          .order("created_at", { ascending: true })
+          .limit(200);
+        if (error || !data) {
+          console.error("Load messages error:", error);
+          return;
+        }
+        const decrypted: ChatMessage[] = [];
+        for (const m of data) {
+          const msg = await decryptRef.current(m);
+          if (msg) decrypted.push(msg);
+        }
+        setMessages(decrypted);
+      } catch (err) {
+        console.error("Load messages exception:", err);
+      }
     }
-  }, [familyId, isReady, familyKey]);
+  }, [familyId, isReady, familyKey, profiles, user]);
 
   // ─── 4. Realtime subscription ───
   useEffect(() => {
@@ -190,12 +199,16 @@ export function useChat() {
           filter: `family_id=eq.${familyId}`,
         },
         async (payload) => {
-          const msg = await decryptDbMessage(payload.new as any);
-          if (msg) {
-            setMessages((prev) => {
-              if (prev.find((m) => m.id === msg.id)) return prev;
-              return [...prev, msg];
-            });
+          try {
+            const msg = await decryptRef.current(payload.new as any);
+            if (msg) {
+              setMessages((prev) => {
+                if (prev.find((m) => m.id === msg.id)) return prev;
+                return [...prev, msg];
+              });
+            }
+          } catch (err) {
+            console.error("Realtime message error:", err);
           }
         }
       )
@@ -206,47 +219,55 @@ export function useChat() {
         supabase.removeChannel(subscriptionRef.current);
       }
     };
-  }, [familyId, isReady, familyKey]);
+  }, [familyId, isReady]);
 
-  // ─── Decrypt a DB row ───
+  // ─── Decrypt a DB row (use ref to avoid stale closures) ───
   const decryptDbMessage = useCallback(
     async (row: any): Promise<ChatMessage | null> => {
-      if (!row || !user) return null;
-      let text = row.encrypted_text;
+      try {
+        if (!row || !user) return null;
+        let text = row.encrypted_text || "";
 
-      if (familyKey && row.iv) {
-        try {
-          text = await decryptMessage(familyKey, {
-            ciphertext: row.encrypted_text,
-            iv: row.iv,
-          });
-        } catch {
-          text = "🔒 تعذر فك التشفير";
+        if (familyKey && row.iv) {
+          try {
+            text = await decryptMessage(familyKey, {
+              ciphertext: row.encrypted_text,
+              iv: row.iv,
+            });
+          } catch {
+            text = "🔒 تعذر فك التشفير";
+          }
         }
-      }
 
-      return {
-        id: row.id,
-        senderId: row.sender_id,
-        senderName: profiles[row.sender_id] || "عضو",
-        text,
-        time: new Date(row.created_at).toLocaleTimeString("ar-SA", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        }),
-        isMe: row.sender_id === user.id,
-        pinned: row.pinned || false,
-        reactions: (row.reactions as Record<string, number>) || {},
-        mentionUserId: row.mention_user_id || undefined,
-        status: row.status || "sent",
-        messageType: (row.message_type as MessageType) || "text",
-        mediaUrl: row.media_url || undefined,
-        mediaMetadata: row.media_metadata as ChatMessage["mediaMetadata"] || undefined,
-      };
+        return {
+          id: row.id,
+          senderId: row.sender_id,
+          senderName: profiles[row.sender_id] || "عضو",
+          text,
+          time: new Date(row.created_at).toLocaleTimeString("ar-SA", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          }),
+          isMe: row.sender_id === user.id,
+          pinned: row.pinned || false,
+          reactions: (row.reactions as Record<string, number>) || {},
+          mentionUserId: row.mention_user_id || undefined,
+          status: row.status || "sent",
+          messageType: (row.message_type as MessageType) || "text",
+          mediaUrl: row.media_url || undefined,
+          mediaMetadata: row.media_metadata as ChatMessage["mediaMetadata"] || undefined,
+        };
+      } catch (err) {
+        console.error("decryptDbMessage error:", err, row);
+        return null;
+      }
     },
     [user, familyKey, profiles]
   );
+
+  const decryptRef = useRef(decryptDbMessage);
+  useEffect(() => { decryptRef.current = decryptDbMessage; }, [decryptDbMessage]);
 
   // ─── Send text message ───
   const sendMessage = useCallback(
