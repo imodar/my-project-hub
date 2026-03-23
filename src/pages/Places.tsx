@@ -60,7 +60,7 @@ const CATEGORY_INFO: Record<PlaceCategory, { emoji: string; bg: string; text: st
 };
 
 const CATEGORIES: (PlaceCategory | "الكل")[] = ["الكل", "مطاعم", "كافيهات", "ترفيه", "أخرى"];
-const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
+// FAMILY_MEMBERS removed — using useFamilyMembers hook
 
 const PRICE_LABELS: Record<PriceRange, string> = {
   "$": "رخيص",

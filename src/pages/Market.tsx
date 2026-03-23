@@ -57,7 +57,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; emoji: string 
 };
 
 const CATEGORIES = ["الكل", ...Object.keys(CATEGORY_COLORS)];
-const FAMILY_MEMBERS: string[] = [];
+// FAMILY_MEMBERS removed — using useFamilyMembers hook
 
 const SWIPE_WIDTH = 140;
 const DEFAULT_FAMILY_LIST_ID = "default-family-list";

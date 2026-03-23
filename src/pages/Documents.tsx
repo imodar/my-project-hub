@@ -70,7 +70,7 @@ const CATEGORIES: Record<DocCategory, { label: string; icon: typeof CreditCard; 
   other: { label: "أخرى", icon: File, bg: "bg-muted", color: "text-muted-foreground" },
 };
 
-const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
+// FAMILY_MEMBERS removed — using useFamilyMembers hook
 const SWIPE_WIDTH = 140;
 
 // Initial data removed — using Supabase hooks

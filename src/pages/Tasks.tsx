@@ -60,7 +60,7 @@ const PRIORITY_INFO: Record<string, { label: string; bg: string; text: string; e
   low: { label: "عادي", bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", emoji: "🟢" },
 };
 
-const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
+// FAMILY_MEMBERS removed — using useFamilyMembers hook
 const SWIPE_WIDTH = 140;
 
 const Tasks = () => {
