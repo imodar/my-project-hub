@@ -314,7 +314,7 @@ const Market = () => {
 
   const getListIcon = (type: MarketList["type"]) => {
     switch (type) {
-      case "family": return <Users size={14} className="text-primary" />;
+      case "family": return <Users size={14} className="text-white/90" />;
       case "personal": return <Lock size={14} className="text-accent" />;
       case "shared": return <Share2 size={14} className="text-blue-500" />;
     }
