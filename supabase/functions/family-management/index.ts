@@ -16,10 +16,25 @@ function json(data: unknown, status = 200) {
 function generateInviteCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
   return code;
+}
+
+async function generateUniqueInviteCode(client: any): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateInviteCode();
+    const { data } = await client
+      .from("families")
+      .select("id")
+      .eq("invite_code", code)
+      .maybeSingle();
+    if (!data) return code;
+  }
+  // Fallback: timestamp-based suffix for guaranteed uniqueness
+  const ts = Date.now().toString(36).slice(-4).toUpperCase();
+  return generateInviteCode().slice(0, 4) + ts;
 }
 
 Deno.serve(async (req) => {
