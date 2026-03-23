@@ -16,10 +16,25 @@ function json(data: unknown, status = 200) {
 function generateInviteCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
   return code;
+}
+
+async function generateUniqueInviteCode(client: any): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateInviteCode();
+    const { data } = await client
+      .from("families")
+      .select("id")
+      .eq("invite_code", code)
+      .maybeSingle();
+    if (!data) return code;
+  }
+  // Fallback: timestamp-based suffix for guaranteed uniqueness
+  const ts = Date.now().toString(36).slice(-4).toUpperCase();
+  return generateInviteCode().slice(0, 4) + ts;
 }
 
 Deno.serve(async (req) => {
@@ -59,7 +74,7 @@ Deno.serve(async (req) => {
       const { name, role } = body;
       if (!name) return json({ error: "اسم العائلة مطلوب" }, 400);
 
-      const inviteCode = generateInviteCode();
+      const inviteCode = await generateUniqueInviteCode(adminClient);
 
       const { data: family, error: famErr } = await adminClient
         .from("families")
@@ -181,6 +196,37 @@ Deno.serve(async (req) => {
       if (error) return json({ error: error.message }, 400);
 
       return json({ success: true });
+    }
+
+    // REGENERATE invite code (unique)
+    if (action === "regenerate-code") {
+      const { family_id } = body;
+      if (!family_id) return json({ error: "family_id مطلوب" }, 400);
+
+      const newCode = await generateUniqueInviteCode(adminClient);
+
+      const { data, error } = await adminClient
+        .from("families")
+        .update({ invite_code: newCode })
+        .eq("id", family_id)
+        .select("invite_code")
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data: { invite_code: data.invite_code } });
+    }
+
+    // GET current invite code
+    if (action === "get-invite-code") {
+      const { family_id } = body;
+      if (!family_id) return json({ error: "family_id مطلوب" }, 400);
+
+      const { data, error } = await adminClient
+        .from("families")
+        .select("invite_code")
+        .eq("id", family_id)
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data: { invite_code: data.invite_code } });
     }
 
     return json({ error: "Invalid action" }, 400);

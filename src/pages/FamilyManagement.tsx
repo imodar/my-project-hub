@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X } from "lucide-react";
+import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X, RefreshCw } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useFamilyId } from "@/hooks/useFamilyId";
 
 type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife" | "worker" | "maid" | "driver";
 type InviteStatus = "active" | "pending";
@@ -19,12 +20,6 @@ interface FamilyMember {
   avatar?: string;
 }
 
-const generateInviteCode = () => {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-};
 
 const ROLE_LABELS: Record<string, string> = {
   father: "الأب",
@@ -75,6 +70,7 @@ const getProfileName = (): string => {
 const FamilyManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { familyId } = useFamilyId();
   const [profileName, setProfileName] = useState("");
 
   useEffect(() => {
@@ -148,10 +144,11 @@ const FamilyManagement = () => {
   const [addStep, setAddStep] = useState<"choose-type" | "enter-name" | "invite-method">("choose-type");
   const [selectedType, setSelectedType] = useState<FamilyRole | null>(null);
   const [newName, setNewName] = useState("");
-  const [inviteCode, setInviteCode] = useState(generateInviteCode);
+  const [inviteCode, setInviteCode] = useState("");
   const [codeTimer, setCodeTimer] = useState(300);
   const [codeCopied, setCodeCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
   // Swipe state
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
@@ -159,19 +156,56 @@ const FamilyManagement = () => {
   const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
   const isDragging = useRef(false);
 
+  // Fetch invite code from server on mount
+  const fetchInviteCode = useCallback(async () => {
+    if (!familyId) return;
+    const { data } = await supabase.functions.invoke("family-management", {
+      body: { action: "get-invite-code", family_id: familyId },
+    });
+    if (data?.data?.invite_code) {
+      setInviteCode(data.data.invite_code);
+    }
+  }, [familyId]);
+
+  const regenerateCode = useCallback(async () => {
+    if (!familyId || isRegeneratingCode) return;
+    setIsRegeneratingCode(true);
+    try {
+      const { data } = await supabase.functions.invoke("family-management", {
+        body: { action: "regenerate-code", family_id: familyId },
+      });
+      if (data?.data?.invite_code) {
+        setInviteCode(data.data.invite_code);
+        setCodeTimer(300);
+      }
+    } catch {
+      toast({ title: "فشل تجديد الكود", variant: "destructive" });
+    } finally {
+      setIsRegeneratingCode(false);
+    }
+  }, [familyId, isRegeneratingCode]);
+
+  // Fetch code when family is ready
   useEffect(() => {
-    if (!showAddDialog || addStep !== "invite-method") return;
+    if (familyId && creatorRole) {
+      fetchInviteCode();
+    }
+  }, [familyId, creatorRole, fetchInviteCode]);
+
+  // Countdown timer - always runs when we have a code
+  useEffect(() => {
+    if (!inviteCode || !creatorRole) return;
     const interval = setInterval(() => {
       setCodeTimer((t) => {
         if (t <= 1) {
-          setInviteCode(generateInviteCode());
+          regenerateCode();
           return 300;
         }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [showAddDialog, addStep]);
+  }, [inviteCode, creatorRole, regenerateCode]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
@@ -335,8 +369,6 @@ const FamilyManagement = () => {
     setAddStep("choose-type");
     setSelectedType(null);
     setNewName("");
-    setCodeTimer(300);
-    setInviteCode(generateInviteCode());
   };
 
   // Simulate incoming join request (for demo - triggered by button)
@@ -585,20 +617,39 @@ const FamilyManagement = () => {
               {/* Invite Code */}
               <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-muted-foreground">ينتهي خلال {formatTime(codeTimer)}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">ينتهي خلال {formatTime(codeTimer)}</span>
+                    <button
+                      onClick={regenerateCode}
+                      disabled={isRegeneratingCode}
+                      className="p-1 rounded-full transition-colors active:bg-muted"
+                    >
+                      <RefreshCw size={14} className={`text-muted-foreground ${isRegeneratingCode ? "animate-spin" : ""}`} />
+                    </button>
+                  </div>
                   <span className="text-sm font-semibold text-foreground">كود الانضمام</span>
+                </div>
+                {/* Timer progress bar */}
+                <div className="w-full h-1 rounded-full bg-muted mb-3 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-1000 ease-linear"
+                    style={{
+                      width: `${(codeTimer / 300) * 100}%`,
+                      background: codeTimer < 60 ? "hsl(var(--destructive))" : "hsl(var(--primary))",
+                    }}
+                  />
                 </div>
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <div className="flex gap-1.5" style={{ direction: "ltr" }}>
-                    {inviteCode.split("").map((char, i) => (
-                      <div key={i} className="w-10 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-foreground bg-muted border border-border">
-                        {char}
+                    {(inviteCode || "--------").split("").map((char, i) => (
+                      <div key={i} className="w-9 h-11 rounded-xl flex items-center justify-center text-base font-bold text-foreground bg-muted border border-border">
+                        {isRegeneratingCode ? "·" : char}
                       </div>
                     ))}
                   </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground/70 text-center mb-2">عند إدخال الكود، ستظهر شاشة قبول على جهازك لاختيار الدور</p>
-                <button onClick={handleCopyCode} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10" style={{ background: "hsl(var(--primary) / 0.08)" }}>
+                <p className="text-[10px] text-muted-foreground/70 text-center mb-2">كود فريد يتجدد تلقائياً كل ٥ دقائق • عند إدخاله ستظهر شاشة قبول</p>
+                <button onClick={handleCopyCode} disabled={!inviteCode || isRegeneratingCode} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10 disabled:opacity-40" style={{ background: "hsl(var(--primary) / 0.08)" }}>
                   {codeCopied ? <Check size={16} /> : <Copy size={16} />}
                   {codeCopied ? "تم النسخ" : "نسخ الكود"}
                 </button>
