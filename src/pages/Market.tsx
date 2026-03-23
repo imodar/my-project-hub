@@ -586,7 +586,20 @@ const Market = () => {
 
       {/* Floating add button - portal to escape transform context */}
       {createPortal(
-        <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30">
+        <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30 flex flex-col gap-2 items-center">
+          {activeList && !activeList.isDefault && (
+            <Button
+              onClick={() => {
+                haptic.light();
+                setShowListActions(true);
+              }}
+              variant="outline"
+              className="w-11 h-11 rounded-full shadow-lg bg-card border-border p-0"
+              size="icon"
+            >
+              <MoreVertical size={18} className="text-muted-foreground" />
+            </Button>
+          )}
           <Button
             onClick={() => {
               haptic.medium();
