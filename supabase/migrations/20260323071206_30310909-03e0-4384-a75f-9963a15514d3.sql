@@ -1,0 +1,1 @@
+ALTER TABLE public.market_lists ADD COLUMN use_categories boolean NOT NULL DEFAULT true;

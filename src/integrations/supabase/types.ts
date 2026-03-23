@@ -1090,6 +1090,7 @@ export type Database = {
           shared_with: string[] | null
           type: string
           updated_at: string
+          use_categories: boolean
         }
         Insert: {
           created_at?: string
@@ -1100,6 +1101,7 @@ export type Database = {
           shared_with?: string[] | null
           type?: string
           updated_at?: string
+          use_categories?: boolean
         }
         Update: {
           created_at?: string
@@ -1110,6 +1112,7 @@ export type Database = {
           shared_with?: string[] | null
           type?: string
           updated_at?: string
+          use_categories?: boolean
         }
         Relationships: [
           {
