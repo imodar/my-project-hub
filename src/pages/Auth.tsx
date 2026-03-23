@@ -152,7 +152,7 @@ const Auth = () => {
         initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-background rounded-t-[2rem] px-6 pt-8 pb-6 shadow-[0_-8px_40px_rgba(0,0,0,0.12)] min-h-[67vh]"
+        className="bg-background rounded-t-[2rem] px-6 pt-8 pb-6 shadow-[0_-8px_40px_rgba(0,0,0,0.12)] min-h-[67vh] flex flex-col"
       >
         {/* Handle bar */}
         <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
@@ -165,7 +165,7 @@ const Auth = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.3 }}
-              className="space-y-5"
+              className="space-y-5 flex-1 flex flex-col"
             >
               <div className="text-center mb-2">
                 <h2 className="text-xl font-bold text-foreground">أهلاً بك</h2>
@@ -231,6 +231,7 @@ const Auth = () => {
                 Google
               </Button>
 
+              <div className="flex-1" />
               {/* Terms */}
               <p className="text-[11px] text-muted-foreground/60 text-center leading-relaxed pt-2 pb-2">
                 بتسجيل دخولك تكون قد وافقت على{" "}
