@@ -303,10 +303,37 @@ export function useChat() {
     [user, familyId, familyKey]
   );
 
+  // ─── Helper: add optimistic message ───
+  const addOptimisticMessage = useCallback(
+    (type: MessageType, mediaUrl: string, metadata?: ChatMessage["mediaMetadata"], caption?: string): string => {
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: ChatMessage = {
+        id: tempId,
+        senderId: user?.id || "",
+        senderName: profiles[user?.id || ""] || "أنا",
+        text: caption || type,
+        time: new Date().toLocaleTimeString("ar-SA", { hour: "numeric", minute: "2-digit", hour12: true }),
+        isMe: true,
+        pinned: false,
+        reactions: {},
+        status: "sending",
+        messageType: type,
+        mediaUrl,
+        mediaMetadata: metadata,
+      };
+      setMessages((prev) => [...prev, optimistic]);
+      return tempId;
+    },
+    [user, profiles]
+  );
+
   // ─── Send media message (image/voice/location) ───
   const sendMediaMessage = useCallback(
     async (type: MessageType, mediaUrl: string, metadata?: ChatMessage["mediaMetadata"], caption?: string) => {
       if (!user || !familyId) return;
+
+      // Add optimistic message immediately
+      const tempId = addOptimisticMessage(type, mediaUrl, metadata, caption);
 
       let encrypted_text = caption || "";
       let iv: string | null = null;
@@ -333,9 +360,19 @@ export function useChat() {
         media_metadata: metadata as any,
       });
 
-      if (error) console.error("Send media error:", error);
+      if (error) {
+        console.error("Send media error:", error);
+        // Mark as failed
+        setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, status: "failed" } : m));
+      } else {
+        // Remove optimistic message — realtime will add the real one
+        // Give realtime a moment, then remove temp if real arrived
+        setTimeout(() => {
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        }, 3000);
+      }
     },
-    [user, familyId, familyKey]
+    [user, familyId, familyKey, addOptimisticMessage]
   );
 
   // ─── Toggle pin ───
