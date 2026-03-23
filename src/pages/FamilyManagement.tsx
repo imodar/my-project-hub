@@ -95,6 +95,7 @@ const QrPattern = React.memo(({ code }: { code: string }) => {
   );
 });
 
+const FamilyManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { familyId } = useFamilyId();
