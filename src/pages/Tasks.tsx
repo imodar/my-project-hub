@@ -345,11 +345,11 @@ const Tasks = () => {
     setShowShareDialog(false);
   }, [selectedShareMembers]);
 
-  const getListIcon = (type: TaskList["type"]) => {
+  const getListIcon = (type: TaskList["type"], isActive: boolean) => {
     switch (type) {
-      case "family": return <Users size={14} className="text-accent" />;
-      case "personal": return <Lock size={14} className="text-accent" />;
-      case "shared": return <Share2 size={14} className="text-blue-500" />;
+      case "family": return <Users size={14} className={isActive ? "text-primary" : "text-white/90"} />;
+      case "personal": return <Lock size={14} className={isActive ? "text-accent" : "text-white/90"} />;
+      case "shared": return <Share2 size={14} className={isActive ? "text-blue-500" : "text-white/90"} />;
     }
   };
 
