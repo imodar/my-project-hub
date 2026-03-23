@@ -67,7 +67,7 @@ const Tasks = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
-  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useTaskLists();
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useTaskLists();
 
   const lists: TaskList[] = useMemo(() => {
     const mapped = (dbLists || []).map((l: any) => ({
@@ -258,8 +258,8 @@ const Tasks = () => {
   const toggleItem = useCallback((itemId: string) => {
     haptic.light();
     const item = activeList?.items.find(i => i.id === itemId);
-    if (item) updateItemMutation.mutate({ id: itemId, done: !item.done });
-  }, [activeList, updateItemMutation]);
+    if (item) toggleItemMutation.mutate({ id: itemId, done: !item.done });
+  }, [activeList, toggleItemMutation]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
@@ -401,7 +401,7 @@ const Tasks = () => {
           onPointerCancel={() => { cancelLongPress(); closeSwipe(item.id); setDragActiveId(null); setDragOverId(null); isLongPressingRef.current = false; }}
         >
           <div className="relative shrink-0 w-7 h-7">
-            {activeList?.type === "family" && pendingItemIds.includes(item.id) && (
+            {pendingItemIds.includes(item.id) && (
               <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
             )}
             <button
