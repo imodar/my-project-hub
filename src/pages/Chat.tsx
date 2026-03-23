@@ -485,7 +485,7 @@ const Chat = () => {
       )}
 
       {/* Input area */}
-      <div className="fixed bottom-24 left-0 right-0 z-40">
+      <div className="sticky bottom-0 left-0 right-0 z-40 pb-24 bg-gradient-to-t from-background via-background to-transparent pt-2">
         <div className="max-w-2xl mx-auto px-3">
           <div className="flex items-center gap-2 p-2 rounded-2xl bg-card border border-border shadow-lg">
             {isRecording ? (
@@ -515,7 +515,7 @@ const Chat = () => {
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   placeholder="اكتب رسالة..."
-                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none px-2 py-2"
+                  className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none px-2 py-2"
                   dir="rtl"
                 />
                 <button
