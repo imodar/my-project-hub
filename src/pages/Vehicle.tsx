@@ -884,7 +884,7 @@ const Vehicle = () => {
                   <SwipeableCarCard
                     key={car.id}
                     onDelete={() => setDeleteConfirmCar(car)}
-                    onEdit={() => setSelectedCar(car)}
+                    onEdit={() => openEditCar(car)}
                   >
                     <button
                       onClick={() => setSelectedCar(car)}
