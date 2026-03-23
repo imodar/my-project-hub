@@ -421,10 +421,22 @@ const Vehicle = () => {
     toast.success("تمت إضافة المركبة بنجاح");
   };
 
-  const handleDeleteCar = (carId: string) => {
-    deleteVehicleMut.mutate(carId);
-    if (selectedCar?.id === carId) setSelectedCar(null);
-    toast.success("تم حذف المركبة");
+  const handleDeleteCar = (car: CarData) => {
+    const carInfo = CAR_MANUFACTURERS[car.manufacturer] || CAR_MANUFACTURERS.other;
+    // Add to trash with all maintenance records
+    addToTrash({
+      type: "vehicle" as any,
+      title: `${carInfo.name} ${car.model} ${car.year}`,
+      description: `${car.mileage.toLocaleString()} ${car.mileageUnit === "km" ? "كم" : "ميل"} • لوحة: ${car.plateNumber || "—"}`,
+      deletedBy: "",
+      isShared: car.sharedWith.length > 0,
+      originalData: car,
+      relatedRecords: car.maintenance,
+    });
+    deleteVehicleMut.mutate(car.id);
+    if (selectedCar?.id === car.id) setSelectedCar(null);
+    setDeleteConfirmCar(null);
+    toast.success("تم نقل المركبة إلى سلة المحذوفات");
   };
 
   const handleAddMaintenance = () => {
