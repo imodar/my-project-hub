@@ -335,7 +335,6 @@ const Tasks = () => {
     setShowAddList(false);
   }, [newListName, newListType, newListShareMembers, createListMutation]);
 
-  const { addToTrash } = useTrash();
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
