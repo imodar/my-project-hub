@@ -36,9 +36,11 @@ import { toast } from "sonner";
 /* ─── Swipeable Card ─── */
 const SwipeableMedCard = ({
   children,
+  onEdit,
   onDelete,
 }: {
   children: React.ReactNode;
+  onEdit: () => void;
   onDelete: () => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +48,9 @@ const SwipeableMedCard = ({
   const currentX = useRef(0);
   const isSwiping = useRef(false);
   const [offset, setOffset] = useState(0);
-  const threshold = 70;
+  const [locked, setLocked] = useState(false);
+  const actionWidth = 120;
+  const threshold = 50;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
@@ -56,38 +60,53 @@ const SwipeableMedCard = ({
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isSwiping.current) return;
     currentX.current = e.touches[0].clientX;
-    const diff = currentX.current - startX.current;
-    // Only allow right swipe (positive) for delete
-    const clamped = Math.max(0, Math.min(threshold * 1.5, diff));
+    let diff = currentX.current - startX.current;
+    if (locked) diff += actionWidth;
+    const clamped = Math.max(0, Math.min(actionWidth + 20, diff));
     setOffset(clamped);
   };
 
   const handleTouchEnd = () => {
     isSwiping.current = false;
-    if (offset > threshold) {
-      onDelete();
+    if (offset > threshold && !locked) {
+      setOffset(actionWidth);
+      setLocked(true);
+    } else if (offset < threshold && locked) {
+      setOffset(0);
+      setLocked(false);
+    } else if (locked) {
+      setOffset(actionWidth);
+    } else {
+      setOffset(0);
     }
-    setOffset(0);
   };
-
-  const absOffset = Math.abs(offset);
-  const actionOpacity = Math.min(absOffset / threshold, 1);
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      {offset > 0 && (
-        <div
-          className="absolute inset-y-0 right-0 flex items-center justify-end pr-5 bg-destructive rounded-2xl"
-          style={{ width: `${absOffset}px`, opacity: actionOpacity }}
+      {/* Action buttons behind card */}
+      <div
+        className="absolute inset-y-0 right-0 flex items-center gap-1 pr-2 rounded-2xl"
+        style={{ width: `${actionWidth}px` }}
+      >
+        <button
+          onClick={() => { setOffset(0); setLocked(false); onEdit(); }}
+          className="flex-1 h-full flex items-center justify-center bg-primary rounded-xl"
         >
-          <Trash2 className="w-5 h-5 text-destructive-foreground" />
-        </div>
-      )}
+          <Pencil className="w-4 h-4 text-primary-foreground" />
+        </button>
+        <button
+          onClick={() => { setOffset(0); setLocked(false); onDelete(); }}
+          className="flex-1 h-full flex items-center justify-center bg-destructive rounded-xl"
+        >
+          <Trash2 className="w-4 h-4 text-destructive-foreground" />
+        </button>
+      </div>
       <div
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onClick={() => { if (locked) { setOffset(0); setLocked(false); } }}
         style={{
           transform: `translateX(${offset}px)`,
           transition: isSwiping.current ? "none" : "transform 0.3s ease-out",
