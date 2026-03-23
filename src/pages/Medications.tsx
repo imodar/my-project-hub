@@ -416,7 +416,6 @@ const Medications = () => {
             return (
               <SwipeableMedCard
                 key={med.id}
-                onEdit={() => { setShowDetailSheet(null); openEditDrawer(med); }}
                 onDelete={() => setShowDeleteConfirm(med)}
               >
                 <div
