@@ -514,13 +514,7 @@ const Market = () => {
               {completedItems} مكتمل
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            {!activeList.isDefault && (
-              <button className="p-1 rounded-lg hover:bg-muted" onClick={() => setShowListActions(true)}>
-                <MoreVertical size={16} className="text-muted-foreground" />
-              </button>
-            )}
-          </div>
+          <div className="flex items-center gap-2" />
         </div>
       )}
 
