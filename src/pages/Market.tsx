@@ -209,6 +209,11 @@ const Market = () => {
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
+    if (!familyId) {
+      const { toast } = await import("@/hooks/use-toast");
+      toast({ title: "يجب الانضمام لعائلة أولاً", variant: "destructive" });
+      return;
+    }
     haptic.medium();
     createListMutation.mutate({
       name: newListName.trim(),
@@ -219,7 +224,7 @@ const Market = () => {
     setNewListShareMembers([]);
     setNewListUseCategories(false);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, createListMutation]);
+  }, [newListName, newListType, newListShareMembers, createListMutation, familyId]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
