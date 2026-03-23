@@ -509,7 +509,8 @@ const CalendarPage = () => {
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">اسم المناسبة</label>
               <input value={newEvent.title} onChange={(e) => setNewEvent((p) => ({ ...p, title: e.target.value }))}
                 placeholder="مثال: عيد ميلاد فهد"
-                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                dir="auto"
+                className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-right" />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">التاريخ</label>
