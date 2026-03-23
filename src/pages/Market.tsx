@@ -168,6 +168,9 @@ const Market = () => {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<MarketItem | null>(null);
 
+  // Delete list confirmation
+  const [deleteListTarget, setDeleteListTarget] = useState<string | null>(null);
+
   // Edit item
   const [editTarget, setEditTarget] = useState<MarketItem | null>(null);
   const [editName, setEditName] = useState("");
@@ -300,9 +303,15 @@ const Market = () => {
   }, [newListName, newListType, newListShareMembers, createListMutation, familyId, toast]);
 
   const deleteList = useCallback((listId: string) => {
+    setDeleteListTarget(listId);
+  }, []);
+
+  const confirmDeleteList = useCallback(() => {
+    if (!deleteListTarget) return;
     haptic.medium();
-    deleteListMutation.mutate(listId);
-  }, [deleteListMutation]);
+    deleteListMutation.mutate(deleteListTarget);
+    setDeleteListTarget(null);
+  }, [deleteListTarget, deleteListMutation]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
@@ -614,7 +623,36 @@ const Market = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Item Drawer */}
+      {/* Delete List Confirmation */}
+      <Drawer open={!!deleteListTarget} onOpenChange={(open) => !open && setDeleteListTarget(null)}>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right">
+            <DrawerTitle>حذف القائمة</DrawerTitle>
+            <DrawerDescription>
+              هل أنت متأكد من حذف هذه القائمة وجميع منتجاتها؟ لا يمكن التراجع عن هذا الإجراء.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter className="flex-row gap-2 pb-6">
+            <Button
+              variant="destructive"
+              className="flex-1 rounded-xl"
+              onClick={confirmDeleteList}
+            >
+              <Trash2 size={16} className="ml-2" />
+              حذف القائمة
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={() => setDeleteListTarget(null)}
+            >
+              إلغاء
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+
       <Drawer open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
         <DrawerContent dir="rtl">
           <DrawerHeader className="text-right">
