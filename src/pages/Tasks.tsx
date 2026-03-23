@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useTaskLists } from "@/hooks/useTaskLists";
+import { useTrash } from "@/contexts/TrashContext";
 import { createPortal } from "react-dom";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, Repeat } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -68,6 +69,7 @@ const Tasks = () => {
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useTaskLists();
+  const { addToTrash } = useTrash();
 
   const lists: TaskList[] = useMemo(() => {
     const mapped = (dbLists || []).map((l: any) => ({
@@ -333,10 +335,33 @@ const Tasks = () => {
     setShowAddList(false);
   }, [newListName, newListType, newListShareMembers, createListMutation]);
 
+
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
+
+    // Save to trash with full data
+    const listToDelete = dbLists.find((l: any) => l.id === listId);
+    if (listToDelete) {
+      addToTrash({
+        type: "task_list",
+        title: listToDelete.name,
+        description: `${(listToDelete as any).task_items?.length || 0} مهمة`,
+        deletedBy: "",
+        isShared: listToDelete.type === "family",
+        originalData: {
+          id: listToDelete.id,
+          name: listToDelete.name,
+          type: listToDelete.type,
+          family_id: listToDelete.family_id,
+          created_by: listToDelete.created_by,
+          shared_with: listToDelete.shared_with,
+        },
+        relatedRecords: (listToDelete as any).task_items || [],
+      });
+    }
+
     deleteListMutation.mutate(listId);
-  }, [deleteListMutation]);
+  }, [deleteListMutation, dbLists, addToTrash]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
