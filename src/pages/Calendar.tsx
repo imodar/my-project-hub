@@ -400,6 +400,9 @@ const CalendarPage = () => {
                     <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
                       <span>{getEventIcon(ev.icon)}</span>
                       <span className="truncate">{ev.title}</span>
+                      {hasReminder && !hasPersonalReminder && (
+                        <Bell size={13} className="text-primary shrink-0" />
+                      )}
                       {hasPersonalReminder && (
                         <BellRing size={13} className="text-amber-500 shrink-0" />
                       )}
