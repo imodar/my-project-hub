@@ -122,8 +122,8 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir="rtl">
-      {/* Top area - branding (1/4 of screen) */}
-      <div className="h-[25vh] flex flex-col items-center justify-center px-6">
+      {/* Top area - branding (1/3 of screen) */}
+      <div className="h-[33vh] flex flex-col items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -152,7 +152,7 @@ const Auth = () => {
         initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-background rounded-t-[2rem] px-6 pt-8 pb-6 shadow-[0_-8px_40px_rgba(0,0,0,0.12)]"
+        className="bg-background rounded-t-[2rem] px-6 pt-8 pb-6 shadow-[0_-8px_40px_rgba(0,0,0,0.12)] min-h-[67vh]"
       >
         {/* Handle bar */}
         <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
