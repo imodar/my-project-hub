@@ -975,6 +975,62 @@ const FamilyManagement = () => {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* QR Scanner Drawer */}
+      <Drawer open={showScanner} onOpenChange={(open) => { if (!open) { setShowScanner(false); setJoinCode(""); } }}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">مسح رمز QR للانضمام</DrawerTitle>
+          </DrawerHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Camera view */}
+            <div className="relative w-full aspect-square max-w-[300px] mx-auto rounded-2xl overflow-hidden bg-black">
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                playsInline
+                muted
+              />
+              {/* Scan overlay */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-48 h-48 border-2 border-primary rounded-2xl relative">
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-lg" />
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-primary rounded-tr-lg" />
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl-lg" />
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                  {/* Scanning line animation */}
+                  <div className="absolute inset-x-2 h-0.5 bg-primary/80 animate-bounce" style={{ top: "50%" }} />
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">وجّه الكاميرا نحو رمز QR الخاص بالعائلة</p>
+
+            {/* Manual code entry */}
+            <div className="bg-muted/50 rounded-2xl p-4">
+              <p className="text-xs font-semibold text-muted-foreground mb-2 text-center">أو أدخل كود الانضمام يدوياً</p>
+              <div className="flex gap-2">
+                <input
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  placeholder="أدخل الكود"
+                  className="flex-1 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  style={{ direction: "ltr" }}
+                  maxLength={6}
+                />
+                <button
+                  onClick={handleManualJoin}
+                  disabled={joinCode.length < 6}
+                  className="px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
+                >
+                  انضمام
+                </button>
+              </div>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
