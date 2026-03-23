@@ -116,6 +116,15 @@ const Chat = () => {
         className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-44"
         style={{ backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--muted) / 0.5), transparent 70%)" }}
       >
+        {/* Encryption notice - scrolls with messages like WhatsApp */}
+        <div className="flex justify-center mb-3">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/60 border border-border/50">
+            <Lock size={11} className="text-muted-foreground" />
+            <span className="text-[11px] text-muted-foreground">
+              {hasKey ? "🔐 تشفير طرف لطرف مفعّل" : "التشفير غير مفعّل"}
+            </span>
+          </div>
+        </div>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mb-3">
