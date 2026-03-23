@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useBudgets } from "@/hooks/useBudgets";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ExpenseItem {
   id: string;
