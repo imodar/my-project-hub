@@ -268,7 +268,7 @@ const FamilyManagement = () => {
   };
 
   const handleCopyLink = () => {
-    const link = `https://app.example.com/join/${inviteCode}`;
+    const link = `https://ailti.lovable.app/join?code=${inviteCode}`;
     navigator.clipboard.writeText(link);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
