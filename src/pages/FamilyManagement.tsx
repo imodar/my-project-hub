@@ -601,15 +601,7 @@ const FamilyManagement = () => {
                   <QrCode size={18} className="text-primary" />
                   <span className="text-sm font-semibold text-foreground">رمز QR</span>
                 </div>
-                <div className="w-40 h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 bg-muted border-2 border-border">
-                  <div className="grid grid-cols-5 gap-1">
-                    {Array.from({ length: 25 }).map((_, i) => (
-                      <div key={i} className="w-5 h-5 rounded-sm" style={{
-                        background: Math.random() > 0.4 ? "hsl(var(--foreground))" : "transparent",
-                      }} />
-                    ))}
-                  </div>
-                </div>
+                <QrPattern code={inviteCode} />
                 <p className="text-xs text-muted-foreground mb-2">امسح الرمز للانضمام للأسرة</p>
                 <p className="text-[10px] text-muted-foreground/70">عند مسح الرمز، ستظهر شاشة قبول على جهاز المشرف لاختيار دور العضو الجديد</p>
               </div>
