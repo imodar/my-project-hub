@@ -11,6 +11,8 @@ import { validateFile } from "@/lib/storage";
 const emojiOptions = ["❤️", "👍", "😂", "😮", "😢", "🤲"];
 
 const StatusIcon = ({ status }: { status: string }) => {
+  if (status === "sending") return <Loader2 size={14} className="text-white/50 animate-spin" />;
+  if (status === "failed") return <X size={14} className="text-destructive" />;
   if (status === "sent") return <Check size={14} className="text-white/50" />;
   if (status === "delivered") return <CheckCheck size={14} className="text-white/50" />;
   return <CheckCheck size={14} className="text-blue-400" />;
