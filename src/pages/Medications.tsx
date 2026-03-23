@@ -735,10 +735,10 @@ const Medications = () => {
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/50">
-              <Switch checked={formReminderEnabled} onCheckedChange={setFormReminderEnabled} />
               <span className="font-medium text-foreground flex items-center gap-2">
                 <Bell className="w-4 h-4" />تفعيل التنبيهات
               </span>
+              <Switch checked={formReminderEnabled} onCheckedChange={setFormReminderEnabled} />
             </div>
 
             <Button onClick={handleSave} className="w-full h-12 text-base font-bold">
