@@ -214,7 +214,6 @@ const Market = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     if (!familyId) {
-      const { toast } = await import("@/hooks/use-toast");
       toast({ title: "يجب الانضمام لعائلة أولاً", variant: "destructive" });
       return;
     }
