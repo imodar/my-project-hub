@@ -230,7 +230,7 @@ const SwipeableCarCard = ({ children, onDelete, onEdit }: {
   return (
     <div className="relative overflow-hidden rounded-2xl">
       {/* Actions behind */}
-      <div className="absolute inset-y-0 right-0 flex items-stretch z-0" style={{ width: 140 }}>
+      <div className="absolute inset-y-0 left-0 flex items-stretch z-0" style={{ width: 140 }}>
         <button onClick={onEdit} className="flex-1 flex flex-col items-center justify-center bg-primary text-primary-foreground">
           <Pencil size={18} />
           <span className="text-[10px] mt-1">تعديل</span>
