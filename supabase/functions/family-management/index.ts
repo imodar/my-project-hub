@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
       const inviteCode = generateInviteCode();
 
-      const { data: family, error: famErr } = await supabase
+      const { data: family, error: famErr } = await adminClient
         .from("families")
         .insert({ name, created_by: userId, invite_code: inviteCode })
         .select()
