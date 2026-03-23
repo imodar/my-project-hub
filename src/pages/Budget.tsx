@@ -218,7 +218,40 @@ const BudgetCard = ({ b, onSelect, remaining, spentPercent }: {
 const Budget = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
+  const { user } = useAuth();
+  const { familyId } = useFamilyId();
   const { budgets: dbBudgets, isLoading, createBudget, updateBudget, deleteBudget: deleteBudgetMut, addExpense: addExpenseMut, updateExpense: updateExpenseMut, deleteExpense: deleteExpenseMut } = useBudgets();
+
+  // Fetch real family members from DB
+  const { data: familyMembersData } = useQuery({
+    queryKey: ["family-members-budget", familyId],
+    queryFn: async () => {
+      if (!familyId) return [];
+      const { data: members, error } = await supabase
+        .from("family_members")
+        .select("user_id, role")
+        .eq("family_id", familyId)
+        .eq("status", "active");
+      if (error) throw error;
+      const userIds = (members || []).map(m => m.user_id).filter(id => id !== user?.id);
+      if (userIds.length === 0) return [];
+      const { data: profiles, error: pErr } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", userIds);
+      if (pErr) throw pErr;
+      return (profiles || []).map(p => {
+        const memberRole = members?.find(m => m.user_id === p.id)?.role || "";
+        const roleLabels: Record<string, string> = {
+          father: "أب", mother: "أم", son: "ابن", daughter: "ابنة",
+          husband: "زوج", wife: "زوجة", worker: "عامل", maid: "خادمة", driver: "سائق",
+        };
+        return { id: p.id, name: p.name || roleLabels[memberRole] || "عضو" };
+      });
+    },
+    enabled: !!familyId && !!user,
+  });
+  const FAMILY_MEMBERS = familyMembersData || [];
 
   // Map DB data to UI format
   const budgets: MonthBudget[] = useMemo(() => {
