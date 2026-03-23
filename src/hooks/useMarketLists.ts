@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -23,6 +24,29 @@ export function useMarketLists() {
     },
     enabled: !!familyId,
   });
+
+  // Realtime subscription for market_items changes
+  useEffect(() => {
+    if (!familyId) return;
+    const channel = supabase
+      .channel(`market-items-${familyId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "market_items" },
+        () => {
+          qc.invalidateQueries({ queryKey: key });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "market_lists", filter: `family_id=eq.${familyId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: key });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [familyId, qc]);
 
   const createList = useMutation({
     mutationFn: async (input: { name: string; type?: string; shared_with?: string[]; use_categories?: boolean }) => {
@@ -100,5 +124,14 @@ export function useMarketLists() {
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
-  return { lists: listsQuery.data || [], isLoading: listsQuery.isLoading, createList, deleteList, addItem, updateItem, deleteItem };
+  return {
+    lists: listsQuery.data || [],
+    isLoading: listsQuery.isLoading,
+    createList,
+    deleteList,
+    addItem,
+    updateItem,
+    deleteItem,
+    pendingItemIds: updateItem.variables?.id && updateItem.isPending ? [updateItem.variables.id] : [],
+  };
 }
