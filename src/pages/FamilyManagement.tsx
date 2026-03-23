@@ -879,8 +879,8 @@ const FamilyManagement = () => {
               </button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
