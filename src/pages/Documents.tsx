@@ -78,6 +78,7 @@ const SWIPE_WIDTH = 140;
 const Documents = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
+  const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { lists: dbDocLists, isLoading: docsLoading, createList: createDocListMut, deleteList: deleteDocListMut, addItem: addDocItemMut, updateItem: updateDocItemMut, deleteItem: deleteDocItemMut } = useDocumentLists();
 
   const lists: DocList[] = useMemo(() => {

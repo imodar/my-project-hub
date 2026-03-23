@@ -66,6 +66,7 @@ const DEFAULT_FAMILY_LIST_NAME = "قائمة العائلة";
 const Market = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
+  const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { familyId } = useFamilyId();
   const { toast } = useToast();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useMarketLists();
