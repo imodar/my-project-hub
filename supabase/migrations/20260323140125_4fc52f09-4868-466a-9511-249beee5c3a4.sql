@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS families_invite_code_unique ON public.families (invite_code) WHERE invite_code IS NOT NULL;
