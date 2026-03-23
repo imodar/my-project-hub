@@ -433,7 +433,14 @@ const FamilyManagement = () => {
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
-        <div />
+        <button
+          onClick={() => setShowScanner(true)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-semibold text-primary"
+          style={{ background: "hsl(var(--primary) / 0.1)" }}
+        >
+          <ScanLine size={16} />
+          مسح QR
+        </button>
         <h1 className="text-lg font-bold text-foreground">إدارة أفراد الأسرة</h1>
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted/50">
           رجوع
