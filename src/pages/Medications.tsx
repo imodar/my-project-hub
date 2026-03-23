@@ -292,15 +292,25 @@ const Medications = () => {
 
   const markAsTaken = (medId: string) => {
     const now = new Date().toISOString();
+    // Log to DB
+    const { addLog } = useMedicationsRef.current;
+    addLog.mutate({ medication_id: medId });
+
     setMedications((prev) =>
       prev.map((m) => {
         if (m.id !== medId) return m;
-        const updated = { ...m, takenLog: [...m.takenLog, now], reminder: { ...m.reminder, lastConfirmedAt: now } };
+        const updated = {
+          ...m,
+          takenLog: [...m.takenLog, now],
+          reminder: { ...m.reminder, lastConfirmedAt: now },
+        };
+        // Recalculate next due — will skip the dose that was just taken
         updated.reminder.nextDueAt = calculateNextDue(updated);
         return updated;
       })
     );
-    setShowDueAlert(null);
+    // Dismiss alert if this med was shown
+    setShowDueAlert((prev) => (prev?.id === medId ? null : prev));
     toast.success("تم تسجيل تناول الدواء ✅");
   };
 
