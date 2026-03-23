@@ -165,7 +165,7 @@ const Auth = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.3 }}
-              className="space-y-5"
+              className="space-y-5 flex-1 flex flex-col"
             >
               <div className="text-center mb-2">
                 <h2 className="text-xl font-bold text-foreground">أهلاً بك</h2>
