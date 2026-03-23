@@ -33,9 +33,8 @@ const Trash = () => {
   const { trashItems, restoreItem, permanentlyDelete } = useTrash();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const handleRestore = (item: TrashItem) => {
-    restoreItem(item.id);
-    toast.success(`تم استعادة "${item.title}"`);
+  const handleRestore = async (item: TrashItem) => {
+    await restoreItem(item.id);
   };
 
   const handlePermanentDelete = () => {
