@@ -55,26 +55,36 @@ export const calculateNextDue = (med: Medication): string => {
     ? [...med.specificTimes].sort()
     : [];
 
-  // Helper: check if a specific dose time was already taken today
-  // A dose is considered taken if lastConfirmedAt is on the same day and
-  // within 60 minutes before or after the dose time
-  const isDoseTimeTaken = (doseDate: Date): boolean => {
-    if (!lastTaken) return false;
-    const diff = Math.abs(doseDate.getTime() - lastTaken.getTime());
-    // Same day and within 60 min window
-    return doseDate.toDateString() === lastTaken.toDateString() && diff < 60 * 60 * 1000;
+  // Build all scheduled dose times for a given day
+  const getDoseTimesForDay = (day: Date): Date[] => {
+    return sortedTimes.map((time) => {
+      const [h, m] = time.split(":").map(Number);
+      const d = new Date(day);
+      d.setHours(h, m, 0, 0);
+      return d;
+    });
   };
 
+  // Find the dose that was confirmed (the first scheduled time >= lastTaken on the same day)
+  // Then skip it — return only times AFTER that confirmed dose
   const getNextTimeOnDay = (day: Date): string | null => {
     if (sortedTimes.length === 0) return null;
-    for (const time of sortedTimes) {
-      const [h, m] = time.split(":").map(Number);
-      const candidate = new Date(day);
-      candidate.setHours(h, m, 0, 0);
-      // Must be in the future AND not already taken
-      if (candidate > now && !isDoseTimeTaken(candidate)) {
-        return candidate.toISOString();
+    const doseTimes = getDoseTimesForDay(day);
+
+    for (const candidate of doseTimes) {
+      if (candidate <= now) continue; // already passed
+
+      // If user confirmed a dose today, skip the dose they confirmed
+      // The confirmed dose is the first scheduled time that was >= lastTaken
+      if (lastTaken && lastTaken.toDateString() === candidate.toDateString()) {
+        // Find which dose was confirmed: first scheduled time >= lastTaken
+        const confirmedDose = doseTimes.find((dt) => dt >= lastTaken);
+        if (confirmedDose && candidate.getTime() === confirmedDose.getTime()) {
+          continue; // skip the confirmed dose
+        }
       }
+
+      return candidate.toISOString();
     }
     return null;
   };
@@ -82,7 +92,6 @@ export const calculateNextDue = (med: Medication): string => {
   if (med.frequencyType === "daily") {
     const todayTime = getNextTimeOnDay(now);
     if (todayTime) return todayTime;
-    // All times passed or taken today, next is tomorrow first time
     if (sortedTimes.length > 0) {
       const [h, m] = sortedTimes[0].split(":").map(Number);
       const tomorrow = new Date(now);
@@ -98,13 +107,11 @@ export const calculateNextDue = (med: Medication): string => {
     const jsDays = med.selectedDays.map(ourToJs);
     const currentJsDay = now.getDay();
 
-    // Check if today is a selected day
     if (jsDays.includes(currentJsDay)) {
       const todayTime = getNextTimeOnDay(now);
       if (todayTime) return todayTime;
     }
 
-    // Find next selected day
     for (let offset = jsDays.includes(currentJsDay) ? 1 : 0; offset <= 7; offset++) {
       const checkDay = (currentJsDay + offset) % 7;
       if (jsDays.includes(checkDay)) {
