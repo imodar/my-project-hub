@@ -208,45 +208,53 @@ export function useChat() {
     };
   }, [familyId, isReady, familyKey]);
 
-  // ─── Decrypt a DB row ───
+  // ─── Decrypt a DB row (use ref to avoid stale closures) ───
   const decryptDbMessage = useCallback(
     async (row: any): Promise<ChatMessage | null> => {
-      if (!row || !user) return null;
-      let text = row.encrypted_text;
+      try {
+        if (!row || !user) return null;
+        let text = row.encrypted_text || "";
 
-      if (familyKey && row.iv) {
-        try {
-          text = await decryptMessage(familyKey, {
-            ciphertext: row.encrypted_text,
-            iv: row.iv,
-          });
-        } catch {
-          text = "🔒 تعذر فك التشفير";
+        if (familyKey && row.iv) {
+          try {
+            text = await decryptMessage(familyKey, {
+              ciphertext: row.encrypted_text,
+              iv: row.iv,
+            });
+          } catch {
+            text = "🔒 تعذر فك التشفير";
+          }
         }
-      }
 
-      return {
-        id: row.id,
-        senderId: row.sender_id,
-        senderName: profiles[row.sender_id] || "عضو",
-        text,
-        time: new Date(row.created_at).toLocaleTimeString("ar-SA", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        }),
-        isMe: row.sender_id === user.id,
-        pinned: row.pinned || false,
-        reactions: (row.reactions as Record<string, number>) || {},
-        mentionUserId: row.mention_user_id || undefined,
-        status: row.status || "sent",
-        messageType: (row.message_type as MessageType) || "text",
-        mediaUrl: row.media_url || undefined,
-        mediaMetadata: row.media_metadata as ChatMessage["mediaMetadata"] || undefined,
-      };
+        return {
+          id: row.id,
+          senderId: row.sender_id,
+          senderName: profiles[row.sender_id] || "عضو",
+          text,
+          time: new Date(row.created_at).toLocaleTimeString("ar-SA", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          }),
+          isMe: row.sender_id === user.id,
+          pinned: row.pinned || false,
+          reactions: (row.reactions as Record<string, number>) || {},
+          mentionUserId: row.mention_user_id || undefined,
+          status: row.status || "sent",
+          messageType: (row.message_type as MessageType) || "text",
+          mediaUrl: row.media_url || undefined,
+          mediaMetadata: row.media_metadata as ChatMessage["mediaMetadata"] || undefined,
+        };
+      } catch (err) {
+        console.error("decryptDbMessage error:", err, row);
+        return null;
+      }
     },
     [user, familyKey, profiles]
   );
+
+  const decryptRef = useRef(decryptDbMessage);
+  useEffect(() => { decryptRef.current = decryptDbMessage; }, [decryptDbMessage]);
 
   // ─── Send text message ───
   const sendMessage = useCallback(
