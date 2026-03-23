@@ -72,6 +72,7 @@ const Market = () => {
       id: l.id,
       name: l.name,
       type: (l.type || "family") as "family" | "personal" | "shared",
+      useCategories: l.use_categories ?? true,
       sharedWith: l.shared_with || [],
       lastUpdatedBy: "",
       lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
