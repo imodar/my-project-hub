@@ -2135,6 +2135,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          family_id: string | null
+          id: string
+          is_read: boolean
+          source_id: string | null
+          source_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          family_id?: string | null
+          id?: string
+          is_read?: boolean
+          source_id?: string | null
+          source_type?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          family_id?: string | null
+          id?: string
+          is_read?: boolean
+          source_id?: string | null
+          source_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string

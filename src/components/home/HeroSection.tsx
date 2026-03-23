@@ -3,8 +3,10 @@ import QiblaCompass from "./QiblaCompass";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import ProfileSheet from "./ProfileSheet";
+import NotificationsSheet from "@/components/notifications/NotificationsSheet";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/hooks/useNotifications";
 
 import NextPrayerBox from "./NextPrayerBox";
 
@@ -226,7 +228,9 @@ const formatLastUpdated = (date: Date): string => {
 const HeroSection = () => {
   const { islamicMode } = useIslamicMode();
   const { profileName } = useAuth();
+  const { unreadCount } = useNotifications();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const hijriDate = "٤ شوّال ١٤٤٧";
   const gregorianDate = "٢٣ مارس ٢٠٢٦";
 
@@ -341,9 +345,16 @@ const HeroSection = () => {
           >
             <Play size={18} />
           </button>
-          <button className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors">
+          <button
+            onClick={() => setNotificationsOpen(true)}
+            className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
+          >
             <Bell size={22} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-[10px] font-bold text-white flex items-center justify-center">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </button>
         </div>
       </header>
@@ -474,6 +485,7 @@ const HeroSection = () => {
       </section>
 
       <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={currentUser} />
+      <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
     </>
   );
 };
