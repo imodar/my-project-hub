@@ -405,6 +405,7 @@ const Tasks = () => {
               <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
             )}
             <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={() => !dragActiveId && toggleItem(item.id)}
               className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                 isDone
