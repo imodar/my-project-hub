@@ -122,17 +122,29 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir="rtl">
-      {/* Top area - branding */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pt-12 pb-6">
+      {/* Top area - branding (1/4 of screen) */}
+      <div className="h-[25vh] flex flex-col items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="text-center"
         >
-          <h1 className="text-4xl font-bold text-primary-foreground mb-2">عِلتي</h1>
+          <h1 className="text-4xl font-bold text-primary-foreground mb-2">عائلتي</h1>
           <p className="text-primary-foreground/70 text-sm">نظّم حياة عائلتك في مكان واحد</p>
         </motion.div>
+        <motion.img
+          src={authFamily}
+          alt="عائلة"
+          className="h-28 mt-3 object-contain pointer-events-none"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1, y: [0, -5, 0] }}
+          transition={{
+            opacity: { duration: 0.5, delay: 0.2 },
+            scale: { duration: 0.5, delay: 0.2 },
+            y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+          }}
+        />
       </div>
 
       {/* Bottom sheet */}
