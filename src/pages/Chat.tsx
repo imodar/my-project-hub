@@ -243,6 +243,13 @@ const Chat = () => {
       <div className="fixed bottom-24 left-0 right-0 z-40">
         <div className="max-w-2xl mx-auto px-3">
           <div className="flex items-center gap-2 p-2 rounded-2xl bg-card border border-border shadow-lg">
+            {/* Plus / Attachment button */}
+            <button
+              onClick={() => setShowAttachments(true)}
+              className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0 transition-colors hover:bg-muted/80"
+            >
+              <Plus size={20} className="text-muted-foreground" />
+            </button>
             <input
               ref={inputRef}
               type="text"
@@ -251,14 +258,14 @@ const Chat = () => {
               value={newMessage}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="اكتب رسالة... (@ لذكر شخص)"
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none px-3 py-2"
+              placeholder="اكتب رسالة..."
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none px-2 py-2"
               dir="rtl"
             />
             <button
               onClick={handleSend}
               disabled={!newMessage.trim()}
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-30"
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 shrink-0"
               style={{
                 background: newMessage.trim()
                   ? "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))"
@@ -270,6 +277,66 @@ const Chat = () => {
           </div>
         </div>
       </div>
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            toast.info("سيتم دعم إرسال الصور قريباً 📸");
+          }
+          e.target.value = "";
+          setShowAttachments(false);
+        }}
+      />
+
+      {/* Attachments Bottom Sheet */}
+      <Drawer open={showAttachments} onOpenChange={setShowAttachments}>
+        <DrawerContent>
+          <DrawerHeader className="text-center pb-2">
+            <DrawerTitle className="text-base font-bold">إرفاق</DrawerTitle>
+          </DrawerHeader>
+          <div className="grid grid-cols-3 gap-4 px-6 pb-8 pt-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 35%))" }}>
+                <Image size={24} className="text-white" />
+              </div>
+              <span className="text-xs font-medium text-foreground">صورة</span>
+            </button>
+            <button
+              onClick={() => {
+                toast.info("سيتم دعم الرسائل الصوتية قريباً 🎙️");
+                setShowAttachments(false);
+              }}
+              className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(262 80% 55%), hsl(262 80% 45%))" }}>
+                <Mic size={24} className="text-white" />
+              </div>
+              <span className="text-xs font-medium text-foreground">تسجيل صوتي</span>
+            </button>
+            <button
+              onClick={() => {
+                toast.info("سيتم دعم مشاركة الموقع قريباً 📍");
+                setShowAttachments(false);
+              }}
+              className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(25 95% 43%))" }}>
+                <MapPin size={24} className="text-white" />
+              </div>
+              <span className="text-xs font-medium text-foreground">موقع</span>
+            </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
