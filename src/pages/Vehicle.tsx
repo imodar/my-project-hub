@@ -210,9 +210,9 @@ const SwipeableCarCard = ({ children, onDelete, onEdit }: {
     }
     if (isVertical.current) return;
 
-    // RTL: only allow negative dx (drag left to reveal actions on right)
-    if (dx < 0) {
-      setOffset(Math.max(dx, -160));
+    // RTL: allow positive dx (drag right to reveal actions on left)
+    if (dx > 0) {
+      setOffset(Math.min(dx, 160));
     } else {
       setOffset(0);
     }
