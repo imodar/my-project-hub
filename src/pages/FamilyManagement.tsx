@@ -620,19 +620,19 @@ const FamilyManagement = () => {
               إنشاء الأسرة
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Add Member Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={(open) => !open && resetDialog()}>
-        <DialogContent className="max-w-sm rounded-3xl" style={{ direction: "rtl" }}>
-          <DialogHeader>
-            <DialogTitle className="text-center">
+      {/* Add Member Drawer */}
+      <Drawer open={showAddDialog} onOpenChange={(open) => !open && resetDialog()}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center">
               {addStep === "choose-type" && "إضافة فرد جديد"}
               {addStep === "enter-name" && `إضافة ${ROLE_LABELS[selectedType || "son"]}`}
               {addStep === "invite-method" && "تم الإضافة ✓"}
-            </DialogTitle>
-          </DialogHeader>
+            </DrawerTitle>
+          </DrawerHeader>
 
           {addStep === "choose-type" && (
             <div className="space-y-3 mt-2">
