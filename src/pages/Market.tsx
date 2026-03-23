@@ -444,6 +444,12 @@ const Market = () => {
       <PageHeader
         title="أغراض السوق"
         actions={[
+          ...(activeList && !activeList.isDefault
+            ? [{
+                icon: <MoreVertical size={20} className="text-white" />,
+                onClick: () => { haptic.light(); setShowListActions(true); },
+              }]
+            : []),
           {
             icon: <Plus size={20} className="text-white" />,
             onClick: () => setShowAddList(true),
