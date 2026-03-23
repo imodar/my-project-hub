@@ -93,15 +93,9 @@ const Chat = () => {
             className: "w-10 h-10 flex items-center justify-center",
           },
         ]}
-      >
-        {/* Encryption label */}
-        <div className="flex items-center justify-center gap-1.5 py-1.5 mt-2 rounded-lg" style={{ background: "hsla(0,0%,100%,0.08)" }}>
-          <Lock size={12} className="text-white/60" />
-          <span className="text-[11px] text-white/60">
-            {hasKey ? "🔐 تشفير طرف لطرف مفعّل (AES-256-GCM)" : "التشفير غير مفعّل"}
-          </span>
-        </div>
-      </PageHeader>
+      />
+
+
 
       {/* Pinned messages bar */}
       {pinnedMessages.length > 0 && (
