@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
+import { useTrash } from "@/contexts/TrashContext";
 import { useMarketLists } from "@/hooks/useMarketLists";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +70,7 @@ const Market = () => {
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { familyId } = useFamilyId();
   const { toast } = useToast();
+  const { addToTrash } = useTrash();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useMarketLists();
   const createdDefaultListRef = useRef<string | null>(null);
 
@@ -309,9 +311,33 @@ const Market = () => {
   const confirmDeleteList = useCallback(() => {
     if (!deleteListTarget) return;
     haptic.medium();
+
+    // Find the full list data to save to trash
+    const listToDelete = dbLists.find((l: any) => l.id === deleteListTarget);
+    if (listToDelete) {
+      addToTrash({
+        type: "market_list",
+        title: listToDelete.name,
+        description: `${(listToDelete as any).market_items?.length || 0} منتج`,
+        deletedBy: "",
+        isShared: listToDelete.type === "family",
+        originalData: {
+          id: listToDelete.id,
+          name: listToDelete.name,
+          type: listToDelete.type,
+          family_id: listToDelete.family_id,
+          created_by: listToDelete.created_by,
+          shared_with: listToDelete.shared_with,
+          use_categories: listToDelete.use_categories,
+        },
+        relatedRecords: (listToDelete as any).market_items || [],
+      });
+    }
+
     deleteListMutation.mutate(deleteListTarget);
     setDeleteListTarget(null);
-  }, [deleteListTarget, deleteListMutation]);
+    toast({ title: "تم نقل القائمة إلى سلة المحذوفات" });
+  }, [deleteListTarget, deleteListMutation, dbLists, addToTrash, toast]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;

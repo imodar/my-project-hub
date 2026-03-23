@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Trash2, RotateCcw, Clock, CalendarDays, CreditCard, Users, AlertTriangle } from "lucide-react";
+import { ChevronRight, Trash2, RotateCcw, Clock, CalendarDays, CreditCard, Users, AlertTriangle, ShoppingCart, ListChecks } from "lucide-react";
 import { useTrash, TrashItem } from "@/contexts/TrashContext";
 import {
   AlertDialog,
@@ -18,6 +18,8 @@ const TYPE_CONFIG: Record<string, { label: string; icon: any; color: string }> =
   event: { label: "مناسبة", icon: CalendarDays, color: "hsl(var(--primary))" },
   debt: { label: "دين", icon: CreditCard, color: "hsl(var(--accent))" },
   family_member: { label: "عضو عائلة", icon: Users, color: "hsl(var(--destructive))" },
+  market_list: { label: "قائمة تسوق", icon: ShoppingCart, color: "hsl(145, 45%, 40%)" },
+  task_list: { label: "قائمة مهام", icon: ListChecks, color: "hsl(215, 70%, 50%)" },
 };
 
 function daysRemaining(deletedAt: Date) {
@@ -31,9 +33,8 @@ const Trash = () => {
   const { trashItems, restoreItem, permanentlyDelete } = useTrash();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const handleRestore = (item: TrashItem) => {
-    restoreItem(item.id);
-    toast.success(`تم استعادة "${item.title}"`);
+  const handleRestore = async (item: TrashItem) => {
+    await restoreItem(item.id);
   };
 
   const handlePermanentDelete = () => {
