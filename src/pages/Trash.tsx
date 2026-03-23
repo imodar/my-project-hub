@@ -18,6 +18,8 @@ const TYPE_CONFIG: Record<string, { label: string; icon: any; color: string }> =
   event: { label: "مناسبة", icon: CalendarDays, color: "hsl(var(--primary))" },
   debt: { label: "دين", icon: CreditCard, color: "hsl(var(--accent))" },
   family_member: { label: "عضو عائلة", icon: Users, color: "hsl(var(--destructive))" },
+  market_list: { label: "قائمة تسوق", icon: ShoppingCart, color: "hsl(145, 45%, 40%)" },
+  task_list: { label: "قائمة مهام", icon: ListChecks, color: "hsl(215, 70%, 50%)" },
 };
 
 function daysRemaining(deletedAt: Date) {
