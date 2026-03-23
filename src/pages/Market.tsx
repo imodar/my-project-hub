@@ -432,6 +432,33 @@ const Market = () => {
       </PageHeader>
 
       <PullToRefresh onRefresh={handleRefresh}>
+      {isLoading ? (
+        <div className="px-4 py-4 space-y-3">
+          {/* Stats skeleton */}
+          <div className="flex items-center justify-between py-2">
+            <div className="flex gap-3">
+              <div className="h-4 w-16 rounded-full bg-muted animate-pulse" />
+              <div className="h-4 w-16 rounded-full bg-muted animate-pulse" />
+            </div>
+            <div className="h-3 w-24 rounded bg-muted animate-pulse" />
+          </div>
+          {/* Search skeleton */}
+          <div className="h-10 rounded-xl bg-muted animate-pulse" />
+          {/* Category skeleton */}
+          <div className="flex gap-2 overflow-hidden py-1">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-8 w-20 rounded-full bg-muted animate-pulse shrink-0" />
+            ))}
+          </div>
+          {/* Items skeleton */}
+          <div className="space-y-2 pt-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-16 rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Stats bar */}
       {activeList && (
         <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
