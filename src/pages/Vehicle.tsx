@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useVehicles } from "@/hooks/useVehicles";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -268,12 +269,7 @@ const Vehicle = () => {
   const [manufacturerSearch, setManufacturerSearch] = useState("");
 
   // Family members for sharing
-  const familyMembers: { id: string; name: string; role: string }[] = useMemo(() => {
-    try {
-      const saved = localStorage.getItem("family_members");
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  }, [addCarOpen]);
+  const { members: familyMembers } = useFamilyMembers();
 
   // Add car form
   const [newManufacturer, setNewManufacturer] = useState("");

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useMedications } from "@/hooks/useMedications";
 import {
   Plus, Pill, Check, Clock, Bell, BellRing, Pencil, Trash2,
@@ -34,16 +35,10 @@ import { toast } from "sonner";
 
 // localStorage helpers removed — using Supabase hooks now
 
-const loadFamilyMembers = (): { id: string; name: string; role: string }[] => {
-  try {
-    const saved = localStorage.getItem("family_members");
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-};
+// localStorage helper removed — using useFamilyMembers hook
 
 const Medications = () => {
+  const { members: familyMembers } = useFamilyMembers();
   const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut } = useMedications();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [showAddDrawer, setShowAddDrawer] = useState(false);
@@ -67,7 +62,7 @@ const Medications = () => {
   const [formColor, setFormColor] = useState(MEDICATION_COLORS[0]);
   const [formReminderEnabled, setFormReminderEnabled] = useState(true);
 
-  const familyMembers = useMemo(loadFamilyMembers, []);
+  // familyMembers now from useFamilyMembers hook above
 
   // Check for due medications every minute
   useEffect(() => {

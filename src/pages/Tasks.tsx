@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useTaskLists } from "@/hooks/useTaskLists";
 import { createPortal } from "react-dom";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, Repeat } from "lucide-react";
@@ -59,12 +60,13 @@ const PRIORITY_INFO: Record<string, { label: string; bg: string; text: string; e
   low: { label: "عادي", bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", emoji: "🟢" },
 };
 
-const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
+// FAMILY_MEMBERS removed — using useFamilyMembers hook
 const SWIPE_WIDTH = 140;
 
 const Tasks = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
+  const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation } = useTaskLists();
 
   const lists: TaskList[] = useMemo(() => {
@@ -651,15 +653,14 @@ const Tasks = () => {
                   <div className="flex flex-wrap gap-2">
                     {FAMILY_MEMBERS.map((member) => (
                       <button
-                        key={member}
-                        onClick={() => setEditAssignedTo(member)}
+                        key={member.id}                        onClick={() => setEditAssignedTo(member.name)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
-                          editAssignedTo === member
+                          editAssignedTo === member.name
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border bg-card text-foreground"
                         }`}
                       >
-                        {member}
+                        {member.name}
                       </button>
                     ))}
                   </div>
@@ -752,15 +753,14 @@ const Tasks = () => {
                   <div className="flex flex-wrap gap-2">
                     {FAMILY_MEMBERS.map((member) => (
                       <button
-                        key={member}
-                        onClick={() => setNewItemAssignedTo(member)}
+                        key={member.id}                        onClick={() => setNewItemAssignedTo(member.name)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
-                          newItemAssignedTo === member
+                          newItemAssignedTo === member.name
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border bg-card text-foreground"
                         }`}
                       >
-                        {member}
+                        {member.name}
                       </button>
                     ))}
                   </div>
@@ -857,20 +857,19 @@ const Tasks = () => {
                   <div className="space-y-1.5 max-h-40 overflow-y-auto">
                     {FAMILY_MEMBERS.map((member) => (
                       <button
-                        key={member}
-                        onClick={() =>
+                        key={member.id}                        onClick={() =>
                           setNewListShareMembers((prev) =>
-                            prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                            prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
                           )
                         }
                         className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                          newListShareMembers.includes(member)
+                          newListShareMembers.includes(member.name)
                             ? "border-primary bg-primary/10"
                             : "border-border bg-card"
                         }`}
                       >
-                        <span className="font-medium text-foreground">{member}</span>
-                        {newListShareMembers.includes(member) && <Check size={14} className="text-primary" />}
+                        <span className="font-medium text-foreground">{member.name}</span>
+                        {newListShareMembers.includes(member.name) && <Check size={14} className="text-primary" />}
                       </button>
                     ))}
                   </div>
@@ -894,18 +893,17 @@ const Tasks = () => {
             <div className="space-y-2 px-4">
               {FAMILY_MEMBERS.map((member) => (
                 <button
-                  key={member}
-                  onClick={() =>
+                  key={member.id}                  onClick={() =>
                     setSelectedShareMembers((prev) =>
-                      prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                      prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
                     )
                   }
                   className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-all ${
-                    selectedShareMembers.includes(member) ? "border-primary bg-primary/10" : "border-border bg-card"
+                    selectedShareMembers.includes(member.name) ? "border-primary bg-primary/10" : "border-border bg-card"
                   }`}
                 >
-                  <span className="font-medium text-foreground">{member}</span>
-                  {selectedShareMembers.includes(member) && <Check size={16} className="text-primary" />}
+                  <span className="font-medium text-foreground">{member.name}</span>
+                  {selectedShareMembers.includes(member.name) && <Check size={16} className="text-primary" />}
                 </button>
               ))}
             </div>

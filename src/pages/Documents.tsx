@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from "react";
+import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDocumentLists } from "@/hooks/useDocumentLists";
 import { createPortal } from "react-dom";
 import {
@@ -69,7 +70,7 @@ const CATEGORIES: Record<DocCategory, { label: string; icon: typeof CreditCard; 
   other: { label: "أخرى", icon: File, bg: "bg-muted", color: "text-muted-foreground" },
 };
 
-const FAMILY_MEMBERS = ["أبو فهد", "أم فهد", "فهد", "نورة", "سارة"];
+// FAMILY_MEMBERS removed — using useFamilyMembers hook
 const SWIPE_WIDTH = 140;
 
 // Initial data removed — using Supabase hooks
@@ -77,6 +78,7 @@ const SWIPE_WIDTH = 140;
 const Documents = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
+  const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { lists: dbDocLists, isLoading: docsLoading, createList: createDocListMut, deleteList: deleteDocListMut, addItem: addDocItemMut, updateItem: updateDocItemMut, deleteItem: deleteDocItemMut } = useDocumentLists();
 
   const lists: DocList[] = useMemo(() => {
@@ -848,20 +850,19 @@ const Documents = () => {
                   <div className="space-y-1.5 max-h-40 overflow-y-auto">
                     {FAMILY_MEMBERS.map((member) => (
                       <button
-                        key={member}
-                        onClick={() =>
+                        key={member.id}                        onClick={() =>
                           setNewListShareMembers((prev) =>
-                            prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                            prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
                           )
                         }
                         className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                          newListShareMembers.includes(member)
+                          newListShareMembers.includes(member.name)
                             ? "border-primary bg-primary/10"
                             : "border-border bg-card"
                         }`}
                       >
-                        <span className="font-medium text-foreground">{member}</span>
-                        {newListShareMembers.includes(member) && <Check size={14} className="text-primary" />}
+                        <span className="font-medium text-foreground">{member.name}</span>
+                        {newListShareMembers.includes(member.name) && <Check size={14} className="text-primary" />}
                       </button>
                     ))}
                   </div>
@@ -885,18 +886,17 @@ const Documents = () => {
             <div className="space-y-2 px-4">
               {FAMILY_MEMBERS.map((member) => (
                 <button
-                  key={member}
-                  onClick={() =>
+                  key={member.id}                  onClick={() =>
                     setSelectedShareMembers((prev) =>
-                      prev.includes(member) ? prev.filter((m) => m !== member) : [...prev, member]
+                      prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
                     )
                   }
                   className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-all ${
-                    selectedShareMembers.includes(member) ? "border-primary bg-primary/10" : "border-border bg-card"
+                    selectedShareMembers.includes(member.name) ? "border-primary bg-primary/10" : "border-border bg-card"
                   }`}
                 >
-                  <span className="font-medium text-foreground">{member}</span>
-                  {selectedShareMembers.includes(member) && <Check size={16} className="text-primary" />}
+                  <span className="font-medium text-foreground">{member.name}</span>
+                  {selectedShareMembers.includes(member.name) && <Check size={16} className="text-primary" />}
                 </button>
               ))}
             </div>
