@@ -424,7 +424,7 @@ const Market = () => {
                   : "bg-white/15 text-white/80 hover:bg-white/25"
               }`}
             >
-              {getListIcon(list.type)}
+              {getListIcon(list.type, activeListId === list.id)}
               {list.name}
             </button>
           ))}
