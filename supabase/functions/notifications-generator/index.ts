@@ -127,15 +127,17 @@ Deno.serve(async (req) => {
 
     // ─── 3. Medications ───
     const dayOfWeek = now.getDay(); // 0=Sun
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
 
     const { data: meds } = await admin
       .from("medications")
-      .select("id, name, member_name, family_id, frequency_type, selected_days, specific_times")
+      .select("id, name, member_name, family_id, frequency_type, selected_days, specific_times, times_per_day")
       .eq("reminder_enabled", true);
 
     if (meds) {
       for (const med of meds) {
-        // Check if today is a selected day
+        // Check if today is a selected day for weekly meds
         if (med.frequency_type === "weekly" && med.selected_days?.length) {
           if (!med.selected_days.includes(dayOfWeek)) continue;
         }
@@ -151,16 +153,26 @@ Deno.serve(async (req) => {
 
         const forWhom = med.member_name ? ` (${med.member_name})` : "";
 
-        for (const m of members) {
-          notifications.push({
-            user_id: m.user_id,
-            family_id: med.family_id,
-            type: "medication",
-            title: `💊 تذكير دواء`,
-            body: `حان موعد ${med.name}${forWhom}`,
-            source_type: "medication",
-            source_id: med.id,
-          });
+        // Generate a notification for each specific dose time
+        const times = med.specific_times?.length ? med.specific_times : ["00:00"];
+
+        for (const time of times) {
+          const [h, m] = time.split(":").map(Number);
+          // Only notify if we're within 15 min window of this dose time
+          const diffMin = (currentHour - h) * 60 + (currentMin - m);
+          if (diffMin < 0 || diffMin >= 15) continue;
+
+          for (const member of members) {
+            notifications.push({
+              user_id: member.user_id,
+              family_id: med.family_id,
+              type: "medication",
+              title: `💊 تذكير دواء`,
+              body: `حان موعد ${med.name}${forWhom} - الساعة ${time}`,
+              source_type: "medication",
+              source_id: `${med.id}_${todayStr}_${time}`,
+            });
+          }
         }
       }
     }
