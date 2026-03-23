@@ -25,7 +25,15 @@ const Auth = () => {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (session) navigate("/", { replace: true });
+    if (session) {
+      // Check for pending invite code
+      const pendingCode = localStorage.getItem("pending_invite_code");
+      if (pendingCode) {
+        navigate(`/join?code=${pendingCode}`, { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
   }, [session, navigate]);
 
   useEffect(() => {
