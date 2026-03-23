@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car } from "lucide-react";
+import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -102,6 +102,13 @@ const FamilyManagement = () => {
 
   const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [setupRole, setSetupRole] = useState<"father" | "mother" | "son" | "daughter" | null>(null);
+
+  // QR Scanner state
+  const [showScanner, setShowScanner] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const scanStreamRef = useRef<MediaStream | null>(null);
+  const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Approval dialog state - when someone scans QR / enters code
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
@@ -243,6 +250,86 @@ const FamilyManagement = () => {
     }
   };
 
+  const stopScanner = useCallback(() => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    if (scanStreamRef.current) {
+      scanStreamRef.current.getTracks().forEach((t) => t.stop());
+      scanStreamRef.current = null;
+    }
+  }, []);
+
+  const startScanner = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+      scanStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+
+      // Use BarcodeDetector if available
+      if ("BarcodeDetector" in window) {
+        const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
+        scanIntervalRef.current = setInterval(async () => {
+          if (!videoRef.current || videoRef.current.readyState < 2) return;
+          try {
+            const barcodes = await detector.detect(videoRef.current);
+            if (barcodes.length > 0) {
+              const code = barcodes[0].rawValue;
+              if (code) {
+                stopScanner();
+                setShowScanner(false);
+                setJoinCode(code);
+                // Auto-submit join request
+                handleJoinByCode(code);
+              }
+            }
+          } catch {}
+        }, 500);
+      }
+    } catch {
+      toast({ title: "لا يمكن الوصول للكاميرا", variant: "destructive" });
+      setShowScanner(false);
+    }
+  }, []);
+
+  const handleJoinByCode = async (code: string) => {
+    if (!code.trim()) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "join", invite_code: code.trim(), role: "son" },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل الانضمام", variant: "destructive" });
+      } else {
+        toast({ title: "تم إرسال طلب الانضمام بنجاح!" });
+      }
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
+  };
+
+  const handleManualJoin = () => {
+    if (!joinCode.trim()) return;
+    handleJoinByCode(joinCode);
+    setShowScanner(false);
+    setJoinCode("");
+  };
+
+  useEffect(() => {
+    if (showScanner) {
+      startScanner();
+    } else {
+      stopScanner();
+    }
+    return () => stopScanner();
+  }, [showScanner, startScanner, stopScanner]);
+
   const resetDialog = () => {
     setShowAddDialog(false);
     setAddStep("choose-type");
@@ -346,7 +433,14 @@ const FamilyManagement = () => {
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
-        <div />
+        <button
+          onClick={() => setShowScanner(true)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-sm font-semibold text-primary"
+          style={{ background: "hsl(var(--primary) / 0.1)" }}
+        >
+          <ScanLine size={16} />
+          مسح QR
+        </button>
         <h1 className="text-lg font-bold text-foreground">إدارة أفراد الأسرة</h1>
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted/50">
           رجوع
@@ -877,6 +971,62 @@ const FamilyManagement = () => {
               >
                 رفض
               </button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* QR Scanner Drawer */}
+      <Drawer open={showScanner} onOpenChange={(open) => { if (!open) { setShowScanner(false); setJoinCode(""); } }}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">مسح رمز QR للانضمام</DrawerTitle>
+          </DrawerHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Camera view */}
+            <div className="relative w-full aspect-square max-w-[300px] mx-auto rounded-2xl overflow-hidden bg-black">
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                playsInline
+                muted
+              />
+              {/* Scan overlay */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-48 h-48 border-2 border-primary rounded-2xl relative">
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-lg" />
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-primary rounded-tr-lg" />
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl-lg" />
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                  {/* Scanning line animation */}
+                  <div className="absolute inset-x-2 h-0.5 bg-primary/80 animate-bounce" style={{ top: "50%" }} />
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">وجّه الكاميرا نحو رمز QR الخاص بالعائلة</p>
+
+            {/* Manual code entry */}
+            <div className="bg-muted/50 rounded-2xl p-4">
+              <p className="text-xs font-semibold text-muted-foreground mb-2 text-center">أو أدخل كود الانضمام يدوياً</p>
+              <div className="flex gap-2">
+                <input
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  placeholder="أدخل الكود"
+                  className="flex-1 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  style={{ direction: "ltr" }}
+                  maxLength={6}
+                />
+                <button
+                  onClick={handleManualJoin}
+                  disabled={joinCode.length < 6}
+                  className="px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
+                >
+                  انضمام
+                </button>
+              </div>
             </div>
           </div>
         </DrawerContent>
