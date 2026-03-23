@@ -457,7 +457,20 @@ const Medications = () => {
                       <Clock className="w-3.5 h-3.5" />
                       <span>{getTimeUntilNext(med.reminder.nextDueAt)}</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEditDrawer(med); }}
+                        className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(med); }}
+                        className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </button>
+                      <div className="w-px h-4 bg-border/50 mx-1" />
                       {med.reminder.enabled ? (
                         <Bell className="w-3.5 h-3.5 text-primary" />
                       ) : (
