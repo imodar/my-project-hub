@@ -1036,6 +1036,41 @@ const Vehicle = () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
+
+        {/* Delete Confirmation Drawer */}
+        <Drawer open={!!deleteConfirmCar} onOpenChange={() => setDeleteConfirmCar(null)}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>حذف المركبة</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-4 text-center space-y-3" dir="rtl">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                <Trash2 size={28} className="text-destructive" />
+              </div>
+              {deleteConfirmCar && (
+                <>
+                  <p className="font-bold text-foreground">
+                    {CAR_MANUFACTURERS[deleteConfirmCar.manufacturer]?.name || deleteConfirmCar.manufacturer} {deleteConfirmCar.model}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    سيتم نقل المركبة مع كل سجلات صيانتها ({deleteConfirmCar.maintenance.length} سجل) إلى سلة المحذوفات
+                  </p>
+                  <p className="text-xs text-muted-foreground/70">
+                    يمكنك استعادتها خلال 30 يوماً من سلة المحذوفات
+                  </p>
+                </>
+              )}
+            </div>
+            <DrawerFooter>
+              <Button variant="destructive" onClick={() => deleteConfirmCar && handleDeleteCar(deleteConfirmCar)} className="w-full rounded-xl h-12">
+                حذف المركبة
+              </Button>
+              <DrawerClose asChild>
+                <Button variant="outline" className="w-full rounded-xl">إلغاء</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
       </PullToRefresh>
     </div>
   );
