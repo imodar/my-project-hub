@@ -35,14 +35,7 @@ import { toast } from "sonner";
 
 // localStorage helpers removed — using Supabase hooks now
 
-const loadFamilyMembers = (): { id: string; name: string; role: string }[] => {
-  try {
-    const saved = localStorage.getItem("family_members");
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-};
+// localStorage helper removed — using useFamilyMembers hook
 
 const Medications = () => {
   const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut } = useMedications();

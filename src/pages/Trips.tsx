@@ -241,7 +241,7 @@ const Trips = () => {
   const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album" | "documents">("itinerary");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
-  const familyMembers: { id: string; name: string; role: string }[] = [];
+  const { members: familyMembers } = useFamilyMembers();
 
   // Drawers
   const [newExpenseDrawer, setNewExpenseDrawer] = useState(false);
