@@ -350,6 +350,7 @@ const CalendarPage = () => {
             const d = daysUntil(ev.date);
             const dayNum = new Date(ev.date).getDate();
             const reminderText = getReminderLabel(ev.reminder_before);
+            const hasReminder = ev.reminder_before && ev.reminder_before.length > 0;
             const hasPersonalReminder = ev.personal_reminders && ev.personal_reminders.length > 0;
 
             return (
