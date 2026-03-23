@@ -3,8 +3,10 @@ import QiblaCompass from "./QiblaCompass";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import ProfileSheet from "./ProfileSheet";
+import NotificationsSheet from "@/components/notifications/NotificationsSheet";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/hooks/useNotifications";
 
 import NextPrayerBox from "./NextPrayerBox";
 
