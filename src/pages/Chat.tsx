@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Pin, Lock, Smile, Check, CheckCheck, ShieldCheck } from "lucide-react";
+import { Send, Pin, Lock, Smile, Check, CheckCheck, ShieldCheck, Plus, Image, Mic, MapPin, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import { useChat } from "@/hooks/useChat";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { toast } from "sonner";
 
 type MessageStatus = "sent" | "delivered" | "read";
 
