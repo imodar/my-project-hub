@@ -303,9 +303,15 @@ const Market = () => {
   }, [newListName, newListType, newListShareMembers, createListMutation, familyId, toast]);
 
   const deleteList = useCallback((listId: string) => {
+    setDeleteListTarget(listId);
+  }, []);
+
+  const confirmDeleteList = useCallback(() => {
+    if (!deleteListTarget) return;
     haptic.medium();
-    deleteListMutation.mutate(listId);
-  }, [deleteListMutation]);
+    deleteListMutation.mutate(deleteListTarget);
+    setDeleteListTarget(null);
+  }, [deleteListTarget, deleteListMutation]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0) return;
