@@ -1,94 +1,137 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
+import { useOfflineFirst } from "./useOfflineFirst";
+import { useOfflineMutation } from "./useOfflineMutation";
 
 export function useBudgets() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
-  const qc = useQueryClient();
   const key = ["budgets", familyId];
 
-  const budgetsQuery = useQuery({
+  const apiFn = useCallback(async () => {
+    if (!familyId) return { data: [], error: null };
+    const { data, error } = await supabase
+      .from("budgets")
+      .select("*, budget_expenses(*)")
+      .eq("family_id", familyId)
+      .order("created_at", { ascending: true });
+    return { data: data || [], error: error?.message || null };
+  }, [familyId]);
+
+  const { data: budgets, isLoading, refetch } = useOfflineFirst<any>({
+    table: "budgets",
     queryKey: key,
-    queryFn: async () => {
-      if (!familyId) return [];
-      const { data, error } = await supabase
-        .from("budgets")
-        .select("*, budget_expenses(*)")
-        .eq("family_id", familyId)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
+    apiFn,
     enabled: !!familyId,
   });
 
-  const createBudget = useMutation({
-    mutationFn: async (input: { type?: string; month?: string; label?: string; income?: number; shared_with?: string[]; trip_id?: string }) => {
-      if (!familyId || !user) throw new Error("No family");
+  const createBudget = useOfflineMutation<any, any>({
+    table: "budgets",
+    operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
       const { error } = await supabase.from("budgets").insert({
-        type: input.type || "month",
-        month: input.month,
-        label: input.label,
-        income: input.income || 0,
-        shared_with: input.shared_with || [],
-        trip_id: input.trip_id || null,
+        type: rest.type || "month",
+        month: rest.month,
+        label: rest.label,
+        income: rest.income || 0,
+        shared_with: rest.shared_with || [],
+        trip_id: rest.trip_id || null,
         family_id: familyId,
-        created_by: user.id,
+        created_by: user?.id,
       });
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
-  const updateBudget = useMutation({
-    mutationFn: async (input: { id: string; [key: string]: any }) => {
+  const updateBudget = useOfflineMutation<any, any>({
+    table: "budgets",
+    operation: "UPDATE",
+    apiFn: async (input) => {
       const { id, ...updates } = input;
       const { error } = await supabase.from("budgets").update(updates).eq("id", id);
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const deleteBudget = useMutation({
-    mutationFn: async (budgetId: string) => {
-      const { error } = await supabase.from("budgets").delete().eq("id", budgetId);
-      if (error) throw error;
+  const deleteBudget = useOfflineMutation<any, any>({
+    table: "budgets",
+    operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("budgets").delete().eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const addExpense = useMutation({
-    mutationFn: async (input: { budget_id: string; name: string; amount: number; date?: string; currency?: string }) => {
+  const addExpense = useOfflineMutation<any, any>({
+    table: "budget_expenses",
+    operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
       const { error } = await supabase.from("budget_expenses").insert({
-        budget_id: input.budget_id,
-        name: input.name,
-        amount: input.amount,
-        date: input.date || null,
-        currency: input.currency || "SAR",
+        budget_id: rest.budget_id,
+        name: rest.name,
+        amount: rest.amount,
+        date: rest.date || null,
+        currency: rest.currency || "SAR",
       });
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
-  const updateExpense = useMutation({
-    mutationFn: async (input: { id: string; [key: string]: any }) => {
+  const updateExpense = useOfflineMutation<any, any>({
+    table: "budget_expenses",
+    operation: "UPDATE",
+    apiFn: async (input) => {
       const { id, ...updates } = input;
       const { error } = await supabase.from("budget_expenses").update(updates).eq("id", id);
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const deleteExpense = useMutation({
-    mutationFn: async (expenseId: string) => {
-      const { error } = await supabase.from("budget_expenses").delete().eq("id", expenseId);
-      if (error) throw error;
+  const deleteExpense = useOfflineMutation<any, any>({
+    table: "budget_expenses",
+    operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("budget_expenses").delete().eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  return { budgets: budgetsQuery.data || [], isLoading: budgetsQuery.isLoading, createBudget, updateBudget, deleteBudget, addExpense, updateExpense, deleteExpense };
+  return {
+    budgets: budgets || [],
+    isLoading,
+    createBudget: {
+      ...createBudget,
+      mutate: (input: any) => createBudget.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, budget_expenses: [], ...input }),
+      mutateAsync: async (input: any) => createBudget.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, budget_expenses: [], ...input }),
+    },
+    updateBudget,
+    deleteBudget: {
+      ...deleteBudget,
+      mutate: (budgetId: string) => deleteBudget.mutate({ id: budgetId }),
+      mutateAsync: async (budgetId: string) => deleteBudget.mutateAsync({ id: budgetId }),
+    },
+    addExpense: {
+      ...addExpense,
+      mutate: (input: any) => addExpense.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+      mutateAsync: async (input: any) => addExpense.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+    },
+    updateExpense,
+    deleteExpense: {
+      ...deleteExpense,
+      mutate: (expenseId: string) => deleteExpense.mutate({ id: expenseId }),
+      mutateAsync: async (expenseId: string) => deleteExpense.mutateAsync({ id: expenseId }),
+    },
+  };
 }

@@ -1,62 +1,86 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
+import { useOfflineFirst } from "./useOfflineFirst";
+import { useOfflineMutation } from "./useOfflineMutation";
 
 export function useCalendarEvents() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
-  const qc = useQueryClient();
   const key = ["calendar-events", familyId];
 
-  const eventsQuery = useQuery({
+  const apiFn = useCallback(async () => {
+    if (!familyId) return { data: [], error: null };
+    const { data, error } = await supabase
+      .from("calendar_events")
+      .select("*")
+      .eq("family_id", familyId)
+      .order("date", { ascending: true });
+    return { data: data || [], error: error?.message || null };
+  }, [familyId]);
+
+  const { data: events, isLoading, refetch } = useOfflineFirst<any>({
+    table: "calendar_events",
     queryKey: key,
-    queryFn: async () => {
-      if (!familyId) return [];
-      const { data, error } = await supabase
-        .from("calendar_events")
-        .select("*")
-        .eq("family_id", familyId)
-        .order("date", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
+    apiFn,
     enabled: !!familyId,
   });
 
-  const addEvent = useMutation({
-    mutationFn: async (input: { title: string; date: string; icon?: string; reminder_before?: string[]; personal_reminders?: string[] }) => {
-      if (!familyId || !user) throw new Error("No family");
+  const addEvent = useOfflineMutation<any, any>({
+    table: "calendar_events",
+    operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
       const { error } = await supabase.from("calendar_events").insert({
-        title: input.title,
-        date: input.date,
-        icon: input.icon || "calendar",
-        reminder_before: input.reminder_before || [],
-        personal_reminders: input.personal_reminders || [],
+        title: rest.title,
+        date: rest.date,
+        icon: rest.icon || "calendar",
+        reminder_before: rest.reminder_before || [],
+        personal_reminders: rest.personal_reminders || [],
         family_id: familyId,
-        added_by: user.id,
+        added_by: user?.id,
       });
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
-  const updateEvent = useMutation({
-    mutationFn: async (input: { id: string; [key: string]: any }) => {
+  const updateEvent = useOfflineMutation<any, any>({
+    table: "calendar_events",
+    operation: "UPDATE",
+    apiFn: async (input) => {
       const { id, ...updates } = input;
       const { error } = await supabase.from("calendar_events").update(updates).eq("id", id);
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const deleteEvent = useMutation({
-    mutationFn: async (eventId: string) => {
-      const { error } = await supabase.from("calendar_events").delete().eq("id", eventId);
-      if (error) throw error;
+  const deleteEvent = useOfflineMutation<any, any>({
+    table: "calendar_events",
+    operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("calendar_events").delete().eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  return { events: eventsQuery.data || [], isLoading: eventsQuery.isLoading, addEvent, updateEvent, deleteEvent };
+  return {
+    events: events || [],
+    isLoading,
+    addEvent: {
+      ...addEvent,
+      mutate: (input: any) => addEvent.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, ...input }),
+      mutateAsync: async (input: any) => addEvent.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, ...input }),
+    },
+    updateEvent,
+    deleteEvent: {
+      ...deleteEvent,
+      mutate: (eventId: string) => deleteEvent.mutate({ id: eventId }),
+      mutateAsync: async (eventId: string) => deleteEvent.mutateAsync({ id: eventId }),
+    },
+  };
 }
