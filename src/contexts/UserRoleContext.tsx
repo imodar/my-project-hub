@@ -40,8 +40,6 @@ export interface FeatureAccess {
 }
 
 interface UserRoleContextType {
-  currentRole: UserRole;
-  setCurrentRole: (role: UserRole) => void;
   featureAccess: FeatureAccess;
   dbRole: UserRole | null;
   isAdmin: boolean;
@@ -51,14 +49,10 @@ interface UserRoleContextType {
 const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined);
 
 export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
-  const [currentRole, setCurrentRole] = useState<UserRole>("father");
-
   const { dbRole, isAdmin, isLoading } = useMyRole();
 
-  // featureAccess is built from dbRole (database), NOT currentRole (localStorage)
-  const effectiveRole = dbRole ?? currentRole; // fallback to currentRole only if no DB data yet
-  const staff = isStaffRole(effectiveRole);
-  const parent = isParentRole(effectiveRole);
+  const staff = dbRole ? isStaffRole(dbRole) : false;
+  const parent = dbRole ? isParentRole(dbRole) : true;
 
   const featureAccess: FeatureAccess = {
     hidden: staff ? STAFF_HIDDEN_FEATURES : [],
@@ -69,7 +63,7 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserRoleContext.Provider value={{ currentRole, setCurrentRole, featureAccess, dbRole, isAdmin, isLoading }}>
+    <UserRoleContext.Provider value={{ featureAccess, dbRole, isAdmin, isLoading }}>
       {children}
     </UserRoleContext.Provider>
   );
