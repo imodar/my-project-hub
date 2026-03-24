@@ -94,30 +94,25 @@ const FamilyManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { familyId } = useFamilyId();
-  const [profileName, setProfileName] = useState("");
+  const queryClient = useQueryClient();
+  const { members: dbMembers, isLoading: membersLoading, refetch: refetchMembers } = useFamilyMembers({ excludeSelf: false });
 
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data?.name) setProfileName(data.name);
-      });
-  }, [user]);
+  // Map DB members to local FamilyMember interface
+  const members: FamilyMember[] = useMemo(() =>
+    dbMembers.map((m) => ({
+      id: m.id,
+      name: m.name,
+      role: m.role as FamilyRole,
+      isCreator: m.isCreator,
+      isAdmin: m.isAdmin,
+      status: "active" as InviteStatus,
+    })),
+  [dbMembers]);
 
-  const [creatorRole, setCreatorRole] = useState<FamilyRole | null>(() => {
-    const saved = localStorage.getItem("family_creator_role");
-    return saved as FamilyRole | null;
-  });
-
-  const [members, setMembers] = useState<FamilyMember[]>(() => {
-    const saved = localStorage.getItem("family_members");
-    if (saved) return JSON.parse(saved);
-    return [];
-  });
+  // Current user's role from DB
+  const myMember = useMemo(() => dbMembers.find((m) => m.id === user?.id), [dbMembers, user]);
+  const creatorRole = (myMember?.role as FamilyRole) || null;
+  const isMyAdmin = myMember?.isAdmin || false;
 
   const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [setupRole, setSetupRole] = useState<"father" | "mother" | "son" | "daughter" | null>(null);
