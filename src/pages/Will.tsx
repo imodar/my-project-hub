@@ -17,6 +17,7 @@ import {
 import { haptic } from "@/lib/haptics";
 import { toast } from "@/hooks/use-toast";
 import { useWill } from "@/hooks/useWill";
+import { ROLE_LABELS } from "@/contexts/UserRoleContext";
 
 // ── Types ──
 interface WillSection {
@@ -74,12 +75,6 @@ const Will = () => {
         if (profiles) {
           const roleMap: Record<string, string> = {};
           data.forEach((m) => { roleMap[m.user_id] = m.role; });
-          const ROLE_LABELS: Record<string, string> = {
-            father: "أب", mother: "أم", son: "ابن", daughter: "ابنة",
-            husband: "زوج", wife: "زوجة", brother: "أخ", sister: "أخت",
-            grandfather: "جد", grandmother: "جدة", worker: "عامل",
-            maid: "خادمة", driver: "سائق",
-          };
           setFamilyMembers(
             profiles.map((p) => ({
               id: p.id,

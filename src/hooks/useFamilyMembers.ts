@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
+import { ROLE_LABELS } from "@/contexts/UserRoleContext";
 
 export interface FamilyMemberInfo {
   id: string; // user_id
@@ -10,18 +11,6 @@ export interface FamilyMemberInfo {
   isAdmin: boolean;
   isCreator: boolean;
 }
-
-const ROLE_LABELS: Record<string, string> = {
-  father: "أب",
-  mother: "أم",
-  son: "ابن",
-  daughter: "ابنة",
-  husband: "زوج",
-  wife: "زوجة",
-  worker: "عامل",
-  maid: "خادمة",
-  driver: "سائق",
-};
 
 export function useFamilyMembers({ excludeSelf = true } = {}) {
   const { user } = useAuth();
@@ -32,20 +21,15 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
     queryFn: async (): Promise<FamilyMemberInfo[]> => {
       if (!familyId) return [];
 
-      // Get family creator
-      const { data: family } = await supabase
-        .from("families")
-        .select("created_by")
-        .eq("id", familyId)
-        .single();
-      const creatorId = family?.created_by;
-
+      // Single query with join to get members + creator info
       const { data: members, error } = await supabase
         .from("family_members")
-        .select("user_id, role, is_admin")
+        .select("user_id, role, is_admin, families!inner(created_by)")
         .eq("family_id", familyId)
         .eq("status", "active");
       if (error) throw error;
+
+      const creatorId = (members?.[0] as any)?.families?.created_by;
 
       let filtered = members || [];
       if (excludeSelf && user) {

@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
+import { ROLE_LABELS, isParentRole, isStaffRole } from "@/contexts/UserRoleContext";
 
 type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife" | "worker" | "maid" | "driver";
 type InviteStatus = "active" | "pending";
@@ -21,22 +22,6 @@ interface FamilyMember {
   status: InviteStatus;
   avatar?: string;
 }
-
-
-const ROLE_LABELS: Record<string, string> = {
-  father: "الأب",
-  mother: "الأم",
-  son: "ابن",
-  daughter: "ابنة",
-  husband: "الزوج",
-  wife: "الزوجة",
-  worker: "عامل",
-  maid: "عاملة",
-  driver: "سائق",
-};
-
-const isStaffRole = (role: FamilyRole) =>
-  role === "worker" || role === "maid" || role === "driver";
 
 const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: number; className?: string }) => {
   switch (role) {
@@ -58,9 +43,6 @@ const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: nu
       return <User size={size} className={className} />;
   }
 };
-
-const isParentRole = (role: FamilyRole) =>
-  role === "father" || role === "mother" || role === "husband" || role === "wife";
 
 const SWIPE_THRESHOLD = 40;
 const SWIPE_WIDTH = 144; // wider for 2 buttons

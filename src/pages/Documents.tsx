@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useMemo } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDocumentLists } from "@/hooks/useDocumentLists";
 import FAB from "@/components/FAB";
+import SwipeableCard from "@/components/SwipeableCard";
 import {
   Plus, Search, FolderLock, Users, Lock, Share2, Trash2, Pencil,
   MoreVertical, Check, FileText, Image, File, Bell, Calendar,
@@ -114,10 +115,7 @@ const Documents = () => {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null);
 
-  // Swipe state
-  const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
-  const touchStartXRef = useRef(0);
-  const activeSwipeRef = useRef<string | null>(null);
+  // Swipe state managed by SwipeableCard component
   const pointerStartYRef = useRef(0);
 
   // Delete confirmation
@@ -170,39 +168,12 @@ const Documents = () => {
     return { label: `${diffDays} يوم`, className: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" };
   };
 
-  // Swipe handlers
-  const closeSwipe = useCallback((id: string) => {
-    setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
-    activeSwipeRef.current = null;
-  }, []);
-
-  const handlePointerDown = (e: React.PointerEvent, id: string) => {
-    touchStartXRef.current = e.clientX;
-    pointerStartYRef.current = e.clientY;
-    activeSwipeRef.current = id;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent, id: string) => {
-    if (activeSwipeRef.current !== id) return;
-    const diffX = e.clientX - touchStartXRef.current;
-    setSwipeOffset((prev) => ({ ...prev, [id]: diffX > 0 ? Math.min(diffX, SWIPE_WIDTH) : 0 }));
-  };
-
-  const handlePointerUp = (e: React.PointerEvent, id: string) => {
-    const offset = swipeOffset[id] || 0;
-    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
-    activeSwipeRef.current = null;
-    if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    }
-  };
+  // Swipe handlers moved to SwipeableCard component
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     haptic.medium();
     deleteDocItemMut.mutate(deleteTarget.id);
-    setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   }, [deleteTarget, deleteDocItemMut]);
 
@@ -213,8 +184,7 @@ const Documents = () => {
     setEditNote(item.note);
     setEditExpiryDate(item.expiryDate || "");
     setEditReminderEnabled(item.reminderEnabled);
-    closeSwipe(item.id);
-  }, [closeSwipe]);
+  }, []);
 
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
@@ -306,42 +276,17 @@ const Documents = () => {
   const renderItem = (item: DocumentItem) => {
     const catInfo = CATEGORIES[item.category];
     const CatIcon = catInfo.icon;
-    const offset = swipeOffset[item.id] || 0;
     const expiryStatus = getExpiryStatus(item.expiryDate);
 
     return (
-      <div key={item.id} className="relative overflow-hidden rounded-2xl select-none">
-        {/* Swipe actions behind */}
+      <SwipeableCard
+        key={item.id}
+        onDelete={() => setDeleteTarget(item)}
+        onEdit={() => openEdit(item)}
+      >
         <div
-          className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
-          style={{ width: `${SWIPE_WIDTH}px` }}
-        >
-          <button
-            onClick={() => { setDeleteTarget(item); closeSwipe(item.id); }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
-          >
-            <Trash2 size={16} className="text-destructive-foreground" />
-            <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
-          </button>
-          <button
-            onClick={() => openEdit(item)}
-            className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
-            style={{ background: "hsl(220, 60%, 50%)" }}
-          >
-            <Pencil size={16} className="text-white" />
-            <span className="text-[10px] text-white font-semibold">تعديل</span>
-          </button>
-        </div>
-
-        {/* Card */}
-        <div
-          className="relative z-10 bg-card rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out"
-          style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
-          onPointerDown={(e) => handlePointerDown(e, item.id)}
-          onPointerMove={(e) => handlePointerMove(e, item.id)}
-          onPointerUp={(e) => handlePointerUp(e, item.id)}
-          onPointerCancel={() => closeSwipe(item.id)}
-          onClick={() => offset === 0 && setViewDoc(item)}
+          className="bg-card rounded-2xl p-3 flex items-center gap-3"
+          onClick={() => setViewDoc(item)}
         >
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${catInfo.bg}`}>
             <CatIcon size={20} className={catInfo.color} />
@@ -373,7 +318,7 @@ const Documents = () => {
             )}
           </div>
         </div>
-      </div>
+      </SwipeableCard>
     );
   };
 

@@ -5,6 +5,7 @@ import { useMarketLists } from "@/hooks/useMarketLists";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useToast } from "@/hooks/use-toast";
 import FAB from "@/components/FAB";
+import SwipeableCard from "@/components/SwipeableCard";
 import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -171,10 +172,7 @@ const Market = () => {
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
 
-  // Swipe state
-  const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
-  const touchStartXRef = useRef(0);
-  const activeSwipeRef = useRef<string | null>(null);
+  // Swipe state managed by SwipeableCard component
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<MarketItem | null>(null);
@@ -218,33 +216,7 @@ const Market = () => {
   const completedItems = activeList?.items.filter((i) => i.checked).length || 0;
   const remainingItems = totalItems - completedItems;
 
-  // Swipe handlers
-  const closeSwipe = useCallback((id: string) => {
-    setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
-    activeSwipeRef.current = null;
-  }, []);
-
-  const handlePointerDown = (e: React.PointerEvent, id: string) => {
-    touchStartXRef.current = e.clientX;
-    activeSwipeRef.current = id;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent, id: string) => {
-    if (activeSwipeRef.current !== id) return;
-    const diff = e.clientX - touchStartXRef.current;
-    // RTL: swipe right reveals actions on the left side (positive diff)
-    setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, SWIPE_WIDTH) : 0 }));
-  };
-
-  const handlePointerUp = (e: React.PointerEvent, id: string) => {
-    const offset = swipeOffset[id] || 0;
-    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
-    activeSwipeRef.current = null;
-    if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    }
-  };
+  // Swipe handlers moved to SwipeableCard component
 
   const toggleItem = useCallback((itemId: string) => {
     haptic.light();
@@ -256,7 +228,6 @@ const Market = () => {
     if (!deleteTarget) return;
     haptic.medium();
     deleteItemMutation.mutate(deleteTarget.id);
-    setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   }, [deleteTarget, deleteItemMutation]);
 
@@ -265,8 +236,7 @@ const Market = () => {
     setEditName(item.name);
     setEditQuantity(item.quantity);
     setEditCategory(item.category);
-    closeSwipe(item.id);
-  }, [closeSwipe]);
+  }, []);
 
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
@@ -373,41 +343,14 @@ const Market = () => {
 
   const renderItem = (item: MarketItem, isChecked: boolean) => {
     const catInfo = CATEGORY_COLORS[item.category] || CATEGORY_COLORS["أخرى"];
-    const offset = swipeOffset[item.id] || 0;
 
     return (
-      <div key={item.id} className="relative overflow-hidden rounded-2xl select-none">
-        {/* Swipe actions behind - positioned on the left side */}
-        <div
-          className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
-          style={{ width: `${SWIPE_WIDTH}px` }}
-        >
-          <button
-            onClick={() => { setDeleteTarget(item); closeSwipe(item.id); }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
-          >
-            <Trash2 size={16} className="text-destructive-foreground" />
-            <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
-          </button>
-          <button
-            onClick={() => openEdit(item)}
-            className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
-            style={{ background: "hsl(220, 60%, 50%)" }}
-          >
-            <Pencil size={16} className="text-white" />
-            <span className="text-[10px] text-white font-semibold">تعديل</span>
-          </button>
-        </div>
-
-        {/* Card */}
-        <div
-          className={`relative z-10 bg-card rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing`}
-          style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
-          onPointerDown={(e) => handlePointerDown(e, item.id)}
-          onPointerMove={(e) => handlePointerMove(e, item.id)}
-          onPointerUp={(e) => handlePointerUp(e, item.id)}
-          onPointerCancel={() => closeSwipe(item.id)}
-        >
+      <SwipeableCard
+        key={item.id}
+        onDelete={() => setDeleteTarget(item)}
+        onEdit={() => openEdit(item)}
+      >
+        <div className="bg-card rounded-2xl p-3 flex items-center gap-3">
           <div className="relative shrink-0 w-7 h-7">
             {pendingItemIds.includes(item.id) && (
               <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
@@ -439,7 +382,7 @@ const Market = () => {
             <span className="text-[10px] text-muted-foreground">{item.addedBy}</span>
           </div>
         </div>
-      </div>
+      </SwipeableCard>
     );
   };
 
