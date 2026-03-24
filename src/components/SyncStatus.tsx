@@ -59,7 +59,7 @@ const SyncStatus = forwardRef<HTMLDivElement, SyncStatusProps>(({ showLabel = fa
   let label = "";
 
   if (!isOnline) {
-    dotClass = "bg-muted-foreground";
+    dotClass = "bg-red-500";
     label = pendingCount > 0 ? `غير متصل (${pendingCount})` : "غير متصل";
   } else if (isSyncing) {
     dotClass = "bg-orange-500 animate-pulse";
