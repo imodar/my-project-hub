@@ -44,7 +44,7 @@ const mapRow = (row: any): TrashItem => ({
   relatedRecords: row.related_records,
 });
 
-export const TrashProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const TrashProvider = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(({ children }, _ref) => {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
   const qc = useQueryClient();
@@ -200,4 +200,5 @@ export const TrashProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
     </TrashContext.Provider>
   );
-};
+});
+TrashProvider.displayName = "TrashProvider";

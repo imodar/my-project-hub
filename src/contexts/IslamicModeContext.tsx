@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface IslamicModeContextType {
   islamicMode: boolean;
@@ -12,7 +12,7 @@ const IslamicModeContext = createContext<IslamicModeContextType>({
 
 export const useIslamicMode = () => useContext(IslamicModeContext);
 
-export const IslamicModeProvider = ({ children }: { children: ReactNode }) => {
+export const IslamicModeProvider = React.forwardRef<HTMLDivElement, { children: ReactNode }>(({ children }, _ref) => {
   const [islamicMode, setIslamicMode] = useState(() => {
     const stored = localStorage.getItem("islamicMode");
     return stored === null ? true : stored === "true";
@@ -27,4 +27,5 @@ export const IslamicModeProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </IslamicModeContext.Provider>
   );
-};
+});
+IslamicModeProvider.displayName = "IslamicModeProvider";
