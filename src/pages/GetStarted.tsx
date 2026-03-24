@@ -214,43 +214,6 @@ SlideContent.displayName = "SlideContent";
             slide={slide}
             handleDragEnd={handleDragEnd}
           />
-          >
-            {/* Floating image with subtle bounce */}
-            <motion.img
-              src={slide.image}
-              alt={slide.title}
-              className="w-64 h-64 sm:w-72 sm:h-72 object-contain pointer-events-none"
-              animate={{
-                y: [0, -8, 0],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-
-            {/* Title */}
-            <motion.h1
-              className="text-2xl sm:text-3xl font-bold text-foreground mt-8 mb-3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {slide.title}
-            </motion.h1>
-
-            {/* Subtitle */}
-            <motion.p
-              className="text-base text-muted-foreground leading-relaxed max-w-xs"
-              style={{ textWrap: "balance" }}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {slide.subtitle}
-            </motion.p>
-          </motion.div>
         </AnimatePresence>
       </div>
 
