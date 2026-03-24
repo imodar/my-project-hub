@@ -11,10 +11,13 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/AuthGuard";
 import ScrollToTop from "@/components/ScrollToTop";
 import OfflineBanner from "@/components/OfflineBanner";
+import StaleBanner from "@/components/StaleBanner";
+import FirstSyncOverlay from "@/components/FirstSyncOverlay";
 import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { warmCache } from "@/lib/warmCache";
+import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
 import Auth from "./pages/Auth.tsx";
 import GetStarted from "./pages/GetStarted.tsx";
 import Index from "./pages/Index.tsx";
@@ -78,11 +81,14 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Pre-warms React Query cache from IndexedDB on startup */
+/** Pre-warms React Query cache from IndexedDB on startup + global Realtime */
 const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   const { familyId } = useFamilyId();
   const qc = useQueryClient();
   const warmedRef = useRef(false);
+
+  // Global realtime for cross-device sync
+  useFamilyRealtime();
 
   useEffect(() => {
     if (familyId && !warmedRef.current) {
@@ -172,6 +178,8 @@ const App = () => (
                 <Sonner />
                 <BrowserRouter>
                   <OfflineBanner />
+                  <StaleBanner />
+                  <FirstSyncOverlay />
                   <ScrollToTop />
                   <WarmCacheProvider>
                     <AnimatedRoutes />
