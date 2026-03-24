@@ -514,10 +514,12 @@ const Debts = () => {
           const isExpanded = expandedDebt === debt.id;
 
           return (
-            <SwipeableDebtCard
+            <SwipeableCard
               key={debt.id}
-              onDelete={() => setDeleteTarget({ id: debt.id, name: debt.personName })}
-              onEdit={() => handleStartEdit(debt)}
+              actions={[
+                { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget({ id: debt.id, name: debt.personName }) },
+                { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleStartEdit(debt) },
+              ]}
             >
               <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
                 <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
