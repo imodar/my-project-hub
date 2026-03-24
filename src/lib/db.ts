@@ -14,7 +14,7 @@ import Dexie, { type Table } from "dexie";
  *  أنواع طابور المزامنة
  * ──────────────────────────────────────────── */
 
-export type SyncOperation = "INSERT" | "UPDATE" | "DELETE";
+// Re-exported from syncQueue for convenience
 export type SyncStatus = "pending" | "synced" | "failed";
 
 export interface SyncQueueItem {
