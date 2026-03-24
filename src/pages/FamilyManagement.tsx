@@ -261,8 +261,7 @@ const FamilyManagement = () => {
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
     }
-    setOpenSwipeId(null);
-    setSwipeOffsets({});
+    
   };
 
   const handleCopyCode = () => {
