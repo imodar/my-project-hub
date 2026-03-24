@@ -1,6 +1,7 @@
 // Budget Page
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import FAB from "@/components/FAB";
+import SwipeableCard from "@/components/SwipeableCard";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane, CalendarIcon } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
