@@ -137,7 +137,8 @@ const AnimatedRoutes = React.forwardRef<HTMLDivElement>((_props, _ref) => {
       </Routes>
     </PageTransition>
   );
-};
+});
+AnimatedRoutes.displayName = "AnimatedRoutes";
 
 const App = React.forwardRef<HTMLDivElement>((_props, _ref) => (
   <ErrorBoundary>
