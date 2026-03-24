@@ -519,8 +519,9 @@ const Debts = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="animate-spin text-muted-foreground" size={32} />
+      <div className="min-h-screen bg-background max-w-2xl mx-auto pb-32" dir="rtl">
+        <PageHeader title="دفتر الديون" onBack={() => navigate("/")} />
+        <CardPageSkeleton />
       </div>
     );
   }
