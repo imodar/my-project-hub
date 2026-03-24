@@ -289,7 +289,7 @@ const Trips = () => {
   // Drag state
   const [draggedActivity, setDraggedActivity] = useState<string | null>(null);
 
-  const filteredTrips = tripsLocal.filter((t) => t.type === activeTab);
+  const filteredTrips = trips.filter((t) => t.type === activeTab);
 
   const resetTripForm = () => {
     setTripName(""); setTripDest(""); setTripStart(""); setTripEnd(""); setTripBudget(""); setTripParticipants([]);
