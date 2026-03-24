@@ -551,11 +551,13 @@ const Vehicle = () => {
                 const Icon = typeInfo?.icon || Wrench;
 
                 return (
-                  <SwipeableRow
+                  <SwipeableCard
                     key={record.id}
-                    onDelete={() => handleDeleteMaintenance(record.id)}
-                    onEdit={() => handleEditMaintenance(record)}
-                    onReminder={() => handleSetReminder(record)}
+                    actions={[
+                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleDeleteMaintenance(record.id) },
+                      { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditMaintenance(record) },
+                      { icon: <Bell size={16} />, label: "تذكير", color: "bg-amber-500", onClick: () => handleSetReminder(record) },
+                    ]}
                   >
                     <div className="bg-card rounded-2xl p-4 border border-border" dir="rtl">
                       <div className="flex items-start gap-3">
