@@ -236,8 +236,7 @@ const Market = () => {
     setEditName(item.name);
     setEditQuantity(item.quantity);
     setEditCategory(item.category);
-    closeSwipe(item.id);
-  }, [closeSwipe]);
+  }, []);
 
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
