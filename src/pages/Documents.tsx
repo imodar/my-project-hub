@@ -115,10 +115,7 @@ const Documents = () => {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null);
 
-  // Swipe state
-  const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
-  const touchStartXRef = useRef(0);
-  const activeSwipeRef = useRef<string | null>(null);
+  // Swipe state managed by SwipeableCard component
   const pointerStartYRef = useRef(0);
 
   // Delete confirmation
