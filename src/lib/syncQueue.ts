@@ -187,4 +187,11 @@ if (typeof window !== "undefined") {
     console.info("[SyncQueue] 🌐 عاد الاتصال — بدء معالجة الطابور...");
     processQueue();
   });
+
+  // معالجة الطابور عند تحميل الصفحة إذا كان الإنترنت متاحاً
+  if (document.readyState === "complete") {
+    processQueue();
+  } else {
+    window.addEventListener("load", () => processQueue());
+  }
 }
