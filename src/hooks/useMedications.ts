@@ -17,9 +17,9 @@ export function useMedications() {
   const queryKey = ["medications", familyId];
 
   /** جلب الأدوية مع سجلاتها من API */
-  const apiFn = async () => {
+  const apiFn = useCallback(async () => {
     if (!familyId) {
-      console.warn("[useMedications] familyId فاضي");
+      console.warn("[useMedications] familyId فاضي - skip");
       return { data: [], error: null };
     }
     console.log("[useMedications] جاري الجلب، familyId:", familyId);
@@ -30,7 +30,7 @@ export function useMedications() {
       .order("created_at", { ascending: false });
     console.log("[useMedications] النتيجة:", data?.length, error);
     return { data: data || [], error: error?.message || null };
-  };
+  }, [familyId]);
 
   const { data: medications, isLoading, isSyncing, refetch } = useOfflineFirst<any>({
     table: "medications",
