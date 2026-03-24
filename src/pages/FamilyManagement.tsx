@@ -239,23 +239,27 @@ const FamilyManagement = () => {
   };
 
   const handleAddMember = () => {
-    if (!selectedType || !newName.trim()) return;
-    const newMember: FamilyMember = {
-      id: Date.now().toString(),
-      name: newName.trim(),
-      role: selectedType,
-      isAdmin: isParentRole(selectedType),
-      status: "pending",
-    };
-    setMembers((prev) => [...prev, newMember]);
+    // Skip fake member creation — go straight to invite method
     setAddStep("invite-method");
   };
 
-  const handleRemoveMember = (id: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-    setOpenSwipeId(null);
-    setSwipeOffsets({});
-    toast({ title: "تم حذف الفرد من الأسرة" });
+  const handleRemoveMember = async (id: string) => {
+    if (!familyId) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "remove-member", family_id: familyId, target_user_id: id },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل حذف العضو", variant: "destructive" });
+        return;
+      }
+      refetchMembers();
+      setOpenSwipeId(null);
+      setSwipeOffsets({});
+      toast({ title: "تم حذف الفرد من الأسرة" });
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
   };
 
   const handleToggleAdmin = (id: string) => {
