@@ -514,6 +514,7 @@ const FamilyManagement = () => {
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : (
+        <>
         <div className="space-y-2">
           {members.map((member) => {
             const offset = swipeOffsets[member.id] || 0;
