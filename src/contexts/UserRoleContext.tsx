@@ -50,7 +50,7 @@ interface UserRoleContextType {
 
 const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined);
 
-export const UserRoleProvider = React.forwardRef<HTMLDivElement, { children: ReactNode }>(({ children }, _ref) => {
+export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
     const saved = localStorage.getItem("current_user_role");
     return (saved as UserRole) || "father";
