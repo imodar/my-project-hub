@@ -43,6 +43,7 @@ const SlideContent = React.forwardRef<
   {
     direction: number;
     variants: Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     slide: SlideData;
     handleDragEnd: (_: unknown, info: PanInfo) => void;
     custom?: number;
@@ -51,7 +52,7 @@ const SlideContent = React.forwardRef<
   <motion.div
     ref={ref}
     custom={direction}
-    variants={variants}
+    variants={variants as any}
     initial="enter"
     animate="center"
     exit="exit"
