@@ -13,7 +13,7 @@
  * });
  */
 import { useQuery, type QueryKey, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { db } from "@/lib/db";
 import { syncTable } from "@/lib/syncManager";
 import type { Table } from "dexie";
@@ -64,22 +64,24 @@ export function useOfflineFirst<T extends { id: string }>({
 }: UseOfflineFirstOptions<T>): UseOfflineFirstReturn<T> {
   const qc = useQueryClient();
   const [localData, setLocalData] = useState<T[] | null>(null);
-  const loadedRef = useRef(false);
 
-  // ── 1. قراءة IndexedDB فوراً ──
-  useEffect(() => {
-    if (!enabled || loadedRef.current) return;
+  /** قراءة البيانات من IndexedDB */
+  const readLocal = useCallback(async () => {
     const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
     if (!table) return;
+    const items: T[] = await table.toArray();
+    const filtered = filterFn ? filterFn(items) : items;
+    setLocalData(filtered);
+    return filtered;
+  }, [tableName, filterFn]);
 
-    table.toArray().then((items: T[]) => {
-      if (items.length > 0) {
-        const filtered = filterFn ? filterFn(items) : items;
-        setLocalData(filtered);
-        // وضع البيانات المحلية في كاش React Query
-        qc.setQueryData(queryKey, filtered);
+  // ── 1. قراءة IndexedDB فوراً عند التحميل ──
+  useEffect(() => {
+    if (!enabled) return;
+    readLocal().then((items) => {
+      if (items && items.length > 0) {
+        qc.setQueryData(queryKey, items);
       }
-      loadedRef.current = true;
     });
   }, [tableName, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -95,7 +97,7 @@ export function useOfflineFirst<T extends { id: string }>({
     queryKey,
     queryFn: fetchAndSync,
     staleTime,
-    enabled: enabled && loadedRef.current !== false,
+    enabled: enabled,
     // لا نُظهر loading إذا عندنا بيانات محلية
     placeholderData: localData ?? undefined,
   });
