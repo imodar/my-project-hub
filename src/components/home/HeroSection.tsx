@@ -377,14 +377,6 @@ const HeroSection = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={startDemo}
-            disabled={demoActive}
-            className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors disabled:opacity-40"
-            title="محاكاة حالات الطقس"
-          >
-            <Play size={18} />
-          </button>
-          <button
             onClick={() => setNotificationsOpen(true)}
             className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
           >
