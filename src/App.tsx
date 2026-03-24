@@ -45,6 +45,7 @@ import Medications from "./pages/Medications.tsx";
 import IslamicReminders from "./pages/IslamicReminders.tsx";
 import MedicationsExample from "./examples/MedicationsExample.tsx";
 import BottomNav from "@/components/home/BottomNav";
+import RoleGuard from "@/components/RoleGuard";
 
 // Admin Panel
 import AdminLayout from "./pages/admin/AdminLayout";
