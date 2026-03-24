@@ -30,6 +30,17 @@ const FirstSyncOverlay = () => {
 
     if (localStorage.getItem("first_sync_done") === "true") return;
 
+    // Brand new account (< 2 min old) → skip overlay forever
+    const accountCreatedAt = user?.created_at
+      ? new Date(user.created_at).getTime()
+      : Date.now();
+    const isNewAccount = Date.now() - accountCreatedAt < 2 * 60 * 1000;
+
+    if (isNewAccount) {
+      localStorage.setItem("first_sync_done", "true");
+      return;
+    }
+
     (async () => {
       try {
         const count = await db.task_lists.count();
