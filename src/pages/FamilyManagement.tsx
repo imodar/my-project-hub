@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X, RefreshCw } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X, RefreshCw, Loader2 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "@/hooks/useFamilyId";
+import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 
 type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife" | "worker" | "maid" | "driver";
 type InviteStatus = "active" | "pending";
@@ -92,30 +94,25 @@ const FamilyManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { familyId } = useFamilyId();
-  const [profileName, setProfileName] = useState("");
+  const queryClient = useQueryClient();
+  const { members: dbMembers, isLoading: membersLoading, refetch: refetchMembers } = useFamilyMembers({ excludeSelf: false });
 
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data?.name) setProfileName(data.name);
-      });
-  }, [user]);
+  // Map DB members to local FamilyMember interface
+  const members: FamilyMember[] = useMemo(() =>
+    dbMembers.map((m) => ({
+      id: m.id,
+      name: m.name,
+      role: m.role as FamilyRole,
+      isCreator: m.isCreator,
+      isAdmin: m.isAdmin,
+      status: "active" as InviteStatus,
+    })),
+  [dbMembers]);
 
-  const [creatorRole, setCreatorRole] = useState<FamilyRole | null>(() => {
-    const saved = localStorage.getItem("family_creator_role");
-    return saved as FamilyRole | null;
-  });
-
-  const [members, setMembers] = useState<FamilyMember[]>(() => {
-    const saved = localStorage.getItem("family_members");
-    if (saved) return JSON.parse(saved);
-    return [];
-  });
+  // Current user's role from DB
+  const myMember = useMemo(() => dbMembers.find((m) => m.id === user?.id), [dbMembers, user]);
+  const creatorRole = (myMember?.role as FamilyRole) || null;
+  const isMyAdmin = myMember?.isAdmin || false;
 
   const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [setupRole, setSetupRole] = useState<"father" | "mother" | "son" | "daughter" | null>(null);
@@ -132,32 +129,30 @@ const FamilyManagement = () => {
   const [approvalName, setApprovalName] = useState("");
   const [approvalRole, setApprovalRole] = useState<FamilyRole | null>(null);
 
+  // Show setup only if user has no family yet (familyId will be null)
   useEffect(() => {
-    if (!creatorRole && members.length === 0) {
+    if (!membersLoading && !familyId) {
       setShowSetupDialog(true);
     }
-  }, [creatorRole, members.length]);
+  }, [membersLoading, familyId]);
 
-  useEffect(() => {
-    localStorage.setItem("family_members", JSON.stringify(members));
-  }, [members]);
-
-  const handleSetupComplete = () => {
+  const handleSetupComplete = async () => {
     if (!setupRole) return;
-    const role = setupRole;
-    setCreatorRole(role);
-    localStorage.setItem("family_creator_role", role);
-    const creator: FamilyMember = {
-      id: "creator",
-      name: profileName,
-      role,
-      isCreator: true,
-      isAdmin: isParentRole(role),
-      status: "active",
-    };
-    setMembers([creator]);
-    setShowSetupDialog(false);
-    toast({ title: "تم إنشاء الأسرة بنجاح!" });
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "create", name: user?.user_metadata?.name || "عائلتي", role: setupRole },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل إنشاء الأسرة", variant: "destructive" });
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["family-id"] });
+      queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
+      setShowSetupDialog(false);
+      toast({ title: "تم إنشاء الأسرة بنجاح!" });
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
   };
 
   // Add member dialog
@@ -244,39 +239,51 @@ const FamilyManagement = () => {
   };
 
   const handleAddMember = () => {
-    if (!selectedType || !newName.trim()) return;
-    const newMember: FamilyMember = {
-      id: Date.now().toString(),
-      name: newName.trim(),
-      role: selectedType,
-      isAdmin: isParentRole(selectedType),
-      status: "pending",
-    };
-    setMembers((prev) => [...prev, newMember]);
+    // Skip fake member creation — go straight to invite method
     setAddStep("invite-method");
   };
 
-  const handleRemoveMember = (id: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-    setOpenSwipeId(null);
-    setSwipeOffsets({});
-    toast({ title: "تم حذف الفرد من الأسرة" });
+  const handleRemoveMember = async (id: string) => {
+    if (!familyId) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "remove-member", family_id: familyId, target_user_id: id },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل حذف العضو", variant: "destructive" });
+        return;
+      }
+      refetchMembers();
+      setOpenSwipeId(null);
+      setSwipeOffsets({});
+      toast({ title: "تم حذف الفرد من الأسرة" });
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
   };
 
-  const handleToggleAdmin = (id: string) => {
-    setMembers((prev) =>
-      prev.map((m) => {
-        if (m.id !== id) return m;
-        // Parents can't lose admin
-        if (isParentRole(m.role)) {
-          toast({ title: "لا يمكن إلغاء إشراف الوالدين", variant: "destructive" });
-          return m;
-        }
-        const newAdmin = !m.isAdmin;
-        toast({ title: newAdmin ? `تم تعيين ${m.name} كمشرف` : `تم إلغاء إشراف ${m.name}` });
-        return { ...m, isAdmin: newAdmin };
-      })
-    );
+  const handleToggleAdmin = async (id: string) => {
+    if (!familyId) return;
+    const member = members.find((m) => m.id === id);
+    if (!member) return;
+    if (isParentRole(member.role)) {
+      toast({ title: "لا يمكن إلغاء إشراف الوالدين", variant: "destructive" });
+      return;
+    }
+    const newAdmin = !member.isAdmin;
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "toggle-admin", family_id: familyId, target_user_id: id, is_admin: newAdmin },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل تعديل الصلاحية", variant: "destructive" });
+        return;
+      }
+      refetchMembers();
+      toast({ title: newAdmin ? `تم تعيين ${member.name} كمشرف` : `تم إلغاء إشراف ${member.name}` });
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
     setOpenSwipeId(null);
     setSwipeOffsets({});
   };
@@ -402,27 +409,15 @@ const FamilyManagement = () => {
     setNewName("");
   };
 
-  // Simulate incoming join request (for demo - triggered by button)
-  const simulateJoinRequest = () => {
-    setApprovalName("محمد");
-    setApprovalRole(null);
-    setShowApprovalDialog(true);
-  };
+  // Note: approval flow removed — joining is handled via invite code + edge function
+  // Members appear automatically after joining via /join?code=... route
 
   const handleApproveJoin = () => {
-    if (!approvalRole || !approvalName.trim()) return;
-    const newMember: FamilyMember = {
-      id: Date.now().toString(),
-      name: approvalName.trim(),
-      role: approvalRole,
-      isAdmin: isParentRole(approvalRole),
-      status: "active",
-    };
-    setMembers((prev) => [...prev, newMember]);
+    // This was a demo stub — real joining happens via edge function
     setShowApprovalDialog(false);
     setApprovalName("");
     setApprovalRole(null);
-    toast({ title: `تم قبول ${newMember.name} في الأسرة!` });
+    refetchMembers();
   };
 
   // Swipe handlers (touch + mouse)
@@ -514,6 +509,12 @@ const FamilyManagement = () => {
       {/* Members List */}
       <div className="flex-1 px-4 pb-32">
         <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
+        {membersLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
+        <>
         <div className="space-y-2">
           {members.map((member) => {
             const offset = swipeOffsets[member.id] || 0;
@@ -596,10 +597,10 @@ const FamilyManagement = () => {
           })}
         </div>
 
-        {/* Add button */}
-        {creatorRole && (
+        {/* Add button — only for admins */}
+        {isMyAdmin && (
           <button
-            onClick={() => setShowAddDialog(true)}
+            onClick={() => { setShowAddDialog(true); setAddStep("invite-method"); }}
             className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-sm font-semibold text-primary transition-colors active:bg-primary/10"
             style={{
               background: "hsl(var(--primary) / 0.08)",
@@ -607,12 +608,12 @@ const FamilyManagement = () => {
             }}
           >
             <Plus size={18} />
-            إضافة فرد جديد
+            دعوة فرد جديد
           </button>
         )}
 
         {/* Invite section */}
-        {creatorRole && (
+        {isMyAdmin && (
           <div className="mt-8">
             <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">طرق الانضمام</h2>
             <div className="space-y-3">
@@ -624,18 +625,7 @@ const FamilyManagement = () => {
                 </div>
                 <QrPattern code={inviteCode} />
                 <p className="text-xs text-muted-foreground mb-2">امسح الرمز للانضمام للأسرة</p>
-                <p className="text-[10px] text-muted-foreground/70">عند مسح الرمز، ستظهر شاشة قبول على جهاز المشرف لاختيار دور العضو الجديد</p>
               </div>
-
-              {/* Simulate join request button (for demo) */}
-              <button
-                onClick={simulateJoinRequest}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold text-foreground bg-card transition-colors active:bg-muted"
-                style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)", border: "1px dashed hsl(var(--border))" }}
-              >
-                <UserPlus size={16} className="text-primary" />
-                محاكاة طلب انضمام (للتجربة)
-              </button>
 
               {/* Invite Code */}
               <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
@@ -652,7 +642,6 @@ const FamilyManagement = () => {
                   </div>
                   <span className="text-sm font-semibold text-foreground">كود الانضمام</span>
                 </div>
-                {/* Timer progress bar */}
                 <div className="w-full h-1 rounded-full bg-muted mb-3 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-1000 ease-linear"
@@ -671,7 +660,7 @@ const FamilyManagement = () => {
                     ))}
                   </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground/70 text-center mb-2">كود فريد يتجدد تلقائياً كل ٥ دقائق • عند إدخاله ستظهر شاشة قبول</p>
+                <p className="text-[10px] text-muted-foreground/70 text-center mb-2">كود فريد يتجدد تلقائياً كل ٥ دقائق</p>
                 <button onClick={handleCopyCode} disabled={!inviteCode || isRegeneratingCode} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10 disabled:opacity-40" style={{ background: "hsl(var(--primary) / 0.08)" }}>
                   {codeCopied ? <Check size={16} /> : <Copy size={16} />}
                   {codeCopied ? "تم النسخ" : "نسخ الكود"}
@@ -684,7 +673,7 @@ const FamilyManagement = () => {
                   <span className="text-sm font-semibold text-foreground">رابط الدعوة</span>
                   <Link2 size={18} className="text-primary" />
                 </div>
-                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل رابط يُستخدم مرة واحدة للانضمام</p>
+                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل رابط للانضمام</p>
                 <div className="flex gap-2">
                   <button onClick={handleShareLink} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-colors active:opacity-90 bg-primary">
                     <Share2 size={16} />
@@ -697,6 +686,8 @@ const FamilyManagement = () => {
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
 
@@ -917,7 +908,7 @@ const FamilyManagement = () => {
 
           {addStep === "invite-method" && (
             <div className="space-y-3 mt-2">
-              <p className="text-sm text-muted-foreground text-center">تم إضافة {newName}. يمكنك الآن إرسال دعوة للانضمام:</p>
+              <p className="text-sm text-muted-foreground text-center">شارك رابط الدعوة أو كود الانضمام مع العضو الجديد:</p>
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
                 <p className="text-xs text-amber-700 dark:text-amber-400 text-center flex items-center justify-center gap-1">
                   <Clock size={10} />
@@ -1091,11 +1082,11 @@ const FamilyManagement = () => {
                   placeholder="أدخل الكود"
                   className="flex-1 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                   style={{ direction: "ltr" }}
-                  maxLength={6}
+                  maxLength={8}
                 />
                 <button
                   onClick={handleManualJoin}
-                  disabled={joinCode.length < 6}
+                  disabled={joinCode.length < 8}
                   className="px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
                 >
                   انضمام
