@@ -1,73 +1,92 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOfflineFirst } from "./useOfflineFirst";
+import { useOfflineMutation } from "./useOfflineMutation";
 
 export function useZakatAssets() {
   const { user } = useAuth();
-  const qc = useQueryClient();
   const key = ["zakat_assets", user?.id];
 
-  const assetsQuery = useQuery({
+  const apiFn = useCallback(async () => {
+    if (!user) return { data: [], error: null };
+    const { data, error } = await supabase
+      .from("zakat_assets")
+      .select("*, zakat_history(*)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    return { data: data || [], error: error?.message || null };
+  }, [user]);
+
+  const { data: assets, isLoading, refetch } = useOfflineFirst<any>({
+    table: "zakat_assets",
     queryKey: key,
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from("zakat_assets")
-        .select("*, zakat_history(*)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+    apiFn,
     enabled: !!user,
   });
 
-  const addAsset = useMutation({
-    mutationFn: async (input: {
-      type: string; name: string; amount?: number; currency?: string;
-      weight_grams?: number; purchase_date?: string; reminder?: boolean;
-      karat?: number | null;
-    }) => {
-      if (!user) throw new Error("No user");
+  const addAsset = useOfflineMutation<any, any>({
+    table: "zakat_assets", operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
       const { error } = await supabase.from("zakat_assets").insert({
-        ...input, user_id: user.id, amount: input.amount || 0,
-        currency: input.currency || "SAR", reminder: input.reminder ?? true,
+        ...rest, user_id: user!.id, amount: rest.amount || 0,
+        currency: rest.currency || "SAR", reminder: rest.reminder ?? true,
       });
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
-  const updateAsset = useMutation({
-    mutationFn: async (input: { id: string; [k: string]: any }) => {
+  const updateAsset = useOfflineMutation<any, any>({
+    table: "zakat_assets", operation: "UPDATE",
+    apiFn: async (input) => {
       const { id, ...updates } = input;
       const { error } = await supabase.from("zakat_assets").update(updates).eq("id", id);
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const deleteAsset = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("zakat_assets").delete().eq("id", id);
-      if (error) throw error;
+  const deleteAsset = useOfflineMutation<any, any>({
+    table: "zakat_assets", operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("zakat_assets").delete().eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const addZakatPayment = useMutation({
-    mutationFn: async (input: { asset_id: string; amount_paid: number; notes?: string }) => {
-      const { error } = await supabase.from("zakat_history").insert(input);
-      if (error) throw error;
-      // Also update zakat_paid_at on the asset
-      await supabase.from("zakat_assets").update({ zakat_paid_at: new Date().toISOString() }).eq("id", input.asset_id);
+  const addZakatPayment = useOfflineMutation<any, any>({
+    table: "zakat_assets", operation: "UPDATE", // payment updates asset's zakat_paid_at
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
+      const { error } = await supabase.from("zakat_history").insert({
+        asset_id: rest.asset_id, amount_paid: rest.amount_paid, notes: rest.notes,
+      });
+      if (error) return { data: null, error: error.message };
+      await supabase.from("zakat_assets").update({ zakat_paid_at: new Date().toISOString() }).eq("id", rest.asset_id);
+      return { data: null, error: null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   return {
-    assets: assetsQuery.data || [],
-    isLoading: assetsQuery.isLoading,
-    addAsset, updateAsset, deleteAsset, addZakatPayment,
+    assets: assets || [], isLoading,
+    addAsset: {
+      ...addAsset,
+      mutate: (input: any) => addAsset.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), user_id: user?.id, zakat_history: [], ...input }),
+      mutateAsync: async (input: any) => addAsset.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), user_id: user?.id, zakat_history: [], ...input }),
+    },
+    updateAsset, deleteAsset: {
+      ...deleteAsset,
+      mutate: (id: string) => deleteAsset.mutate({ id }),
+      mutateAsync: async (id: string) => deleteAsset.mutateAsync({ id }),
+    },
+    addZakatPayment: {
+      ...addZakatPayment,
+      mutate: (input: any) => addZakatPayment.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+      mutateAsync: async (input: any) => addZakatPayment.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+    },
   };
 }

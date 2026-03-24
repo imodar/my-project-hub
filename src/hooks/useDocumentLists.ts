@@ -1,107 +1,126 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
+import { useOfflineFirst } from "./useOfflineFirst";
+import { useOfflineMutation } from "./useOfflineMutation";
 
 export function useDocumentLists() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
-  const qc = useQueryClient();
   const key = ["document-lists", familyId];
 
-  const listsQuery = useQuery({
+  const apiFn = useCallback(async () => {
+    if (!familyId) return { data: [], error: null };
+    const { data, error } = await supabase
+      .from("document_lists")
+      .select("*, document_items(*, document_files(*))")
+      .eq("family_id", familyId)
+      .order("updated_at", { ascending: false });
+    return { data: data || [], error: error?.message || null };
+  }, [familyId]);
+
+  const { data: lists, isLoading, refetch } = useOfflineFirst<any>({
+    table: "document_lists",
     queryKey: key,
-    queryFn: async () => {
-      if (!familyId) return [];
-      const { data, error } = await supabase
-        .from("document_lists")
-        .select("*, document_items(*, document_files(*))")
-        .eq("family_id", familyId)
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+    apiFn,
     enabled: !!familyId,
   });
 
-  const createList = useMutation({
-    mutationFn: async (input: { name: string; type?: string; shared_with?: string[] }) => {
-      if (!familyId || !user) throw new Error("No family");
+  const createList = useOfflineMutation<any, any>({
+    table: "document_lists", operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
       const { error } = await supabase.from("document_lists").insert({
-        name: input.name,
-        type: input.type || "family",
-        shared_with: input.shared_with || [],
-        family_id: familyId,
-        created_by: user.id,
+        name: rest.name, type: rest.type || "family", shared_with: rest.shared_with || [],
+        family_id: familyId, created_by: user?.id,
       });
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
-  const deleteList = useMutation({
-    mutationFn: async (listId: string) => {
-      const { error } = await supabase.from("document_lists").delete().eq("id", listId);
-      if (error) throw error;
+  const deleteList = useOfflineMutation<any, any>({
+    table: "document_lists", operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("document_lists").delete().eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const addItem = useMutation({
-    mutationFn: async (input: { list_id: string; name: string; category?: string; expiry_date?: string; reminder_enabled?: boolean; note?: string }) => {
-      if (!user) throw new Error("No user");
+  const addItem = useOfflineMutation<any, any>({
+    table: "document_items", operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
       const { error } = await supabase.from("document_items").insert({
-        list_id: input.list_id,
-        name: input.name,
-        category: input.category || "other",
-        expiry_date: input.expiry_date,
-        reminder_enabled: input.reminder_enabled || false,
-        note: input.note || "",
-        added_by: user.id,
+        list_id: rest.list_id, name: rest.name, category: rest.category || "other",
+        expiry_date: rest.expiry_date, reminder_enabled: rest.reminder_enabled || false,
+        note: rest.note || "", added_by: user?.id,
       });
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
-  const updateItem = useMutation({
-    mutationFn: async (input: { id: string; [key: string]: any }) => {
+  const updateItem = useOfflineMutation<any, any>({
+    table: "document_items", operation: "UPDATE",
+    apiFn: async (input) => {
       const { id, ...updates } = input;
       const { error } = await supabase.from("document_items").update(updates).eq("id", id);
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const deleteItem = useMutation({
-    mutationFn: async (itemId: string) => {
-      const { error } = await supabase.from("document_items").delete().eq("id", itemId);
-      if (error) throw error;
+  const deleteItem = useOfflineMutation<any, any>({
+    table: "document_items", operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("document_items").delete().eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const addFile = useMutation({
-    mutationFn: async (input: { document_id: string; name: string; file_url?: string; type?: string; size?: number }) => {
+  const addFile = useOfflineMutation<any, any>({
+    table: "document_files", operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
       const { error } = await supabase.from("document_files").insert({
-        document_id: input.document_id,
-        name: input.name,
-        file_url: input.file_url,
-        type: input.type,
-        size: input.size,
+        document_id: rest.document_id, name: rest.name,
+        file_url: rest.file_url, type: rest.type, size: rest.size,
       });
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
-  const deleteFile = useMutation({
-    mutationFn: async (fileId: string) => {
-      const { error } = await supabase.from("document_files").delete().eq("id", fileId);
-      if (error) throw error;
+  const deleteFile = useOfflineMutation<any, any>({
+    table: "document_files", operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("document_files").delete().eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  return { lists: listsQuery.data || [], isLoading: listsQuery.isLoading, createList, deleteList, addItem, updateItem, deleteItem, addFile, deleteFile };
+  const wrap = (mut: any, defaults: any = {}) => ({
+    ...mut,
+    mutate: (input: any) => mut.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...defaults, ...input }),
+    mutateAsync: async (input: any) => mut.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...defaults, ...input }),
+  });
+  const wrapDel = (mut: any) => ({
+    ...mut,
+    mutate: (id: string) => mut.mutate({ id }),
+    mutateAsync: async (id: string) => mut.mutateAsync({ id }),
+  });
+
+  return {
+    lists: lists || [], isLoading,
+    createList: wrap(createList, { family_id: familyId, document_items: [] }),
+    deleteList: wrapDel(deleteList),
+    addItem: wrap(addItem, { document_files: [] }),
+    updateItem, deleteItem: wrapDel(deleteItem),
+    addFile: wrap(addFile), deleteFile: wrapDel(deleteFile),
+  };
 }

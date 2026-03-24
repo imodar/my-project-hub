@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
+import { useOfflineFirst } from "./useOfflineFirst";
+import { useOfflineMutation } from "./useOfflineMutation";
 import { toast } from "sonner";
 
 export function useTaskLists() {
@@ -11,52 +13,42 @@ export function useTaskLists() {
   const qc = useQueryClient();
   const key = ["task-lists", familyId];
 
-  // Track pending item IDs for spinner
   const [pendingItemIds, setPendingItemIds] = useState<string[]>([]);
   const addPending = useCallback((id: string) => setPendingItemIds(p => [...p, id]), []);
   const removePending = useCallback((id: string) => setPendingItemIds(p => p.filter(x => x !== id)), []);
 
-  const listsQuery = useQuery({
+  const apiFn = useCallback(async () => {
+    if (!familyId) return { data: [], error: null };
+    const { data, error } = await supabase
+      .from("task_lists")
+      .select("*, task_items(*)")
+      .eq("family_id", familyId)
+      .order("updated_at", { ascending: true });
+    return { data: data || [], error: error?.message || null };
+  }, [familyId]);
+
+  const { data: lists, isLoading, refetch } = useOfflineFirst<any>({
+    table: "task_lists",
     queryKey: key,
-    queryFn: async () => {
-      if (!familyId) return [];
-      const { data, error } = await supabase
-        .from("task_lists")
-        .select("*, task_items(*)")
-        .eq("family_id", familyId)
-        .order("updated_at", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
+    apiFn,
     enabled: !!familyId,
   });
 
-  // --- Realtime subscription ---
+  // --- Realtime subscription (kept alongside offline-first) ---
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!familyId) return;
-
     const channel = supabase
       .channel(`tasks-realtime-${familyId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "task_items" },
-        () => {
-          qc.invalidateQueries({ queryKey: key });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "task_lists", filter: `family_id=eq.${familyId}` },
-        () => {
-          qc.invalidateQueries({ queryKey: key });
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_items" }, () => {
+        qc.invalidateQueries({ queryKey: key });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_lists", filter: `family_id=eq.${familyId}` }, () => {
+        qc.invalidateQueries({ queryKey: key });
+      })
       .subscribe();
-
     channelRef.current = channel;
-
     return () => {
       supabase.removeChannel(channel);
       channelRef.current = null;
@@ -65,112 +57,124 @@ export function useTaskLists() {
 
   // --- Mutations ---
 
-  const createList = useMutation({
-    mutationFn: async (input: { name: string; type?: string; shared_with?: string[] }) => {
-      if (!familyId || !user) throw new Error("No family");
-      const { error } = await supabase.from("task_lists").insert({
-        name: input.name,
-        type: input.type || "family",
-        shared_with: input.shared_with || [],
+  const createList = useOfflineMutation<any, any>({
+    table: "task_lists",
+    operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
+      const { data, error } = await supabase.from("task_lists").insert({
+        name: rest.name,
+        type: rest.type || "family",
+        shared_with: rest.shared_with || [],
         family_id: familyId,
-        created_by: user.id,
-      });
-      if (error) throw error;
+        created_by: user?.id,
+      }).select().single();
+      return { data, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
-  const deleteList = useMutation({
-    mutationFn: async (listId: string) => {
-      const { error } = await supabase.from("task_lists").delete().eq("id", listId);
-      if (error) throw error;
+  const deleteList = useOfflineMutation<any, any>({
+    table: "task_lists",
+    operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("task_lists").delete().eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const addItem = useMutation({
-    mutationFn: async (input: { list_id: string; name: string; note?: string; priority?: string; assigned_to?: string; repeat_enabled?: boolean; repeat_days?: number[]; repeat_count?: number }) => {
-      const { error } = await supabase.from("task_items").insert({
-        list_id: input.list_id,
-        name: input.name,
-        note: input.note || "",
-        priority: input.priority || "none",
-        assigned_to: input.assigned_to || null,
-        repeat_enabled: input.repeat_enabled || false,
-        repeat_days: input.repeat_days || [],
-        repeat_count: input.repeat_count || 0,
-      });
-      if (error) throw error;
+  const addItem = useOfflineMutation<any, any>({
+    table: "task_items",
+    operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
+      const { data, error } = await supabase.from("task_items").insert({
+        list_id: rest.list_id,
+        name: rest.name,
+        note: rest.note || "",
+        priority: rest.priority || "none",
+        assigned_to: rest.assigned_to || null,
+        repeat_enabled: rest.repeat_enabled || false,
+        repeat_days: rest.repeat_days || [],
+        repeat_count: rest.repeat_count || 0,
+      }).select().single();
+      return { data, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
-  // Optimistic toggle for task items
-  const toggleItem = useMutation({
-    mutationFn: async (input: { id: string; done: boolean }) => {
-      const { error } = await supabase
-        .from("task_items")
-        .update({ done: input.done })
-        .eq("id", input.id);
-      if (error) throw error;
+  const toggleItem = useOfflineMutation<any, any>({
+    table: "task_items",
+    operation: "UPDATE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("task_items").update({ done: input.done }).eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onMutate: async (input) => {
-      addPending(input.id);
-      // Cancel outgoing refetches
-      await qc.cancelQueries({ queryKey: key });
-      // Snapshot previous value
-      const previous = qc.getQueryData(key);
-      // Optimistically update
-      qc.setQueryData(key, (old: any) => {
-        if (!old) return old;
-        return old.map((list: any) => ({
-          ...list,
-          task_items: (list.task_items || []).map((item: any) =>
-            item.id === input.id ? { ...item, done: input.done } : item
-          ),
-        }));
-      });
-      return { previous };
-    },
-    onError: (_err, input, context) => {
-      // Rollback
-      if (context?.previous) {
-        qc.setQueryData(key, context.previous);
-      }
-      toast.error("فشل تحديث المهمة");
-    },
-    onSettled: (_data, _err, input) => {
-      removePending(input.id);
-      qc.invalidateQueries({ queryKey: key });
-    },
+    queryKey: key,
+    onError: () => toast.error("فشل تحديث المهمة"),
   });
 
-  const updateItem = useMutation({
-    mutationFn: async (input: { id: string; [key: string]: any }) => {
+  const updateItem = useOfflineMutation<any, any>({
+    table: "task_items",
+    operation: "UPDATE",
+    apiFn: async (input) => {
       const { id, ...updates } = input;
       const { error } = await supabase.from("task_items").update(updates).eq("id", id);
-      if (error) throw error;
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
-  const deleteItem = useMutation({
-    mutationFn: async (itemId: string) => {
-      const { error } = await supabase.from("task_items").delete().eq("id", itemId);
-      if (error) throw error;
+  const deleteItem = useOfflineMutation<any, any>({
+    table: "task_items",
+    operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase.from("task_items").delete().eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey: key,
   });
 
   return {
-    lists: listsQuery.data || [],
-    isLoading: listsQuery.isLoading,
-    createList,
-    deleteList,
-    addItem,
-    toggleItem,
-    updateItem,
-    deleteItem,
+    lists: lists || [],
+    isLoading,
+    createList: {
+      ...createList,
+      mutate: (input: any) => {
+        createList.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input });
+      },
+      mutateAsync: async (input: any) => createList.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input }),
+    },
+    deleteList: {
+      ...deleteList,
+      mutate: (listId: string) => deleteList.mutate({ id: listId }),
+      mutateAsync: async (listId: string) => deleteList.mutateAsync({ id: listId }),
+    },
+    addItem: {
+      ...addItem,
+      mutate: (input: any) => addItem.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), done: false, ...input }),
+      mutateAsync: async (input: any) => addItem.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), done: false, ...input }),
+    },
+    toggleItem: {
+      ...toggleItem,
+      mutate: (input: { id: string; done: boolean }) => {
+        addPending(input.id);
+        toggleItem.mutate(input);
+        setTimeout(() => removePending(input.id), 2000);
+      },
+    },
+    updateItem: {
+      ...updateItem,
+      mutate: (input: any) => updateItem.mutate(input),
+    },
+    deleteItem: {
+      ...deleteItem,
+      mutate: (itemId: string) => deleteItem.mutate({ id: itemId }),
+      mutateAsync: async (itemId: string) => deleteItem.mutateAsync({ id: itemId }),
+    },
     pendingItemIds,
   };
 }

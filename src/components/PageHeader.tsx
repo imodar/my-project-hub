@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import SyncStatus from "@/components/SyncStatus";
 
 interface HeaderAction {
   icon: ReactNode;
@@ -15,9 +16,10 @@ interface PageHeaderProps {
   actions?: HeaderAction[];
   children?: ReactNode;
   onBack?: () => void;
+  showSyncStatus?: boolean;
 }
 
-const PageHeader = ({ title, subtitle, actions, children, onBack }: PageHeaderProps) => {
+const PageHeader = ({ title, subtitle, actions, children, onBack, showSyncStatus = true }: PageHeaderProps) => {
   const navigate = useNavigate();
 
   return (
@@ -39,6 +41,7 @@ const PageHeader = ({ title, subtitle, actions, children, onBack }: PageHeaderPr
           <h1 className="text-lg font-bold text-white">{title}</h1>
           {subtitle && <p className="text-xs text-white/70">{subtitle}</p>}
         </div>
+        {showSyncStatus && <SyncStatus className="opacity-80" />}
         {actions?.map((action, i) => (
           <button
             key={i}

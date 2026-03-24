@@ -33,7 +33,125 @@ interface TableApiMapping {
  * };
  */
 export const TABLE_API_MAP: Record<string, TableApiMapping> = {
-  // ── placeholder — سيتم الربط لاحقاً ──
+  // ── Tasks ──
+  task_items: {
+    functionName: "tasks-api",
+    actions: { INSERT: "add-item", UPDATE: "update-item", DELETE: "delete-item" },
+  },
+  task_lists: {
+    functionName: "tasks-api",
+    actions: { INSERT: "create-list", DELETE: "delete-list" },
+  },
+
+  // ── Market ──
+  market_items: {
+    functionName: "market-api",
+    actions: { INSERT: "add-item", UPDATE: "update-item", DELETE: "delete-item" },
+  },
+  market_lists: {
+    functionName: "market-api",
+    actions: { INSERT: "create-list", DELETE: "delete-list" },
+  },
+
+  // ── Calendar ──
+  calendar_events: {
+    functionName: "calendar-api",
+    actions: { INSERT: "add-event", UPDATE: "update-event", DELETE: "delete-event" },
+  },
+
+  // ── Budget ──
+  budgets: {
+    functionName: "budget-api",
+    actions: { INSERT: "create-budget", UPDATE: "update-budget", DELETE: "delete-budget" },
+  },
+  budget_expenses: {
+    functionName: "budget-api",
+    actions: { INSERT: "add-expense", UPDATE: "update-expense", DELETE: "delete-expense" },
+  },
+
+  // ── Debts ──
+  debts: {
+    functionName: "debts-api",
+    actions: { INSERT: "create-debt", UPDATE: "update-debt", DELETE: "delete-debt" },
+  },
+  debt_payments: {
+    functionName: "debts-api",
+    actions: { INSERT: "add-payment" },
+  },
+
+  // ── Trips ──
+  trips: {
+    functionName: "trips-api",
+    actions: { INSERT: "create-trip", UPDATE: "update-trip", DELETE: "delete-trip" },
+  },
+  trip_day_plans: {
+    functionName: "trips-api",
+    actions: { INSERT: "add-day-plan" },
+  },
+  trip_activities: {
+    functionName: "trips-api",
+    actions: { INSERT: "add-activity", UPDATE: "toggle-activity" },
+  },
+  trip_expenses: {
+    functionName: "trips-api",
+    actions: { INSERT: "add-expense", DELETE: "delete-expense" },
+  },
+  trip_packing: {
+    functionName: "trips-api",
+    actions: { INSERT: "add-packing", UPDATE: "toggle-packing" },
+  },
+
+  // ── Documents ──
+  document_lists: {
+    functionName: "documents-api",
+    actions: { INSERT: "create-list", DELETE: "delete-list" },
+  },
+  document_items: {
+    functionName: "documents-api",
+    actions: { INSERT: "add-item", UPDATE: "update-item", DELETE: "delete-item" },
+  },
+
+  // ── Medications ──
+  medications: {
+    functionName: "health-api",
+    actions: { INSERT: "add-medication", UPDATE: "update-medication", DELETE: "delete-medication" },
+  },
+  medication_logs: {
+    functionName: "health-api",
+    actions: { INSERT: "log-medication" },
+  },
+
+  // ── Vehicles ──
+  vehicles: {
+    functionName: "vehicles-api",
+    actions: { INSERT: "add-vehicle", UPDATE: "update-vehicle", DELETE: "delete-vehicle" },
+  },
+  vehicle_maintenance: {
+    functionName: "vehicles-api",
+    actions: { INSERT: "add-maintenance", UPDATE: "update-maintenance", DELETE: "delete-maintenance" },
+  },
+
+  // ── Zakat ──
+  zakat_assets: {
+    functionName: "zakat-api",
+    actions: { INSERT: "create-asset", UPDATE: "update-asset", DELETE: "delete-asset" },
+  },
+
+  // ── Albums ──
+  albums: {
+    functionName: "albums-api",
+    actions: { INSERT: "create-album", DELETE: "delete-album" },
+  },
+  album_photos: {
+    functionName: "albums-api",
+    actions: { INSERT: "add-photo", DELETE: "delete-photo" },
+  },
+
+  // ── Chat ──
+  chat_messages: {
+    functionName: "chat-api",
+    actions: { INSERT: "send-message", UPDATE: "pin-message" },
+  },
 };
 
 /* ────────────────────────────────────────────
