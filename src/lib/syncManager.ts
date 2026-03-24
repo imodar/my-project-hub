@@ -6,6 +6,7 @@
  */
 import { db } from "./db";
 import type { Table } from "dexie";
+import { projectPendingChanges } from "./syncQueue";
 
 /* ────────────────────────────────────────────
  *  مزامنة جدول واحد
@@ -16,14 +17,14 @@ import type { Table } from "dexie";
  *
  * @param tableName - اسم الجدول في Dexie
  * @param apiFn - دالة تجلب البيانات من الـ API (تستقبل اختيارياً lastSyncedAt)
- * @returns البيانات المُحدّثة
+ * @returns البيانات المُحدّثة بعد إسقاط العمليات المحلية غير المتزامنة فوقها
  *
  * @example
  * await syncTable("medications", (lastSynced) =>
  *   api.get("health-api", { action: "list", since: lastSynced })
  * );
  */
-export async function syncTable<T extends { id: string }>(
+export async function syncTable<T extends { id: string; created_at?: string }>(
   tableName: string,
   apiFn: (lastSyncedAt: string | null) => Promise<{ data: T[] | null; error: string | null }>
 ): Promise<T[]> {
@@ -33,32 +34,28 @@ export async function syncTable<T extends { id: string }>(
     return [];
   }
 
-  // قراءة آخر وقت مزامنة
   const lastSyncedAt = await getLastSyncTime(tableName);
-
-  // جلب البيانات من API (مع دعم Delta Sync)
   const { data, error } = await apiFn(lastSyncedAt);
 
   if (error || !data) {
     console.warn(`[SyncManager] فشل جلب "${tableName}": ${error} — استخدام البيانات المحلية`);
-    // عند فشل API: إرجاع البيانات المحلية بدل مصفوفة فارغة
     const localData = await table.toArray();
-    return localData as T[];
+    return projectPendingChanges(tableName, localData as T[]);
   }
 
-  // تحديث IndexedDB — bulkPut يُحدّث الموجود ويُضيف الجديد
   await table.bulkPut(data);
 
-  // تحديث وقت المزامنة
   await db.sync_meta.put({
     table: tableName,
     last_synced_at: new Date().toISOString(),
   });
 
-  // إرجاع كل البيانات المحلية (تشمل الإضافات الأوفلاين غير المُزامنة)
   const allLocal = await table.toArray();
-  console.info(`[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، محلي: ${allLocal.length}`);
-  return allLocal as T[];
+  const projectedData = await projectPendingChanges(tableName, allLocal as T[]);
+  console.info(
+    `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، محلي بعد الإسقاط: ${projectedData.length}`
+  );
+  return projectedData;
 }
 
 /* ────────────────────────────────────────────

@@ -16,6 +16,7 @@ import { useQuery, type QueryKey, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
 import { db } from "@/lib/db";
 import { syncTable } from "@/lib/syncManager";
+import { projectPendingChanges } from "@/lib/syncQueue";
 import type { Table } from "dexie";
 
 /* ────────────────────────────────────────────
@@ -54,7 +55,7 @@ export interface UseOfflineFirstReturn<T> {
  *  Hook
  * ──────────────────────────────────────────── */
 
-export function useOfflineFirst<T extends { id: string }>({
+export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   table: tableName,
   queryKey,
   apiFn,
@@ -65,12 +66,13 @@ export function useOfflineFirst<T extends { id: string }>({
   const qc = useQueryClient();
   const [localData, setLocalData] = useState<T[] | null>(null);
 
-  /** قراءة البيانات من IndexedDB */
+  /** قراءة البيانات من IndexedDB مع إسقاط التغييرات المعلقة من sync_queue */
   const readLocal = useCallback(async () => {
     const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
     if (!table) return;
     const items: T[] = await table.toArray();
-    const filtered = filterFn ? filterFn(items) : items;
+    const projected = await projectPendingChanges(tableName, items);
+    const filtered = filterFn ? filterFn(projected) : projected;
     setLocalData(filtered);
     return filtered;
   }, [tableName, filterFn]);
