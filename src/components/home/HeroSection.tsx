@@ -307,6 +307,20 @@ const HeroSection = () => {
   }, []);
 
   useEffect(() => {
+    // Check sessionStorage cache first
+    try {
+      const cached = sessionStorage.getItem("weather_cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Use cache if less than 30 minutes old
+        if (Date.now() - new Date(parsed.lastUpdated).getTime() < 30 * 60 * 1000) {
+          setWeather({ ...parsed, lastUpdated: new Date(parsed.lastUpdated) });
+          setHasLocationPermission(true);
+          return;
+        }
+      }
+    } catch {}
+
     navigator.geolocation?.getCurrentPosition(
       async (pos) => {
         setHasLocationPermission(true);
@@ -336,14 +350,16 @@ const HeroSection = () => {
           else if (weatherCode === 3) { description = "غائم"; icon = "cloud"; }
           else if (weatherCode >= 1) { description = "غائم جزئياً"; icon = "cloudsun"; }
 
-          setWeather({
+          const weatherData = {
             temp: Math.round(data.current?.temperature_2m || 0),
             description,
             city: cityName,
             icon,
             weatherCode,
             lastUpdated: new Date(),
-          });
+          };
+          setWeather(weatherData);
+          try { sessionStorage.setItem("weather_cache", JSON.stringify(weatherData)); } catch {}
         } catch (e) {
           console.error("Weather fetch failed:", e);
         }

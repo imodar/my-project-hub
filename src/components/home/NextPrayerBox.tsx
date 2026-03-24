@@ -78,12 +78,42 @@ const PrayerIcon = () => (
   </svg>
 );
 
+const CACHE_KEY = "prayer_times_cache";
+
+const getCachedTimes = (): PrayerTimes | null => {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    // Only use cache from same day
+    const cachedDate = new Date(cached._cachedAt);
+    const now = new Date();
+    if (cachedDate.toDateString() !== now.toDateString()) return null;
+    return cached as PrayerTimes;
+  } catch { return null; }
+};
+
+const setCachedTimes = (times: PrayerTimes) => {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ...times, _cachedAt: new Date().toISOString() }));
+  } catch {}
+};
+
 export const usePrayerTimes = () => {
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(getCachedTimes);
   const [nextPrayer, setNextPrayer] = useState<NextPrayerInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!getCachedTimes());
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // Fetch once per session/day
   useEffect(() => {
+    const cached = getCachedTimes();
+    if (cached) {
+      setPrayerTimes(cached);
+      setLoading(false);
+      return;
+    }
+
     const fetchPrayers = async () => {
       try {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
@@ -103,7 +133,8 @@ export const usePrayerTimes = () => {
             Maghrib: data.data.timings.Maghrib,
             Isha: data.data.timings.Isha,
           };
-          setNextPrayer(getNextPrayer(times));
+          setCachedTimes(times);
+          setPrayerTimes(times);
           setLastUpdated(new Date());
         }
       } catch (e) {
@@ -114,9 +145,16 @@ export const usePrayerTimes = () => {
     };
 
     fetchPrayers();
-    const interval = setInterval(fetchPrayers, 60000);
-    return () => clearInterval(interval);
   }, []);
+
+  // Update countdown every 30s without re-fetching
+  useEffect(() => {
+    if (!prayerTimes) return;
+    const update = () => setNextPrayer(getNextPrayer(prayerTimes));
+    update();
+    const interval = setInterval(update, 30000);
+    return () => clearInterval(interval);
+  }, [prayerTimes]);
 
   return { nextPrayer, loading, lastUpdated };
 };
