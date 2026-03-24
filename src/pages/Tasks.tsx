@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useTaskLists } from "@/hooks/useTaskLists";
 import { useTrash } from "@/contexts/TrashContext";
-import { createPortal } from "react-dom";
+import FAB from "@/components/FAB";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, Repeat } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
