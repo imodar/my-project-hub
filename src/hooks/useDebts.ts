@@ -36,7 +36,7 @@ export function useDebts() {
       payment_details?: Record<string, unknown>;
     }) => {
       if (!user || !familyId) throw new Error("No user/family");
-      const { error } = await supabase.from("debts").insert({
+      const row = {
         person_name: input.person_name,
         amount: input.amount,
         currency: input.currency || "SAR",
@@ -44,10 +44,11 @@ export function useDebts() {
         date: input.date,
         due_date: input.due_date,
         note: input.note || "",
-        payment_details: input.payment_details || null,
+        payment_details: (input.payment_details || null) as Record<string, unknown> | null,
         user_id: user.id,
         family_id: familyId,
-      });
+      };
+      const { error } = await supabase.from("debts").insert(row as never);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
