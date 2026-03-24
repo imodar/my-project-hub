@@ -45,6 +45,7 @@ import Medications from "./pages/Medications.tsx";
 import IslamicReminders from "./pages/IslamicReminders.tsx";
 import MedicationsExample from "./examples/MedicationsExample.tsx";
 import BottomNav from "@/components/home/BottomNav";
+import RoleGuard from "@/components/RoleGuard";
 
 // Admin Panel
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -109,19 +110,19 @@ const AnimatedRoutes = () => {
         <Route path="/debts" element={<AuthGuard><Debts /></AuthGuard>} />
         <Route path="/family" element={<AuthGuard><FamilyManagement /></AuthGuard>} />
         <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-        <Route path="/calendar" element={<AuthGuard><CalendarPage /></AuthGuard>} />
+        <Route path="/calendar" element={<AuthGuard><RoleGuard requireNonStaff><CalendarPage /></RoleGuard></AuthGuard>} />
         <Route path="/trash" element={<AuthGuard><Trash /></AuthGuard>} />
         <Route path="/market" element={<AuthGuard><Market /></AuthGuard>} />
-        <Route path="/places" element={<AuthGuard><Places /></AuthGuard>} />
+        <Route path="/places" element={<AuthGuard><RoleGuard requireNonStaff><Places /></RoleGuard></AuthGuard>} />
         <Route path="/places/add" element={<AuthGuard><AddPlace /></AuthGuard>} />
         <Route path="/places/edit/:id" element={<AuthGuard><AddPlace /></AuthGuard>} />
         <Route path="/budget" element={<AuthGuard><Budget /></AuthGuard>} />
         <Route path="/tasks" element={<AuthGuard><Tasks /></AuthGuard>} />
         <Route path="/documents" element={<AuthGuard><Documents /></AuthGuard>} />
-        <Route path="/zakat" element={<AuthGuard><Zakat /></AuthGuard>} />
-        <Route path="/will" element={<AuthGuard><Will /></AuthGuard>} />
+        <Route path="/zakat" element={<AuthGuard><RoleGuard requireNonStaff><Zakat /></RoleGuard></AuthGuard>} />
+        <Route path="/will" element={<AuthGuard><RoleGuard requireNonStaff><Will /></RoleGuard></AuthGuard>} />
         <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
-        <Route path="/albums" element={<AuthGuard><Albums /></AuthGuard>} />
+        <Route path="/albums" element={<AuthGuard><RoleGuard requireNonStaff><Albums /></RoleGuard></AuthGuard>} />
         <Route path="/kids-worship" element={<AuthGuard><KidsWorship /></AuthGuard>} />
         <Route path="/parent-dashboard" element={<AuthGuard><ParentDashboard /></AuthGuard>} />
         <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />

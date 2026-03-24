@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useMyRole } from "@/hooks/useMyRole";
 
 export type UserRole = "father" | "mother" | "husband" | "wife" | "son" | "daughter" | "worker" | "maid" | "driver";
 
@@ -14,13 +15,21 @@ export const STAFF_ROLE_LABELS: Record<string, string> = {
   driver: "سائق",
 };
 
-// Features visibility per role type
-// parent: all features
-// child: all features  
-// staff: restricted
+export const ROLE_LABELS: Record<string, string> = {
+  father: "أب",
+  mother: "أم",
+  husband: "زوج",
+  wife: "زوجة",
+  son: "ابن",
+  daughter: "ابنة",
+  worker: "عامل",
+  maid: "عاملة",
+  driver: "سائق",
+};
+
 const STAFF_HIDDEN_FEATURES = ["/places", "/will", "/calendar", "/zakat", "/albums"];
-const STAFF_PERSONAL_ONLY_FEATURES: string[] = []; // personal scope only
-const STAFF_DISABLED_FEATURES: string[] = []; // disabled
+const STAFF_PERSONAL_ONLY_FEATURES: string[] = [];
+const STAFF_DISABLED_FEATURES: string[] = [];
 
 export interface FeatureAccess {
   hidden: string[];
@@ -34,6 +43,9 @@ interface UserRoleContextType {
   currentRole: UserRole;
   setCurrentRole: (role: UserRole) => void;
   featureAccess: FeatureAccess;
+  dbRole: UserRole | null;
+  isAdmin: boolean;
+  isLoading: boolean;
 }
 
 const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined);
@@ -44,12 +56,16 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
     return (saved as UserRole) || "father";
   });
 
+  const { dbRole, isAdmin, isLoading } = useMyRole();
+
   useEffect(() => {
     localStorage.setItem("current_user_role", currentRole);
   }, [currentRole]);
 
-  const staff = isStaffRole(currentRole);
-  const parent = isParentRole(currentRole);
+  // featureAccess is built from dbRole (database), NOT currentRole (localStorage)
+  const effectiveRole = dbRole ?? currentRole; // fallback to currentRole only if no DB data yet
+  const staff = isStaffRole(effectiveRole);
+  const parent = isParentRole(effectiveRole);
 
   const featureAccess: FeatureAccess = {
     hidden: staff ? STAFF_HIDDEN_FEATURES : [],
@@ -60,7 +76,7 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserRoleContext.Provider value={{ currentRole, setCurrentRole, featureAccess }}>
+    <UserRoleContext.Provider value={{ currentRole, setCurrentRole, featureAccess, dbRole, isAdmin, isLoading }}>
       {children}
     </UserRoleContext.Provider>
   );

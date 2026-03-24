@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Briefcase, Car } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
-import { useUserRole, type UserRole } from "@/contexts/UserRoleContext";
+import { useUserRole, ROLE_LABELS } from "@/contexts/UserRoleContext";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +19,7 @@ const Settings = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { islamicMode, setIslamicMode } = useIslamicMode();
-  const { currentRole, setCurrentRole } = useUserRole();
+  const { dbRole, isAdmin: isDbAdmin, isLoading: roleLoading } = useUserRole();
   const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
   const [contacts, setContacts] = useState(emergencyContacts);
   const [members, setMembers] = useState(familyMembers);
@@ -28,8 +29,7 @@ const Settings = () => {
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
 
-  // Simulate admin role (parent)
-  const isAdmin = true;
+  const isAdmin = isDbAdmin;
 
   const settingsGroups = [
     {
@@ -188,9 +188,9 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Role Switcher (Demo) */}
+        {/* Role Display (Read-Only from DB) */}
         <div>
-          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">محاكاة الدور (للتجربة)</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">الدور في العائلة</h2>
           <div
             className="rounded-2xl overflow-hidden p-4"
             style={{
@@ -198,29 +198,35 @@ const Settings = () => {
               boxShadow: "0 2px 12px hsla(0,0%,0%,0.05)",
             }}
           >
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { role: "father" as UserRole, label: "أب", icon: User, color: "hsl(var(--primary))" },
-                { role: "son" as UserRole, label: "ابن", icon: User, color: "hsl(215, 70%, 50%)" },
-                { role: "worker" as UserRole, label: "عامل", icon: Briefcase, color: "hsl(30, 60%, 45%)" },
-                { role: "maid" as UserRole, label: "عاملة", icon: Briefcase, color: "hsl(30, 60%, 45%)" },
-                { role: "driver" as UserRole, label: "سائق", icon: Car, color: "hsl(30, 60%, 45%)" },
-              ]).map((item) => (
-                <button
-                  key={item.role}
-                  onClick={() => setCurrentRole(item.role)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
-                    currentRole === item.role ? "border-primary bg-primary/10" : "border-border bg-card"
-                  }`}
+            {roleLoading ? (
+              <div className="flex items-center gap-3">
+                <Skeleton className="w-10 h-10 rounded-xl" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "hsl(var(--primary) / 0.1)" }}
                 >
-                  <item.icon size={18} style={{ color: currentRole === item.role ? item.color : "hsl(var(--muted-foreground))" }} />
-                  <span className="text-xs font-bold text-foreground">{item.label}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground text-center mt-3">
-              اختر دوراً لمحاكاة تجربة المستخدم المختلفة
-            </p>
+                  <User size={20} className="text-primary" />
+                </div>
+                <div className="flex-1 text-right">
+                  <p className="text-sm font-bold text-foreground">
+                    {dbRole ? ROLE_LABELS[dbRole] || dbRole : "غير محدد"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    يتم تحديد الدور من قبل مشرف العائلة
+                  </p>
+                </div>
+                <span
+                  className="text-[10px] font-semibold px-2 py-1 rounded-full"
+                  style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}
+                >
+                  من قاعدة البيانات
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
