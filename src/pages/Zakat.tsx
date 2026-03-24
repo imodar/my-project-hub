@@ -224,7 +224,7 @@ const Zakat = () => {
     type: a.type as AssetType,
     label: a.name,
     amount: a.amount || a.weight_grams || 0,
-    karat: undefined, // stored in metadata if needed
+    karat: a.karat ?? undefined,
     purchaseDate: a.purchase_date || "",
     marketValue: undefined,
     reminder: a.reminder || false,
