@@ -469,10 +469,10 @@ const HeroSection = () => {
           {/* Cloud decorations */}
           {(!weather || (weather && weather.weatherCode <= 3)) && !demoActive && (
             <>
-              <div className="absolute top-3 right-10 opacity-20">
+              <div className="absolute top-3 left-10 opacity-20">
                 <Cloud size={52} />
               </div>
-              <div className="absolute bottom-3 left-16 opacity-15">
+              <div className="absolute bottom-3 right-16 opacity-15">
                 <Cloud size={36} />
               </div>
             </>
