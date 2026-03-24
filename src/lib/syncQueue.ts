@@ -45,6 +45,7 @@ const MAX_RETRIES = 3;
  *  حالة المعالجة (لمنع التشغيل المتزامن)
  * ──────────────────────────────────────────── */
 let isProcessing = false;
+const _warnedUnmapped = new Set<string>();
 
 /**
  * تطبّق العمليات غير المتزامنة من sync_queue فوق البيانات الأساسية،

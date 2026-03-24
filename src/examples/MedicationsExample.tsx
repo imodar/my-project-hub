@@ -54,9 +54,11 @@ const MedicationsExample = () => {
         .order("created_at", { ascending: false });
       return { data: data ?? [], error: error?.message ?? null };
     },
-    // فلترة محلية حسب family_id
-    filterFn: (items) =>
-      familyId ? items.filter((m) => m.family_id === familyId) : items,
+    filterFn: useCallback(
+      (items: Medication[]) =>
+        familyId ? items.filter((m) => m.family_id === familyId) : items,
+      [familyId]
+    ),
     enabled: !!familyId,
   });
 
