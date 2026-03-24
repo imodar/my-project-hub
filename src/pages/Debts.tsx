@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff, History } from "lucide-react";
+import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff, History, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import PageHeader from "@/components/PageHeader";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { useDebts } from "@/hooks/useDebts";
+import { toast } from "sonner";
 
 type PaymentType = "cash" | "item" | "installment";
 
@@ -24,7 +25,7 @@ const CURRENCIES = [
 
 type CurrencyCode = typeof CURRENCIES[number]["code"];
 
-const getCurrencySymbol = (code: CurrencyCode) => CURRENCIES.find((c) => c.code === code)?.symbol || code;
+const getCurrencySymbol = (code: string) => CURRENCIES.find((c) => c.code === code)?.symbol || code;
 
 interface DebtAmount {
   amount: number;
@@ -42,14 +43,15 @@ interface Payment {
 interface Postponement {
   newDate: string;
   reason: string;
-  date: string; // when postponement was made
+  date: string;
 }
 
 interface Debt {
   id: string;
   personName: string;
   amounts: DebtAmount[];
-  date: string; // تاريخ أخذ الدين
+  direction: "given" | "taken";
+  date: string;
   dueDate: string;
   note: string;
   payments: Payment[];
@@ -59,9 +61,49 @@ interface Debt {
   postponements: Postponement[];
 }
 
-// No more hardcoded initial data - using Supabase
+/* ── Map Supabase row → UI Debt ── */
+const mapRawToDebt = (raw: any): Debt => {
+  const pd = raw.payment_details as any;
+  const amounts: DebtAmount[] = pd?.amounts
+    ? pd.amounts.map((a: any) => ({ amount: Number(a.amount), currency: a.currency as CurrencyCode }))
+    : [{ amount: Number(raw.amount), currency: (raw.currency || "SAR") as CurrencyCode }];
 
-// Swipeable card with Edit + Delete
+  const payments: Payment[] = (raw.debt_payments || []).map((p: any) => {
+    const ppd = p.payment_details as any;
+    return {
+      id: p.id,
+      amounts: ppd?.amounts
+        ? ppd.amounts.map((a: any) => ({ amount: Number(a.amount), currency: a.currency as CurrencyCode }))
+        : [{ amount: Number(p.amount), currency: (p.currency || "SAR") as CurrencyCode }],
+      date: p.date || p.created_at?.split("T")[0] || "",
+      type: (p.type || "cash") as PaymentType,
+      itemDescription: p.item_description,
+    };
+  });
+
+  const postponements: Postponement[] = (raw.debt_postponements || []).map((pp: any) => ({
+    newDate: pp.new_date || "",
+    reason: pp.reason || "",
+    date: pp.created_at?.split("T")[0] || "",
+  }));
+
+  return {
+    id: raw.id,
+    personName: raw.person_name,
+    amounts,
+    direction: raw.direction as "given" | "taken",
+    date: raw.date || raw.created_at?.split("T")[0] || "",
+    dueDate: raw.due_date || "",
+    note: raw.note || "",
+    payments,
+    isFullyPaid: raw.is_fully_paid,
+    isArchived: raw.is_archived,
+    hasReminder: raw.has_reminder,
+    postponements,
+  };
+};
+
+// ── Swipeable card ──
 const ACTION_WIDTH = 140;
 const SwipeableDebtCard = ({
   children,
@@ -134,19 +176,16 @@ const SwipeableDebtCard = ({
 
 const formatNumber = (n: number) => n.toLocaleString("ar-SA");
 const formatDate = (d: string) => {
+  if (!d) return "";
   const date = new Date(d);
   return date.toLocaleDateString("ar-SA", { day: "numeric", month: "long" });
-};
-const formatFullDate = (d: string) => {
-  const date = new Date(d);
-  return date.toLocaleDateString("ar-SA", { day: "numeric", month: "long", year: "numeric" });
 };
 
 const formatDebtAmount = (da: DebtAmount) => `${formatNumber(da.amount)} ${getCurrencySymbol(da.currency)}`;
 const formatAmountsList = (amounts: DebtAmount[]) => amounts.map(formatDebtAmount).join(" + ");
 
 const isOverdue = (dueDate: string, isFullyPaid: boolean) => {
-  if (isFullyPaid) return false;
+  if (isFullyPaid || !dueDate) return false;
   return new Date(dueDate) < new Date();
 };
 
@@ -249,9 +288,9 @@ const AmountEditor = ({
 
 const Debts = () => {
   const navigate = useNavigate();
+  const { debts: rawDebts, isLoading, addDebt, updateDebt, deleteDebt, addPayment, addPostponement } = useDebts();
+
   const [activeTab, setActiveTab] = useState<"given" | "taken">("given");
-  const [givenDebts, setGivenDebts] = useState<Debt[]>([]);
-  const [takenDebts, setTakenDebts] = useState<Debt[]>([]);
   const [expandedDebt, setExpandedDebt] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addFormType, setAddFormType] = useState<"given" | "taken">("given");
@@ -275,69 +314,85 @@ const Debts = () => {
   const [postponeData, setPostponeData] = useState({ newDate: "", reason: "" });
   const [editingDebtId, setEditingDebtId] = useState<string | null>(null);
 
+  // ── Map Supabase data to UI model ──
+  const allDebts = useMemo(() => rawDebts.map(mapRawToDebt), [rawDebts]);
+  const givenDebts = useMemo(() => allDebts.filter((d) => d.direction === "given"), [allDebts]);
+  const takenDebts = useMemo(() => allDebts.filter((d) => d.direction === "taken"), [allDebts]);
+
   const debts = activeTab === "given" ? givenDebts : takenDebts;
-  const setDebts = activeTab === "given" ? setGivenDebts : setTakenDebts;
   const activeDebts = debts.filter((d) => !d.isArchived);
   const archivedDebts = debts.filter((d) => d.isArchived);
 
   const givenSummary = getSummaryByCurrency(givenDebts);
   const takenSummary = getSummaryByCurrency(takenDebts);
 
-  const findDebtById = (id: string): { debt: Debt; setFn: typeof setGivenDebts } | null => {
-    const g = givenDebts.find(d => d.id === id);
-    if (g) return { debt: g, setFn: setGivenDebts };
-    const t = takenDebts.find(d => d.id === id);
-    if (t) return { debt: t, setFn: setTakenDebts };
-    return null;
-  };
-
-  const handleMarkFullyPaid = (debtId: string) => {
-    setDebts((prev) =>
-      prev.map((d) => {
-        if (d.id !== debtId) return d;
-        const remaining = getRemainingAmounts(d);
-        return {
-          ...d, isFullyPaid: true, isArchived: true,
-          payments: [...d.payments, { id: Date.now().toString(), amounts: remaining, date: new Date().toISOString().split("T")[0], type: "cash" as PaymentType }],
-        };
-      })
-    );
+  const handleMarkFullyPaid = async (debtId: string) => {
+    const debt = allDebts.find((d) => d.id === debtId);
+    if (!debt) return;
+    const remaining = getRemainingAmounts(debt);
+    // Add final payment
+    if (remaining.length > 0) {
+      await addPayment.mutateAsync({
+        debt_id: debtId,
+        amount: remaining[0].amount,
+        currency: remaining[0].currency,
+        type: "cash",
+        date: new Date().toISOString().split("T")[0],
+        ...(remaining.length > 1
+          ? { payment_details: { amounts: remaining.map((r) => ({ amount: r.amount, currency: r.currency })) } }
+          : {}),
+      });
+    }
+    await updateDebt.mutateAsync({ id: debtId, is_fully_paid: true, is_archived: true });
+    toast.success("تم تسجيل السداد الكامل");
   };
 
   const handleStartEdit = (debt: Debt) => {
     setEditingDebtId(debt.id);
     setNewDebt({ personName: debt.personName, date: debt.date, dueDate: debt.dueDate, note: debt.note });
     setNewDebtAmounts(debt.amounts.map((a) => ({ amount: String(a.amount), currency: a.currency })));
-    setAddFormType(activeTab);
+    setAddFormType(debt.direction);
     setShowAddForm(true);
   };
 
-  const handleAddDebt = () => {
+  const handleAddDebt = async () => {
     const validAmounts = newDebtAmounts.filter((a) => a.amount && Number(a.amount) > 0);
     if (!newDebt.personName || validAmounts.length === 0 || !newDebt.dueDate) return;
 
-    const targetSetDebts = addFormType === "given" ? setGivenDebts : setTakenDebts;
+    const amountsData = validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency }));
+    const multiCurrency = amountsData.length > 1 ? { amounts: amountsData } : null;
 
-    if (editingDebtId) {
-      targetSetDebts((prev) =>
-        prev.map((d) =>
-          d.id === editingDebtId
-            ? { ...d, personName: newDebt.personName, amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })), date: newDebt.date || d.date, dueDate: newDebt.dueDate, note: newDebt.note }
-            : d
-        )
-      );
-    } else {
-      const debt: Debt = {
-        id: Date.now().toString(),
-        personName: newDebt.personName,
-        amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })),
-        date: newDebt.date || new Date().toISOString().split("T")[0],
-        dueDate: newDebt.dueDate,
-        note: newDebt.note,
-        payments: [], isFullyPaid: false, isArchived: false, hasReminder: false, postponements: [],
-      };
-      targetSetDebts((prev) => [debt, ...prev]);
+    try {
+      if (editingDebtId) {
+        await updateDebt.mutateAsync({
+          id: editingDebtId,
+          person_name: newDebt.personName,
+          amount: amountsData[0].amount,
+          currency: amountsData[0].currency,
+          payment_details: multiCurrency,
+          date: newDebt.date || undefined,
+          due_date: newDebt.dueDate,
+          note: newDebt.note,
+        });
+        toast.success("تم تحديث الدين");
+      } else {
+        await addDebt.mutateAsync({
+          person_name: newDebt.personName,
+          amount: amountsData[0].amount,
+          currency: amountsData[0].currency,
+          direction: addFormType,
+          date: newDebt.date || new Date().toISOString().split("T")[0],
+          due_date: newDebt.dueDate,
+          note: newDebt.note,
+          payment_details: multiCurrency || undefined,
+        });
+        toast.success("تمت إضافة الدين");
+      }
+    } catch {
+      toast.error("حدث خطأ");
+      return;
     }
+
     setNewDebt({ personName: "", date: "", dueDate: "", note: "" });
     setNewDebtAmounts([{ amount: "", currency: "SAR" }]);
     setShowAddForm(false);
@@ -345,37 +400,52 @@ const Debts = () => {
   };
 
   const openPaymentDrawer = (debtId: string) => {
-    const found = findDebtById(debtId);
-    if (!found) return;
-    const rem = getRemainingAmounts(found.debt);
+    const debt = allDebts.find((d) => d.id === debtId);
+    if (!debt) return;
+    const rem = getRemainingAmounts(debt);
     setNewPaymentAmounts(rem.map((r) => ({ amount: "", currency: r.currency })));
     setNewPayment({ type: "cash", itemDescription: "" });
     setPaymentDebtId(debtId);
     setShowPaymentDrawer(true);
   };
 
-  const handleAddPayment = () => {
+  const handleAddPayment = async () => {
     if (!paymentDebtId) return;
     const validAmounts = newPaymentAmounts.filter((a) => a.amount && Number(a.amount) > 0);
     if (validAmounts.length === 0) return;
-    const payment: Payment = {
-      id: Date.now().toString(),
-      amounts: validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency })),
-      date: new Date().toISOString().split("T")[0],
-      type: newPayment.type,
-      itemDescription: newPayment.itemDescription || undefined,
-    };
-    // Update in both lists
-    const updateFn = (prev: Debt[]) =>
-      prev.map((d) => {
-        if (d.id !== paymentDebtId) return d;
-        const updated = { ...d, payments: [...d.payments, payment] };
-        const remaining = getRemainingAmounts(updated);
-        if (remaining.length === 0) { updated.isFullyPaid = true; updated.isArchived = true; }
-        return updated;
+
+    const amountsData = validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency }));
+
+    try {
+      await addPayment.mutateAsync({
+        debt_id: paymentDebtId,
+        amount: amountsData[0].amount,
+        currency: amountsData[0].currency,
+        type: newPayment.type,
+        item_description: newPayment.itemDescription || undefined,
+        date: new Date().toISOString().split("T")[0],
+        ...(amountsData.length > 1 ? { payment_details: { amounts: amountsData } } : {}),
       });
-    setGivenDebts(updateFn);
-    setTakenDebts(updateFn);
+
+      // Check if fully paid after this payment
+      const debt = allDebts.find((d) => d.id === paymentDebtId);
+      if (debt) {
+        const updatedPayments = [
+          ...debt.payments,
+          { id: "temp", amounts: amountsData as DebtAmount[], date: "", type: "cash" as PaymentType },
+        ];
+        const tempDebt = { ...debt, payments: updatedPayments };
+        const remaining = getRemainingAmounts(tempDebt);
+        if (remaining.length === 0) {
+          await updateDebt.mutateAsync({ id: paymentDebtId, is_fully_paid: true, is_archived: true });
+        }
+      }
+
+      toast.success("تم تسجيل الدفعة");
+    } catch {
+      toast.error("حدث خطأ في تسجيل الدفعة");
+    }
+
     setShowPaymentDrawer(false);
     setPaymentDebtId(null);
   };
@@ -386,25 +456,31 @@ const Debts = () => {
     setShowPostponeDrawer(true);
   };
 
-  const handlePostpone = () => {
+  const handlePostpone = async () => {
     if (!postponeDebtId || !postponeData.newDate || !postponeData.reason) return;
-    const postponement: Postponement = { ...postponeData, date: new Date().toISOString().split("T")[0] };
-    const updateFn = (prev: Debt[]) =>
-      prev.map((d) =>
-        d.id === postponeDebtId
-          ? { ...d, dueDate: postponeData.newDate, postponements: [...d.postponements, postponement] }
-          : d
-      );
-    setGivenDebts(updateFn);
-    setTakenDebts(updateFn);
+    try {
+      await addPostponement.mutateAsync({
+        debt_id: postponeDebtId,
+        new_date: postponeData.newDate,
+        reason: postponeData.reason,
+      });
+      await updateDebt.mutateAsync({ id: postponeDebtId, due_date: postponeData.newDate });
+      toast.success("تم تأجيل الدين");
+    } catch {
+      toast.error("حدث خطأ في التأجيل");
+    }
     setShowPostponeDrawer(false);
     setPostponeDebtId(null);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteTarget) return;
-    setGivenDebts(prev => prev.filter(d => d.id !== deleteTarget.id));
-    setTakenDebts(prev => prev.filter(d => d.id !== deleteTarget.id));
+    try {
+      await deleteDebt.mutateAsync(deleteTarget.id);
+      toast.success("تم حذف الدين");
+    } catch {
+      toast.error("حدث خطأ في الحذف");
+    }
     setDeleteTarget(null);
   };
 
@@ -439,6 +515,14 @@ const Debts = () => {
       <p className="text-[10px] opacity-40 mt-1">{count} دين نشط</p>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="animate-spin text-muted-foreground" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto relative pb-32" dir="rtl">
@@ -503,7 +587,6 @@ const Debts = () => {
             >
               <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
                 <button className="w-full p-4 text-right" onClick={() => setExpandedDebt(isExpanded ? null : debt.id)}>
-                  {/* Name on right, amounts on left */}
                   <div className="flex items-start justify-between mb-2">
                     <div className="text-right flex items-center gap-2 flex-1 min-w-0">
                       {debt.hasReminder && <Bell size={14} className="text-amber-500 shrink-0" />}
@@ -539,7 +622,6 @@ const Debts = () => {
 
                 {isExpanded && (
                   <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
-                    {/* History: payments + postponements merged chronologically */}
                     {(debt.payments.length > 0 || debt.postponements.length > 0) && (
                       <div>
                         <p className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5">
@@ -547,18 +629,9 @@ const Debts = () => {
                           سجل العمليات
                         </p>
                         <div className="space-y-1.5">
-                          {/* Merge and sort by date */}
                           {[
-                            ...debt.payments.map(p => ({
-                              type: "payment" as const,
-                              date: p.date,
-                              data: p,
-                            })),
-                            ...debt.postponements.map(pp => ({
-                              type: "postponement" as const,
-                              date: pp.date,
-                              data: pp,
-                            })),
+                            ...debt.payments.map(p => ({ type: "payment" as const, date: p.date, data: p })),
+                            ...debt.postponements.map(pp => ({ type: "postponement" as const, date: pp.date, data: pp })),
                           ]
                             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                             .map((entry, i) => {
@@ -605,7 +678,6 @@ const Debts = () => {
                       </div>
                     )}
 
-                    {/* Actions */}
                     {!debt.isFullyPaid && (
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => handleMarkFullyPaid(debt.id)} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5">
@@ -763,10 +835,14 @@ const Debts = () => {
               onChange={(e) => setNewDebt({ ...newDebt, note: e.target.value })}
               className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
             />
-            <button onClick={handleAddDebt} className={`w-full py-3.5 rounded-2xl font-bold text-base text-white ${
-              addFormType === "given" ? "bg-emerald-500" : "bg-red-500"
-            }`}>
-              {editingDebtId ? "حفظ التعديلات" : "إضافة"}
+            <button
+              onClick={handleAddDebt}
+              disabled={addDebt.isPending || updateDebt.isPending}
+              className={`w-full py-3.5 rounded-2xl font-bold text-base text-white disabled:opacity-50 ${
+                addFormType === "given" ? "bg-emerald-500" : "bg-red-500"
+              }`}
+            >
+              {(addDebt.isPending || updateDebt.isPending) ? "جارٍ الحفظ..." : editingDebtId ? "حفظ التعديلات" : "إضافة"}
             </button>
           </div>
         </DrawerContent>
@@ -804,7 +880,9 @@ const Debts = () => {
             <AmountEditor amounts={newPaymentAmounts} setAmounts={setNewPaymentAmounts} />
           </div>
           <DrawerFooter className="flex-row gap-2">
-            <Button onClick={handleAddPayment} className="flex-1 rounded-xl">تأكيد الدفعة</Button>
+            <Button onClick={handleAddPayment} disabled={addPayment.isPending} className="flex-1 rounded-xl">
+              {addPayment.isPending ? "جارٍ..." : "تأكيد الدفعة"}
+            </Button>
             <Button variant="outline" onClick={() => setShowPaymentDrawer(false)} className="flex-1 rounded-xl">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
@@ -835,7 +913,9 @@ const Debts = () => {
             />
           </div>
           <DrawerFooter className="flex-row gap-2">
-            <Button onClick={handlePostpone} className="flex-1 rounded-xl">تأكيد التأجيل</Button>
+            <Button onClick={handlePostpone} disabled={addPostponement.isPending} className="flex-1 rounded-xl">
+              {addPostponement.isPending ? "جارٍ..." : "تأكيد التأجيل"}
+            </Button>
             <Button variant="outline" onClick={() => setShowPostponeDrawer(false)} className="flex-1 rounded-xl">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
@@ -852,8 +932,8 @@ const Debts = () => {
               هل أنت متأكد من حذف دين "{deleteTarget?.name}"؟
             </p>
             <div className="flex gap-2">
-              <button onClick={confirmDelete} className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
-                حذف
+              <button onClick={confirmDelete} disabled={deleteDebt.isPending} className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50">
+                {deleteDebt.isPending ? "جارٍ الحذف..." : "حذف"}
               </button>
               <button onClick={() => setDeleteTarget(null)} className="flex-1 py-3 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors">
                 إلغاء

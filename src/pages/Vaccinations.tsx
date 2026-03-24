@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare, PersonStanding } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare, PersonStanding, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,32 +19,20 @@ import {
   getChildAge,
   getNextDueVaccines,
 } from "@/data/vaccinationData";
+import { useVaccinations } from "@/hooks/useVaccinations";
 import { toast } from "sonner";
 
-const STORAGE_KEY = "family-vaccinations-children";
-
-const loadChildren = (): Child[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) return [];
-    const parsed = JSON.parse(data);
-    // Migrate old data without new fields
-    return parsed.map((c: any) => ({
-      ...c,
-      vaccineNotes: c.vaccineNotes || [],
-      reminderSettings: c.reminderSettings || { beforeDay: true, beforeWeek: true, beforeMonth: true },
-    }));
-  } catch {
-    return [];
-  }
-};
-
-const saveChildren = (children: Child[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(children));
-};
-
 const Vaccinations = () => {
-  const [children, setChildren] = useState<Child[]>(loadChildren);
+  const {
+    children,
+    isLoading,
+    addChild,
+    updateChild,
+    toggleVaccine,
+    updateReminderSettings,
+    saveVaccineNote: saveVaccineNoteMutation,
+  } = useVaccinations();
+
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showEditSheet, setShowEditSheet] = useState(false);
@@ -64,55 +52,44 @@ const Vaccinations = () => {
     startX: 0, startY: 0, swiping: false, childId: null,
   });
 
-  useEffect(() => {
-    saveChildren(children);
-  }, [children]);
+  // Keep selectedChild in sync with data
+  const resolvedSelected = selectedChild ? children.find((c) => c.id === selectedChild.id) || selectedChild : null;
 
-  useEffect(() => {
-    if (selectedChild) {
-      const updated = children.find((c) => c.id === selectedChild.id);
-      if (updated) setSelectedChild(updated);
-    }
-  }, [children]);
-
-  const handleAddChild = () => {
+  const handleAddChild = async () => {
     if (!newName.trim()) { toast.error("يرجى إدخال اسم الطفل"); return; }
     if (!newBirthDate) { toast.error("يرجى إدخال تاريخ الميلاد"); return; }
 
-    const child: Child = {
-      id: crypto.randomUUID(),
-      name: newName.trim(),
-      gender: newGender,
-      birthDate: newBirthDate,
-      completedVaccines: [],
-      vaccineNotes: [],
-      reminderSettings: { beforeDay: true, beforeWeek: true, beforeMonth: true },
-    };
-
-    setChildren((prev) => [...prev, child]);
-    setNewName("");
-    setNewGender("male");
-    setNewBirthDate("");
-    setShowAddSheet(false);
-    toast.success(`تمت إضافة ${child.name}`);
+    try {
+      await addChild.mutateAsync({ name: newName.trim(), gender: newGender, birthDate: newBirthDate });
+      setNewName("");
+      setNewGender("male");
+      setNewBirthDate("");
+      setShowAddSheet(false);
+      toast.success(`تمت إضافة ${newName.trim()}`);
+    } catch {
+      toast.error("حدث خطأ في الإضافة");
+    }
   };
 
-  const handleEditChild = () => {
+  const handleEditChild = async () => {
     if (!editingChild) return;
     if (!newName.trim()) { toast.error("يرجى إدخال اسم الطفل"); return; }
     if (!newBirthDate) { toast.error("يرجى إدخال تاريخ الميلاد"); return; }
 
-    setChildren((prev) =>
-      prev.map((c) =>
-        c.id === editingChild.id
-          ? { ...c, name: newName.trim(), gender: newGender, birthDate: newBirthDate }
-          : c
-      )
-    );
-    setShowEditSheet(false);
-    setEditingChild(null);
-    setSwipedChildId(null);
-    toast.success("تم تحديث بيانات الطفل");
+    try {
+      await updateChild.mutateAsync({
+        id: editingChild.id,
+        name: newName.trim(),
+        gender: newGender,
+        birthDate: newBirthDate,
+      });
+      setShowEditSheet(false);
+      setEditingChild(null);
+      setSwipedChildId(null);
+      toast.success("تم تحديث بيانات الطفل");
+    } catch {
+      toast.error("حدث خطأ");
+    }
   };
 
   const openEditSheet = (child: Child) => {
@@ -129,34 +106,23 @@ const Vaccinations = () => {
     setSwipedChildId(null);
   };
 
-  const toggleVaccine = (childId: string, vaccineId: string) => {
-    setChildren((prev) =>
-      prev.map((child) => {
-        if (child.id !== childId) return child;
-        const completed = child.completedVaccines.includes(vaccineId)
-          ? child.completedVaccines.filter((v) => v !== vaccineId)
-          : [...child.completedVaccines, vaccineId];
-        return { ...child, completedVaccines: completed };
-      })
-    );
+  const handleToggleVaccine = (childId: string, vaccineId: string) => {
+    const child = children.find((c) => c.id === childId);
+    if (!child) return;
+    toggleVaccine.mutate({ childId, vaccineId, completed: child.completedVaccines });
   };
 
-  const updateReminderSettings = (childId: string, settings: ReminderSettings) => {
-    setChildren((prev) =>
-      prev.map((c) => (c.id === childId ? { ...c, reminderSettings: settings } : c))
-    );
+  const handleUpdateReminderSettings = (childId: string, settings: ReminderSettings) => {
+    updateReminderSettings.mutate({ childId, settings });
   };
 
-  const saveVaccineNote = () => {
-    if (!selectedChild || !noteVaccineId) return;
-    setChildren((prev) =>
-      prev.map((c) => {
-        if (c.id !== selectedChild.id) return c;
-        const notes = c.vaccineNotes.filter((n) => n.vaccineId !== noteVaccineId);
-        if (noteText.trim()) notes.push({ vaccineId: noteVaccineId, note: noteText.trim() });
-        return { ...c, vaccineNotes: notes };
-      })
-    );
+  const handleSaveVaccineNote = () => {
+    if (!resolvedSelected || !noteVaccineId) return;
+    saveVaccineNoteMutation.mutate({
+      childId: resolvedSelected.id,
+      vaccineId: noteVaccineId,
+      note: noteText,
+    });
     setShowNoteSheet(false);
     toast.success("تم حفظ الملاحظة");
   };
@@ -166,9 +132,9 @@ const Vaccinations = () => {
   };
 
   const openNoteSheet = (vaccineId: string) => {
-    if (!selectedChild) return;
+    if (!resolvedSelected) return;
     setNoteVaccineId(vaccineId);
-    setNoteText(getVaccineNote(selectedChild, vaccineId));
+    setNoteText(getVaccineNote(resolvedSelected, vaccineId));
     setShowNoteSheet(true);
   };
 
@@ -181,15 +147,10 @@ const Vaccinations = () => {
     if (!cardEl || swipeRef.current.childId !== childId) return;
     const diffX = e.touches[0].clientX - swipeRef.current.startX;
     const diffY = Math.abs(e.touches[0].clientY - swipeRef.current.startY);
-    
-    // If vertical scroll is dominant, ignore
     if (diffY > Math.abs(diffX) && !swipeRef.current.swiping) return;
-    
     if (Math.abs(diffX) > 10) swipeRef.current.swiping = true;
-    
     if (swipeRef.current.swiping) {
       e.preventDefault();
-      // RTL: positive diffX = swipe right = close, negative = swipe left = open
       const clampedX = Math.max(-112, Math.min(0, diffX));
       cardEl.style.transform = `translateX(${clampedX}px)`;
     }
@@ -198,12 +159,10 @@ const Vaccinations = () => {
   const handleTouchEnd = (childId: string, cardEl: HTMLDivElement | null) => {
     if (!cardEl || swipeRef.current.childId !== childId) return;
     const wasSwiping = swipeRef.current.swiping;
-    
     if (wasSwiping) {
       const currentTransform = cardEl.style.transform;
       const match = currentTransform.match(/translateX\((-?\d+)px\)/);
       const currentX = match ? parseInt(match[1]) : 0;
-      
       cardEl.style.transition = "transform 200ms ease-out";
       if (currentX < -50) {
         cardEl.style.transform = "translateX(-112px)";
@@ -219,18 +178,20 @@ const Vaccinations = () => {
 
   const handleCardClick = (child: Child) => {
     if (swipeRef.current.swiping) return;
-    if (swipedChildId === child.id) {
-      setSwipedChildId(null);
-      return;
-    }
-    if (swipedChildId) {
-      setSwipedChildId(null);
-      return;
-    }
+    if (swipedChildId === child.id) { setSwipedChildId(null); return; }
+    if (swipedChildId) { setSwipedChildId(null); return; }
     setSelectedChild(child);
   };
 
   const totalVaccines = getTotalVaccines();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="animate-spin text-muted-foreground" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
@@ -264,51 +225,27 @@ const Vaccinations = () => {
 
             return (
               <div key={child.id} className="relative overflow-hidden rounded-2xl">
-                {/* Swipe actions behind */}
                 <div className="absolute inset-y-0 left-0 flex items-center gap-2 px-3 z-0">
-                  <button
-                    onClick={() => openEditSheet(child)}
-                    className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center"
-                  >
+                  <button onClick={() => openEditSheet(child)} className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center">
                     <Pencil className="w-5 h-5 text-white" />
                   </button>
-                  <button
-                    onClick={() => openReminderFromSwipe(child)}
-                    className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center"
-                  >
+                  <button onClick={() => openReminderFromSwipe(child)} className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center">
                     <Bell className="w-5 h-5 text-white" />
                   </button>
                 </div>
 
-                {/* Card */}
                 <div
                   ref={(el) => { if (el) el.dataset.childId = child.id; }}
                   onClick={() => handleCardClick(child)}
                   onTouchStart={(e) => handleTouchStart(e, child.id)}
-                  onTouchMove={(e) => {
-                    const card = e.currentTarget as HTMLDivElement;
-                    handleTouchMove(e, child.id, card);
-                  }}
-                  onTouchEnd={(e) => {
-                    const card = e.currentTarget as HTMLDivElement;
-                    handleTouchEnd(child.id, card);
-                  }}
+                  onTouchMove={(e) => handleTouchMove(e, child.id, e.currentTarget as HTMLDivElement)}
+                  onTouchEnd={(e) => handleTouchEnd(child.id, e.currentTarget as HTMLDivElement)}
                   className="w-full bg-card rounded-2xl p-4 border border-border/50 text-right relative z-10 cursor-pointer"
                   style={{ transform: isSwiped ? "translateX(-112px)" : "translateX(0)" }}
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        child.gender === "male"
-                          ? "bg-blue-100 dark:bg-blue-900/30"
-                          : "bg-pink-100 dark:bg-pink-900/30"
-                      }`}
-                    >
-                      <Baby
-                        className={`w-6 h-6 ${
-                          child.gender === "male" ? "text-blue-500" : "text-pink-500"
-                        }`}
-                      />
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${child.gender === "male" ? "bg-blue-100 dark:bg-blue-900/30" : "bg-pink-100 dark:bg-pink-900/30"}`}>
+                      <Baby className={`w-6 h-6 ${child.gender === "male" ? "text-blue-500" : "text-pink-500"}`} />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-foreground">{child.name}</h3>
@@ -357,7 +294,9 @@ const Vaccinations = () => {
               <Label className="text-right block">تاريخ الميلاد</Label>
               <Input type="date" value={newBirthDate} onChange={(e) => setNewBirthDate(e.target.value)} max={new Date().toISOString().split("T")[0]} dir="rtl" className="text-right" />
             </div>
-            <Button onClick={handleAddChild} className="w-full h-12 text-base font-bold">إضافة الطفل</Button>
+            <Button onClick={handleAddChild} disabled={addChild.isPending} className="w-full h-12 text-base font-bold">
+              {addChild.isPending ? "جارٍ الإضافة..." : "إضافة الطفل"}
+            </Button>
           </div>
         </DrawerContent>
       </Drawer>
@@ -384,7 +323,9 @@ const Vaccinations = () => {
               <Label className="text-right block">تاريخ الميلاد</Label>
               <Input type="date" value={newBirthDate} onChange={(e) => setNewBirthDate(e.target.value)} max={new Date().toISOString().split("T")[0]} dir="rtl" className="text-right" />
             </div>
-            <Button onClick={handleEditChild} className="w-full h-12 text-base font-bold">حفظ التعديلات</Button>
+            <Button onClick={handleEditChild} disabled={updateChild.isPending} className="w-full h-12 text-base font-bold">
+              {updateChild.isPending ? "جارٍ الحفظ..." : "حفظ التعديلات"}
+            </Button>
           </div>
         </DrawerContent>
       </Drawer>
@@ -410,7 +351,7 @@ const Vaccinations = () => {
                     checked={reminderChild.reminderSettings[item.key]}
                     onCheckedChange={(checked) => {
                       const newSettings = { ...reminderChild.reminderSettings, [item.key]: checked };
-                      updateReminderSettings(reminderChild.id, newSettings);
+                      handleUpdateReminderSettings(reminderChild.id, newSettings);
                       setReminderChild({ ...reminderChild, reminderSettings: newSettings });
                     }}
                   />
@@ -432,15 +373,15 @@ const Vaccinations = () => {
       </Drawer>
 
       {/* Child Vaccine Detail Drawer */}
-      <Drawer open={!!selectedChild} onOpenChange={(open) => !open && setSelectedChild(null)}>
+      <Drawer open={!!resolvedSelected} onOpenChange={(open) => !open && setSelectedChild(null)}>
         <DrawerContent className="max-h-[90vh]">
-          {selectedChild && (
+          {resolvedSelected && (
             <>
               <DrawerHeader>
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => {
-                      setReminderChild(selectedChild);
+                      setReminderChild(resolvedSelected);
                       setShowReminderSheet(true);
                     }}
                     className="p-2 rounded-lg text-amber-500 hover:bg-amber-500/10"
@@ -448,50 +389,44 @@ const Vaccinations = () => {
                     <Bell className="w-5 h-5" />
                   </button>
                   <DrawerTitle className="text-center flex-1">
-                    جدول لقاحات {selectedChild.name}
+                    جدول لقاحات {resolvedSelected.name}
                   </DrawerTitle>
                   <div className="w-9" />
                 </div>
               </DrawerHeader>
 
               <div className="overflow-y-auto flex-1">
-                {/* Summary */}
                 <div className="px-5">
                   <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-muted-foreground">
-                        العمر: {getChildAge(selectedChild.birthDate)}
+                        العمر: {getChildAge(resolvedSelected.birthDate)}
                       </span>
                       <span className="text-sm font-bold text-primary">
-                        {selectedChild.completedVaccines.length}/{totalVaccines}
+                        {resolvedSelected.completedVaccines.length}/{totalVaccines}
                       </span>
                     </div>
                     <Progress
-                      value={Math.round((selectedChild.completedVaccines.length / totalVaccines) * 100)}
+                      value={Math.round((resolvedSelected.completedVaccines.length / totalVaccines) * 100)}
                       className="h-2.5"
                     />
                   </div>
                 </div>
 
-                {/* Vaccine schedule */}
                 <Accordion type="multiple" className="mt-4 px-5 pb-4">
                   {vaccineSchedule.map((group) => {
                     const childAgeDays = Math.floor(
-                      (new Date().getTime() - new Date(selectedChild.birthDate).getTime()) / (1000 * 60 * 60 * 24)
+                      (new Date().getTime() - new Date(resolvedSelected.birthDate).getTime()) / (1000 * 60 * 60 * 24)
                     );
                     const isDue = childAgeDays >= group.vaccines[0].ageDays;
-                    const allCompleted = group.vaccines.every((v) => selectedChild.completedVaccines.includes(v.id));
-                    const someCompleted = !allCompleted && group.vaccines.some((v) => selectedChild.completedVaccines.includes(v.id));
+                    const allCompleted = group.vaccines.every((v) => resolvedSelected.completedVaccines.includes(v.id));
+                    const someCompleted = !allCompleted && group.vaccines.some((v) => resolvedSelected.completedVaccines.includes(v.id));
 
                     return (
                       <AccordionItem key={group.id} value={group.id} className="border-b-0 mb-2">
                         <AccordionTrigger className="hover:no-underline p-3 rounded-xl bg-card border border-border/50">
                           <div className="flex items-center gap-3 flex-1 text-right">
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                                allCompleted ? "bg-green-100 dark:bg-green-900/30" : isDue && !allCompleted ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
-                              }`}
-                            >
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${allCompleted ? "bg-green-100 dark:bg-green-900/30" : isDue && !allCompleted ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"}`}>
                               {allCompleted ? <Check className="w-4 h-4 text-green-600" /> : isDue ? <Clock className="w-4 h-4 text-amber-600" /> : <Clock className="w-4 h-4 text-muted-foreground" />}
                             </div>
                             <div className="flex-1">
@@ -499,32 +434,32 @@ const Vaccinations = () => {
                               {someCompleted && <span className="text-xs text-muted-foreground mr-2">(جزئي)</span>}
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {group.vaccines.filter((v) => selectedChild.completedVaccines.includes(v.id)).length}/{group.vaccines.length}
+                              {group.vaccines.filter((v) => resolvedSelected.completedVaccines.includes(v.id)).length}/{group.vaccines.length}
                             </span>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="pt-2 pb-0">
                           <div className="space-y-2 pr-4">
                             {group.vaccines.map((vaccine) => {
-                              const isCompleted = selectedChild.completedVaccines.includes(vaccine.id);
+                              const isCompleted = resolvedSelected.completedVaccines.includes(vaccine.id);
                               const isOverdue = isDue && !isCompleted;
-                              const hasNote = !!getVaccineNote(selectedChild, vaccine.id);
+                              const hasNote = !!getVaccineNote(resolvedSelected, vaccine.id);
 
                               return (
                                 <div key={vaccine.id} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-right ${
                                   isCompleted ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : isOverdue ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800" : "bg-card border-border/50"
                                 }`}>
                                   <button
-                                    onClick={() => toggleVaccine(selectedChild.id, vaccine.id)}
+                                    onClick={() => handleToggleVaccine(resolvedSelected.id, vaccine.id)}
                                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isCompleted ? "bg-green-500 border-green-500" : "border-border"}`}
                                   >
                                     {isCompleted && <Check className="w-3.5 h-3.5 text-white" />}
                                   </button>
-                                  <div className="flex-1 min-w-0" onClick={() => toggleVaccine(selectedChild.id, vaccine.id)}>
+                                  <div className="flex-1 min-w-0" onClick={() => handleToggleVaccine(resolvedSelected.id, vaccine.id)}>
                                     <p className={`text-sm font-medium ${isCompleted ? "line-through text-muted-foreground" : "text-foreground"}`}>{vaccine.name}</p>
                                     <p className="text-xs text-muted-foreground truncate">{vaccine.description}</p>
                                     {hasNote && (
-                                      <p className="text-xs text-primary mt-1 truncate">📝 {getVaccineNote(selectedChild, vaccine.id)}</p>
+                                      <p className="text-xs text-primary mt-1 truncate">📝 {getVaccineNote(resolvedSelected, vaccine.id)}</p>
                                     )}
                                   </div>
                                   <button
@@ -565,11 +500,13 @@ const Vaccinations = () => {
               className="text-right min-h-[100px]"
             />
             <div className="flex gap-3">
-              <Button onClick={saveVaccineNote} className="flex-1 h-12 font-bold">حفظ</Button>
+              <Button onClick={handleSaveVaccineNote} disabled={saveVaccineNoteMutation.isPending} className="flex-1 h-12 font-bold">
+                {saveVaccineNoteMutation.isPending ? "جارٍ..." : "حفظ"}
+              </Button>
               {noteText && (
                 <Button
                   variant="outline"
-                  onClick={() => { setNoteText(""); saveVaccineNote(); }}
+                  onClick={() => { setNoteText(""); handleSaveVaccineNote(); }}
                   className="h-12 text-destructive border-destructive/30"
                 >
                   حذف

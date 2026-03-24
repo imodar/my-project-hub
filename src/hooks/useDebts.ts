@@ -25,9 +25,18 @@ export function useDebts() {
   });
 
   const addDebt = useMutation({
-    mutationFn: async (input: { person_name: string; amount: number; currency?: string; direction: string; date?: string; due_date?: string; note?: string }) => {
+    mutationFn: async (input: {
+      person_name: string;
+      amount: number;
+      currency?: string;
+      direction: string;
+      date?: string;
+      due_date?: string;
+      note?: string;
+      payment_details?: Record<string, unknown>;
+    }) => {
       if (!user || !familyId) throw new Error("No user/family");
-      const { error } = await supabase.from("debts").insert({
+      const row = {
         person_name: input.person_name,
         amount: input.amount,
         currency: input.currency || "SAR",
@@ -35,18 +44,20 @@ export function useDebts() {
         date: input.date,
         due_date: input.due_date,
         note: input.note || "",
+        payment_details: (input.payment_details || null) as Record<string, unknown> | null,
         user_id: user.id,
         family_id: familyId,
-      });
+      };
+      const { error } = await supabase.from("debts").insert(row as never);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const updateDebt = useMutation({
-    mutationFn: async (input: { id: string; [key: string]: any }) => {
+    mutationFn: async (input: { id: string; [key: string]: unknown }) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("debts").update(updates).eq("id", id);
+      const { error } = await supabase.from("debts").update(updates as never).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
@@ -61,15 +72,25 @@ export function useDebts() {
   });
 
   const addPayment = useMutation({
-    mutationFn: async (input: { debt_id: string; amount: number; currency?: string; type?: string; item_description?: string; date?: string }) => {
-      const { error } = await supabase.from("debt_payments").insert({
+    mutationFn: async (input: {
+      debt_id: string;
+      amount: number;
+      currency?: string;
+      type?: string;
+      item_description?: string;
+      date?: string;
+      payment_details?: Record<string, unknown>;
+    }) => {
+      const row = {
         debt_id: input.debt_id,
         amount: input.amount,
         currency: input.currency || "SAR",
         type: input.type || "cash",
         item_description: input.item_description,
         date: input.date,
-      });
+        payment_details: (input.payment_details || null) as Record<string, unknown> | null,
+      };
+      const { error } = await supabase.from("debt_payments").insert(row as never);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
@@ -87,5 +108,13 @@ export function useDebts() {
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
-  return { debts: debtsQuery.data || [], isLoading: debtsQuery.isLoading, addDebt, updateDebt, deleteDebt, addPayment, addPostponement };
+  return {
+    debts: debtsQuery.data || [],
+    isLoading: debtsQuery.isLoading,
+    addDebt,
+    updateDebt,
+    deleteDebt,
+    addPayment,
+    addPostponement,
+  };
 }
