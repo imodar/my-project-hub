@@ -17,20 +17,15 @@ import Dexie, { type Table } from "dexie";
 // Re-exported from syncQueue for convenience
 export type SyncStatus = "pending" | "synced" | "failed";
 
+export type SyncOperation = "INSERT" | "UPDATE" | "DELETE";
+
 export interface SyncQueueItem {
-  /** مُعرّف تلقائي (auto-increment) */
   id?: number;
-  /** اسم الجدول المستهدف */
   table: string;
-  /** نوع العملية */
   operation: SyncOperation;
-  /** البيانات المرتبطة بالعملية */
   data: Record<string, unknown>;
-  /** وقت إنشاء العملية */
   created_at: string;
-  /** حالة المزامنة */
   status: SyncStatus;
-  /** عدد محاولات الإرسال */
   retries: number;
 }
 

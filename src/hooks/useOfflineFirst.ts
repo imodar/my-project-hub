@@ -69,7 +69,7 @@ export function useOfflineFirst<T extends { id: string }>({
   // ── 1. قراءة IndexedDB فوراً ──
   useEffect(() => {
     if (!enabled || loadedRef.current) return;
-    const table = (db as Record<string, unknown>)[tableName] as Table | undefined;
+    const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
     if (!table) return;
 
     table.toArray().then((items: T[]) => {

@@ -58,7 +58,7 @@ export function useOfflineMutation<
 
   return useMutation<TData | null, Error, TVariables>({
     mutationFn: async (variables) => {
-      const table = (db as Record<string, unknown>)[tableName] as Table | undefined;
+      const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
 
       // ── 1. Optimistic Update: تحديث IndexedDB فوراً ──
       if (table) {

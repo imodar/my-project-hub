@@ -65,7 +65,7 @@ const MedicationsExample = () => {
     table: "medications",
     operation: "INSERT",
     apiFn: async (data) => {
-      const { error } = await supabase.from("medications").insert(data);
+      const { error } = await supabase.from("medications").insert(data as never);
       return { data: data as unknown as Medication, error: error?.message ?? null };
     },
     queryKey: ["medications-example", familyId],

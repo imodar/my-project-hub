@@ -27,7 +27,7 @@ export async function syncTable<T extends { id: string }>(
   tableName: string,
   apiFn: (lastSyncedAt: string | null) => Promise<{ data: T[] | null; error: string | null }>
 ): Promise<T[]> {
-  const table = (db as Record<string, unknown>)[tableName] as Table | undefined;
+  const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
   if (!table) {
     console.warn(`[SyncManager] الجدول "${tableName}" غير موجود في Dexie`);
     return [];
