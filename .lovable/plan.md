@@ -1,77 +1,56 @@
-## المرحلة 0 — Schema ✅ مكتمل
 
-### تم إنشاء:
-- 3 Enums: `app_role`, `family_role`, `subscription_plan`
-- 40+ جدول مع RLS على كل جدول
-- 5 Security Definer Functions: `has_role`, `is_family_member`, `is_family_admin`, `get_user_family_id`, `is_staff_member`
-- 4 Storage Buckets: `avatars`, `documents`, `album-photos`, `trip-documents`
-- Realtime enabled: `chat_messages`, `market_items`, `task_items`
-- Auto-create profile trigger on signup
 
----
+# خطة تنفيذ Offline-First Architecture
 
-## المرحلة 1 — المصادقة ✅ مكتمل
+## الملفات المطلوبة (8 ملفات جديدة — لا تعديل على أي ملف موجود)
 
-- Auth.tsx (OTP + Google OAuth)
-- AuthContext + AuthGuard
-- Phone Auth + Google OAuth
+### 1. تثبيت التبعيات
+- `dexie` + `dexie-react-hooks`
 
----
+### 2. `src/lib/db.ts` — قاعدة بيانات Dexie.js
+- Class `AppDatabase extends Dexie` مع 30+ جدول مطابق لـ Supabase
+- `sync_queue`: `++id, table, operation, data, created_at, status, retries`
+- `sync_meta`: `table, last_synced_at`
+- تصدير instance `db`
 
-## المرحلة 2 — Edge Functions + API Layer ✅ مكتمل
+### 3. `src/lib/syncQueue.ts` — طابور المزامنة
+- `TABLE_API_MAP` = placeholder فارغ `{}` جاهز للربط
+- `addToQueue(table, operation, data)` — حفظ عملية معلقة
+- `processQueue()` — معالجة FIFO مع retry ×3
+- `window.addEventListener('online', processQueue)` تلقائي
+- إذا الجدول غير مربوط بالـ map: يبقى pending
 
-- 25 Edge Function مُنشأة
-- `apiClient` موحّد في `src/lib/api.ts`
+### 4. `src/lib/syncManager.ts` — مدير المزامنة
+- `syncTable<T>(tableName, apiFn)` — جلب API → تحديث IndexedDB
+- `syncAll()` — مزامنة جميع الجداول
+- `getLastSyncTime(tableName)` — قراءة آخر timestamp
+- بنية Delta sync جاهزة
 
----
+### 5. `src/hooks/useOfflineFirst.ts` — Hook قراءة
+- يقرأ IndexedDB فوراً كـ `initialData`
+- background fetch عبر `useQuery`
+- `isLoading = false` مع بيانات محلية
+- `isSyncing` أثناء الجلب
 
-## المرحلة 3 — React Query Hooks ✅ مكتمل
+### 6. `src/hooks/useOfflineMutation.ts` — Hook كتابة
+- Optimistic update لـ IndexedDB + UI فوراً
+- إرسال API في الخلفية
+- فشل/offline → `addToQueue` تلقائياً
+- invalidate queryKey عند النجاح
 
-- hooks لكل ميزة (16 hook)
+### 7. `src/components/SyncStatus.tsx` — مؤشر الحالة
+- `useLiveQuery` لمراقبة pending count
+- أخضر/برتقالي/رمادي dot + عدد المعلق
 
----
-
-## المرحلة 4 — ربط الصفحات بالـ Hooks ✅ مكتمل
-
-- جميع الصفحات محوّلة من localStorage إلى Supabase
-
----
-
-## المرحلة 5 — Stripe + الاشتراكات 🔲
-
----
-
-## المرحلة 6 — E2EE التشفير ✅ مكتمل
-
-- `src/lib/crypto.ts`: ECDH P-256 + AES-256-GCM
-- IndexedDB للمفاتيح الخاصة (لا تغادر الجهاز)
-- `family_keys` لتخزين المفتاح المشترك
-- `useChat` hook مع تشفير/فك تشفير تلقائي
-- Realtime subscription مشفر
-
----
-
-## المرحلة 7 — Push Notifications 🔲 (مؤجّل - يحتاج Firebase)
+### 8. `src/examples/MedicationsExample.tsx` — مثال توضيحي
+- صفحة مستقلة تماماً (لا تُضاف للـ router)
+- توضح استخدام `useOfflineFirst` لجلب الأدوية من IndexedDB + API
+- توضح استخدام `useOfflineMutation` لإضافة دواء مع optimistic update
+- تعرض `SyncStatus` كمكون
+- تحتوي تعليقات توضيحية بالعربية لكل خطوة
 
 ---
 
-## المرحلة 8 — File Upload + Storage ✅ مكتمل
+## ترتيب التنفيذ
+1. تثبيت dexie → 2. db.ts → 3. syncQueue.ts → 4. syncManager.ts → 5. useOfflineFirst.ts → 6. useOfflineMutation.ts → 7. SyncStatus.tsx → 8. MedicationsExample.tsx
 
-- `src/lib/storage.ts`: upload, signed URLs, delete, validation
-- Storage RLS policies لجميع الـ buckets
-- دعم public (avatars) و private (documents, albums, trips)
-
----
-
-## المرحلة 9 — لوحة الإدارة ✅ مكتمل
-
-- `AdminDashboard.tsx` مع:
-  - إحصائيات (مستخدمين، عائلات، نشاط، حذف)
-  - قائمة المستخدمين مع الاشتراكات
-  - سجل التدقيق (Audit Log)
-  - حماية بـ `user_roles` + `has_role`
-  - Route: `/admin`
-
----
-
-## المرحلة 10 — Testing + Deployment 🔲
