@@ -4,9 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
 
 export interface FamilyMemberInfo {
-  id: string;
+  id: string; // user_id
   name: string;
   role: string;
+  isAdmin: boolean;
+  isCreator: boolean;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -29,9 +31,18 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
     queryKey: ["family-members-list", familyId, excludeSelf],
     queryFn: async (): Promise<FamilyMemberInfo[]> => {
       if (!familyId) return [];
+
+      // Get family creator
+      const { data: family } = await supabase
+        .from("families")
+        .select("created_by")
+        .eq("id", familyId)
+        .single();
+      const creatorId = family?.created_by;
+
       const { data: members, error } = await supabase
         .from("family_members")
-        .select("user_id, role")
+        .select("user_id, role, is_admin")
         .eq("family_id", familyId)
         .eq("status", "active");
       if (error) throw error;
@@ -50,17 +61,19 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
         .in("id", userIds);
       if (pErr) throw pErr;
 
-      return (profiles || []).map((p) => {
-        const memberRole = filtered.find((m) => m.user_id === p.id)?.role || "";
+      return filtered.map((m) => {
+        const profile = (profiles || []).find((p) => p.id === m.user_id);
         return {
-          id: p.id,
-          name: p.name || ROLE_LABELS[memberRole] || "عضو",
-          role: memberRole,
+          id: m.user_id,
+          name: profile?.name || ROLE_LABELS[m.role] || "عضو",
+          role: m.role,
+          isAdmin: m.is_admin || false,
+          isCreator: m.user_id === creatorId,
         };
       });
     },
     enabled: !!familyId && !!user,
   });
 
-  return { members: query.data || [], isLoading: query.isLoading };
+  return { members: query.data || [], isLoading: query.isLoading, refetch: query.refetch };
 }
