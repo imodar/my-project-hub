@@ -40,8 +40,10 @@ export async function syncTable<T extends { id: string }>(
   const { data, error } = await apiFn(lastSyncedAt);
 
   if (error || !data) {
-    console.warn(`[SyncManager] فشل جلب "${tableName}": ${error}`);
-    return [];
+    console.warn(`[SyncManager] فشل جلب "${tableName}": ${error} — استخدام البيانات المحلية`);
+    // عند فشل API: إرجاع البيانات المحلية بدل مصفوفة فارغة
+    const localData = await table.toArray();
+    return localData as T[];
   }
 
   // تحديث IndexedDB — bulkPut يُحدّث الموجود ويُضيف الجديد
