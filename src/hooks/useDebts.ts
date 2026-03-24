@@ -57,7 +57,7 @@ export function useDebts() {
   const updateDebt = useMutation({
     mutationFn: async (input: { id: string; [key: string]: unknown }) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("debts").update(updates).eq("id", id);
+      const { error } = await supabase.from("debts").update(updates as never).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
