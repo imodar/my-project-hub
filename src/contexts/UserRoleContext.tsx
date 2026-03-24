@@ -80,8 +80,7 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </UserRoleContext.Provider>
   );
-});
-UserRoleProvider.displayName = "UserRoleProvider";
+};
 
 export const useUserRole = () => {
   const ctx = useContext(UserRoleContext);

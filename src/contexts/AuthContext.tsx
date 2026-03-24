@@ -76,8 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-});
-AuthProvider.displayName = "AuthProvider";
+};
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);

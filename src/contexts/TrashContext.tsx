@@ -200,5 +200,4 @@ export const TrashProvider = ({ children }: { children: React.ReactNode }) => {
       {children}
     </TrashContext.Provider>
   );
-});
-TrashProvider.displayName = "TrashProvider";
+};

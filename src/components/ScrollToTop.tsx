@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-const ScrollToTop = React.forwardRef<HTMLDivElement>((_props, _ref) => {
+const ScrollToTop = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
@@ -9,7 +9,6 @@ const ScrollToTop = React.forwardRef<HTMLDivElement>((_props, _ref) => {
   }, [pathname]);
 
   return null;
-});
-ScrollToTop.displayName = "ScrollToTop";
+};
 
 export default ScrollToTop;
