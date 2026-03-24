@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const OfflineBanner = React.forwardRef<HTMLDivElement>((_props, _ref) => {
+const OfflineBanner = () => {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
@@ -34,7 +34,6 @@ const OfflineBanner = React.forwardRef<HTMLDivElement>((_props, _ref) => {
       )}
     </AnimatePresence>
   );
-});
-OfflineBanner.displayName = "OfflineBanner";
+};
 
 export default OfflineBanner;

@@ -13,7 +13,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = React.forwardRef<HTMLDivElement, { children: ReactNode }>(({ children }, _ref) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileName, setProfileName] = useState("");
@@ -76,8 +76,7 @@ export const AuthProvider = React.forwardRef<HTMLDivElement, { children: ReactNo
       {children}
     </AuthContext.Provider>
   );
-});
-AuthProvider.displayName = "AuthProvider";
+};
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);

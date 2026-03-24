@@ -12,7 +12,7 @@ const IslamicModeContext = createContext<IslamicModeContextType>({
 
 export const useIslamicMode = () => useContext(IslamicModeContext);
 
-export const IslamicModeProvider = React.forwardRef<HTMLDivElement, { children: ReactNode }>(({ children }, _ref) => {
+export const IslamicModeProvider = ({ children }: { children: ReactNode }) => {
   const [islamicMode, setIslamicMode] = useState(() => {
     const stored = localStorage.getItem("islamicMode");
     return stored === null ? true : stored === "true";
@@ -27,5 +27,4 @@ export const IslamicModeProvider = React.forwardRef<HTMLDivElement, { children: 
       {children}
     </IslamicModeContext.Provider>
   );
-});
-IslamicModeProvider.displayName = "IslamicModeProvider";
+};
