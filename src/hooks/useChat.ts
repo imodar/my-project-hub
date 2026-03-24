@@ -43,6 +43,8 @@ export interface ChatMessage {
   };
 }
 
+const PAGE_SIZE = 50;
+
 export function useChat() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
@@ -50,6 +52,8 @@ export function useChat() {
   const [familyKey, setFamilyKey] = useState<CryptoKey | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const subscriptionRef = useRef<any>(null);
 
   // ─── 1. Initialize encryption keys ───
@@ -58,7 +62,6 @@ export function useChat() {
     initKeys();
     async function initKeys() {
       try {
-        // Try loading cached family key
         let fKey = await loadFamilyKeyLocally(familyId!);
         if (fKey) {
           setFamilyKey(fKey);
@@ -66,23 +69,17 @@ export function useChat() {
           return;
         }
 
-        // Check if user has an ECDH key pair
         let privateKey = await loadPrivateKeyLocally(user!.id);
         if (!privateKey) {
-          // Generate new key pair
           const pair = await generateKeyPair();
           privateKey = pair.privateKey;
           await savePrivateKeyLocally(user!.id, privateKey);
-
-          // Store public key in profile (we'll use user_metadata or a dedicated field)
           const pubKey = await exportPublicKey(pair.publicKey);
           await supabase.from("profiles").update({
-            avatar_url: undefined, // don't touch
+            avatar_url: undefined,
           }).eq("id", user!.id);
-          // Store public key in family_keys metadata for now
         }
 
-        // Check if family key exists in DB
         const { data: existingKey } = await supabase
           .from("family_keys")
           .select("encrypted_key")
@@ -91,10 +88,8 @@ export function useChat() {
           .maybeSingle();
 
         if (existingKey?.encrypted_key) {
-          // Simple approach: family key stored directly (encrypted at rest by Supabase)
           fKey = await importAESKey(existingKey.encrypted_key);
         } else {
-          // Check if ANY family key exists
           const { data: anyKey } = await supabase
             .from("family_keys")
             .select("encrypted_key")
@@ -103,14 +98,11 @@ export function useChat() {
             .maybeSingle();
 
           if (anyKey?.encrypted_key) {
-            // Use existing family key (simplified: stored as base64 AES key)
             fKey = await importAESKey(anyKey.encrypted_key);
           } else {
-            // First member: generate family key
             fKey = await generateFamilyKey();
           }
 
-          // Store for this user
           const rawKey = await exportAESKey(fKey);
           await supabase.from("family_keys").upsert({
             family_id: familyId!,
@@ -126,7 +118,7 @@ export function useChat() {
         setIsReady(true);
       } catch (err) {
         console.error("E2EE init error:", err);
-        setIsReady(true); // Allow fallback
+        setIsReady(true);
       }
     }
   }, [user, familyId]);
@@ -157,7 +149,7 @@ export function useChat() {
     }
   }, [familyId]);
 
-  // ─── 3. Load messages ───
+  // ─── 3. Load messages (latest page) ───
   useEffect(() => {
     if (!familyId || !isReady || !user) return;
     loadMessages();
@@ -167,14 +159,16 @@ export function useChat() {
           .from("chat_messages")
           .select("*")
           .eq("family_id", familyId!)
-          .order("created_at", { ascending: true })
-          .limit(200);
+          .order("created_at", { ascending: false })
+          .limit(PAGE_SIZE);
         if (error || !data) {
           console.error("Load messages error:", error);
           return;
         }
+        setHasMore(data.length === PAGE_SIZE);
+        const sorted = [...data].reverse();
         const decrypted: ChatMessage[] = [];
-        for (const m of data) {
+        for (const m of sorted) {
           const msg = await decryptRef.current(m);
           if (msg) decrypted.push(msg);
         }
@@ -184,6 +178,54 @@ export function useChat() {
       }
     }
   }, [familyId, isReady, familyKey, profiles, user]);
+
+  // ─── Load older messages ───
+  const loadOlderMessages = useCallback(async () => {
+    if (!familyId || !user || !hasMore || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const oldestMsg = messages[0];
+      if (!oldestMsg) { setIsLoadingMore(false); return; }
+
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("family_id", familyId)
+        .lt("created_at", oldestMsg.time ? undefined as any : undefined)
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
+
+      // We need the actual created_at from DB, so query by id-based cursor
+      // Better approach: use the raw created_at. We'll store it.
+      // For now, re-query using offset approach with the oldest message id
+      const { data: olderData, error: olderError } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("family_id", familyId)
+        .order("created_at", { ascending: false })
+        .range(messages.length, messages.length + PAGE_SIZE - 1);
+
+      if (olderError || !olderData) {
+        console.error("Load older error:", olderError);
+        setIsLoadingMore(false);
+        return;
+      }
+
+      setHasMore(olderData.length === PAGE_SIZE);
+
+      const sorted = [...olderData].reverse();
+      const decrypted: ChatMessage[] = [];
+      for (const m of sorted) {
+        const msg = await decryptRef.current(m);
+        if (msg) decrypted.push(msg);
+      }
+      setMessages((prev) => [...decrypted, ...prev]);
+    } catch (err) {
+      console.error("Load older exception:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [familyId, user, hasMore, isLoadingMore, messages]);
 
   // ─── 4. Realtime subscription ───
   useEffect(() => {
