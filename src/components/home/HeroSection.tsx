@@ -1,6 +1,6 @@
 import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, Play } from "lucide-react";
 import QiblaCompass from "./QiblaCompass";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import ProfileSheet from "./ProfileSheet";
 import NotificationsSheet from "@/components/notifications/NotificationsSheet";
