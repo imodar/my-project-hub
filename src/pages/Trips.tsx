@@ -490,7 +490,6 @@ const Trips = () => {
     });
     const updated = { ...selectedTrip, days: updatedDays };
     setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
     setDraggedActivity(null);
   };
 
