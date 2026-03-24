@@ -740,6 +740,7 @@ const Market = () => {
           <div className="space-y-3 px-4">
             <Input placeholder="اسم المنتج" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} className="rounded-xl" />
             <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => setNewItemQuantity(e.target.value)} className="rounded-xl" />
+            {activeList?.useCategories && (
             <div>
               <p className="text-xs text-muted-foreground mb-2">التصنيف</p>
               <div className="flex flex-wrap gap-2">
@@ -758,6 +759,7 @@ const Market = () => {
                 ))}
               </div>
             </div>
+            )}
           </div>
           <DrawerFooter className="flex-row gap-2">
             <Button onClick={addItem} className="flex-1 rounded-xl">إضافة</Button>
