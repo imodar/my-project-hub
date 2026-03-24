@@ -25,6 +25,7 @@ export interface ChatMessage {
   senderName: string;
   text: string;
   time: string;
+  createdAt: string; // raw ISO timestamp for cursor pagination
   isMe: boolean;
   pinned: boolean;
   reactions: Record<string, number>;
