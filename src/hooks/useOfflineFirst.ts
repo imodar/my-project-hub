@@ -66,25 +66,31 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   const cachedData = qc.getQueryData<T[]>(queryKey);
   const [initialLoaded, setInitialLoaded] = useState(() => !!cachedData);
 
+  // Serialize queryKey for stable dependency comparison
+  const queryKeyStr = JSON.stringify(queryKey);
+
   // ── 1. قراءة IndexedDB فقط إذا لم يكن هناك كاش ──
   useEffect(() => {
-    if (initialLoaded) return; // already have data from cache
     if (!enabled) return;
+    let cancelled = false;
     (async () => {
       const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
       if (!table) {
-        setInitialLoaded(true);
+        if (!cancelled) setInitialLoaded(true);
         return;
       }
       const items: T[] = await table.toArray();
       const projected = await projectPendingChanges(tableName, items);
       const filtered = applyFilter(projected);
-      if (filtered.length > 0) {
-        qc.setQueryData(queryKey, filtered);
+      if (!cancelled) {
+        if (filtered.length > 0) {
+          qc.setQueryData(queryKey, filtered);
+        }
+        setInitialLoaded(true);
       }
-      setInitialLoaded(true);
     })();
-  }, [tableName, enabled, initialLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => { cancelled = true; };
+  }, [tableName, enabled, queryKeyStr]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 2. جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {

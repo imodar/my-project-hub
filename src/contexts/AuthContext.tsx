@@ -60,6 +60,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     setProfileName("");
+    try {
+      await Promise.all([
+        db.medications.clear(),
+        db.medication_logs.clear(),
+        db.task_lists.clear(),
+        db.task_items.clear(),
+        db.market_lists.clear(),
+        db.market_items.clear(),
+        db.calendar_events.clear(),
+        db.budgets.clear(),
+        db.budget_expenses.clear(),
+        db.debts.clear(),
+        db.debt_payments.clear(),
+        db.trips.clear(),
+        db.chat_messages.clear(),
+        db.sync_meta.clear(),
+        db.sync_queue.clear(),
+      ]);
+    } catch {
+      // silent — logout should always succeed
+    }
+    localStorage.removeItem("cached_family_id");
+    localStorage.removeItem("first_sync_done");
     await supabase.auth.signOut();
   };
 
