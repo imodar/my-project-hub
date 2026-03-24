@@ -310,9 +310,6 @@ const Tasks = () => {
     setNewItemNote("");
     setNewItemPriority("medium");
     setNewItemAssignedTo("");
-    setNewItemRepeatEnabled(false);
-    setNewItemRepeatDays([]);
-    setNewItemRepeatCount(1);
     setShowAddItem(false);
   }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, newItemRepeatEnabled, newItemRepeatDays, newItemRepeatCount, addItemMutation]);
 
