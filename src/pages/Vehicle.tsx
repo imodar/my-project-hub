@@ -592,7 +592,7 @@ const Vehicle = () => {
                         </div>
                       </div>
                     </div>
-                  </SwipeableRow>
+                  </SwipeableCard>
                 );
               })}
             </div>
