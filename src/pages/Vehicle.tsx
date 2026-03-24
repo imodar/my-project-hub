@@ -719,17 +719,7 @@ const Vehicle = () => {
           )}
         </div>
 
-        {/* FAB */}
-        {createPortal(
-          <button
-            onClick={() => { resetMaintForm(); setAddMaintenanceOpen(true); }}
-            className="fixed bottom-24 left-5 z-40 w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center"
-            style={{ background: "hsl(var(--primary))" }}
-          >
-            <Plus size={24} className="text-primary-foreground" />
-          </button>,
-          document.body
-        )}
+        <FAB onClick={() => { resetMaintForm(); setAddMaintenanceOpen(true); }} />
 
         {/* Add/Edit Maintenance Drawer */}
         <Drawer open={addMaintenanceOpen} onOpenChange={setAddMaintenanceOpen}>
