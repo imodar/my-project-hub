@@ -186,6 +186,9 @@ const Chat = () => {
     profiles,
     familyId,
     familyKey: hasKey,
+    hasMore,
+    isLoadingMore,
+    loadOlderMessages,
   } = useChat();
 
   const [newMessage, setNewMessage] = useState("");
@@ -398,6 +401,18 @@ const Chat = () => {
             </div>
             <p className="text-sm font-bold text-muted-foreground">لا توجد رسائل</p>
             <p className="text-xs text-muted-foreground/60">ابدأ محادثة مشفرة مع عائلتك</p>
+          </div>
+        )}
+
+        {hasMore && (
+          <div className="flex justify-center py-2">
+            <button
+              onClick={loadOlderMessages}
+              disabled={isLoadingMore}
+              className="text-xs text-primary hover:underline disabled:opacity-50"
+            >
+              {isLoadingMore ? "جاري التحميل..." : "تحميل رسائل أقدم"}
+            </button>
           </div>
         )}
 
