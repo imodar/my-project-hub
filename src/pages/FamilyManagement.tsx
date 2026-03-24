@@ -903,7 +903,7 @@ const FamilyManagement = () => {
 
           {addStep === "invite-method" && (
             <div className="space-y-3 mt-2">
-              <p className="text-sm text-muted-foreground text-center">تم إضافة {newName}. يمكنك الآن إرسال دعوة للانضمام:</p>
+              <p className="text-sm text-muted-foreground text-center">شارك رابط الدعوة أو كود الانضمام مع العضو الجديد:</p>
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
                 <p className="text-xs text-amber-700 dark:text-amber-400 text-center flex items-center justify-center gap-1">
                   <Clock size={10} />
