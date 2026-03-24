@@ -31,79 +31,8 @@ const CASH_CURRENCIES = [
   { code: "KWD", label: "دينار كويتي", symbol: "د.ك" },
 ] as const;
 
-// ── Swipeable Card (RTL: swipe left to reveal actions on right) ──
-const ACTION_WIDTH = 280;
-function SwipeableAssetCard({ onEdit, onReminder, onDelete, onZakatPaid, children }: { onEdit: () => void; onReminder: () => void; onDelete: () => void; onZakatPaid: () => void; children: React.ReactNode }) {
-  const startXRef = useRef(0);
-  const currentXRef = useRef(0);
-  const isOpenRef = useRef(false);
-  const [transform, setTransform] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startXRef.current = e.touches[0].clientX;
-  };
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const diff = startXRef.current - e.touches[0].clientX; // positive when swiping left
-    currentXRef.current = isOpenRef.current
-      ? Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH + (startXRef.current - e.touches[0].clientX) - ACTION_WIDTH))
-      : Math.max(0, Math.min(ACTION_WIDTH, diff));
-    if (isOpenRef.current) {
-      const closeDiff = e.touches[0].clientX - startXRef.current; // positive when swiping right (to close)
-      currentXRef.current = Math.max(0, Math.min(ACTION_WIDTH, ACTION_WIDTH - closeDiff));
-    }
-    setTransform(currentXRef.current);
-  };
-  const handleTouchEnd = () => {
-    const open = currentXRef.current > ACTION_WIDTH / 2;
-    isOpenRef.current = open;
-    setTransform(open ? ACTION_WIDTH : 0);
-  };
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl" ref={containerRef}>
-      <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
-        <button
-          onClick={() => { haptic.light(); onZakatPaid(); }}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-emerald-600 text-white"
-        >
-          <Check size={18} />
-          <span className="text-[10px] font-bold">تمت التزكية</span>
-        </button>
-        <button
-          onClick={() => { haptic.light(); onEdit(); }}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-primary text-white"
-        >
-          <Pencil size={18} />
-          <span className="text-[10px] font-bold">تعديل</span>
-        </button>
-        <button
-          onClick={() => { haptic.light(); onReminder(); }}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-amber-500 text-white"
-        >
-          <Bell size={18} />
-          <span className="text-[10px] font-bold">تذكير</span>
-        </button>
-        <button
-          onClick={() => { haptic.light(); onDelete(); }}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-white"
-        >
-          <Trash2 size={18} />
-          <span className="text-[10px] font-bold">حذف</span>
-        </button>
-      </div>
-      <div
-        className="relative bg-background z-10 transition-transform duration-200"
-        style={{ transform: `translateX(-${transform}px)` }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
+// Using shared SwipeableCard component
+import SwipeableCard from "@/components/SwipeableCard";
 
 // ── Types ──
 type AssetType = "cash" | "gold" | "silver" | "stocks" | "funds";

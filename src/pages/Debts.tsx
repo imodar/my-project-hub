@@ -104,76 +104,8 @@ const mapRawToDebt = (raw: any): Debt => {
   };
 };
 
-// ── Swipeable card ──
-const ACTION_WIDTH = 140;
-const SwipeableDebtCard = ({
-  children,
-  onDelete,
-  onEdit,
-}: {
-  children: React.ReactNode;
-  onDelete: () => void;
-  onEdit: () => void;
-}) => {
-  const [swipeX, setSwipeX] = useState(0);
-  const startXRef = useRef(0);
-  const isDraggingRef = useRef(false);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    startXRef.current = e.touches[0].clientX;
-    isDraggingRef.current = true;
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDraggingRef.current) return;
-    const diff = e.touches[0].clientX - startXRef.current;
-    if (diff > 0) setSwipeX(Math.min(diff, ACTION_WIDTH));
-    else setSwipeX(0);
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    isDraggingRef.current = false;
-    setSwipeX((prev) => (prev > 60 ? ACTION_WIDTH : 0));
-  }, []);
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl">
-      <div
-        className="absolute inset-y-0 left-0 flex items-stretch gap-0.5 rounded-r-2xl overflow-hidden p-0.5"
-        style={{ width: ACTION_WIDTH, opacity: swipeX > 0 ? 1 : 0, pointerEvents: swipeX > 0 ? "auto" : "none" }}
-      >
-        <button
-          onClick={() => { onEdit(); setSwipeX(0); }}
-          className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl"
-          style={{ background: "hsl(220, 60%, 50%)" }}
-        >
-          <Pencil size={16} className="text-white" />
-          <span className="text-[10px] text-white font-bold">تعديل</span>
-        </button>
-        <button
-          onClick={() => { onDelete(); setSwipeX(0); }}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive rounded-xl"
-        >
-          <Trash2 size={16} className="text-destructive-foreground" />
-          <span className="text-[10px] text-destructive-foreground font-bold">حذف</span>
-        </button>
-      </div>
-      <div
-        className="relative z-10 bg-background rounded-2xl"
-        style={{
-          transform: `translateX(${swipeX}px)`,
-          transition: isDraggingRef.current ? "none" : "transform 300ms ease-out",
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onClick={() => { if (swipeX > 0) setSwipeX(0); }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-};
+// Using shared SwipeableCard component
+import SwipeableCard from "@/components/SwipeableCard";
 
 const formatNumber = (n: number) => n.toLocaleString("ar-SA");
 const formatDate = (d: string) => {
