@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Briefcase, Car } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useUserRole, ROLE_LABELS } from "@/contexts/UserRoleContext";
