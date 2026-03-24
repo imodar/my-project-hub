@@ -311,12 +311,19 @@ export async function processQueue(): Promise<void> {
       }
 
       try {
-        const { error } = await apiClient(mapping.functionName, {
+        const { error, status } = await apiClient(mapping.functionName, {
           method: "POST",
           body: { action, ...item.data },
         });
 
-        if (error) throw new Error(error);
+        if (error) {
+          // 401 = جلسة منتهية — لا فائدة من إعادة المحاولة
+          if (status === 401) {
+            console.warn(`[SyncQueue] 🔒 خطأ مصادقة (401) — إيقاف معالجة الطابور حتى إعادة تسجيل الدخول`);
+            break; // توقف عن معالجة باقي الطابور
+          }
+          throw new Error(error);
+        }
 
         await db.sync_queue.update(item.id!, { status: "synced" as const });
         console.info(`[SyncQueue] ✅ تمت مزامنة ${item.operation} على ${item.table}`);
