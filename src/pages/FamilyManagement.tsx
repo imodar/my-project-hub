@@ -262,20 +262,28 @@ const FamilyManagement = () => {
     }
   };
 
-  const handleToggleAdmin = (id: string) => {
-    setMembers((prev) =>
-      prev.map((m) => {
-        if (m.id !== id) return m;
-        // Parents can't lose admin
-        if (isParentRole(m.role)) {
-          toast({ title: "لا يمكن إلغاء إشراف الوالدين", variant: "destructive" });
-          return m;
-        }
-        const newAdmin = !m.isAdmin;
-        toast({ title: newAdmin ? `تم تعيين ${m.name} كمشرف` : `تم إلغاء إشراف ${m.name}` });
-        return { ...m, isAdmin: newAdmin };
-      })
-    );
+  const handleToggleAdmin = async (id: string) => {
+    if (!familyId) return;
+    const member = members.find((m) => m.id === id);
+    if (!member) return;
+    if (isParentRole(member.role)) {
+      toast({ title: "لا يمكن إلغاء إشراف الوالدين", variant: "destructive" });
+      return;
+    }
+    const newAdmin = !member.isAdmin;
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "toggle-admin", family_id: familyId, target_user_id: id, is_admin: newAdmin },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل تعديل الصلاحية", variant: "destructive" });
+        return;
+      }
+      refetchMembers();
+      toast({ title: newAdmin ? `تم تعيين ${member.name} كمشرف` : `تم إلغاء إشراف ${member.name}` });
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
     setOpenSwipeId(null);
     setSwipeOffsets({});
   };
