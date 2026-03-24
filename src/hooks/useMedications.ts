@@ -1,92 +1,173 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+/**
+ * useMedications — Hook لإدارة الأدوية بنظام Offline-First
+ *
+ * يستخدم useOfflineFirst للقراءة (IndexedDB أولاً ثم API)
+ * ويستخدم useOfflineMutation للكتابة (optimistic + sync queue)
+ */
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
+import { useOfflineFirst } from "./useOfflineFirst";
+import { useOfflineMutation } from "./useOfflineMutation";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useMedications() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
-  const qc = useQueryClient();
-  const key = ["medications", familyId];
+  const queryKey = ["medications", familyId];
 
-  const medsQuery = useQuery({
-    queryKey: key,
-    queryFn: async () => {
-      if (!familyId) return [];
+  /** جلب الأدوية مع سجلاتها من API */
+  const apiFn = async () => {
+    if (!familyId) return { data: [], error: null };
+    const { data, error } = await supabase
+      .from("medications")
+      .select("*, medication_logs(*)")
+      .eq("family_id", familyId)
+      .order("created_at", { ascending: false });
+    return { data: data || [], error: error?.message || null };
+  };
+
+  const { data: medications, isLoading, isSyncing, refetch } = useOfflineFirst<any>({
+    table: "medications",
+    queryKey,
+    apiFn,
+    enabled: !!familyId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  /** إضافة دواء */
+  const addMedication = useOfflineMutation<any, any>({
+    table: "medications",
+    operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
+      const { data, error } = await supabase.from("medications").insert({
+        family_id: familyId,
+        name: rest.name,
+        dosage: rest.dosage,
+        member_id: rest.member_id,
+        member_name: rest.member_name,
+        frequency_type: rest.frequency_type || "daily",
+        frequency_value: rest.frequency_value || 1,
+        selected_days: rest.selected_days || [],
+        times_per_day: rest.times_per_day || 1,
+        specific_times: rest.specific_times || [],
+        start_date: rest.start_date,
+        end_date: rest.end_date,
+        notes: rest.notes,
+        color: rest.color,
+        reminder_enabled: rest.reminder_enabled ?? true,
+      }).select().single();
+      return { data, error: error?.message || null };
+    },
+    queryKey,
+    onSuccess: () => refetch(),
+  });
+
+  /** تعديل دواء */
+  const updateMedication = useOfflineMutation<any, any>({
+    table: "medications",
+    operation: "UPDATE",
+    apiFn: async (input) => {
+      const { id, ...updates } = input;
       const { data, error } = await supabase
         .from("medications")
-        .select("*, medication_logs(*)")
-        .eq("family_id", familyId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      return { data, error: error?.message || null };
     },
-    enabled: !!familyId,
+    queryKey,
   });
 
-  const addMedication = useMutation({
-    mutationFn: async (input: {
-      name: string; dosage?: string; member_id?: string; member_name?: string;
-      frequency_type?: string; frequency_value?: number; selected_days?: number[];
-      times_per_day?: number; specific_times?: string[];
-      start_date?: string; end_date?: string; notes?: string; color?: string;
-      reminder_enabled?: boolean;
-    }) => {
-      if (!familyId) throw new Error("No family");
-      const { error } = await supabase.from("medications").insert({
-        family_id: familyId,
-        name: input.name,
-        dosage: input.dosage,
-        member_id: input.member_id,
-        member_name: input.member_name,
-        frequency_type: input.frequency_type || "daily",
-        frequency_value: input.frequency_value || 1,
-        selected_days: input.selected_days || [],
-        times_per_day: input.times_per_day || 1,
-        specific_times: input.specific_times || [],
-        start_date: input.start_date,
-        end_date: input.end_date,
-        notes: input.notes,
-        color: input.color,
-        reminder_enabled: input.reminder_enabled ?? true,
-      });
-      if (error) throw error;
+  /** حذف دواء */
+  const deleteMedication = useOfflineMutation<any, any>({
+    table: "medications",
+    operation: "DELETE",
+    apiFn: async (input) => {
+      const { error } = await supabase
+        .from("medications")
+        .delete()
+        .eq("id", input.id);
+      return { data: null, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey,
   });
 
-  const updateMedication = useMutation({
-    mutationFn: async (input: { id: string; [key: string]: any }) => {
-      const { id, ...updates } = input;
-      const { error } = await supabase.from("medications").update(updates).eq("id", id);
-      if (error) throw error;
+  /** تسجيل جرعة */
+  const addLog = useOfflineMutation<any, any>({
+    table: "medication_logs",
+    operation: "INSERT",
+    apiFn: async (input) => {
+      const { id, created_at, ...rest } = input;
+      const { data, error } = await supabase
+        .from("medication_logs")
+        .insert({
+          medication_id: rest.medication_id,
+          taken_by: user?.id,
+          skipped: rest.skipped || false,
+          notes: rest.notes,
+          ...(rest.taken_at ? { taken_at: rest.taken_at } : {}),
+        })
+        .select()
+        .single();
+      return { data, error: error?.message || null };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    queryKey,
+    onSuccess: () => refetch(),
   });
 
-  const deleteMedication = useMutation({
-    mutationFn: async (medId: string) => {
-      const { error } = await supabase.from("medications").delete().eq("id", medId);
-      if (error) throw error;
+  // واجهة متوافقة مع الاستخدام الحالي
+  return {
+    medications,
+    isLoading,
+    addMedication: {
+      ...addMedication,
+      mutateAsync: async (input: any) => {
+        const payload = {
+          id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+          family_id: familyId,
+          medication_logs: [],
+          ...input,
+        };
+        return addMedication.mutateAsync(payload);
+      },
+      mutate: (input: any) => {
+        const payload = {
+          id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+          family_id: familyId,
+          medication_logs: [],
+          ...input,
+        };
+        addMedication.mutate(payload);
+      },
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
-  });
-
-  const addLog = useMutation({
-    mutationFn: async (input: { medication_id: string; skipped?: boolean; notes?: string; taken_at?: string }) => {
-      if (!user) throw new Error("No user");
-      const payload = {
-        medication_id: input.medication_id,
-        taken_by: user.id,
-        skipped: input.skipped || false,
-        notes: input.notes,
-        ...(input.taken_at ? { taken_at: input.taken_at } : {}),
-      };
-      const { error } = await supabase.from("medication_logs").insert(payload);
-      if (error) throw error;
+    updateMedication,
+    deleteMedication: {
+      ...deleteMedication,
+      mutateAsync: async (medId: string) => deleteMedication.mutateAsync({ id: medId }),
+      mutate: (medId: string) => deleteMedication.mutate({ id: medId }),
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
-  });
-
-  return { medications: medsQuery.data || [], isLoading: medsQuery.isLoading, addMedication, updateMedication, deleteMedication, addLog };
+    addLog: {
+      ...addLog,
+      mutateAsync: async (input: any) => {
+        const payload = {
+          id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+          ...input,
+        };
+        return addLog.mutateAsync(payload);
+      },
+      mutate: (input: any) => {
+        const payload = {
+          id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+          ...input,
+        };
+        addLog.mutate(payload);
+      },
+    },
+  };
 }
