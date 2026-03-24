@@ -591,10 +591,10 @@ const FamilyManagement = () => {
           })}
         </div>
 
-        {/* Add button */}
-        {creatorRole && (
+        {/* Add button — only for admins */}
+        {isMyAdmin && (
           <button
-            onClick={() => setShowAddDialog(true)}
+            onClick={() => { setShowAddDialog(true); setAddStep("invite-method"); }}
             className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-sm font-semibold text-primary transition-colors active:bg-primary/10"
             style={{
               background: "hsl(var(--primary) / 0.08)",
@@ -602,7 +602,7 @@ const FamilyManagement = () => {
             }}
           >
             <Plus size={18} />
-            إضافة فرد جديد
+            دعوة فرد جديد
           </button>
         )}
 
