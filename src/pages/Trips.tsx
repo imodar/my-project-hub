@@ -1305,9 +1305,16 @@ const Trips = () => {
                       { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => { setDeleteTarget(trip.id); setDeleteDrawer(true); } },
                       { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditTrip(trip) },
                     ]}
+                    onSwipeOpen={() => setOpenTripCardId(trip.id)}
                   >
                     <button
-                      onClick={() => handleSelectTrip(trip)}
+                      onClick={() => {
+                        if (openTripCardId === trip.id) {
+                          setOpenTripCardId(null);
+                          return;
+                        }
+                        handleSelectTrip(trip);
+                      }}
                       className="w-full text-right p-4 active:bg-muted/30 transition-colors"
                     >
                       <div className="flex items-start justify-between">
