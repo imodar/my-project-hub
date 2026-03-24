@@ -17,6 +17,7 @@ import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { warmCache } from "@/lib/warmCache";
+import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
 import Auth from "./pages/Auth.tsx";
 import GetStarted from "./pages/GetStarted.tsx";
 import Index from "./pages/Index.tsx";
