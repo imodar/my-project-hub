@@ -43,6 +43,7 @@ import Vehicle from "./pages/Vehicle.tsx";
 import Vaccinations from "./pages/Vaccinations.tsx";
 import Medications from "./pages/Medications.tsx";
 import IslamicReminders from "./pages/IslamicReminders.tsx";
+import MedicationsExample from "./examples/MedicationsExample.tsx";
 import BottomNav from "@/components/home/BottomNav";
 
 // Admin Panel
@@ -129,6 +130,7 @@ const AnimatedRoutes = () => {
         <Route path="/vaccinations" element={<AuthGuard><Vaccinations /></AuthGuard>} />
         <Route path="/medications" element={<AuthGuard><Medications /></AuthGuard>} />
         <Route path="/islamic-reminders" element={<AuthGuard><IslamicReminders /></AuthGuard>} />
+        <Route path="/offline-demo" element={<AuthGuard><MedicationsExample /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>
