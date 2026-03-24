@@ -259,6 +259,7 @@ const Zakat = () => {
         name: addLabel || ASSET_TYPE_META[addType].label,
         amount: Number(addAmount),
         purchase_date: addDate,
+        karat: addType === "gold" ? addKarat : null,
       });
     } else {
       addAssetMut.mutate({
