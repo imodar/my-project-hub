@@ -8,10 +8,11 @@ import { toast } from "@/hooks/use-toast";
 import {
   categories, allItems, TOTAL_ITEMS,
   type ChildProfile, type MonthData,
-  loadChildren, saveChildren, loadData, saveData, getMonthLabel,
+  loadChildren, saveChildren, getMonthLabel,
 } from "@/components/kids-worship/worshipData";
 import { exportWorshipPdf } from "@/components/kids-worship/exportPdf";
 import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
+import { useKidsWorshipData } from "@/hooks/useKidsWorshipData";
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
@@ -23,42 +24,15 @@ const ParentDashboard = () => {
   const [selectedDay, setSelectedDay] = useState(now.getDate());
   const [newChildName, setNewChildName] = useState("");
   const [showAddChild, setShowAddChild] = useState(false);
-  const [editingData, setEditingData] = useState<MonthData | null>(null);
 
   const totalDays = new Date(selectedYear, selectedMonth + 1, 0).getDate();
 
-  // Load all children's data for summaries
-  const childrenData = useMemo(() => {
-    const map: Record<string, MonthData> = {};
-    children.forEach((child) => {
-      map[child.id] = loadData(child.id, selectedYear, selectedMonth);
-    });
-    return map;
-  }, [children, selectedYear, selectedMonth]);
+  // Use Supabase-backed hook for the selected child (or first child for summaries)
+  const activeChildForHook = selectedChild || children[0]?.id || "default";
+  const { data: worshipData, saveDayData } = useKidsWorshipData(activeChildForHook, selectedYear, selectedMonth);
 
-  // Weekly summary for a child
-  const getWeeklySummary = (childId: string) => {
-    const data = childrenData[childId] || {};
-    const today = now.getDate();
-    const weekStart = Math.max(1, today - 6);
-    let totalDone = 0;
-    let totalPossible = 0;
-    let fullDays = 0;
-
-    for (let d = weekStart; d <= today; d++) {
-      const dd = data[d] || {};
-      const done = Object.values(dd).filter(Boolean).length;
-      totalDone += done;
-      totalPossible += TOTAL_ITEMS;
-      if (done === TOTAL_ITEMS) fullDays++;
-    }
-
-    return {
-      percentage: totalPossible > 0 ? Math.round((totalDone / totalPossible) * 100) : 0,
-      fullDays,
-      daysTracked: today - weekStart + 1,
-    };
-  };
+  // Load all children's data — we use separate hooks per child via a wrapper component
+  // For now, summaries use the worshipData when viewing a specific child
 
   const addChild = () => {
     if (!newChildName.trim()) return;
@@ -82,43 +56,35 @@ const ParentDashboard = () => {
   };
 
   const handleExportPdf = async (childId: string) => {
-    const data = childrenData[childId] || {};
     const child = children.find((c) => c.id === childId);
-    await exportWorshipPdf(data, selectedYear, selectedMonth, child?.name || "", totalDays);
+    await exportWorshipPdf(worshipData, selectedYear, selectedMonth, child?.name || "", totalDays);
     toast({ title: "تم تصدير الجدول بنجاح ✅" });
   };
 
-  // Temporary: fill all days for testing PDF alignment
   const fillAllData = (childId: string) => {
     const items = allItems.map(i => i.id);
-    const fullData: MonthData = {};
     for (let day = 1; day <= totalDays; day++) {
-      fullData[day] = {};
-      items.forEach(id => { fullData[day][id] = true; });
+      const dayItems: Record<string, boolean> = {};
+      items.forEach(id => { dayItems[id] = true; });
+      saveDayData.mutate({ day, items: dayItems });
     }
-    saveData(childId, selectedYear, selectedMonth, fullData);
-    // Force refresh
-    window.location.reload();
+    toast({ title: "تم تعبئة كل الشهر" });
   };
 
   const openChildEditor = (childId: string) => {
     setSelectedChild(childId);
-    setEditingData(childrenData[childId] || {});
     setSelectedDay(now.getDate());
   };
 
   const toggleItemForChild = (itemId: string) => {
-    if (!selectedChild || !editingData) return;
-    const dayData = editingData[selectedDay] || {};
+    if (!selectedChild) return;
+    const dayData = worshipData[selectedDay] || {};
     const newDayData = { ...dayData, [itemId]: !dayData[itemId] };
-    const newData = { ...editingData, [selectedDay]: newDayData };
-    setEditingData(newData);
-    saveData(selectedChild, selectedYear, selectedMonth, newData);
+    saveDayData.mutate({ day: selectedDay, items: newDayData });
   };
 
   const getDayStatus = (day: number): "full" | "partial" | "empty" => {
-    if (!editingData) return "empty";
-    const dd = editingData[day] || {};
+    const dd = worshipData[day] || {};
     const done = Object.values(dd).filter(Boolean).length;
     if (done === TOTAL_ITEMS) return "full";
     if (done > 0) return "partial";
@@ -126,9 +92,9 @@ const ParentDashboard = () => {
   };
 
   // If editing a specific child
-  if (selectedChild && editingData) {
+  if (selectedChild) {
     const child = children.find((c) => c.id === selectedChild);
-    const dayData = editingData[selectedDay] || {};
+    const dayData = worshipData[selectedDay] || {};
     const doneCount = Object.values(dayData).filter(Boolean).length;
 
     return (
@@ -139,7 +105,7 @@ const ParentDashboard = () => {
           actions={[
             {
               icon: <ChevronLeft size={18} className="text-white" />,
-              onClick: () => { setSelectedChild(null); setEditingData(null); },
+              onClick: () => { setSelectedChild(null); },
             },
           ]}
         />
@@ -152,7 +118,6 @@ const ParentDashboard = () => {
             onMonthChange={(y, m) => {
               setSelectedYear(y);
               setSelectedMonth(m);
-              setEditingData(loadData(selectedChild, y, m));
             }}
             onDayChange={setSelectedDay}
             dayStatus={getDayStatus}
@@ -262,105 +227,18 @@ const ParentDashboard = () => {
       {/* Children List */}
       <div className="px-4 mt-4 space-y-3">
         {children.map((child) => {
-          const summary = getWeeklySummary(child.id);
-          const monthData = childrenData[child.id] || {};
-          const totalStars = Object.values(monthData).filter(
-            (dd) => Object.values(dd).filter(Boolean).length === TOTAL_ITEMS
-          ).length;
-
           return (
-            <motion.div
+            <ChildCard
               key={child.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl p-4 shadow-sm border border-purple-100/40"
-            >
-              {/* Child header */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
-                    style={{ background: "hsl(270 55% 94%)", color: "hsl(270 55% 50%)" }}>
-                    {child.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-foreground">{child.name}</h3>
-                    <p className="text-[10px] text-muted-foreground">
-                      ⭐ {totalStars} أيام كاملة هذا الشهر
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => removeChild(child.id)}
-                  className="p-1.5 rounded-lg hover:bg-red-50 active:scale-95 transition-all"
-                >
-                  <Trash2 size={14} className="text-red-400" />
-                </button>
-              </div>
-
-              {/* Weekly summary */}
-              <div className="bg-gradient-to-l from-purple-50 to-pink-50 rounded-xl p-3 mb-3">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <TrendingUp size={14} style={{ color: "hsl(270 55% 50%)" }} />
-                  <span className="text-[11px] font-bold" style={{ color: "hsl(270 55% 50%)" }}>
-                    ملخص آخر 7 أيام
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className="h-2 rounded-full bg-purple-100 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${summary.percentage}%`,
-                          background: summary.percentage >= 80
-                            ? "linear-gradient(90deg, hsl(160 50% 45%), hsl(160 60% 40%))"
-                            : summary.percentage >= 50
-                            ? "linear-gradient(90deg, hsl(40 90% 50%), hsl(35 80% 50%))"
-                            : "linear-gradient(90deg, hsl(340 55% 50%), hsl(340 60% 45%))",
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold" style={{ color: "hsl(270 55% 50%)" }}>
-                    {summary.percentage}%
-                  </span>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1.5">
-                  {summary.fullDays} أيام كاملة من {summary.daysTracked}
-                </p>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => openChildEditor(child.id)}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 h-9 rounded-xl text-xs gap-1.5"
-                >
-                  <Eye size={14} />
-                  عرض وتعديل
-                </Button>
-                <Button
-                  onClick={() => handleExportPdf(child.id)}
-                  size="sm"
-                  className="flex-1 h-9 rounded-xl text-xs gap-1.5"
-                  style={{ background: "linear-gradient(135deg, hsl(270 55% 50%), hsl(340 55% 50%))" }}
-                >
-                  <Download size={14} />
-                  تصدير PDF
-                </Button>
-              </div>
-              {/* Temporary test button */}
-              <Button
-                onClick={() => fillAllData(child.id)}
-                variant="outline"
-                size="sm"
-                className="w-full h-8 rounded-xl text-xs mt-2 border-amber-300 text-amber-700 bg-amber-50"
-              >
-                🧪 تعبئة كل الشهر (للاختبار)
-              </Button>
-            </motion.div>
+              child={child}
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
+              totalDays={totalDays}
+              onRemove={removeChild}
+              onEdit={openChildEditor}
+              onExportPdf={handleExportPdf}
+              onFillAll={fillAllData}
+            />
           );
         })}
 
@@ -404,5 +282,144 @@ const ParentDashboard = () => {
     </div>
   );
 };
+
+// Separate component per child to use its own useKidsWorshipData hook
+function ChildCard({
+  child, selectedYear, selectedMonth, totalDays,
+  onRemove, onEdit, onExportPdf, onFillAll,
+}: {
+  child: ChildProfile;
+  selectedYear: number;
+  selectedMonth: number;
+  totalDays: number;
+  onRemove: (id: string) => void;
+  onEdit: (id: string) => void;
+  onExportPdf: (id: string) => void;
+  onFillAll: (id: string) => void;
+}) {
+  const now = new Date();
+  const { data: monthData } = useKidsWorshipData(child.id, selectedYear, selectedMonth);
+
+  const totalStars = Object.values(monthData).filter(
+    (dd) => Object.values(dd).filter(Boolean).length === TOTAL_ITEMS
+  ).length;
+
+  // Weekly summary
+  const summary = useMemo(() => {
+    const today = now.getDate();
+    const weekStart = Math.max(1, today - 6);
+    let totalDone = 0;
+    let totalPossible = 0;
+    let fullDays = 0;
+
+    for (let d = weekStart; d <= today; d++) {
+      const dd = monthData[d] || {};
+      const done = Object.values(dd).filter(Boolean).length;
+      totalDone += done;
+      totalPossible += TOTAL_ITEMS;
+      if (done === TOTAL_ITEMS) fullDays++;
+    }
+
+    return {
+      percentage: totalPossible > 0 ? Math.round((totalDone / totalPossible) * 100) : 0,
+      fullDays,
+      daysTracked: today - weekStart + 1,
+    };
+  }, [monthData]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-2xl p-4 shadow-sm border border-purple-100/40"
+    >
+      {/* Child header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
+            style={{ background: "hsl(270 55% 94%)", color: "hsl(270 55% 50%)" }}>
+            {child.name.charAt(0)}
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-foreground">{child.name}</h3>
+            <p className="text-[10px] text-muted-foreground">
+              ⭐ {totalStars} أيام كاملة هذا الشهر
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => onRemove(child.id)}
+          className="p-1.5 rounded-lg hover:bg-red-50 active:scale-95 transition-all"
+        >
+          <Trash2 size={14} className="text-red-400" />
+        </button>
+      </div>
+
+      {/* Weekly summary */}
+      <div className="bg-gradient-to-l from-purple-50 to-pink-50 rounded-xl p-3 mb-3">
+        <div className="flex items-center gap-1.5 mb-2">
+          <TrendingUp size={14} style={{ color: "hsl(270 55% 50%)" }} />
+          <span className="text-[11px] font-bold" style={{ color: "hsl(270 55% 50%)" }}>
+            ملخص آخر 7 أيام
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <div className="h-2 rounded-full bg-purple-100 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${summary.percentage}%`,
+                  background: summary.percentage >= 80
+                    ? "linear-gradient(90deg, hsl(160 50% 45%), hsl(160 60% 40%))"
+                    : summary.percentage >= 50
+                    ? "linear-gradient(90deg, hsl(40 90% 50%), hsl(35 80% 50%))"
+                    : "linear-gradient(90deg, hsl(340 55% 50%), hsl(340 60% 45%))",
+                }}
+              />
+            </div>
+          </div>
+          <span className="text-xs font-bold" style={{ color: "hsl(270 55% 50%)" }}>
+            {summary.percentage}%
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1.5">
+          {summary.fullDays} أيام كاملة من {summary.daysTracked}
+        </p>
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <Button
+          onClick={() => onEdit(child.id)}
+          variant="outline"
+          size="sm"
+          className="flex-1 h-9 rounded-xl text-xs gap-1.5"
+        >
+          <Eye size={14} />
+          عرض وتعديل
+        </Button>
+        <Button
+          onClick={() => onExportPdf(child.id)}
+          size="sm"
+          className="flex-1 h-9 rounded-xl text-xs gap-1.5"
+          style={{ background: "linear-gradient(135deg, hsl(270 55% 50%), hsl(340 55% 50%))" }}
+        >
+          <Download size={14} />
+          تصدير PDF
+        </Button>
+      </div>
+      {/* Temporary test button */}
+      <Button
+        onClick={() => onFillAll(child.id)}
+        variant="outline"
+        size="sm"
+        className="w-full h-8 rounded-xl text-xs mt-2 border-amber-300 text-amber-700 bg-amber-50"
+      >
+        🧪 تعبئة كل الشهر (للاختبار)
+      </Button>
+    </motion.div>
+  );
+}
 
 export default ParentDashboard;

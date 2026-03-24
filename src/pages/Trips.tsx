@@ -824,7 +824,7 @@ const Trips = () => {
                           const updated = { ...selectedTrip, expenses: selectedTrip.expenses.filter((e) => e.id !== exp.id) };
                           setSelectedTrip(updated);
                           setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
-                          syncTripToBudget({ id: updated.id, name: updated.name, budget: updated.budget, expenses: updated.expenses });
+                          deleteExpense.mutate(exp.id);
                         }}
                         className="text-muted-foreground hover:text-destructive transition-colors"
                       >
