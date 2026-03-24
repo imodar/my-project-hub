@@ -65,21 +65,17 @@ export function useOfflineMutation<
       const previousData = qc.getQueryData<unknown[]>(queryKey);
 
       // تحديث React Query cache فوراً
-      qc.setQueryData<unknown[]>(queryKey, (old) => {
+      qc.setQueryData<Record<string, unknown>[]>(queryKey, (old) => {
         const items = old ?? [];
         switch (operation) {
           case "INSERT":
-            return [variables, ...items];
+            return [variables as Record<string, unknown>, ...items];
           case "UPDATE":
             return items.map((item) =>
-              (item as Record<string, unknown>)?.id === variables.id
-                ? { ...item, ...variables }
-                : item
+              item?.id === variables.id ? { ...item, ...variables } : item
             );
           case "DELETE":
-            return items.filter(
-              (item) => (item as Record<string, unknown>)?.id !== variables.id
-            );
+            return items.filter((item) => item?.id !== variables.id);
           default:
             return items;
         }
