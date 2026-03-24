@@ -174,7 +174,6 @@ const Documents = () => {
     if (!deleteTarget) return;
     haptic.medium();
     deleteDocItemMut.mutate(deleteTarget.id);
-    setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   }, [deleteTarget, deleteDocItemMut]);
 
