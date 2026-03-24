@@ -186,6 +186,9 @@ const Chat = () => {
     profiles,
     familyId,
     familyKey: hasKey,
+    hasMore,
+    isLoadingMore,
+    loadOlderMessages,
   } = useChat();
 
   const [newMessage, setNewMessage] = useState("");
