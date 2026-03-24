@@ -53,6 +53,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
     const base = isOpen.current ? ACTION_WIDTH : 0;
     const newOffset = Math.max(0, Math.min(ACTION_WIDTH, base + dx));
     setOffset(newOffset);
+    offsetRef.current = newOffset;
   }, [ACTION_WIDTH]);
 
   const handleTouchEnd = useCallback(() => {
