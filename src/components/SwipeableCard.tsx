@@ -60,18 +60,22 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
     isDragging.current = false;
     if (isVertical.current) return;
 
-    const shouldOpen = offsetRef.current > THRESHOLD;
+    const current = offsetRef.current;
+    const shouldOpen = current > THRESHOLD;
 
     if (shouldOpen && !isOpen.current) {
-      setOffset(ACTION_WIDTH);
       offsetRef.current = ACTION_WIDTH;
+      setOffset(ACTION_WIDTH);
       isOpen.current = true;
       onSwipeOpen?.();
       haptic.light();
-    } else if (offsetRef.current < ACTION_WIDTH / 2) {
-      setOffset(0);
+    } else if (current < ACTION_WIDTH / 2) {
       offsetRef.current = 0;
+      setOffset(0);
       isOpen.current = false;
+    } else if (isOpen.current) {
+      offsetRef.current = ACTION_WIDTH;
+      setOffset(ACTION_WIDTH);
     }
   }, [ACTION_WIDTH, onSwipeOpen]);
 
