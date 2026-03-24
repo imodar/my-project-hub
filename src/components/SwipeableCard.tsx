@@ -22,6 +22,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
   const ACTION_WIDTH = actions.length * BUTTON_WIDTH;
 
   const [offset, setOffset] = useState(0);
+  const offsetRef = useRef(0);
   const startX = useRef(0);
   const startY = useRef(0);
   const isOpen = useRef(false);
