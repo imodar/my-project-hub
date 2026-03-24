@@ -607,7 +607,7 @@ const FamilyManagement = () => {
         )}
 
         {/* Invite section */}
-        {creatorRole && (
+        {isMyAdmin && (
           <div className="mt-8">
             <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">طرق الانضمام</h2>
             <div className="space-y-3">
