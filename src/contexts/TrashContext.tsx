@@ -200,4 +200,5 @@ export const TrashProvider = React.forwardRef<HTMLDivElement, { children: React.
       {children}
     </TrashContext.Provider>
   );
-};
+});
+TrashProvider.displayName = "TrashProvider";
