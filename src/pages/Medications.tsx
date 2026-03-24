@@ -431,7 +431,7 @@ const Medications = () => {
                     </div>
                   )}
                 </div>
-              </SwipeableMedCard>
+              </SwipeableCard>
             );
           })
         )}

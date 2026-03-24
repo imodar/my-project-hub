@@ -799,7 +799,7 @@ const Vehicle = () => {
                         </div>
                       </div>
                     </button>
-                  </SwipeableCarCard>
+                  </SwipeableCard>
                 );
               })}
             </div>

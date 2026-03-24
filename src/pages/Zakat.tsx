@@ -430,7 +430,7 @@ const Zakat = () => {
                           </div>
                         </div>
                       </div>
-                    </SwipeableAssetCard>
+                    </SwipeableCard>
                   );
                 })}
               </div>
