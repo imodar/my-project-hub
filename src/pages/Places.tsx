@@ -953,16 +953,7 @@ const Places = () => {
         </Drawer>
       </PullToRefresh>
 
-      {/* FAB add button */}
-      {createPortal(
-        <button
-          onClick={() => navigate("/places/add", { state: { listId: activeListId } })}
-          className="fixed bottom-28 left-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 active:scale-95 transition-transform"
-        >
-          <Plus size={24} />
-        </button>,
-        document.body
-      )}
+      <FAB onClick={() => navigate("/places/add", { state: { listId: activeListId } })} />
     </div>
   );
 };

@@ -522,22 +522,7 @@ const Documents = () => {
           )}
         </div>
 
-        {/* FAB */}
-        {createPortal(
-          <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30">
-            <Button
-              onClick={() => {
-                haptic.medium();
-                setShowAddItem(true);
-              }}
-              className="w-14 h-14 rounded-full shadow-xl bg-primary text-primary-foreground hover:bg-primary/90 p-0"
-              size="icon"
-            >
-              <Plus size={24} />
-            </Button>
-          </div>,
-          document.body
-        )}
+        <FAB onClick={() => { haptic.medium(); setShowAddItem(true); }} />
 
         {/* View Document Drawer */}
         <Drawer open={!!viewDoc} onOpenChange={(open) => !open && setViewDoc(null)}>

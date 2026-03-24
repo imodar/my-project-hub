@@ -328,16 +328,7 @@ const CalendarPage = () => {
           <h3 className="text-base font-black text-foreground">المناسبات القادمة</h3>
         </div>
 
-        {/* FAB - portal to escape transform context */}
-        {createPortal(
-          <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30">
-            <button onClick={() => { setSelectedDay(todayStr); setShowAddDialog(true); }}
-              className="w-14 h-14 rounded-full shadow-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors">
-              <Plus size={24} />
-            </button>
-          </div>,
-          document.body
-        )}
+        <FAB onClick={() => { setSelectedDay(todayStr); setShowAddDialog(true); }} />
 
         <div className="space-y-3">
           {allUpcoming.length === 0 && (
