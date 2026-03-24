@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff, History, Loader2 } from "lucide-react";
+import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff, History } from "lucide-react";
+import { CardPageSkeleton } from "@/components/PageSkeletons";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import PageHeader from "@/components/PageHeader";
