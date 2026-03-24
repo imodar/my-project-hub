@@ -129,32 +129,30 @@ const FamilyManagement = () => {
   const [approvalName, setApprovalName] = useState("");
   const [approvalRole, setApprovalRole] = useState<FamilyRole | null>(null);
 
+  // Show setup only if user has no family yet (familyId will be null)
   useEffect(() => {
-    if (!creatorRole && members.length === 0) {
+    if (!membersLoading && !familyId) {
       setShowSetupDialog(true);
     }
-  }, [creatorRole, members.length]);
+  }, [membersLoading, familyId]);
 
-  useEffect(() => {
-    localStorage.setItem("family_members", JSON.stringify(members));
-  }, [members]);
-
-  const handleSetupComplete = () => {
+  const handleSetupComplete = async () => {
     if (!setupRole) return;
-    const role = setupRole;
-    setCreatorRole(role);
-    localStorage.setItem("family_creator_role", role);
-    const creator: FamilyMember = {
-      id: "creator",
-      name: profileName,
-      role,
-      isCreator: true,
-      isAdmin: isParentRole(role),
-      status: "active",
-    };
-    setMembers([creator]);
-    setShowSetupDialog(false);
-    toast({ title: "تم إنشاء الأسرة بنجاح!" });
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "create", name: user?.user_metadata?.name || "عائلتي", role: setupRole },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل إنشاء الأسرة", variant: "destructive" });
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["family-id"] });
+      queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
+      setShowSetupDialog(false);
+      toast({ title: "تم إنشاء الأسرة بنجاح!" });
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
   };
 
   // Add member dialog
