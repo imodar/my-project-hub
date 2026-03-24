@@ -25,22 +25,7 @@ interface TaskItem {
   priority: "none" | "high" | "medium" | "low";
   assignedTo: string;
   done: boolean;
-  repeat?: {
-    enabled: boolean;
-    days: number[]; // 0=Sat..6=Fri
-    count: number;
-  };
 }
-
-const WEEKDAYS_SHORT = [
-  { value: 0, label: "سب" },
-  { value: 1, label: "أح" },
-  { value: 2, label: "إث" },
-  { value: 3, label: "ثل" },
-  { value: 4, label: "أر" },
-  { value: 5, label: "خم" },
-  { value: 6, label: "جم" },
-];
 
 interface TaskList {
   id: string;
