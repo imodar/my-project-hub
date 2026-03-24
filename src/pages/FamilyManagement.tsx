@@ -430,7 +430,7 @@ const FamilyManagement = () => {
         <>
         <div className="space-y-2">
           {members.map((member) => {
-            const offset = swipeOffsets[member.id] || 0;
+            const memberIsAdmin = member.isAdmin || isParentRole(member.role);
             const memberIsAdmin = member.isAdmin || isParentRole(member.role);
             const canSwipe = !member.isCreator;
             const isPending = member.status === "pending";
