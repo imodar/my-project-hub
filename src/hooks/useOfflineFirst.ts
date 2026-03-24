@@ -97,12 +97,14 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   });
 
   // ── 3. حساب الحالات ──
-  const hasLocalData = localData !== null && localData.length > 0;
-  const isLoading = !hasLocalData && query.isLoading;
-  const isSyncing = query.isFetching && hasLocalData;
+  // نعتمد على query.data كمصدر أساسي — يتحدث تلقائياً مع setQueryData من useOfflineMutation
+  const effectiveData = query.data ?? localData ?? [];
+  const hasData = effectiveData.length > 0;
+  const isLoading = !hasData && query.isLoading && localData === null;
+  const isSyncing = query.isFetching && hasData;
 
   return {
-    data: (query.data ?? localData ?? []) as T[],
+    data: effectiveData as T[],
     isLoading,
     isSyncing,
     error: query.error ? (query.error as Error).message : null,
