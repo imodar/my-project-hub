@@ -305,9 +305,6 @@ const Tasks = () => {
       note: newItemNote.trim(),
       priority: newItemPriority,
       assigned_to: newItemAssignedTo || null,
-      repeat_enabled: newItemRepeatEnabled,
-      repeat_days: newItemRepeatDays,
-      repeat_count: newItemRepeatCount,
     });
     setNewItemName("");
     setNewItemNote("");
