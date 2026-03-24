@@ -818,7 +818,6 @@ const Trips = () => {
                         onClick={() => {
                           const updated = { ...selectedTrip, expenses: selectedTrip.expenses.filter((e) => e.id !== exp.id) };
                           setSelectedTrip(updated);
-                          setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
                           deleteExpense.mutate(exp.id);
                         }}
                         className="text-muted-foreground hover:text-destructive transition-colors"
