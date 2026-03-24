@@ -1,73 +1,60 @@
 
 
-# خطة إصلاح حفظ العيار (karat) في الزكاة
+# إصلاح `tripsLocal` في Trips.tsx — إزالة الـ state المكرر
 
 ## المشكلة
-العيار يُعرض في UI ويُستخدم بالحساب لكن **لا يُحفظ ولا يُقرأ من DB**. السطر 227: `karat: undefined`. كل حسابات الذهب خاطئة بعد إعادة فتح الصفحة.
+`tripsLocal` هو نسخة محلية من `trips` (القادمة من DB عبر `useMemo`). كل ما يصير `invalidateQueries` بعد أي mutation، الـ `useEffect` يستبدل `tripsLocal` بالبيانات الجديدة → أي تعديل optimistic محلي (drag/drop، حذف expense inline) يضيع.
 
-## الحل — 3 تعديلات
+## الحل
+**إزالة `tripsLocal` بالكامل** واستخدام `trips` مباشرة من `useMemo`. الأماكن القليلة اللي تستخدم `setTrips` (drag/drop و inline delete) لازم تتحول لتعمل على `selectedTrip` فقط لأن:
+- الـ drag/drop يغيّر ترتيب الأنشطة → هذا UI-only ولا يرسل للـ DB أصلاً
+- حذف expense يستدعي `deleteExpense.mutate` → الـ invalidate يرجّع البيانات الصحيحة
 
-### 1. Migration: إضافة عمود `karat` لجدول `zakat_assets`
-```sql
-ALTER TABLE public.zakat_assets ADD COLUMN IF NOT EXISTS karat integer;
+## التعديلات في `src/pages/Trips.tsx`
+
+### 1. إزالة الـ state والـ effect (سطور 234-237)
+```
+// حذف:
+const [tripsLocal, setTripsLocal] = useState<Trip[]>([]);
+useEffect(() => { setTripsLocal(trips); }, [trips]);
+const setTrips = setTripsLocal;
 ```
 
-### 2. تعديل `src/pages/Zakat.tsx`
-
-**سطر 227 — قراءة العيار من DB:**
-```
-karat: a.karat ?? undefined,
-```
-بدل `karat: undefined`
-
-**سطور 256-261 — إضافة karat للـ update mutation:**
+### 2. تعديل `filteredTrips` (سطر 296)
 ```js
-updateAssetMut.mutate({
-  id: editingAssetId,
-  type: addType,
-  name: addLabel || ASSET_TYPE_META[addType].label,
-  amount: Number(addAmount),
-  purchase_date: addDate,
-  karat: addType === "gold" ? addKarat : null,
-});
+// من:
+const filteredTrips = tripsLocal.filter((t) => t.type === activeTab);
+// إلى:
+const filteredTrips = trips.filter((t) => t.type === activeTab);
 ```
 
-**سطور 264-270 — إضافة karat للـ add mutation:**
+### 3. تعديل `handleDrop` (سطر 497)
 ```js
-addAssetMut.mutate({
-  type: addType,
-  name: addLabel || ASSET_TYPE_META[addType].label,
-  amount: Number(addAmount),
-  purchase_date: addDate,
-  reminder: true,
-  karat: addType === "gold" ? addKarat : null,
-});
+// حذف سطر:
+setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+// الإبقاء على:
+setSelectedTrip(updated);
 ```
+الـ drag/drop يعدّل `selectedTrip` فقط — عرض القائمة الرئيسية لا يحتاج التحديث لأن المستخدم داخل تفاصيل الرحلة.
 
-### 3. تعديل `src/hooks/useZakatAssets.ts`
-
-إضافة `karat` لـ type الـ input في `addAsset`:
-```ts
-karat?: number | null;
+### 4. تعديل inline expense delete (سطر 826)
+```js
+// حذف سطر:
+setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+// الإبقاء على:
+setSelectedTrip(updated);
+deleteExpense.mutate(exp.id);
 ```
+الـ mutation يعمل invalidate → `trips` يتحدث تلقائياً.
 
-## كيف يعمل حساب القيمة بالعيار
+## ملخص
 
-السطر 298 موجود فعلاً وصحيح:
-```
-const purity = (asset.karat || 24) / 24;
-return asset.amount * purity * goldPricePerGram;
-```
-- عيار 24 → نقاء 100% → `85 × 1.0 × 540 = 45,900 ر.س`
-- عيار 18 → نقاء 75% → `85 × 0.75 × 540 = 34,425 ر.س`
+| التعديل | السطر | الوصف |
+|---|---|---|
+| حذف `tripsLocal` state + effect | 234-237 | إزالة الـ state المكرر |
+| `filteredTrips` | 296 | استخدام `trips` مباشرة |
+| `handleDrop` | 497 | حذف `setTrips` |
+| inline delete | 826 | حذف `setTrips` |
 
-سعر الذهب 24 قيراط يُجلب من API خارجي عبر `useGoldPrice()` الموجود فعلاً.
-
-## ملخص الملفات
-
-| الملف | التعديل |
-|---|---|
-| Migration جديد | `ALTER TABLE zakat_assets ADD COLUMN karat integer` |
-| `src/pages/Zakat.tsx` | قراءة karat من DB + تمريرها للـ mutations |
-| `src/hooks/useZakatAssets.ts` | إضافة `karat` للـ input type |
+ملف واحد فقط: `src/pages/Trips.tsx`. لا تعديل على أي ملف آخر.
 
