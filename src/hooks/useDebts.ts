@@ -66,7 +66,8 @@ export function useDebts() {
 
   const deleteDebt = useMutation({
     mutationFn: async (debtId: string) => {
-      const { error } = await supabase.from("debts").delete().eq("id", debtId);
+      if (!user) throw new Error("No user");
+      const { error } = await supabase.from("debts").delete().eq("id", debtId).eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
