@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
@@ -35,6 +35,62 @@ const slides = [
 ];
 
 const AUTO_ADVANCE_MS = 5000;
+
+type SlideData = typeof slides[number];
+
+const SlideContent = React.forwardRef<
+  HTMLDivElement,
+  {
+    direction: number;
+    variants: Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    slide: SlideData;
+    handleDragEnd: (_: unknown, info: PanInfo) => void;
+    custom?: number;
+  }
+>(({ direction, variants, slide, handleDragEnd, ...props }, ref) => (
+  <motion.div
+    ref={ref}
+    custom={direction}
+    variants={variants as any}
+    initial="enter"
+    animate="center"
+    exit="exit"
+    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+    drag="x"
+    dragConstraints={{ left: 0, right: 0 }}
+    dragElastic={0.15}
+    onDragEnd={handleDragEnd}
+    className="flex flex-col items-center text-center w-full cursor-grab active:cursor-grabbing select-none"
+    {...props}
+  >
+    <motion.img
+      src={slide.image}
+      alt={slide.title}
+      className="w-64 h-64 sm:w-72 sm:h-72 object-contain pointer-events-none"
+      animate={{ y: [0, -8, 0] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    />
+    <motion.h1
+      className="text-2xl sm:text-3xl font-bold text-foreground mt-8 mb-3"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {slide.title}
+    </motion.h1>
+    <motion.p
+      className="text-base text-muted-foreground leading-relaxed max-w-xs"
+      style={{ textWrap: "balance" } as React.CSSProperties}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.25, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {slide.subtitle}
+    </motion.p>
+  </motion.div>
+));
+SlideContent.displayName = "SlideContent";
 
 const GetStarted = () => {
   const [current, setCurrent] = useState(0);
@@ -154,59 +210,13 @@ const GetStarted = () => {
       {/* Main swipeable content */}
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md mx-auto px-6 relative">
         <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
+          <SlideContent
             key={current}
-            custom={direction}
+            direction={direction}
             variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              duration: 0.45,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.15}
-            onDragEnd={handleDragEnd}
-            className="flex flex-col items-center text-center w-full cursor-grab active:cursor-grabbing select-none"
-          >
-            {/* Floating image with subtle bounce */}
-            <motion.img
-              src={slide.image}
-              alt={slide.title}
-              className="w-64 h-64 sm:w-72 sm:h-72 object-contain pointer-events-none"
-              animate={{
-                y: [0, -8, 0],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-
-            {/* Title */}
-            <motion.h1
-              className="text-2xl sm:text-3xl font-bold text-foreground mt-8 mb-3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {slide.title}
-            </motion.h1>
-
-            {/* Subtitle */}
-            <motion.p
-              className="text-base text-muted-foreground leading-relaxed max-w-xs"
-              style={{ textWrap: "balance" }}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {slide.subtitle}
-            </motion.p>
-          </motion.div>
+            slide={slide}
+            handleDragEnd={handleDragEnd}
+          />
         </AnimatePresence>
       </div>
 
