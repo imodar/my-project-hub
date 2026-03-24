@@ -184,8 +184,7 @@ const Documents = () => {
     setEditNote(item.note);
     setEditExpiryDate(item.expiryDate || "");
     setEditReminderEnabled(item.reminderEnabled);
-    closeSwipe(item.id);
-  }, [closeSwipe]);
+  }, []);
 
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
