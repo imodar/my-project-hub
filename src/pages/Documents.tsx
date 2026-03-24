@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useMemo } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDocumentLists } from "@/hooks/useDocumentLists";
 import FAB from "@/components/FAB";
+import SwipeableCard from "@/components/SwipeableCard";
 import {
   Plus, Search, FolderLock, Users, Lock, Share2, Trash2, Pencil,
   MoreVertical, Check, FileText, Image, File, Bell, Calendar,
