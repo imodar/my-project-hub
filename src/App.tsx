@@ -138,7 +138,7 @@ const AnimatedRoutes = () => {
   );
 };
 
-const App = () => (
+const App = React.forwardRef<HTMLDivElement>((_props, _ref) => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -161,6 +161,7 @@ const App = () => (
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
-);
+));
+App.displayName = "App";
 
 export default App;
