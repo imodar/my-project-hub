@@ -114,7 +114,7 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   // ── Medications ──
   medications: {
     functionName: "health-api",
-    actions: { INSERT: "add-medication", UPDATE: "update-medication", DELETE: "delete-medication" },
+    actions: { INSERT: "create-medication", UPDATE: "update-medication", DELETE: "delete-medication" },
   },
   medication_logs: {
     functionName: "health-api",
