@@ -210,14 +210,15 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
   };
 };
 
-const WeatherIcon = ({ icon }: { icon: string }) => {
-  if (icon.includes("rain")) return <CloudRain size={16} className="text-blue-200" />;
-  if (icon.includes("snow")) return <Snowflake size={16} className="text-blue-100" />;
-  if (icon.includes("fog")) return <Wind size={16} className="text-amber-200" />;
-  if (icon.includes("cloud")) return <Cloud size={16} className="text-white/80" />;
-  if (icon.includes("sun") || icon.includes("clear")) return <Sun size={16} className="text-yellow-200" />;
-  return <CloudSun size={16} className="text-white/80" />;
-};
+const WeatherIcon = React.forwardRef<SVGSVGElement, { icon: string }>(({ icon, ...props }, ref) => {
+  if (icon.includes("rain")) return <CloudRain ref={ref} size={16} className="text-blue-200" {...props} />;
+  if (icon.includes("snow")) return <Snowflake ref={ref} size={16} className="text-blue-100" {...props} />;
+  if (icon.includes("fog")) return <Wind ref={ref} size={16} className="text-amber-200" {...props} />;
+  if (icon.includes("cloud")) return <Cloud ref={ref} size={16} className="text-white/80" {...props} />;
+  if (icon.includes("sun") || icon.includes("clear")) return <Sun ref={ref} size={16} className="text-yellow-200" {...props} />;
+  return <CloudSun ref={ref} size={16} className="text-white/80" {...props} />;
+});
+WeatherIcon.displayName = "WeatherIcon";
 
 const formatLastUpdated = (date: Date): string => {
   const h = date.getHours().toString().padStart(2, "0");
