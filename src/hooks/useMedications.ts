@@ -4,6 +4,7 @@
  * يستخدم useOfflineFirst للقراءة (IndexedDB أولاً ثم API)
  * ويستخدم useOfflineMutation للكتابة (optimistic + sync queue)
  */
+import { useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
