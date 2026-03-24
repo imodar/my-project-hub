@@ -86,8 +86,15 @@ export function useOfflineMutation<
 
     mutationFn: async (variables): Promise<MutationResult<TData>> => {
       const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
+      const isOffline = !navigator.onLine;
 
-      // ── 1. تحديث IndexedDB فوراً ──
+      // ── 1. إذا أوفلاين: أضف للـ queue أولاً (قبل تعديل IndexedDB) ──
+      // هذا يضمن أن projectPendingChanges تشوف العملية حتى لو readLocal اشتغل بينهما
+      if (isOffline) {
+        await addToQueue(tableName, operation, variables as Record<string, unknown>);
+      }
+
+      // ── 2. تحديث IndexedDB ──
       if (table) {
         try {
           switch (operation) {
@@ -110,13 +117,13 @@ export function useOfflineMutation<
         }
       }
 
-      // ── 2. إرسال للـ API ──
-      if (!navigator.onLine) {
-        await addToQueue(tableName, operation, variables as Record<string, unknown>);
+      // ── 3. إذا أوفلاين: انتهينا (Queue أُضيف في خطوة 1) ──
+      if (isOffline) {
         console.info(`[OfflineMutation] 📴 لا اتصال — أُضيفت ${operation} على ${tableName} للطابور`);
         return { data: null, queued: true };
       }
 
+      // ── 4. إرسال للـ API ──
       try {
         const { data, error } = await apiFn(variables);
 

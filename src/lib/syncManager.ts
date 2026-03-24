@@ -45,12 +45,14 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
 
   await table.bulkPut(data);
 
+  // تحديث وقت المزامنة قبل القراءة النهائية لتقليل race window
   await db.sync_meta.put({
     table: tableName,
     last_synced_at: new Date().toISOString(),
   });
 
-  const allLocal = await table.toArray();
+  // قراءة البيانات + إسقاط العمليات المعلقة
+  const allLocal: T[] = await table.toArray();
   const projectedData = await projectPendingChanges(tableName, allLocal as T[]);
   console.info(
     `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، محلي بعد الإسقاط: ${projectedData.length}`
