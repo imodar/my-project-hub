@@ -103,7 +103,6 @@ const Tasks = () => {
       shared_with: [],
     });
   }, [familyId, featureAccess.isStaff, isLoading, dbLists, createListMutation]);
-  }, [dbLists, featureAccess.isStaff]);
 
   const [activeListId, setActiveListId] = useState("");
 
