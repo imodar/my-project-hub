@@ -409,27 +409,15 @@ const FamilyManagement = () => {
     setNewName("");
   };
 
-  // Simulate incoming join request (for demo - triggered by button)
-  const simulateJoinRequest = () => {
-    setApprovalName("محمد");
-    setApprovalRole(null);
-    setShowApprovalDialog(true);
-  };
+  // Note: approval flow removed — joining is handled via invite code + edge function
+  // Members appear automatically after joining via /join?code=... route
 
   const handleApproveJoin = () => {
-    if (!approvalRole || !approvalName.trim()) return;
-    const newMember: FamilyMember = {
-      id: Date.now().toString(),
-      name: approvalName.trim(),
-      role: approvalRole,
-      isAdmin: isParentRole(approvalRole),
-      status: "active",
-    };
-    setMembers((prev) => [...prev, newMember]);
+    // This was a demo stub — real joining happens via edge function
     setShowApprovalDialog(false);
     setApprovalName("");
     setApprovalRole(null);
-    toast({ title: `تم قبول ${newMember.name} في الأسرة!` });
+    refetchMembers();
   };
 
   // Swipe handlers (touch + mouse)
