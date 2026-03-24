@@ -278,6 +278,7 @@ const HeroSection = () => {
   const [currentHour] = useState(() => new Date().getHours());
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
   const greeting = useMemo(() => getGreeting(currentHour), [currentHour]);
+  const timeIcon = useMemo(() => getTimeIcon(currentHour), [currentHour]);
 
   const [demoActive, setDemoActive] = useState(false);
   const [demoIndex, setDemoIndex] = useState(0);
