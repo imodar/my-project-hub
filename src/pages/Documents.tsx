@@ -281,8 +281,10 @@ const Documents = () => {
     return (
       <SwipeableCard
         key={item.id}
-        onDelete={() => setDeleteTarget(item)}
-        onEdit={() => openEdit(item)}
+        actions={[
+          { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget(item) },
+          { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => openEdit(item) },
+        ]}
       >
         <div
           className="bg-card rounded-2xl p-3 flex items-center gap-3"
