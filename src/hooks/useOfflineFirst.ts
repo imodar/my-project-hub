@@ -2,7 +2,7 @@
  * useOfflineFirst — Hook للقراءة مع أولوية البيانات المحلية
  *
  * يقرأ البيانات من IndexedDB فوراً (0ms) ثم يُحدّث في الخلفية من API.
- * إذا وُجدت بيانات محلية: isLoading = false فوراً (تجربة سلسة بدون انتظار).
+ * React Query cache هو المصدر الوحيد للبيانات — لا يوجد state منفصل.
  */
 import { useQuery, type QueryKey, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -51,60 +51,58 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   enabled = true,
 }: UseOfflineFirstOptions<T>): UseOfflineFirstReturn<T> {
   const qc = useQueryClient();
-  const [localData, setLocalData] = useState<T[] | null>(null);
 
-  // تثبيت filterFn بـ useRef لمنع إعادة إنشاء readLocal كل render
+  // تثبيت filterFn بـ useRef لمنع إعادة إنشاء الدوال كل render
   const filterFnRef = useRef(filterFn);
   filterFnRef.current = filterFn;
 
-  /** قراءة البيانات من IndexedDB مع إسقاط التغييرات المعلقة */
-  const readLocal = useCallback(async () => {
-    const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
-    if (!table) return;
-    const items: T[] = await table.toArray();
-    const projected = await projectPendingChanges(tableName, items);
-    const filtered = filterFnRef.current ? filterFnRef.current(projected) : projected;
-    setLocalData(filtered);
-    return filtered;
-  }, [tableName]);
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
-  // ── 1. قراءة IndexedDB فوراً عند التحميل ──
+  /** تطبيق الفلتر */
+  const applyFilter = useCallback((items: T[]) => {
+    const fn = filterFnRef.current;
+    return fn ? fn(items) : items;
+  }, []);
+
+  // ── 1. قراءة IndexedDB فوراً وكتابتها في React Query cache مباشرة ──
   useEffect(() => {
     if (!enabled) return;
-    readLocal().then((items) => {
-      if (items && items.length > 0) {
-        qc.setQueryData(queryKey, items);
+    (async () => {
+      const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
+      if (!table) {
+        setInitialLoaded(true);
+        return;
       }
-    });
+      const items: T[] = await table.toArray();
+      const projected = await projectPendingChanges(tableName, items);
+      const filtered = applyFilter(projected);
+      if (filtered.length > 0) {
+        qc.setQueryData(queryKey, filtered);
+      }
+      setInitialLoaded(true);
+    })();
   }, [tableName, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── 2. جلب من API في الخلفية — يدمج ولا يمسح البيانات المحلية ──
+  // ── 2. جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
     const result = await syncTable<T>(tableName, () => apiFn());
-    // syncTable يُرجع projectPendingChanges تلقائياً
-    const fn = filterFnRef.current;
-    const filtered = fn ? fn(result) : result;
-    setLocalData(filtered);
-    return filtered;
-  }, [tableName, apiFn]);
+    return applyFilter(result);
+  }, [tableName, apiFn, applyFilter]);
 
   const query = useQuery<T[]>({
     queryKey,
     queryFn: fetchAndSync,
     staleTime,
     enabled,
-    placeholderData: localData ?? undefined,
   });
 
-  // ── 3. حساب الحالات ──
-  // نعتمد على query.data كمصدر أساسي — يتحدث تلقائياً مع setQueryData من useOfflineMutation
-  const effectiveData = query.data ?? localData ?? [];
-  const hasData = effectiveData.length > 0;
-  const isLoading = !hasData && query.isLoading && localData === null;
-  const isSyncing = query.isFetching && hasData;
+  // ── 3. مصدر وحيد: React Query cache ──
+  const data = query.data ?? [];
+  const isLoading = !initialLoaded && query.isLoading;
+  const isSyncing = query.isFetching && initialLoaded;
 
   return {
-    data: effectiveData as T[],
+    data,
     isLoading,
     isSyncing,
     error: query.error ? (query.error as Error).message : null,
