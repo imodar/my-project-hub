@@ -67,30 +67,73 @@ const getProfileName = (): string => {
   return "";
 };
 
-// Stable QR-like pattern that only changes when the code changes
+// Real QR Code that encodes the invite URL
 const QrPattern = React.memo(({ code }: { code: string }) => {
-  const pattern = useMemo(() => {
-    // Generate deterministic pattern from code string
-    let seed = 0;
-    for (let i = 0; i < code.length; i++) {
-      seed = ((seed << 5) - seed + code.charCodeAt(i)) | 0;
+  const modules = useMemo(() => {
+    // Dynamic import workaround: use inline qr generation
+    // Encode as join URL so camera apps can open it directly
+    const joinUrl = `${window.location.origin}/join?code=${encodeURIComponent(code)}`;
+
+    // Use qrcode-generator
+    const qr = (window as any).__qrcode_gen;
+    if (qr) {
+      const q = qr(0, "M");
+      q.addData(joinUrl);
+      q.make();
+      const count = q.getModuleCount();
+      const result: boolean[][] = [];
+      for (let r = 0; r < count; r++) {
+        const row: boolean[] = [];
+        for (let c = 0; c < count; c++) {
+          row.push(q.isDark(r, c));
+        }
+        result.push(row);
+      }
+      return result;
     }
-    const seededRandom = (i: number) => {
-      const x = Math.sin(seed + i * 9301 + 49297) * 49297;
-      return x - Math.floor(x);
-    };
-    return Array.from({ length: 25 }, (_, i) => seededRandom(i) > 0.4);
+    return null;
   }, [code]);
 
-  return (
-    <div className="w-40 h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 bg-muted border-2 border-border">
-      <div className="grid grid-cols-5 gap-1">
-        {pattern.map((filled, i) => (
-          <div key={i} className="w-5 h-5 rounded-sm" style={{
-            background: filled ? "hsl(var(--foreground))" : "transparent",
-          }} />
-        ))}
+  // Load qrcode-generator on mount
+  const [loaded, setLoaded] = useState(!!(window as any).__qrcode_gen);
+  useEffect(() => {
+    if ((window as any).__qrcode_gen) { setLoaded(true); return; }
+    import("qrcode-generator").then((mod) => {
+      (window as any).__qrcode_gen = mod.default || mod;
+      setLoaded(true);
+    });
+  }, []);
+
+  if (!loaded || !modules) {
+    return (
+      <div className="w-40 h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 bg-muted border-2 border-border">
+        <span className="text-xs text-muted-foreground">جاري التحميل...</span>
       </div>
+    );
+  }
+
+  const size = modules.length;
+  const cellSize = Math.floor(140 / size);
+  const totalSize = cellSize * size;
+
+  return (
+    <div className="w-40 h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 bg-white border-2 border-border">
+      <svg width={totalSize} height={totalSize} viewBox={`0 0 ${totalSize} ${totalSize}`}>
+        {modules.map((row, r) =>
+          row.map((dark, c) =>
+            dark ? (
+              <rect
+                key={`${r}-${c}`}
+                x={c * cellSize}
+                y={r * cellSize}
+                width={cellSize}
+                height={cellSize}
+                fill="black"
+              />
+            ) : null
+          )
+        )}
+      </svg>
     </div>
   );
 });
