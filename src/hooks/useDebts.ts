@@ -81,15 +81,16 @@ export function useDebts() {
       date?: string;
       payment_details?: Record<string, unknown>;
     }) => {
-      const { error } = await supabase.from("debt_payments").insert({
+      const row = {
         debt_id: input.debt_id,
         amount: input.amount,
         currency: input.currency || "SAR",
         type: input.type || "cash",
         item_description: input.item_description,
         date: input.date,
-        payment_details: input.payment_details || null,
-      });
+        payment_details: (input.payment_details || null) as Record<string, unknown> | null,
+      };
+      const { error } = await supabase.from("debt_payments").insert(row as never);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
