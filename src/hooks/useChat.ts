@@ -347,6 +347,7 @@ export function useChat() {
         senderName: profiles[user?.id || ""] || "أنا",
         text: caption || type,
         time: new Date().toLocaleTimeString("ar-SA", { hour: "numeric", minute: "2-digit", hour12: true }),
+        createdAt: new Date().toISOString(),
         isMe: true,
         pinned: false,
         reactions: {},
