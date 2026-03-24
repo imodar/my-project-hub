@@ -77,6 +77,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
 
   const close = useCallback(() => {
     setOffset(0);
+    offsetRef.current = 0;
     isOpen.current = false;
   }, []);
 
