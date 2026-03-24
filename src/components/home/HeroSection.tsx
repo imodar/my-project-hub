@@ -481,7 +481,10 @@ const HeroSection = () => {
           <div className="relative z-20 space-y-3">
             {/* Greeting */}
             <div>
-              <h1 className="text-xl font-bold tracking-tight mb-1">
+              <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
+                <span className="inline-flex" style={{ filter: `drop-shadow(0 0 6px ${timeIcon.glow})` }}>
+                  {timeIcon.icon}
+                </span>
                 {greeting}{currentUser.name ? `، ${currentUser.name}` : ""}
               </h1>
               <p className="text-white/75 font-medium text-xs whitespace-nowrap">
