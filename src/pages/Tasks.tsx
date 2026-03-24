@@ -342,84 +342,65 @@ const Tasks = () => {
 
   const renderItem = (item: TaskItem, isDone: boolean) => {
     const prioInfo = PRIORITY_INFO[item.priority];
-    const offset = dragActiveId ? 0 : (swipeOffset[item.id] || 0);
-    const isDragging = dragActiveId === item.id;
+    const isDraggingItem = dragActiveId === item.id;
     const isDragOverThis = dragOverId === item.id;
 
     return (
       <div
         key={item.id}
         ref={(el) => { if (el) itemRefsMap.current.set(item.id, el); }}
-        className={`relative overflow-hidden rounded-2xl select-none transition-all duration-200 ${
-          isDragging ? "opacity-50 scale-95 shadow-lg ring-2 ring-primary" : ""
-        } ${isDragOverThis ? "border-2 border-primary border-dashed" : ""}`}
+        className={`select-none transition-all duration-200 ${
+          isDraggingItem ? "opacity-50 scale-95 shadow-lg ring-2 ring-primary" : ""
+        } ${isDragOverThis ? "border-2 border-primary border-dashed rounded-2xl" : ""}`}
       >
-        {/* Swipe actions behind */}
-        {!dragActiveId && (
-          <div
-            className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
-            style={{ width: `${SWIPE_WIDTH}px` }}
-          >
-            <button
-              onClick={() => { setDeleteTarget(item); closeSwipe(item.id); }}
-              className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
-            >
-              <Trash2 size={16} className="text-destructive-foreground" />
-              <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
-            </button>
-            <button
-              onClick={() => openEdit(item)}
-              className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
-              style={{ background: "hsl(220, 60%, 50%)" }}
-            >
-              <Pencil size={16} className="text-white" />
-              <span className="text-[10px] text-white font-semibold">تعديل</span>
-            </button>
-          </div>
-        )}
-
-        {/* Card */}
-        <div
-          className="relative z-10 bg-card rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out"
-          style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
-          onPointerDown={(e) => handlePointerDown(e, item.id)}
-          onPointerMove={(e) => handlePointerMove(e, item.id)}
-          onPointerUp={(e) => handlePointerUp(e, item.id)}
-          onPointerCancel={() => { cancelLongPress(); closeSwipe(item.id); setDragActiveId(null); setDragOverId(null); isLongPressingRef.current = false; }}
+        <SwipeableCard
+          actions={[
+            { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget(item) },
+            { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => openEdit(item) },
+          ]}
         >
-          <div className="relative shrink-0 w-7 h-7">
-            {pendingItemIds.includes(item.id) && (
-              <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
-            )}
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => !dragActiveId && toggleItem(item.id)}
-              className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
-                isDone
-                  ? "bg-primary"
-                  : "border-2 border-border hover:border-primary"
-              }`}
-            >
-              {isDone && <Check size={14} className="text-primary-foreground" />}
-            </button>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className={`font-semibold text-sm text-foreground truncate ${isDone ? "line-through" : ""}`}>
-              {item.name}
-            </p>
-            {item.note && (
-              <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
-            )}
-            <p className="text-[10px] text-muted-foreground mt-0.5">{item.assignedTo}</p>
-          </div>
-          {item.priority !== "none" && (
-            <div className="flex flex-col items-end gap-1">
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
-                {prioInfo.emoji} {prioInfo.label}
-              </span>
+          <div
+            className="bg-card rounded-2xl p-3 flex items-center gap-3"
+            style={{ touchAction: "pan-y" }}
+            onPointerDown={(e) => handlePointerDown(e, item.id)}
+            onPointerMove={(e) => handlePointerMove(e)}
+            onPointerUp={(e) => handlePointerUp(e)}
+            onPointerCancel={() => { cancelLongPress(); setDragActiveId(null); setDragOverId(null); isLongPressingRef.current = false; }}
+          >
+            <div className="relative shrink-0 w-7 h-7">
+              {pendingItemIds.includes(item.id) && (
+                <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
+              )}
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => !dragActiveId && toggleItem(item.id)}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                  isDone
+                    ? "bg-primary"
+                    : "border-2 border-border hover:border-primary"
+                }`}
+              >
+                {isDone && <Check size={14} className="text-primary-foreground" />}
+              </button>
             </div>
-          )}
-        </div>
+            <div className="flex-1 min-w-0">
+              <p className={`font-semibold text-sm text-foreground truncate ${isDone ? "line-through" : ""}`}>
+                {item.name}
+              </p>
+              {item.note && (
+                <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-0.5">{item.assignedTo}</p>
+            </div>
+            {item.priority !== "none" && (
+              <div className="flex flex-col items-end gap-1">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
+                  {prioInfo.emoji} {prioInfo.label}
+                </span>
+              </div>
+            )}
+          </div>
+        </SwipeableCard>
       </div>
     );
   };
