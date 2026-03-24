@@ -125,11 +125,13 @@ const Market = () => {
   }, [familyId]);
 
   useEffect(() => {
+    // Only create default list if NO family-type list exists
+    const hasFamilyList = (dbLists || []).some((l: any) => l.type === "family");
     if (
       featureAccess.isStaff ||
       !familyId ||
       isLoading ||
-      (dbLists?.length ?? 0) > 0 ||
+      hasFamilyList ||
       createdDefaultListRef.current === familyId
     ) {
       return;
