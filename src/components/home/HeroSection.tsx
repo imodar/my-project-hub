@@ -20,10 +20,47 @@ interface WeatherData {
 }
 
 const getGreeting = (hour: number) => {
-  if (hour >= 5 && hour < 12) return "صباح الخير";
-  if (hour >= 12 && hour < 17) return "مساء النور";
-  if (hour >= 17 && hour < 21) return "مساء الخير";
-  return "تصبح على خير";
+  if (hour >= 5 && hour < 18) return "صباح الخير";
+  return "مساء الخير";
+};
+
+/** Returns a sun/moon icon with color that transitions through the day */
+const getTimeIcon = (hour: number): { icon: React.ReactNode; glow: string } => {
+  // Dawn 5-7: soft orange sunrise
+  if (hour >= 5 && hour < 7) return {
+    icon: <Sun size={20} className="text-orange-300" />,
+    glow: "rgba(255,180,80,0.3)",
+  };
+  // Morning 7-11: bright yellow sun
+  if (hour >= 7 && hour < 11) return {
+    icon: <Sun size={20} className="text-yellow-200" />,
+    glow: "rgba(255,245,158,0.4)",
+  };
+  // Midday 11-15: intense white-yellow sun
+  if (hour >= 11 && hour < 15) return {
+    icon: <Sun size={20} className="text-yellow-100" />,
+    glow: "rgba(255,255,200,0.5)",
+  };
+  // Afternoon 15-18: warm golden sun
+  if (hour >= 15 && hour < 18) return {
+    icon: <Sun size={20} className="text-amber-300" />,
+    glow: "rgba(255,200,100,0.35)",
+  };
+  // Sunset/dusk 18-20: orange-red setting sun transitioning to moon
+  if (hour >= 18 && hour < 20) return {
+    icon: <Moon size={20} className="text-orange-200" />,
+    glow: "rgba(255,160,80,0.3)",
+  };
+  // Early night 20-23: silver moon
+  if (hour >= 20 && hour < 23) return {
+    icon: <Moon size={20} className="text-blue-100" />,
+    glow: "rgba(200,210,255,0.25)",
+  };
+  // Late night 23-5: dim moon
+  return {
+    icon: <Moon size={20} className="text-indigo-200/80" />,
+    glow: "rgba(180,180,255,0.2)",
+  };
 };
 
 const isNightTime = (hour: number) => hour >= 19 || hour < 5;
@@ -241,6 +278,7 @@ const HeroSection = () => {
   const [currentHour] = useState(() => new Date().getHours());
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
   const greeting = useMemo(() => getGreeting(currentHour), [currentHour]);
+  const timeIcon = useMemo(() => getTimeIcon(currentHour), [currentHour]);
 
   const [demoActive, setDemoActive] = useState(false);
   const [demoIndex, setDemoIndex] = useState(0);
@@ -443,7 +481,10 @@ const HeroSection = () => {
           <div className="relative z-20 space-y-3">
             {/* Greeting */}
             <div>
-              <h1 className="text-xl font-bold tracking-tight mb-1">
+              <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
+                <span className="inline-flex" style={{ filter: `drop-shadow(0 0 6px ${timeIcon.glow})` }}>
+                  {timeIcon.icon}
+                </span>
                 {greeting}{currentUser.name ? `، ${currentUser.name}` : ""}
               </h1>
               <p className="text-white/75 font-medium text-xs whitespace-nowrap">
