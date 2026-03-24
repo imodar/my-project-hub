@@ -343,41 +343,14 @@ const Market = () => {
 
   const renderItem = (item: MarketItem, isChecked: boolean) => {
     const catInfo = CATEGORY_COLORS[item.category] || CATEGORY_COLORS["أخرى"];
-    const offset = swipeOffset[item.id] || 0;
 
     return (
-      <div key={item.id} className="relative overflow-hidden rounded-2xl select-none">
-        {/* Swipe actions behind - positioned on the left side */}
-        <div
-          className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
-          style={{ width: `${SWIPE_WIDTH}px` }}
-        >
-          <button
-            onClick={() => { setDeleteTarget(item); closeSwipe(item.id); }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
-          >
-            <Trash2 size={16} className="text-destructive-foreground" />
-            <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
-          </button>
-          <button
-            onClick={() => openEdit(item)}
-            className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
-            style={{ background: "hsl(220, 60%, 50%)" }}
-          >
-            <Pencil size={16} className="text-white" />
-            <span className="text-[10px] text-white font-semibold">تعديل</span>
-          </button>
-        </div>
-
-        {/* Card */}
-        <div
-          className={`relative z-10 bg-card rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out cursor-grab active:cursor-grabbing`}
-          style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
-          onPointerDown={(e) => handlePointerDown(e, item.id)}
-          onPointerMove={(e) => handlePointerMove(e, item.id)}
-          onPointerUp={(e) => handlePointerUp(e, item.id)}
-          onPointerCancel={() => closeSwipe(item.id)}
-        >
+      <SwipeableCard
+        key={item.id}
+        onDelete={() => setDeleteTarget(item)}
+        onEdit={() => openEdit(item)}
+      >
+        <div className="bg-card rounded-2xl p-3 flex items-center gap-3">
           <div className="relative shrink-0 w-7 h-7">
             {pendingItemIds.includes(item.id) && (
               <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
@@ -409,7 +382,7 @@ const Market = () => {
             <span className="text-[10px] text-muted-foreground">{item.addedBy}</span>
           </div>
         </div>
-      </div>
+      </SwipeableCard>
     );
   };
 
