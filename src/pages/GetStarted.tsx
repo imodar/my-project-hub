@@ -90,6 +90,8 @@ const SlideContent = React.forwardRef<
   </motion.div>
 ));
 SlideContent.displayName = "SlideContent";
+
+const GetStarted = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
   const navigate = useNavigate();
