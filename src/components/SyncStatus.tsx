@@ -70,7 +70,7 @@ const SyncStatus = forwardRef<HTMLDivElement, SyncStatusProps>(({ showLabel = fa
   }
 
   return (
-    <div className={cn("flex items-center gap-1.5", className)} dir="rtl">
+    <div ref={ref} className={cn("flex items-center gap-1.5", className)} dir="rtl">
       <span className={cn("rounded-full shrink-0", dotSize, dotClass)} />
       {showLabel && (
         <span className="text-xs text-muted-foreground">{label}</span>
@@ -82,6 +82,8 @@ const SyncStatus = forwardRef<HTMLDivElement, SyncStatusProps>(({ showLabel = fa
       )}
     </div>
   );
-};
+});
+
+SyncStatus.displayName = "SyncStatus";
 
 export default SyncStatus;
