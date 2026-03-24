@@ -99,6 +99,13 @@ const Market = () => {
       };
     });
 
+    // Sort oldest first (oldest on the right in RTL)
+    mapped.sort((a, b) => {
+      const da = (dbLists || []).find((l: any) => l.id === a.id)?.created_at || "";
+      const db2 = (dbLists || []).find((l: any) => l.id === b.id)?.created_at || "";
+      return da.localeCompare(db2);
+    });
+
     const filtered = featureAccess.isStaff ? mapped.filter((list) => list.type !== "family") : mapped;
 
     if (filtered.length > 0 || featureAccess.isStaff) {
