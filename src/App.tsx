@@ -73,7 +73,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const AnimatedRoutes = () => {
+const AnimatedRoutes = React.forwardRef<HTMLDivElement>((_props, _ref) => {
   const location = useLocation();
   const isAdminPanel = location.pathname.startsWith("/admin-panel");
 
