@@ -172,6 +172,7 @@ const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
       </div>
     </div>
   );
-};
+});
+BottomNav.displayName = "BottomNav";
 
 export default BottomNav;
