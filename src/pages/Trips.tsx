@@ -1300,8 +1300,10 @@ const Trips = () => {
                 return (
                   <SwipeableCard
                     key={trip.id}
-                    onEdit={() => handleEditTrip(trip)}
-                    onDelete={() => { setDeleteTarget(trip.id); setDeleteDrawer(true); }}
+                    actions={[
+                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => { setDeleteTarget(trip.id); setDeleteDrawer(true); } },
+                      { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditTrip(trip) },
+                    ]}
                   >
                     <button
                       onClick={() => handleSelectTrip(trip)}
