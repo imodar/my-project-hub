@@ -1,3 +1,4 @@
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -138,7 +139,7 @@ const AnimatedRoutes = () => {
   );
 };
 
-const App = () => (
+const App = React.forwardRef<HTMLDivElement>((_props, _ref) => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -161,6 +162,7 @@ const App = () => (
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
-);
+));
+App.displayName = "App";
 
 export default App;
