@@ -26,6 +26,7 @@ export function useZakatAssets() {
     mutationFn: async (input: {
       type: string; name: string; amount?: number; currency?: string;
       weight_grams?: number; purchase_date?: string; reminder?: boolean;
+      karat?: number | null;
     }) => {
       if (!user) throw new Error("No user");
       const { error } = await supabase.from("zakat_assets").insert({

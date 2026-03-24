@@ -268,6 +268,7 @@ const Zakat = () => {
         amount: Number(addAmount),
         purchase_date: addDate,
         reminder: true,
+        karat: addType === "gold" ? addKarat : null,
       });
     }
     setShowAdd(false);
