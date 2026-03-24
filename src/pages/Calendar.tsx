@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useMemo } from "react";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
-import { createPortal } from "react-dom";
+import FAB from "@/components/FAB";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
 import {
