@@ -1082,11 +1082,11 @@ const FamilyManagement = () => {
                   placeholder="أدخل الكود"
                   className="flex-1 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                   style={{ direction: "ltr" }}
-                  maxLength={6}
+                  maxLength={8}
                 />
                 <button
                   onClick={handleManualJoin}
-                  disabled={joinCode.length < 6}
+                  disabled={joinCode.length < 8}
                   className="px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
                 >
                   انضمام
