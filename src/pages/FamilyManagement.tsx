@@ -625,7 +625,8 @@ const FamilyManagement = () => {
                 <QrPattern code={inviteCode} />
                 <p className="text-xs text-muted-foreground mb-2">امسح الرمز للانضمام للأسرة</p>
                 <p className="text-[10px] text-muted-foreground/70">عند مسح الرمز، ستظهر شاشة قبول على جهاز المشرف لاختيار دور العضو الجديد</p>
-              </div>
+        </div>
+        )}
 
 
               {/* Invite Code */}
