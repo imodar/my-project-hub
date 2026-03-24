@@ -231,10 +231,6 @@ const Trips = () => {
     }));
   }, [dbTrips]);
 
-  // Local state wrappers for UI (selected trip sync)
-  const [tripsLocal, setTripsLocal] = useState<Trip[]>([]);
-  useEffect(() => { setTripsLocal(trips); }, [trips]);
-  const setTrips = setTripsLocal;
 
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
