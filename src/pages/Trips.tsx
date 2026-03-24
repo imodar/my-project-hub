@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useNavigate } from "react-router-dom";
 import FAB from "@/components/FAB";
+import SwipeableCard from "@/components/SwipeableCard";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
