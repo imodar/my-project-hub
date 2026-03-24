@@ -504,46 +504,16 @@ const FamilyManagement = () => {
             const canSwipe = !member.isCreator;
             const isPending = member.status === "pending";
             return (
-              <div key={member.id} className="relative overflow-hidden rounded-2xl" onClick={() => handleCardTap(member.id)}>
-                {/* Swipe actions - Delete + Admin */}
-                {canSwipe && (
-                  <div
-                    className="absolute inset-y-0 left-0 flex items-center gap-1 p-1"
-                    style={{ width: `${SWIPE_WIDTH}px` }}
-                  >
-                    <button
-                      onClick={() => handleRemoveMember(member.id)}
-                      className="flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-xl text-destructive-foreground"
-                      style={{ background: "hsl(var(--destructive))" }}
-                    >
-                      <Trash2 size={16} />
-                      <span className="text-[10px] font-semibold">حذف</span>
-                    </button>
-                    <button
-                      onClick={() => handleToggleAdmin(member.id)}
-                      className="flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-xl text-primary-foreground"
-                      style={{ background: memberIsAdmin ? "hsl(var(--muted-foreground))" : "hsl(var(--primary))" }}
-                    >
-                      <Shield size={16} />
-                      <span className="text-[10px] font-semibold">{memberIsAdmin ? "إلغاء" : "مشرف"}</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Card */}
+              <SwipeableCard
+                key={member.id}
+                actions={canSwipe ? [
+                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleRemoveMember(member.id) },
+                  { icon: <Shield size={16} />, label: memberIsAdmin ? "إلغاء" : "مشرف", color: memberIsAdmin ? "bg-muted-foreground" : "bg-primary", onClick: () => handleToggleAdmin(member.id) },
+                ] : []}
+              >
                 <div
-                  className="relative flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl transition-transform duration-150"
-                  style={{
-                    boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
-                    transform: `translateX(${offset}px)`,
-                  }}
-                  onTouchStart={(e) => canSwipe && handlePointerStart(e.touches[0].clientX, e.touches[0].clientY, member.id)}
-                  onTouchMove={(e) => canSwipe && handlePointerMove(e.touches[0].clientX, e.touches[0].clientY, member.id)}
-                  onTouchEnd={() => canSwipe && handlePointerEnd(member.id)}
-                  onMouseDown={(e) => canSwipe && handleMouseDown(e, member.id)}
-                  onMouseMove={(e) => canSwipe && handleMouseMove(e, member.id)}
-                  onMouseUp={() => canSwipe && handleMouseUp(member.id)}
-                  onMouseLeave={() => canSwipe && mouseDownRef.current && handleMouseUp(member.id)}
+                  className="relative flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl"
+                  style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}
                 >
                   {/* Avatar */}
                   <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{
@@ -574,7 +544,7 @@ const FamilyManagement = () => {
                     </span>
                   )}
                 </div>
-              </div>
+              </SwipeableCard>
             );
           })}
         </div>
