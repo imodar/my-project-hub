@@ -109,60 +109,7 @@ const SUGGESTION_STATUS: Record<string, { label: string; icon: typeof Check; col
 const INITIAL_TRIPS: Trip[] = [];
 
 // Swipeable card component
-const ACTION_WIDTH = 140;
-
-function SwipeableCard({ onEdit, onDelete, children }: {
-  onEdit: () => void;
-  onDelete: () => void;
-  children: React.ReactNode;
-}) {
-  const startX = useRef(0);
-  const currentX = useRef(0);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const handleStart = (clientX: number) => { startX.current = clientX; };
-  const handleMove = (clientX: number) => {
-    const diff = clientX - startX.current;
-    if (diff > 0) {
-      currentX.current = Math.min(diff, ACTION_WIDTH);
-      if (cardRef.current) cardRef.current.style.transform = `translateX(${currentX.current}px)`;
-    }
-  };
-  const handleEnd = () => {
-    const snap = currentX.current > ACTION_WIDTH / 2 ? ACTION_WIDTH : 0;
-    currentX.current = snap;
-    if (cardRef.current) {
-      cardRef.current.style.transition = "transform 0.25s ease-out";
-      cardRef.current.style.transform = `translateX(${snap}px)`;
-      setTimeout(() => { if (cardRef.current) cardRef.current.style.transition = ""; }, 250);
-    }
-  };
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl">
-      <div className="absolute inset-y-0 left-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
-        <button onClick={onEdit} className="flex-1 flex flex-col items-center justify-center gap-1 bg-primary text-primary-foreground">
-          <Pencil size={16} /><span className="text-[10px]">تعديل</span>
-        </button>
-        <button onClick={onDelete} className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-destructive-foreground">
-          <Trash2 size={16} /><span className="text-[10px]">حذف</span>
-        </button>
-      </div>
-      <div
-        ref={cardRef}
-        onTouchStart={(e) => handleStart(e.touches[0].clientX)}
-        onTouchMove={(e) => handleMove(e.touches[0].clientX)}
-        onTouchEnd={handleEnd}
-        onMouseDown={(e) => handleStart(e.clientX)}
-        onMouseMove={(e) => { if (e.buttons === 1) handleMove(e.clientX); }}
-        onMouseUp={handleEnd}
-        className="relative z-10 bg-card"
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
+// Using shared SwipeableCard component
 
 const Trips = () => {
   const navigate = useNavigate();
