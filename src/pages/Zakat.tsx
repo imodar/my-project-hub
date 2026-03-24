@@ -362,20 +362,22 @@ const Zakat = () => {
                   const zakat = getZakatAmount(asset);
 
                   return (
-                    <SwipeableAssetCard
+                    <SwipeableCard
                       key={asset.id}
-                      onEdit={() => {
-                        setAddType(asset.type);
-                        setAddLabel(asset.label);
-                        setAddAmount(String(asset.amount));
-                        if (asset.karat) setAddKarat(asset.karat);
-                        setAddDate(asset.purchaseDate);
-                        setEditingAssetId(asset.id);
-                        setShowAdd(true);
-                      }}
-                      onReminder={() => { setReminderAsset(asset.id); }}
-                       onDelete={() => setDeleteConfirm(asset.id)}
-                       onZakatPaid={() => setZakatPaidAsset(asset.id)}
+                      actions={[
+                        { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
+                          setAddType(asset.type);
+                          setAddLabel(asset.label);
+                          setAddAmount(String(asset.amount));
+                          if (asset.karat) setAddKarat(asset.karat);
+                          setAddDate(asset.purchaseDate);
+                          setEditingAssetId(asset.id);
+                          setShowAdd(true);
+                        }},
+                        { icon: <Bell size={16} />, label: "تذكير", color: "bg-amber-500", onClick: () => setReminderAsset(asset.id) },
+                        { icon: <Check size={16} />, label: "زكّيت", color: "bg-emerald-600", onClick: () => setZakatPaidAsset(asset.id) },
+                        { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteConfirm(asset.id) },
+                      ]}
                      >
                       <div className="rounded-2xl bg-background border border-border p-4">
                         <div className="flex items-start gap-3">
