@@ -625,10 +625,7 @@ const FamilyManagement = () => {
                 </div>
                 <QrPattern code={inviteCode} />
                 <p className="text-xs text-muted-foreground mb-2">امسح الرمز للانضمام للأسرة</p>
-                <p className="text-[10px] text-muted-foreground/70">عند مسح الرمز، ستظهر شاشة قبول على جهاز المشرف لاختيار دور العضو الجديد</p>
-        </div>
-        )}
-
+              </div>
 
               {/* Invite Code */}
               <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
@@ -645,7 +642,6 @@ const FamilyManagement = () => {
                   </div>
                   <span className="text-sm font-semibold text-foreground">كود الانضمام</span>
                 </div>
-                {/* Timer progress bar */}
                 <div className="w-full h-1 rounded-full bg-muted mb-3 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-1000 ease-linear"
@@ -664,7 +660,7 @@ const FamilyManagement = () => {
                     ))}
                   </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground/70 text-center mb-2">كود فريد يتجدد تلقائياً كل ٥ دقائق • عند إدخاله ستظهر شاشة قبول</p>
+                <p className="text-[10px] text-muted-foreground/70 text-center mb-2">كود فريد يتجدد تلقائياً كل ٥ دقائق</p>
                 <button onClick={handleCopyCode} disabled={!inviteCode || isRegeneratingCode} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10 disabled:opacity-40" style={{ background: "hsl(var(--primary) / 0.08)" }}>
                   {codeCopied ? <Check size={16} /> : <Copy size={16} />}
                   {codeCopied ? "تم النسخ" : "نسخ الكود"}
@@ -677,7 +673,7 @@ const FamilyManagement = () => {
                   <span className="text-sm font-semibold text-foreground">رابط الدعوة</span>
                   <Link2 size={18} className="text-primary" />
                 </div>
-                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل رابط يُستخدم مرة واحدة للانضمام</p>
+                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل رابط للانضمام</p>
                 <div className="flex gap-2">
                   <button onClick={handleShareLink} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-colors active:opacity-90 bg-primary">
                     <Share2 size={16} />
@@ -690,6 +686,8 @@ const FamilyManagement = () => {
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
 
