@@ -314,16 +314,19 @@ const Medications = () => {
   };
 
   const markAsTaken = (medId: string) => {
-    const now = new Date().toISOString();
-    addLogMut.mutate({ medication_id: medId });
+    const targetMedication = medications.find((m) => m.id === medId);
+    if (!targetMedication) return;
+
+    const confirmedDoseAt = targetMedication.reminder.nextDueAt || new Date().toISOString();
+    addLogMut.mutate({ medication_id: medId, taken_at: confirmedDoseAt });
 
     setMedications((prev) =>
       prev.map((m) => {
         if (m.id !== medId) return m;
         const updated = {
           ...m,
-          takenLog: [...m.takenLog, now],
-          reminder: { ...m.reminder, lastConfirmedAt: now },
+          takenLog: [...m.takenLog, confirmedDoseAt],
+          reminder: { ...m.reminder, lastConfirmedAt: confirmedDoseAt },
         };
         updated.reminder.nextDueAt = calculateNextDue(updated);
         return updated;
