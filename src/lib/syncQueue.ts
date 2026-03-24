@@ -46,6 +46,67 @@ const MAX_RETRIES = 3;
  * ──────────────────────────────────────────── */
 let isProcessing = false;
 
+/**
+ * تطبّق العمليات غير المتزامنة من sync_queue فوق البيانات الأساسية،
+ * بحيث تبقى العناصر المضافة أو المعدّلة أوفلاين ظاهرة حتى لو رجعت
+ * الشاشة تقرأ من السيرفر أو من جدول محلي ناقص.
+ *
+ * @param table - اسم الجدول المستهدف
+ * @param baseItems - البيانات الأساسية القادمة من Dexie أو API بعد حفظها محلياً
+ * @returns البيانات بعد إسقاط عمليات INSERT / UPDATE / DELETE المعلقة أو الفاشلة
+ */
+export async function projectPendingChanges<T extends { id?: string; created_at?: string }>(
+  table: string,
+  baseItems: T[]
+): Promise<T[]> {
+  const queueItems = await db.sync_queue
+    .where("table")
+    .equals(table)
+    .filter((item) => item.status === "pending" || item.status === "failed")
+    .sortBy("created_at");
+
+  const itemsMap = new Map<string, T>();
+
+  for (const item of baseItems) {
+    if (item.id) {
+      itemsMap.set(item.id, item);
+    }
+  }
+
+  for (const queuedItem of queueItems) {
+    const payload = queuedItem.data as T;
+    const id = payload?.id;
+
+    if (!id) continue;
+
+    switch (queuedItem.operation) {
+      case "INSERT":
+        itemsMap.set(id, {
+          ...itemsMap.get(id),
+          ...payload,
+        } as T);
+        break;
+      case "UPDATE":
+        itemsMap.set(id, {
+          ...(itemsMap.get(id) ?? ({} as T)),
+          ...payload,
+        });
+        break;
+      case "DELETE":
+        itemsMap.delete(id);
+        break;
+    }
+  }
+
+  return Array.from(itemsMap.values()).sort((a, b) => {
+    const aTime = a.created_at ? Date.parse(a.created_at) : Number.NaN;
+    const bTime = b.created_at ? Date.parse(b.created_at) : Number.NaN;
+
+    if (Number.isNaN(aTime) || Number.isNaN(bTime)) return 0;
+    return bTime - aTime;
+  });
+}
+
 /* ────────────────────────────────────────────
  *  إضافة عملية جديدة للطابور
  * ──────────────────────────────────────────── */
@@ -76,7 +137,6 @@ export async function addToQueue(
   const id = await db.sync_queue.add(item);
   console.info(`[SyncQueue] أُضيفت عملية ${operation} على ${table} (id: ${id})`);
 
-  // محاولة المعالجة فوراً إذا كان الإنترنت متاحاً
   if (navigator.onLine) {
     processQueue();
   }
@@ -116,7 +176,6 @@ export async function processQueue(): Promise<void> {
 
       const mapping = TABLE_API_MAP[item.table];
 
-      // إذا الجدول غير مربوط بعد — نتركه pending
       if (!mapping) {
         console.warn(`[SyncQueue] الجدول "${item.table}" غير مربوط بـ API — يبقى pending`);
         continue;
@@ -136,7 +195,6 @@ export async function processQueue(): Promise<void> {
 
         if (error) throw new Error(error);
 
-        // نجاح — تحديث الحالة
         await db.sync_queue.update(item.id!, { status: "synced" as const });
         console.info(`[SyncQueue] ✅ تمت مزامنة ${item.operation} على ${item.table}`);
       } catch (err) {
@@ -155,7 +213,6 @@ export async function processQueue(): Promise<void> {
       }
     }
 
-    // تنظيف العمليات المكتملة (الأقدم من 24 ساعة)
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     await db.sync_queue
       .where("status")
@@ -188,7 +245,6 @@ if (typeof window !== "undefined") {
     processQueue();
   });
 
-  // معالجة الطابور عند تحميل الصفحة إذا كان الإنترنت متاحاً
   if (document.readyState === "complete") {
     processQueue();
   } else {
