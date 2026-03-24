@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDocumentLists } from "@/hooks/useDocumentLists";
-import { createPortal } from "react-dom";
+import FAB from "@/components/FAB";
 import {
   Plus, Search, FolderLock, Users, Lock, Share2, Trash2, Pencil,
   MoreVertical, Check, FileText, Image, File, Bell, Calendar,
