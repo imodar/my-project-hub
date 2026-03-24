@@ -154,22 +154,13 @@ const GetStarted = () => {
       {/* Main swipeable content */}
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md mx-auto px-6 relative">
         <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
+          <SlideContent
             key={current}
-            custom={direction}
+            direction={direction}
             variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              duration: 0.45,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.15}
-            onDragEnd={handleDragEnd}
-            className="flex flex-col items-center text-center w-full cursor-grab active:cursor-grabbing select-none"
+            slide={slide}
+            handleDragEnd={handleDragEnd}
+          />
           >
             {/* Floating image with subtle bounce */}
             <motion.img
