@@ -122,7 +122,7 @@ const AnimatedRoutes = () => {
         <Route path="/zakat" element={<AuthGuard><RoleGuard requireNonStaff><Zakat /></RoleGuard></AuthGuard>} />
         <Route path="/will" element={<AuthGuard><RoleGuard requireNonStaff><Will /></RoleGuard></AuthGuard>} />
         <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
-        <Route path="/albums" element={<AuthGuard><Albums /></AuthGuard>} />
+        <Route path="/albums" element={<AuthGuard><RoleGuard requireNonStaff><Albums /></RoleGuard></AuthGuard>} />
         <Route path="/kids-worship" element={<AuthGuard><KidsWorship /></AuthGuard>} />
         <Route path="/parent-dashboard" element={<AuthGuard><ParentDashboard /></AuthGuard>} />
         <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
