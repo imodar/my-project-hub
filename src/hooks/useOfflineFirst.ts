@@ -64,22 +64,24 @@ export function useOfflineFirst<T extends { id: string }>({
 }: UseOfflineFirstOptions<T>): UseOfflineFirstReturn<T> {
   const qc = useQueryClient();
   const [localData, setLocalData] = useState<T[] | null>(null);
-  const loadedRef = useRef(false);
 
-  // ── 1. قراءة IndexedDB فوراً ──
-  useEffect(() => {
-    if (!enabled || loadedRef.current) return;
+  /** قراءة البيانات من IndexedDB */
+  const readLocal = useCallback(async () => {
     const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
     if (!table) return;
+    const items: T[] = await table.toArray();
+    const filtered = filterFn ? filterFn(items) : items;
+    setLocalData(filtered);
+    return filtered;
+  }, [tableName, filterFn]);
 
-    table.toArray().then((items: T[]) => {
-      if (items.length > 0) {
-        const filtered = filterFn ? filterFn(items) : items;
-        setLocalData(filtered);
-        // وضع البيانات المحلية في كاش React Query
-        qc.setQueryData(queryKey, filtered);
+  // ── 1. قراءة IndexedDB فوراً عند التحميل ──
+  useEffect(() => {
+    if (!enabled) return;
+    readLocal().then((items) => {
+      if (items && items.length > 0) {
+        qc.setQueryData(queryKey, items);
       }
-      loadedRef.current = true;
     });
   }, [tableName, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
