@@ -17,6 +17,7 @@ import {
 import { haptic } from "@/lib/haptics";
 import { toast } from "@/hooks/use-toast";
 import { useWill } from "@/hooks/useWill";
+import { ROLE_LABELS } from "@/contexts/UserRoleContext";
 
 // ── Types ──
 interface WillSection {
