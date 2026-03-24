@@ -75,7 +75,7 @@ export function useOfflineMutation<
               item?.id === variables.id ? { ...item, ...variables } : item
             );
           case "DELETE":
-            return items.filter((item) => item?.id !== variables.id);
+            return items.filter((item) => String(item?.id) !== String(variables.id));
           default:
             return items;
         }
