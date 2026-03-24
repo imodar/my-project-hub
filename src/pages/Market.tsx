@@ -5,6 +5,7 @@ import { useMarketLists } from "@/hooks/useMarketLists";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useToast } from "@/hooks/use-toast";
 import FAB from "@/components/FAB";
+import SwipeableCard from "@/components/SwipeableCard";
 import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
