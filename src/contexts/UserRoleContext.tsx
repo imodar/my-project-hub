@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useMyRole } from "@/hooks/useMyRole";
 
 export type UserRole = "father" | "mother" | "husband" | "wife" | "son" | "daughter" | "worker" | "maid" | "driver";
@@ -50,7 +50,7 @@ interface UserRoleContextType {
 
 const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined);
 
-export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
+export const UserRoleProvider = React.forwardRef<HTMLDivElement, { children: ReactNode }>(({ children }, _ref) => {
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
     const saved = localStorage.getItem("current_user_role");
     return (saved as UserRole) || "father";
@@ -80,7 +80,8 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </UserRoleContext.Provider>
   );
-};
+});
+UserRoleProvider.displayName = "UserRoleProvider";
 
 export const useUserRole = () => {
   const ctx = useContext(UserRoleContext);
