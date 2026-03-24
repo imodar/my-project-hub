@@ -5,6 +5,7 @@ import { useTrash } from "@/contexts/TrashContext";
 import FAB from "@/components/FAB";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
+import { useFamilyId } from "@/hooks/useFamilyId";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import { useUserRole } from "@/contexts/UserRoleContext";
@@ -47,19 +48,23 @@ const PRIORITY_INFO: Record<string, { label: string; bg: string; text: string; e
 
 // FAMILY_MEMBERS removed — using useFamilyMembers hook
 const SWIPE_WIDTH = 140;
+const DEFAULT_FAMILY_LIST_NAME = "مهام العائلة";
 
 const Tasks = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
+  const { familyId } = useFamilyId();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useTaskLists();
   const { addToTrash } = useTrash();
+  const createdDefaultListRef = useRef<string | null>(null);
 
   const lists: TaskList[] = useMemo(() => {
     const mapped = (dbLists || []).map((l: any) => ({
       id: l.id,
       name: l.name,
       type: (l.type || "family") as "family" | "personal" | "shared",
+      isDefault: l.type === "family" && l.name === DEFAULT_FAMILY_LIST_NAME,
       sharedWith: l.shared_with || [],
       lastUpdatedBy: "",
       lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
@@ -73,8 +78,31 @@ const Tasks = () => {
         
       })),
     }));
+    mapped.sort((a, b) => {
+      const da = (dbLists || []).find((l: any) => l.id === a.id)?.updated_at || "";
+      const db2 = (dbLists || []).find((l: any) => l.id === b.id)?.updated_at || "";
+      return da.localeCompare(db2);
+    });
     return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
   }, [dbLists, featureAccess.isStaff]);
+
+  // Auto-create default family list
+  useEffect(() => {
+    const hasFamilyList = (dbLists || []).some((l: any) => l.type === "family");
+    if (
+      featureAccess.isStaff ||
+      !familyId ||
+      isLoading ||
+      hasFamilyList ||
+      createdDefaultListRef.current === familyId
+    ) return;
+    createdDefaultListRef.current = familyId;
+    createListMutation.mutate({
+      name: DEFAULT_FAMILY_LIST_NAME,
+      type: "family",
+      shared_with: [],
+    });
+  }, [familyId, featureAccess.isStaff, isLoading, dbLists, createListMutation]);
 
   const [activeListId, setActiveListId] = useState("");
 
