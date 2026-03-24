@@ -622,15 +622,6 @@ const FamilyManagement = () => {
                 <p className="text-[10px] text-muted-foreground/70">عند مسح الرمز، ستظهر شاشة قبول على جهاز المشرف لاختيار دور العضو الجديد</p>
               </div>
 
-              {/* Simulate join request button (for demo) */}
-              <button
-                onClick={simulateJoinRequest}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold text-foreground bg-card transition-colors active:bg-muted"
-                style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)", border: "1px dashed hsl(var(--border))" }}
-              >
-                <UserPlus size={16} className="text-primary" />
-                محاكاة طلب انضمام (للتجربة)
-              </button>
 
               {/* Invite Code */}
               <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
