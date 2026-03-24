@@ -5,6 +5,7 @@ import { useTrash } from "@/contexts/TrashContext";
 import FAB from "@/components/FAB";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
+import { useFamilyId } from "@/hooks/useFamilyId";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import { useUserRole } from "@/contexts/UserRoleContext";
