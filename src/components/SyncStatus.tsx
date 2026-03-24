@@ -6,20 +6,18 @@
  * - 🟠 برتقالي (متحرك): يتزامن الآن
  * - ⚫ رمادي: غير متصل + عدد العمليات المعلقة
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
 interface SyncStatusProps {
-  /** إظهار النص بجانب النقطة */
   showLabel?: boolean;
-  /** حجم النقطة */
   size?: "sm" | "md";
   className?: string;
 }
 
-const SyncStatus = ({ showLabel = false, size = "sm", className }: SyncStatusProps) => {
+const SyncStatus = forwardRef<HTMLDivElement, SyncStatusProps>(({ showLabel = false, size = "sm", className }, ref) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isSyncing, setIsSyncing] = useState(false);
 
