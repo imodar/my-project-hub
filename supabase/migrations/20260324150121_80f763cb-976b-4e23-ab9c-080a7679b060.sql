@@ -1,0 +1,1 @@
+ALTER TABLE public.zakat_assets ADD COLUMN IF NOT EXISTS karat integer;

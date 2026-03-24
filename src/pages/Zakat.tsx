@@ -224,7 +224,7 @@ const Zakat = () => {
     type: a.type as AssetType,
     label: a.name,
     amount: a.amount || a.weight_grams || 0,
-    karat: undefined, // stored in metadata if needed
+    karat: a.karat ?? undefined,
     purchaseDate: a.purchase_date || "",
     marketValue: undefined,
     reminder: a.reminder || false,
@@ -259,6 +259,7 @@ const Zakat = () => {
         name: addLabel || ASSET_TYPE_META[addType].label,
         amount: Number(addAmount),
         purchase_date: addDate,
+        karat: addType === "gold" ? addKarat : null,
       });
     } else {
       addAssetMut.mutate({
@@ -267,6 +268,7 @@ const Zakat = () => {
         amount: Number(addAmount),
         purchase_date: addDate,
         reminder: true,
+        karat: addType === "gold" ? addKarat : null,
       });
     }
     setShowAdd(false);

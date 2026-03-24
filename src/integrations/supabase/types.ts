@@ -2486,6 +2486,7 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          karat: number | null
           name: string
           purchase_date: string | null
           reminder: boolean
@@ -2499,6 +2500,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          karat?: number | null
           name: string
           purchase_date?: string | null
           reminder?: boolean
@@ -2512,6 +2514,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          karat?: number | null
           name?: string
           purchase_date?: string | null
           reminder?: boolean
