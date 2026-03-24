@@ -48,7 +48,7 @@ const PRIORITY_INFO: Record<string, { label: string; bg: string; text: string; e
 };
 
 // FAMILY_MEMBERS removed — using useFamilyMembers hook
-const SWIPE_WIDTH = 140;
+// SWIPE_WIDTH removed — using shared SwipeableCard
 const DEFAULT_FAMILY_LIST_NAME = "مهام العائلة";
 
 const Tasks = () => {
