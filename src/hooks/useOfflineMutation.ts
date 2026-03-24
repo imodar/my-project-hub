@@ -16,7 +16,8 @@
  */
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { db } from "@/lib/db";
-import { addToQueue, type SyncOperation } from "@/lib/syncQueue";
+import { addToQueue } from "@/lib/syncQueue";
+import type { SyncOperation } from "@/lib/db";
 import type { Table } from "dexie";
 
 /* ────────────────────────────────────────────
