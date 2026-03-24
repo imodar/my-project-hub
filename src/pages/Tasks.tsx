@@ -471,6 +471,12 @@ const Tasks = () => {
         <PageHeader
           title="المهام"
           actions={[
+            ...(activeList && !activeList.isDefault
+              ? [{
+                  icon: <MoreVertical size={20} className="text-white" />,
+                  onClick: () => { haptic.light(); setShowListActions(true); },
+                }]
+              : []),
             {
               icon: <Plus size={20} className="text-white" />,
               onClick: () => setShowAddList(true),
@@ -517,11 +523,6 @@ const Tasks = () => {
               <span className="text-[10px] text-muted-foreground">
                 {activeList.lastUpdatedBy} – {activeList.lastUpdatedAt}
               </span>
-              {!activeList.isDefault && (
-                <button className="p-1 rounded-lg hover:bg-muted" onClick={() => setShowListActions(true)}>
-                  <MoreVertical size={16} className="text-muted-foreground" />
-                </button>
-              )}
             </div>
           </div>
         )}
