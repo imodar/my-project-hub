@@ -4,6 +4,7 @@ import { useTaskLists } from "@/hooks/useTaskLists";
 import { useTrash } from "@/contexts/TrashContext";
 import FAB from "@/components/FAB";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical } from "lucide-react";
+import SwipeableCard from "@/components/SwipeableCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useNavigate } from "react-router-dom";
