@@ -1,54 +1,73 @@
 
 
-# خطة إصلاح أمان featureAccess — قراءة الدور من قاعدة البيانات
+# خطة إصلاح حفظ العيار (karat) في الزكاة
 
 ## المشكلة
-`UserRoleContext` يقرأ الدور من `localStorage` — أي مستخدم يقدر يغيّر دوره من DevTools ويوصل لصفحات ممنوعة (الوصية، الزكاة، إلخ).
+العيار يُعرض في UI ويُستخدم بالحساب لكن **لا يُحفظ ولا يُقرأ من DB**. السطر 227: `karat: undefined`. كل حسابات الذهب خاطئة بعد إعادة فتح الصفحة.
 
-## الحل — 4 ملفات جديدة/معدّلة
+## الحل — 3 تعديلات
 
-### 1. إنشاء `src/hooks/useMyRole.ts`
-- يستخدم React Query لجلب `role` و `is_admin` من جدول `family_members` حيث `user_id = auth.uid()` و `status = 'active'`
-- `staleTime: 5 * 60 * 1000`
-- يرجع `{ dbRole: UserRole | null, isAdmin: boolean, isLoading: boolean }`
-- يعتمد على `useAuth()` مباشرة (لا يحتاج `useFamilyId`)
+### 1. Migration: إضافة عمود `karat` لجدول `zakat_assets`
+```sql
+ALTER TABLE public.zakat_assets ADD COLUMN IF NOT EXISTS karat integer;
+```
 
-### 2. تعديل `src/contexts/UserRoleContext.tsx`
-- إضافة `dbRole`, `isAdmin`, `isLoading` للـ context type
-- استدعاء `useMyRole()` داخل Provider
-- **`featureAccess` يُبنى من `dbRole`** وليس `currentRole`
-- الإبقاء على `currentRole` + `setCurrentRole` للتوافق فقط (لكن لا يؤثر على الصلاحيات)
-- إذا `isLoading` أو `dbRole === null` → `featureAccess` يكون غير مقيّد (أو مقيّد بالكامل حسب الأمان — الأفضل: مقيّد حتى يتم التحميل)
+### 2. تعديل `src/pages/Zakat.tsx`
 
-### 3. إنشاء `src/components/RoleGuard.tsx`
-- Props: `requireNonStaff: boolean`, `children`
-- يقرأ `dbRole` و `isLoading` من `useUserRole()`
-- `isLoading` → spinner
-- إذا `dbRole` هو staff (`worker/maid/driver`) و `requireNonStaff` مفعّل → `<Navigate to="/" />`
-- غير ذلك → يعرض `children`
+**سطر 227 — قراءة العيار من DB:**
+```
+karat: a.karat ?? undefined,
+```
+بدل `karat: undefined`
 
-### 4. تعديل `src/App.tsx`
-- لف هذه الروتات بـ `RoleGuard requireNonStaff`:
-  - `/will`, `/zakat`, `/places`, `/calendar`, `/albums`
-- مثال: `<AuthGuard><RoleGuard requireNonStaff><Will /></RoleGuard></AuthGuard>`
+**سطور 256-261 — إضافة karat للـ update mutation:**
+```js
+updateAssetMut.mutate({
+  id: editingAssetId,
+  type: addType,
+  name: addLabel || ASSET_TYPE_META[addType].label,
+  amount: Number(addAmount),
+  purchase_date: addDate,
+  karat: addType === "gold" ? addKarat : null,
+});
+```
 
-### 5. تعديل `src/pages/Settings.tsx` (سطور 191-225)
-- استبدال Role Switcher التفاعلي بعرض الدور الحالي من DB فقط (read-only)
-- إزالة `setCurrentRole` من الاستدعاء
-- عرض `dbRole` مع label عربي + badge "من قاعدة البيانات"
-- إذا `isLoading` → skeleton
+**سطور 264-270 — إضافة karat للـ add mutation:**
+```js
+addAssetMut.mutate({
+  type: addType,
+  name: addLabel || ASSET_TYPE_META[addType].label,
+  amount: Number(addAmount),
+  purchase_date: addDate,
+  reminder: true,
+  karat: addType === "gold" ? addKarat : null,
+});
+```
 
----
+### 3. تعديل `src/hooks/useZakatAssets.ts`
+
+إضافة `karat` لـ type الـ input في `addAsset`:
+```ts
+karat?: number | null;
+```
+
+## كيف يعمل حساب القيمة بالعيار
+
+السطر 298 موجود فعلاً وصحيح:
+```
+const purity = (asset.karat || 24) / 24;
+return asset.amount * purity * goldPricePerGram;
+```
+- عيار 24 → نقاء 100% → `85 × 1.0 × 540 = 45,900 ر.س`
+- عيار 18 → نقاء 75% → `85 × 0.75 × 540 = 34,425 ر.س`
+
+سعر الذهب 24 قيراط يُجلب من API خارجي عبر `useGoldPrice()` الموجود فعلاً.
 
 ## ملخص الملفات
 
-| الملف | العملية |
+| الملف | التعديل |
 |---|---|
-| `src/hooks/useMyRole.ts` | جديد |
-| `src/contexts/UserRoleContext.tsx` | تعديل |
-| `src/components/RoleGuard.tsx` | جديد |
-| `src/App.tsx` | تعديل (5 روتات) |
-| `src/pages/Settings.tsx` | تعديل (role selector → read-only) |
-
-لا تعديل على أي edge function أو migration — البيانات موجودة فعلاً في `family_members.role`.
+| Migration جديد | `ALTER TABLE zakat_assets ADD COLUMN karat integer` |
+| `src/pages/Zakat.tsx` | قراءة karat من DB + تمريرها للـ mutations |
+| `src/hooks/useZakatAssets.ts` | إضافة `karat` للـ input type |
 
