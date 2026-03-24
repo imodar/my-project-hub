@@ -29,8 +29,7 @@ const Settings = () => {
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
 
-  // Simulate admin role (parent)
-  const isAdmin = true;
+  const isAdmin = isDbAdmin;
 
   const settingsGroups = [
     {
