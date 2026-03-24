@@ -1,116 +1,111 @@
-import React, { useRef, useCallback } from "react";
-import { Pencil, Trash2, Archive } from "lucide-react";
+import React, { useRef, useState, useCallback } from "react";
+import { haptic } from "@/lib/haptics";
+
+export interface SwipeAction {
+  icon: React.ReactNode;
+  label: string;
+  color: string;        // tailwind bg class e.g. "bg-primary" or "bg-destructive"
+  textColor?: string;   // defaults to "text-white"
+  onClick: () => void;
+}
 
 interface SwipeableCardProps {
   children: React.ReactNode;
-  onEdit?: () => void;
-  onDelete: () => void;
-  onArchive?: () => void;
-  actionWidth?: number;
+  actions: SwipeAction[];   // 1–4 actions
+  onSwipeOpen?: () => void; // called when card opens (to close siblings)
 }
 
-const SwipeableCard = ({ children, onEdit, onDelete, onArchive, actionWidth }: SwipeableCardProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const startXRef = useRef(0);
-  const currentXRef = useRef(0);
-  const isOpenRef = useRef(false);
+const BUTTON_WIDTH = 68; // px per action button
+const THRESHOLD = 60;    // px to trigger snap open
 
-  const actionCount = [onDelete, onEdit, onArchive].filter(Boolean).length;
-  const ACTION_WIDTH = actionWidth ?? actionCount * 70;
-  const SWIPE_THRESHOLD = 60;
+export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardProps) => {
+  const ACTION_WIDTH = actions.length * BUTTON_WIDTH;
 
-  const getContent = useCallback(() => {
-    return containerRef.current?.querySelector("[data-swipe-content]") as HTMLElement | null;
+  const [offset, setOffset] = useState(0);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const isOpen = useRef(false);
+  const isDragging = useRef(false);
+  const isVertical = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    isDragging.current = true;
+    isVertical.current = false;
   }, []);
 
-  const setTransform = useCallback((x: number) => {
-    const content = getContent();
-    if (content) content.style.transform = `translateX(${x}px)`;
-  }, [getContent]);
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current) return;
 
-  const closeSwipe = useCallback(() => {
-    const content = getContent();
-    if (content) content.style.transition = "transform 0.3s ease";
-    setTransform(0);
-    isOpenRef.current = false;
-  }, [getContent, setTransform]);
+    const dx = e.touches[0].clientX - startX.current;
+    const dy = e.touches[0].clientY - startY.current;
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    startXRef.current = e.clientX;
-    currentXRef.current = isOpenRef.current ? ACTION_WIDTH : 0;
-    const content = getContent();
-    if (content) content.style.transition = "none";
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }, [ACTION_WIDTH, getContent]);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    const diff = e.clientX - startXRef.current;
-    const base = isOpenRef.current ? ACTION_WIDTH : 0;
-    currentXRef.current = Math.max(0, Math.min(ACTION_WIDTH, base + diff));
-    setTransform(currentXRef.current);
-  }, [ACTION_WIDTH, setTransform]);
-
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    const content = getContent();
-    if (content) content.style.transition = "transform 0.3s ease";
-    if (currentXRef.current > SWIPE_THRESHOLD) {
-      setTransform(ACTION_WIDTH);
-      isOpenRef.current = true;
-    } else {
-      setTransform(0);
-      isOpenRef.current = false;
+    // Detect vertical scroll — lock direction early
+    if (!isVertical.current && Math.abs(dy) > Math.abs(dx) + 5) {
+      isVertical.current = true;
+      return;
     }
-    if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    if (isVertical.current) return;
+
+    // RTL: drag right (positive dx) reveals actions on the left
+    const base = isOpen.current ? ACTION_WIDTH : 0;
+    const newOffset = Math.max(0, Math.min(ACTION_WIDTH, base + dx));
+    setOffset(newOffset);
+  }, [ACTION_WIDTH]);
+
+  const handleTouchEnd = useCallback(() => {
+    isDragging.current = false;
+    if (isVertical.current) return;
+
+    const shouldOpen = offset > THRESHOLD;
+
+    if (shouldOpen && !isOpen.current) {
+      setOffset(ACTION_WIDTH);
+      isOpen.current = true;
+      onSwipeOpen?.();
+      haptic.light();
+    } else if (!shouldOpen || offset < ACTION_WIDTH / 2) {
+      setOffset(0);
+      isOpen.current = false;
     }
-  }, [ACTION_WIDTH, SWIPE_THRESHOLD, getContent, setTransform]);
+  }, [offset, ACTION_WIDTH, onSwipeOpen]);
+
+  const close = useCallback(() => {
+    setOffset(0);
+    isOpen.current = false;
+  }, []);
 
   return (
-    <div ref={containerRef} className="relative overflow-hidden rounded-2xl">
-      {/* Action buttons behind */}
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Action buttons — revealed on left when swiping right */}
       <div
-        className="absolute inset-y-0 left-0 flex items-stretch gap-1 p-1"
+        className="absolute inset-y-0 left-0 flex items-stretch"
         style={{ width: ACTION_WIDTH }}
       >
-        {onDelete && (
+        {actions.map((action, i) => (
           <button
-            onClick={() => { closeSwipe(); onDelete(); }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
+            key={i}
+            onClick={() => { action.onClick(); close(); }}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 
+                        ${action.color} ${action.textColor ?? "text-white"}
+                        ${i === 0 ? "rounded-r-none" : ""}
+                        ${i === actions.length - 1 ? "rounded-l-2xl" : ""}`}
           >
-            <Trash2 size={16} className="text-destructive-foreground" />
-            <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
+            {action.icon}
+            <span className="text-[10px] font-semibold">{action.label}</span>
           </button>
-        )}
-        {onEdit && (
-          <button
-            onClick={() => { closeSwipe(); onEdit(); }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl"
-            style={{ background: "hsl(220, 60%, 50%)" }}
-          >
-            <Pencil size={16} className="text-white" />
-            <span className="text-[10px] text-white font-semibold">تعديل</span>
-          </button>
-        )}
-        {onArchive && (
-          <button
-            onClick={() => { closeSwipe(); onArchive(); }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl"
-            style={{ background: "hsl(var(--muted))" }}
-          >
-            <Archive size={16} className="text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground font-semibold">أرشفة</span>
-          </button>
-        )}
+        ))}
       </div>
-      {/* Swipeable content */}
+
+      {/* Card content — slides right to reveal actions */}
       <div
-        data-swipe-content
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={closeSwipe}
-        className="relative z-10"
-        style={{ touchAction: "pan-y" }}
+        className="relative z-10 transition-transform duration-200 ease-out"
+        style={{ transform: `translateX(${offset}px)`, transition: isDragging.current ? "none" : undefined }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => { if (isOpen.current) close(); }}
       >
         {children}
       </div>
