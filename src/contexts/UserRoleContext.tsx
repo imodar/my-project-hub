@@ -51,16 +51,9 @@ interface UserRoleContextType {
 const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined);
 
 export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
-  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
-    const saved = localStorage.getItem("current_user_role");
-    return (saved as UserRole) || "father";
-  });
+  const [currentRole, setCurrentRole] = useState<UserRole>("father");
 
   const { dbRole, isAdmin, isLoading } = useMyRole();
-
-  useEffect(() => {
-    localStorage.setItem("current_user_role", currentRole);
-  }, [currentRole]);
 
   // featureAccess is built from dbRole (database), NOT currentRole (localStorage)
   const effectiveRole = dbRole ?? currentRole; // fallback to currentRole only if no DB data yet
