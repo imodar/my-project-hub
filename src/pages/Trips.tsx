@@ -993,16 +993,7 @@ const Trips = () => {
           </div>
         )}
 
-        {/* Documents FAB */}
-        {tripView === "documents" && createPortal(
-          <button
-            onClick={() => setNewDocDrawer(true)}
-            className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-          >
-            <Plus size={24} />
-          </button>,
-          document.body
-        )}
+        <FAB onClick={() => setNewDocDrawer(true)} show={tripView === "documents"} />
 
         {/* Add Document Drawer */}
         <Drawer open={newDocDrawer} onOpenChange={setNewDocDrawer}>
