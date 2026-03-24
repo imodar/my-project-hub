@@ -4,7 +4,7 @@ import { useTrash } from "@/contexts/TrashContext";
 import { useMarketLists } from "@/hooks/useMarketLists";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useToast } from "@/hooks/use-toast";
-import { createPortal } from "react-dom";
+import FAB from "@/components/FAB";
 import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
