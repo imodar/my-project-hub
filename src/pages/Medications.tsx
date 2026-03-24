@@ -337,14 +337,20 @@ const Medications = () => {
   };
 
   const skipMedication = (medId: string) => {
+    const targetMedication = medications.find((m) => m.id === medId);
+    if (!targetMedication) return;
+
+    const skippedDoseAt = targetMedication.reminder.nextDueAt || new Date().toISOString();
+    addLogMut.mutate({ medication_id: medId, skipped: true, taken_at: skippedDoseAt });
+
     setMedications((prev) =>
       prev.map((m) => {
         if (m.id !== medId) return m;
-        const updated = { ...m };
+        const updated = {
+          ...m,
+          reminder: { ...m.reminder, lastConfirmedAt: skippedDoseAt },
+        };
         updated.reminder.nextDueAt = calculateNextDue(updated);
-        const next = new Date(updated.reminder.nextDueAt);
-        next.setDate(next.getDate() + 1);
-        updated.reminder.nextDueAt = next.toISOString();
         return updated;
       })
     );
