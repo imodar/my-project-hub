@@ -5,7 +5,8 @@ import { LogOut } from "lucide-react";
 import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Briefcase, Car } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
-import { useUserRole, type UserRole } from "@/contexts/UserRoleContext";
+import { useUserRole, ROLE_LABELS } from "@/contexts/UserRoleContext";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
