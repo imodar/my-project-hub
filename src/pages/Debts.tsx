@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from "react";
-import { createPortal } from "react-dom";
+import FAB from "@/components/FAB";
 import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff, History } from "lucide-react";
 import { CardPageSkeleton } from "@/components/PageSkeletons";
 import { useNavigate } from "react-router-dom";
