@@ -311,7 +311,7 @@ const Tasks = () => {
     setNewItemPriority("medium");
     setNewItemAssignedTo("");
     setShowAddItem(false);
-  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, newItemRepeatEnabled, newItemRepeatDays, newItemRepeatCount, addItemMutation]);
+  }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, addItemMutation]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
