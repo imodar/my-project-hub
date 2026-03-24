@@ -295,7 +295,7 @@ const Debts = () => {
   const [expandedDebt, setExpandedDebt] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addFormType, setAddFormType] = useState<"given" | "taken">("given");
-  const [showFabMenu, setShowFabMenu] = useState(false);
+  
 
   // Payment drawer
   const [showPaymentDrawer, setShowPaymentDrawer] = useState(false);
