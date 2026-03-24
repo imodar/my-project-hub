@@ -113,7 +113,7 @@ const AnimatedRoutes = () => {
         <Route path="/calendar" element={<AuthGuard><RoleGuard requireNonStaff><CalendarPage /></RoleGuard></AuthGuard>} />
         <Route path="/trash" element={<AuthGuard><Trash /></AuthGuard>} />
         <Route path="/market" element={<AuthGuard><Market /></AuthGuard>} />
-        <Route path="/places" element={<AuthGuard><Places /></AuthGuard>} />
+        <Route path="/places" element={<AuthGuard><RoleGuard requireNonStaff><Places /></RoleGuard></AuthGuard>} />
         <Route path="/places/add" element={<AuthGuard><AddPlace /></AuthGuard>} />
         <Route path="/places/edit/:id" element={<AuthGuard><AddPlace /></AuthGuard>} />
         <Route path="/budget" element={<AuthGuard><Budget /></AuthGuard>} />
