@@ -33,90 +33,8 @@ import {
 } from "@/data/medicationData";
 import { toast } from "sonner";
 
-/* ─── Swipeable Card ─── */
-const SwipeableMedCard = ({
-  children,
-  onEdit,
-  onDelete,
-}: {
-  children: React.ReactNode;
-  onEdit: () => void;
-  onDelete: () => void;
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const startX = useRef(0);
-  const currentX = useRef(0);
-  const isSwiping = useRef(false);
-  const [offset, setOffset] = useState(0);
-  const [locked, setLocked] = useState(false);
-  const actionWidth = 120;
-  const threshold = 50;
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    isSwiping.current = true;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isSwiping.current) return;
-    currentX.current = e.touches[0].clientX;
-    let diff = currentX.current - startX.current;
-    if (locked) diff += actionWidth;
-    const clamped = Math.max(0, Math.min(actionWidth + 20, diff));
-    setOffset(clamped);
-  };
-
-  const handleTouchEnd = () => {
-    isSwiping.current = false;
-    if (offset > threshold && !locked) {
-      setOffset(actionWidth);
-      setLocked(true);
-    } else if (offset < threshold && locked) {
-      setOffset(0);
-      setLocked(false);
-    } else if (locked) {
-      setOffset(actionWidth);
-    } else {
-      setOffset(0);
-    }
-  };
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl">
-      {/* Action buttons behind card */}
-      <div
-        className="absolute inset-y-0 right-0 flex items-center gap-1 pr-2 rounded-2xl"
-        style={{ width: `${actionWidth}px` }}
-      >
-        <button
-          onClick={() => { setOffset(0); setLocked(false); onEdit(); }}
-          className="flex-1 h-full flex items-center justify-center bg-primary rounded-xl"
-        >
-          <Pencil className="w-4 h-4 text-primary-foreground" />
-        </button>
-        <button
-          onClick={() => { setOffset(0); setLocked(false); onDelete(); }}
-          className="flex-1 h-full flex items-center justify-center bg-destructive rounded-xl"
-        >
-          <Trash2 className="w-4 h-4 text-destructive-foreground" />
-        </button>
-      </div>
-      <div
-        ref={containerRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onClick={() => { if (locked) { setOffset(0); setLocked(false); } }}
-        style={{
-          transform: `translateX(${offset}px)`,
-          transition: isSwiping.current ? "none" : "transform 0.3s ease-out",
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-};
+// Using shared SwipeableCard component
+import SwipeableCard from "@/components/SwipeableCard";
 
 const Medications = () => {
   const { members: familyMembers } = useFamilyMembers();
@@ -442,10 +360,12 @@ const Medications = () => {
             const takenToday = med.takenLog.some((t) => new Date(t).toDateString() === new Date().toDateString());
 
             return (
-              <SwipeableMedCard
+              <SwipeableCard
                 key={med.id}
-                onEdit={() => { setShowDetailSheet(null); openEditDrawer(med); }}
-                onDelete={() => setShowDeleteConfirm(med)}
+                actions={[
+                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteConfirm(med) },
+                  { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => { setShowDetailSheet(null); openEditDrawer(med); } },
+                ]}
               >
                 <div
                   className={`bg-card rounded-2xl p-4 border transition-colors cursor-pointer ${
@@ -511,7 +431,7 @@ const Medications = () => {
                     </div>
                   )}
                 </div>
-              </SwipeableMedCard>
+              </SwipeableCard>
             );
           })
         )}

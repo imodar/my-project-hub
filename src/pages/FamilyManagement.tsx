@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X, RefreshCw, Loader2 } from "lucide-react";
+import SwipeableCard from "@/components/SwipeableCard";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,8 +45,7 @@ const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: nu
   }
 };
 
-const SWIPE_THRESHOLD = 40;
-const SWIPE_WIDTH = 144; // wider for 2 buttons
+// Swipe constants removed — using shared SwipeableCard
 
 const getProfileName = (): string => {
   return "";
@@ -148,11 +148,7 @@ const FamilyManagement = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
-  // Swipe state
-  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number; id: string } | null>(null);
-  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
-  const isDragging = useRef(false);
+  // Swipe state managed by SwipeableCard
 
   // Fetch invite code from server on mount
   const fetchInviteCode = useCallback(async () => {
@@ -236,8 +232,7 @@ const FamilyManagement = () => {
         return;
       }
       refetchMembers();
-      setOpenSwipeId(null);
-      setSwipeOffsets({});
+      
       toast({ title: "تم حذف الفرد من الأسرة" });
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
@@ -266,8 +261,7 @@ const FamilyManagement = () => {
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
     }
-    setOpenSwipeId(null);
-    setSwipeOffsets({});
+    
   };
 
   const handleCopyCode = () => {
@@ -402,70 +396,7 @@ const FamilyManagement = () => {
     refetchMembers();
   };
 
-  // Swipe handlers (touch + mouse)
-  const handlePointerStart = useCallback((x: number, y: number, id: string) => {
-    touchStartRef.current = { x, y, id };
-    isDragging.current = false;
-  }, []);
-
-  const handlePointerMove = useCallback((x: number, y: number, id: string) => {
-    if (!touchStartRef.current || touchStartRef.current.id !== id) return;
-    const dx = x - touchStartRef.current.x;
-    const dy = Math.abs(touchStartRef.current.y - y);
-
-    if (!isDragging.current && dy > Math.abs(dx)) {
-      touchStartRef.current = null;
-      return;
-    }
-    isDragging.current = true;
-
-    if (dx > 0) {
-      const offset = Math.min(dx, SWIPE_WIDTH);
-      setSwipeOffsets((prev) => ({ ...prev, [id]: offset }));
-    } else {
-      setSwipeOffsets((prev) => ({ ...prev, [id]: Math.max(0, (prev[id] || 0) + dx * 0.5) }));
-    }
-  }, []);
-
-  const handlePointerEnd = useCallback((id: string) => {
-    const offset = swipeOffsets[id] || 0;
-    if (offset > SWIPE_THRESHOLD) {
-      setSwipeOffsets((prev) => ({ ...prev, [id]: SWIPE_WIDTH }));
-      setOpenSwipeId(id);
-    } else {
-      setSwipeOffsets((prev) => ({ ...prev, [id]: 0 }));
-      setOpenSwipeId(null);
-    }
-    touchStartRef.current = null;
-    isDragging.current = false;
-  }, [swipeOffsets]);
-
-  // Mouse drag state
-  const mouseDownRef = useRef(false);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent, id: string) => {
-    mouseDownRef.current = true;
-    handlePointerStart(e.clientX, e.clientY, id);
-  }, [handlePointerStart]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent, id: string) => {
-    if (!mouseDownRef.current) return;
-    e.preventDefault();
-    handlePointerMove(e.clientX, e.clientY, id);
-  }, [handlePointerMove]);
-
-  const handleMouseUp = useCallback((id: string) => {
-    if (!mouseDownRef.current) return;
-    mouseDownRef.current = false;
-    handlePointerEnd(id);
-  }, [handlePointerEnd]);
-
-  const handleCardTap = useCallback((id: string) => {
-    if (openSwipeId && openSwipeId !== id) {
-      setSwipeOffsets((prev) => ({ ...prev, [openSwipeId]: 0 }));
-      setOpenSwipeId(null);
-    }
-  }, [openSwipeId]);
+  // Swipe handlers moved to SwipeableCard component
 
   const spouseRole = getSpouseRole();
 
@@ -499,51 +430,20 @@ const FamilyManagement = () => {
         <>
         <div className="space-y-2">
           {members.map((member) => {
-            const offset = swipeOffsets[member.id] || 0;
             const memberIsAdmin = member.isAdmin || isParentRole(member.role);
             const canSwipe = !member.isCreator;
             const isPending = member.status === "pending";
             return (
-              <div key={member.id} className="relative overflow-hidden rounded-2xl" onClick={() => handleCardTap(member.id)}>
-                {/* Swipe actions - Delete + Admin */}
-                {canSwipe && (
-                  <div
-                    className="absolute inset-y-0 left-0 flex items-center gap-1 p-1"
-                    style={{ width: `${SWIPE_WIDTH}px` }}
-                  >
-                    <button
-                      onClick={() => handleRemoveMember(member.id)}
-                      className="flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-xl text-destructive-foreground"
-                      style={{ background: "hsl(var(--destructive))" }}
-                    >
-                      <Trash2 size={16} />
-                      <span className="text-[10px] font-semibold">حذف</span>
-                    </button>
-                    <button
-                      onClick={() => handleToggleAdmin(member.id)}
-                      className="flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-xl text-primary-foreground"
-                      style={{ background: memberIsAdmin ? "hsl(var(--muted-foreground))" : "hsl(var(--primary))" }}
-                    >
-                      <Shield size={16} />
-                      <span className="text-[10px] font-semibold">{memberIsAdmin ? "إلغاء" : "مشرف"}</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Card */}
+              <SwipeableCard
+                key={member.id}
+                actions={canSwipe ? [
+                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleRemoveMember(member.id) },
+                  { icon: <Shield size={16} />, label: memberIsAdmin ? "إلغاء" : "مشرف", color: memberIsAdmin ? "bg-muted-foreground" : "bg-primary", onClick: () => handleToggleAdmin(member.id) },
+                ] : []}
+              >
                 <div
-                  className="relative flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl transition-transform duration-150"
-                  style={{
-                    boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
-                    transform: `translateX(${offset}px)`,
-                  }}
-                  onTouchStart={(e) => canSwipe && handlePointerStart(e.touches[0].clientX, e.touches[0].clientY, member.id)}
-                  onTouchMove={(e) => canSwipe && handlePointerMove(e.touches[0].clientX, e.touches[0].clientY, member.id)}
-                  onTouchEnd={() => canSwipe && handlePointerEnd(member.id)}
-                  onMouseDown={(e) => canSwipe && handleMouseDown(e, member.id)}
-                  onMouseMove={(e) => canSwipe && handleMouseMove(e, member.id)}
-                  onMouseUp={() => canSwipe && handleMouseUp(member.id)}
-                  onMouseLeave={() => canSwipe && mouseDownRef.current && handleMouseUp(member.id)}
+                  className="relative flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl"
+                  style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}
                 >
                   {/* Avatar */}
                   <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{
@@ -574,7 +474,7 @@ const FamilyManagement = () => {
                     </span>
                   )}
                 </div>
-              </div>
+              </SwipeableCard>
             );
           })}
         </div>

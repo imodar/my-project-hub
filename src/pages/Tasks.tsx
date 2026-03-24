@@ -4,6 +4,7 @@ import { useTaskLists } from "@/hooks/useTaskLists";
 import { useTrash } from "@/contexts/TrashContext";
 import FAB from "@/components/FAB";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical } from "lucide-react";
+import SwipeableCard from "@/components/SwipeableCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useNavigate } from "react-router-dom";
@@ -47,7 +48,7 @@ const PRIORITY_INFO: Record<string, { label: string; bg: string; text: string; e
 };
 
 // FAMILY_MEMBERS removed — using useFamilyMembers hook
-const SWIPE_WIDTH = 140;
+// SWIPE_WIDTH removed — using shared SwipeableCard
 const DEFAULT_FAMILY_LIST_NAME = "مهام العائلة";
 
 const Tasks = () => {
@@ -116,10 +117,7 @@ const Tasks = () => {
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
 
-  // Swipe state
-  const [swipeOffset, setSwipeOffset] = useState<Record<string, number>>({});
-  const touchStartXRef = useRef(0);
-  const activeSwipeRef = useRef<string | null>(null);
+  // Swipe state managed by SwipeableCard
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<TaskItem | null>(null);
@@ -206,21 +204,13 @@ const Tasks = () => {
     isLongPressingRef.current = false;
   }, [activeListId, dragActiveId]);
 
-  // Swipe handlers
-  const closeSwipe = useCallback((id: string) => {
-    setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
-    activeSwipeRef.current = null;
-  }, []);
-
+  // Swipe handlers moved to SwipeableCard component
+  // Long-press drag handlers for reorder
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
-    touchStartXRef.current = e.clientX;
-    activeSwipeRef.current = id;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     startLongPress(id, e.clientY);
   };
 
-  const handlePointerMove = (e: React.PointerEvent, id: string) => {
-    // If dragging, find which item we're over
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (isLongPressingRef.current && dragActiveId) {
       e.preventDefault();
       const y = e.clientY;
@@ -233,33 +223,13 @@ const Tasks = () => {
       if (overItem && overItem !== dragActiveId) {
         setDragOverId(overItem);
       }
-      return;
     }
-
-    if (activeSwipeRef.current !== id) return;
-    const diffX = e.clientX - touchStartXRef.current;
-    const diffY = Math.abs(e.clientY - pointerStartYRef.current);
-    // Cancel long press if finger moves horizontally (swipe) or vertically (scroll)
-    if (Math.abs(diffX) > 5 || diffY > 5) {
-      cancelLongPress();
-    }
-    setSwipeOffset((prev) => ({ ...prev, [id]: diffX > 0 ? Math.min(diffX, SWIPE_WIDTH) : 0 }));
   };
 
-  const handlePointerUp = (e: React.PointerEvent, id: string) => {
+  const handlePointerUp = (e: React.PointerEvent) => {
     cancelLongPress();
     if (isLongPressingRef.current) {
       finishDrag(dragOverId);
-      if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
-        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-      }
-      return;
-    }
-    const offset = swipeOffset[id] || 0;
-    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
-    activeSwipeRef.current = null;
-    if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     }
   };
 
@@ -273,7 +243,6 @@ const Tasks = () => {
     if (!deleteTarget) return;
     haptic.medium();
     deleteItemMutation.mutate(deleteTarget.id);
-    setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   }, [deleteTarget, deleteItemMutation]);
 
@@ -283,8 +252,7 @@ const Tasks = () => {
     setEditNote(item.note);
     setEditPriority(item.priority);
     setEditAssignedTo(item.assignedTo);
-    closeSwipe(item.id);
-  }, [closeSwipe]);
+  }, []);
 
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
@@ -374,84 +342,65 @@ const Tasks = () => {
 
   const renderItem = (item: TaskItem, isDone: boolean) => {
     const prioInfo = PRIORITY_INFO[item.priority];
-    const offset = dragActiveId ? 0 : (swipeOffset[item.id] || 0);
-    const isDragging = dragActiveId === item.id;
+    const isDraggingItem = dragActiveId === item.id;
     const isDragOverThis = dragOverId === item.id;
 
     return (
       <div
         key={item.id}
         ref={(el) => { if (el) itemRefsMap.current.set(item.id, el); }}
-        className={`relative overflow-hidden rounded-2xl select-none transition-all duration-200 ${
-          isDragging ? "opacity-50 scale-95 shadow-lg ring-2 ring-primary" : ""
-        } ${isDragOverThis ? "border-2 border-primary border-dashed" : ""}`}
+        className={`select-none transition-all duration-200 ${
+          isDraggingItem ? "opacity-50 scale-95 shadow-lg ring-2 ring-primary" : ""
+        } ${isDragOverThis ? "border-2 border-primary border-dashed rounded-2xl" : ""}`}
       >
-        {/* Swipe actions behind */}
-        {!dragActiveId && (
-          <div
-            className="absolute left-0 top-0 bottom-0 flex items-stretch gap-1 rounded-2xl overflow-hidden p-1"
-            style={{ width: `${SWIPE_WIDTH}px` }}
-          >
-            <button
-              onClick={() => { setDeleteTarget(item); closeSwipe(item.id); }}
-              className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive hover:bg-destructive/90 transition-colors rounded-xl"
-            >
-              <Trash2 size={16} className="text-destructive-foreground" />
-              <span className="text-[10px] text-destructive-foreground font-semibold">حذف</span>
-            </button>
-            <button
-              onClick={() => openEdit(item)}
-              className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors rounded-xl"
-              style={{ background: "hsl(220, 60%, 50%)" }}
-            >
-              <Pencil size={16} className="text-white" />
-              <span className="text-[10px] text-white font-semibold">تعديل</span>
-            </button>
-          </div>
-        )}
-
-        {/* Card */}
-        <div
-          className="relative z-10 bg-card rounded-2xl p-3 flex items-center gap-3 transition-transform duration-200 ease-out"
-          style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
-          onPointerDown={(e) => handlePointerDown(e, item.id)}
-          onPointerMove={(e) => handlePointerMove(e, item.id)}
-          onPointerUp={(e) => handlePointerUp(e, item.id)}
-          onPointerCancel={() => { cancelLongPress(); closeSwipe(item.id); setDragActiveId(null); setDragOverId(null); isLongPressingRef.current = false; }}
+        <SwipeableCard
+          actions={[
+            { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget(item) },
+            { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => openEdit(item) },
+          ]}
         >
-          <div className="relative shrink-0 w-7 h-7">
-            {pendingItemIds.includes(item.id) && (
-              <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
-            )}
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => !dragActiveId && toggleItem(item.id)}
-              className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
-                isDone
-                  ? "bg-primary"
-                  : "border-2 border-border hover:border-primary"
-              }`}
-            >
-              {isDone && <Check size={14} className="text-primary-foreground" />}
-            </button>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className={`font-semibold text-sm text-foreground truncate ${isDone ? "line-through" : ""}`}>
-              {item.name}
-            </p>
-            {item.note && (
-              <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
-            )}
-            <p className="text-[10px] text-muted-foreground mt-0.5">{item.assignedTo}</p>
-          </div>
-          {item.priority !== "none" && (
-            <div className="flex flex-col items-end gap-1">
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
-                {prioInfo.emoji} {prioInfo.label}
-              </span>
+          <div
+            className="bg-card rounded-2xl p-3 flex items-center gap-3"
+            style={{ touchAction: "pan-y" }}
+            onPointerDown={(e) => handlePointerDown(e, item.id)}
+            onPointerMove={(e) => handlePointerMove(e)}
+            onPointerUp={(e) => handlePointerUp(e)}
+            onPointerCancel={() => { cancelLongPress(); setDragActiveId(null); setDragOverId(null); isLongPressingRef.current = false; }}
+          >
+            <div className="relative shrink-0 w-7 h-7">
+              {pendingItemIds.includes(item.id) && (
+                <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
+              )}
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => !dragActiveId && toggleItem(item.id)}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                  isDone
+                    ? "bg-primary"
+                    : "border-2 border-border hover:border-primary"
+                }`}
+              >
+                {isDone && <Check size={14} className="text-primary-foreground" />}
+              </button>
             </div>
-          )}
-        </div>
+            <div className="flex-1 min-w-0">
+              <p className={`font-semibold text-sm text-foreground truncate ${isDone ? "line-through" : ""}`}>
+                {item.name}
+              </p>
+              {item.note && (
+                <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-0.5">{item.assignedTo}</p>
+            </div>
+            {item.priority !== "none" && (
+              <div className="flex flex-col items-end gap-1">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
+                  {prioInfo.emoji} {prioInfo.label}
+                </span>
+              </div>
+            )}
+          </div>
+        </SwipeableCard>
       </div>
     );
   };

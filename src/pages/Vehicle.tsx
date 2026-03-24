@@ -5,7 +5,7 @@ import { useTrash } from "@/contexts/TrashContext";
 import FAB from "@/components/FAB";
 import { useNavigate } from "react-router-dom";
 import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search, Users, UserPlus } from "lucide-react";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import SwipeableCard from "@/components/SwipeableCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -181,129 +181,7 @@ const CarLogo = ({ manufacturer, size = 40 }: { manufacturer: string; size?: num
   return <Car size={size * 0.6} className="text-muted-foreground" />;
 };
 
-// ─── Swipeable Car Card (right swipe only in RTL = drag left to reveal actions) ───
-const SwipeableCarCard = ({ children, onDelete, onEdit }: {
-  children: React.ReactNode;
-  onDelete: () => void;
-  onEdit: () => void;
-}) => {
-  const [offset, setOffset] = useState(0);
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const isSwiping = useRef(false);
-  const isVertical = useRef(false);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    startY.current = e.touches[0].clientY;
-    isSwiping.current = false;
-    isVertical.current = false;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const dx = e.touches[0].clientX - startX.current;
-    const dy = e.touches[0].clientY - startY.current;
-
-    if (!isSwiping.current && !isVertical.current) {
-      if (Math.abs(dy) > Math.abs(dx)) { isVertical.current = true; return; }
-      if (Math.abs(dx) > 10) isSwiping.current = true;
-    }
-    if (isVertical.current) return;
-
-    // RTL: allow positive dx (drag right to reveal actions on left)
-    if (dx > 0) {
-      setOffset(Math.min(dx, 160));
-    } else {
-      setOffset(0);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (offset > 80) {
-      setOffset(140); // snap open
-    } else {
-      setOffset(0);
-    }
-    isSwiping.current = false;
-  };
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl">
-      {/* Actions behind */}
-      <div className="absolute inset-y-0 left-0 flex items-stretch z-0" style={{ width: 140 }}>
-        <button onClick={onEdit} className="flex-1 flex flex-col items-center justify-center bg-primary text-primary-foreground">
-          <Pencil size={18} />
-          <span className="text-[10px] mt-1">تعديل</span>
-        </button>
-        <button onClick={onDelete} className="flex-1 flex flex-col items-center justify-center bg-destructive text-destructive-foreground">
-          <Trash2 size={18} />
-          <span className="text-[10px] mt-1">حذف</span>
-        </button>
-      </div>
-      <div
-        className="relative z-10 transition-transform"
-        style={{ transform: `translateX(${offset}px)`, transitionDuration: isSwiping.current ? "0ms" : "200ms" }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {children}
-      </div>
-    </div>
-  );
-};
-
-// ─── Swipeable Row (for maintenance records) ───
-const SwipeableRow = ({ children, onDelete, onEdit, onReminder }: {
-  children: React.ReactNode;
-  onDelete: () => void;
-  onEdit: () => void;
-  onReminder: () => void;
-}) => {
-  const [offset, setOffset] = useState(0);
-  const constraintsRef = useRef<HTMLDivElement>(null);
-
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x > 120) {
-      onDelete();
-      setOffset(0);
-    } else if (info.offset.x < -120) {
-      setOffset(0);
-    } else {
-      setOffset(0);
-    }
-  };
-
-  return (
-    <div ref={constraintsRef} className="relative overflow-hidden rounded-2xl">
-      <div className="absolute inset-0 flex items-stretch">
-        <div className="flex items-center gap-2 px-3 bg-destructive text-destructive-foreground">
-          <Trash2 size={18} />
-          <span className="text-xs font-bold">حذف</span>
-        </div>
-        <div className="flex-1" />
-        <div className="flex items-center gap-1 px-2">
-          <button onClick={onReminder} className="p-2 rounded-xl bg-amber-100 text-amber-700">
-            <Bell size={16} />
-          </button>
-          <button onClick={onEdit} className="p-2 rounded-xl bg-blue-100 text-blue-700">
-            <Pencil size={16} />
-          </button>
-        </div>
-      </div>
-      <motion.div
-        drag="x"
-        dragConstraints={{ left: -140, right: 140 }}
-        dragElastic={0.1}
-        onDragEnd={handleDragEnd}
-        animate={{ x: offset }}
-        className="relative z-10"
-      >
-        {children}
-      </motion.div>
-    </div>
-  );
-};
+// Using shared SwipeableCard component
 
 // ─── Main Component ───
 const Vehicle = () => {
@@ -673,11 +551,13 @@ const Vehicle = () => {
                 const Icon = typeInfo?.icon || Wrench;
 
                 return (
-                  <SwipeableRow
+                  <SwipeableCard
                     key={record.id}
-                    onDelete={() => handleDeleteMaintenance(record.id)}
-                    onEdit={() => handleEditMaintenance(record)}
-                    onReminder={() => handleSetReminder(record)}
+                    actions={[
+                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleDeleteMaintenance(record.id) },
+                      { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditMaintenance(record) },
+                      { icon: <Bell size={16} />, label: "تذكير", color: "bg-amber-500", onClick: () => handleSetReminder(record) },
+                    ]}
                   >
                     <div className="bg-card rounded-2xl p-4 border border-border" dir="rtl">
                       <div className="flex items-start gap-3">
@@ -712,7 +592,7 @@ const Vehicle = () => {
                         </div>
                       </div>
                     </div>
-                  </SwipeableRow>
+                  </SwipeableCard>
                 );
               })}
             </div>
@@ -871,10 +751,12 @@ const Vehicle = () => {
                 const soonCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "soon").length;
 
                 return (
-                  <SwipeableCarCard
+                  <SwipeableCard
                     key={car.id}
-                    onDelete={() => setDeleteConfirmCar(car)}
-                    onEdit={() => openEditCar(car)}
+                    actions={[
+                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteConfirmCar(car) },
+                      { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => openEditCar(car) },
+                    ]}
                   >
                     <button
                       onClick={() => setSelectedCar(car)}
@@ -917,7 +799,7 @@ const Vehicle = () => {
                         </div>
                       </div>
                     </button>
-                  </SwipeableCarCard>
+                  </SwipeableCard>
                 );
               })}
             </div>
