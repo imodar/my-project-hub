@@ -232,8 +232,7 @@ const FamilyManagement = () => {
         return;
       }
       refetchMembers();
-      setOpenSwipeId(null);
-      setSwipeOffsets({});
+      
       toast({ title: "تم حذف الفرد من الأسرة" });
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
