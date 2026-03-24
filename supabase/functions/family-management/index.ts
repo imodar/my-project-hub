@@ -69,6 +69,17 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    // ── Admin authorization for sensitive actions ──
+    if (action === "toggle-admin" || action === "remove-member") {
+      const { family_id } = body;
+      if (!family_id) return json({ error: "family_id مطلوب" }, 400);
+      const { data: isAdmin } = await supabase.rpc("is_family_admin", {
+        _user_id: userId,
+        _family_id: family_id,
+      });
+      if (!isAdmin) return json({ error: "غير مصرح" }, 403);
+    }
+
     // CREATE family
     if (action === "create") {
       const { name, role } = body;
