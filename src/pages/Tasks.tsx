@@ -70,7 +70,7 @@ const Tasks = () => {
         priority: (i.priority || "none") as TaskItem["priority"],
         assignedTo: i.assigned_to || "",
         done: i.done,
-        repeat: i.repeat_enabled ? { enabled: true, days: i.repeat_days || [], count: i.repeat_count || 0 } : undefined,
+        
       })),
     }));
     return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
