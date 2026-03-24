@@ -22,6 +22,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
   const ACTION_WIDTH = actions.length * BUTTON_WIDTH;
 
   const [offset, setOffset] = useState(0);
+  const offsetRef = useRef(0);
   const startX = useRef(0);
   const startY = useRef(0);
   const isOpen = useRef(false);
@@ -52,27 +53,31 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
     const base = isOpen.current ? ACTION_WIDTH : 0;
     const newOffset = Math.max(0, Math.min(ACTION_WIDTH, base + dx));
     setOffset(newOffset);
+    offsetRef.current = newOffset;
   }, [ACTION_WIDTH]);
 
   const handleTouchEnd = useCallback(() => {
     isDragging.current = false;
     if (isVertical.current) return;
 
-    const shouldOpen = offset > THRESHOLD;
+    const shouldOpen = offsetRef.current > THRESHOLD;
 
     if (shouldOpen && !isOpen.current) {
       setOffset(ACTION_WIDTH);
+      offsetRef.current = ACTION_WIDTH;
       isOpen.current = true;
       onSwipeOpen?.();
       haptic.light();
-    } else if (!shouldOpen || offset < ACTION_WIDTH / 2) {
+    } else if (offsetRef.current < ACTION_WIDTH / 2) {
       setOffset(0);
+      offsetRef.current = 0;
       isOpen.current = false;
     }
-  }, [offset, ACTION_WIDTH, onSwipeOpen]);
+  }, [ACTION_WIDTH, onSwipeOpen]);
 
   const close = useCallback(() => {
     setOffset(0);
+    offsetRef.current = 0;
     isOpen.current = false;
   }, []);
 
@@ -100,8 +105,8 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
 
       {/* Card content — slides right to reveal actions */}
       <div
-        className="relative z-10 transition-transform duration-200 ease-out"
-        style={{ transform: `translateX(${offset}px)`, transition: isDragging.current ? "none" : undefined }}
+        className="relative z-10"
+        style={{ transform: `translateX(${offset}px)`, transition: isDragging.current ? "none" : "transform 250ms ease-out" }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
