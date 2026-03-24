@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useZakatAssets } from "@/hooks/useZakatAssets";
-import { createPortal } from "react-dom";
+import FAB from "@/components/FAB";
 import {
   Plus, Coins, Info, Trash2, Bell, BellOff, ChevronDown, ChevronUp,
   ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock, Pencil, CalendarIcon
@@ -508,19 +508,7 @@ const Zakat = () => {
         </div>
       </PullToRefresh>
 
-      {/* FAB */}
-      {createPortal(
-        <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30">
-          <Button
-            onClick={() => { haptic.medium(); setShowAdd(true); }}
-            className="w-14 h-14 rounded-full shadow-xl bg-primary text-primary-foreground hover:bg-primary/90 p-0"
-            style={{ boxShadow: "0 6px 24px hsla(209, 100%, 31%, 0.35)" }}
-          >
-            <Plus size={26} />
-          </Button>
-        </div>,
-        document.body
-      )}
+      <FAB onClick={() => { haptic.medium(); setShowAdd(true); }} />
 
       {/* Add asset drawer */}
       <Drawer open={showAdd} onOpenChange={setShowAdd}>

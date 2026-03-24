@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { usePlaceLists } from "@/hooks/usePlaceLists";
-import { createPortal } from "react-dom";
+import FAB from "@/components/FAB";
 import { Plus, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, RotateCcw, SlidersHorizontal, Baby, DollarSign, Phone, Link2, ExternalLink } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
@@ -953,16 +953,7 @@ const Places = () => {
         </Drawer>
       </PullToRefresh>
 
-      {/* FAB add button */}
-      {createPortal(
-        <button
-          onClick={() => navigate("/places/add", { state: { listId: activeListId } })}
-          className="fixed bottom-28 left-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 active:scale-95 transition-transform"
-        >
-          <Plus size={24} />
-        </button>,
-        document.body
-      )}
+      <FAB onClick={() => navigate("/places/add", { state: { listId: activeListId } })} />
     </div>
   );
 };

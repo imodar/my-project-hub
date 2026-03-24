@@ -1,5 +1,6 @@
 // Budget Page
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import FAB from "@/components/FAB";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane, CalendarIcon } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -383,17 +384,7 @@ const Budget = () => {
           onBack={() => setSelectedBudget(null)}
         />
 
-        {/* FAB for adding expense */}
-        <button
-          onClick={() => { setExpenseName(""); setExpenseAmount(""); setShowAddExpense(true); }}
-          className="fixed left-4 bottom-24 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
-          style={{
-            background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-            boxShadow: "0 8px 25px hsl(var(--hero-gradient-from) / 0.4)",
-          }}
-        >
-          <Plus size={24} className="text-white" />
-        </button>
+        <FAB onClick={() => { setExpenseName(""); setExpenseAmount(""); setShowAddExpense(true); }} />
 
         <div className="px-4 mt-4 space-y-4">
           {/* Summary Cards */}
@@ -718,26 +709,16 @@ const Budget = () => {
         </div>
       </PullToRefresh>
 
-      {/* FAB */}
-      <button
-        onClick={() => {
-          haptic.light();
-          setBudgetType("month");
-          setNewMonthIdx(String(new Date().getMonth()));
-          setNewYear(String(new Date().getFullYear()));
-          setProjectLabel("");
-          setNewIncome("");
-          setShareNames([]);
-          setShowAddMonth(true);
-        }}
-        className="fixed left-4 bottom-24 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
-        style={{
-          background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-          boxShadow: "0 8px 25px hsl(var(--hero-gradient-from) / 0.4)",
-        }}
-      >
-        <Plus size={24} className="text-white" />
-      </button>
+      <FAB onClick={() => {
+        haptic.light();
+        setBudgetType("month");
+        setNewMonthIdx(String(new Date().getMonth()));
+        setNewYear(String(new Date().getFullYear()));
+        setProjectLabel("");
+        setNewIncome("");
+        setShareNames([]);
+        setShowAddMonth(true);
+      }} />
 
       {/* Add Budget Drawer */}
       <Drawer open={showAddMonth} onOpenChange={setShowAddMonth}>

@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from "react";
+import FAB from "@/components/FAB";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -296,16 +297,7 @@ const Albums = () => {
           </div>
         )}
 
-        {/* FAB */}
-        <button
-          onClick={handleAddPhoto}
-          className="fixed bottom-28 left-5 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-transform"
-          style={{
-            background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8))",
-          }}
-        >
-          <ImagePlus size={22} className="text-primary-foreground" />
-        </button>
+        <FAB icon={<ImagePlus size={22} />} onClick={handleAddPhoto} />
       </div>
     );
   }
@@ -416,16 +408,7 @@ const Albums = () => {
         </div>
       </PullToRefresh>
 
-      {/* FAB */}
-      <button
-        onClick={() => setShowCreate(true)}
-        className="fixed bottom-28 left-5 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-transform"
-        style={{
-          background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8))",
-        }}
-      >
-        <FolderPlus size={22} className="text-primary-foreground" />
-      </button>
+      <FAB icon={<FolderPlus size={22} />} onClick={() => setShowCreate(true)} />
 
       {/* Create Album Drawer */}
       <Drawer open={showCreate} onOpenChange={setShowCreate}>

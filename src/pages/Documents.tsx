@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDocumentLists } from "@/hooks/useDocumentLists";
-import { createPortal } from "react-dom";
+import FAB from "@/components/FAB";
 import {
   Plus, Search, FolderLock, Users, Lock, Share2, Trash2, Pencil,
   MoreVertical, Check, FileText, Image, File, Bell, Calendar,
@@ -522,22 +522,7 @@ const Documents = () => {
           )}
         </div>
 
-        {/* FAB */}
-        {createPortal(
-          <div className="fixed bottom-24 left-4 max-w-2xl mx-auto z-30">
-            <Button
-              onClick={() => {
-                haptic.medium();
-                setShowAddItem(true);
-              }}
-              className="w-14 h-14 rounded-full shadow-xl bg-primary text-primary-foreground hover:bg-primary/90 p-0"
-              size="icon"
-            >
-              <Plus size={24} />
-            </Button>
-          </div>,
-          document.body
-        )}
+        <FAB onClick={() => { haptic.medium(); setShowAddItem(true); }} />
 
         {/* View Document Drawer */}
         <Drawer open={!!viewDoc} onOpenChange={(open) => !open && setViewDoc(null)}>
