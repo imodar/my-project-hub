@@ -13,7 +13,7 @@ const navItems = [
 
 const SOS_HOLD_DURATION = 3000;
 
-const SOSNavButton = () => {
+const SOSNavButton = React.forwardRef<HTMLButtonElement>((_props, _ref) => {
   const [holdProgress, setHoldProgress] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
