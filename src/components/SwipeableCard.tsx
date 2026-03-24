@@ -105,8 +105,8 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
 
       {/* Card content — slides right to reveal actions */}
       <div
-        className="relative z-10 transition-transform duration-200 ease-out"
-        style={{ transform: `translateX(${offset}px)`, transition: isDragging.current ? "none" : undefined }}
+        className="relative z-10"
+        style={{ transform: `translateX(${offset}px)`, transition: isDragging.current ? "none" : "transform 250ms ease-out" }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
