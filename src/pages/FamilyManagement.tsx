@@ -431,7 +431,6 @@ const FamilyManagement = () => {
         <div className="space-y-2">
           {members.map((member) => {
             const memberIsAdmin = member.isAdmin || isParentRole(member.role);
-            const memberIsAdmin = member.isAdmin || isParentRole(member.role);
             const canSwipe = !member.isCreator;
             const isPending = member.status === "pending";
             return (
