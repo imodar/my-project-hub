@@ -339,13 +339,15 @@ const Budget = () => {
               b.expenses.map((exp) => (
                 <SwipeableCard
                   key={exp.id}
-                  onEdit={() => {
-                    setEditExpenseName(exp.name);
-                    setEditExpenseAmount(exp.amount.toString());
-                    setEditExpenseDate(exp.date ? new Date(exp.date) : undefined);
-                    setShowEditExpense({ budgetId: b.id, expense: exp });
-                  }}
-                  onDelete={() => setShowDeleteExpense({ budgetId: b.id, expenseId: exp.id })}
+                  actions={[
+                    { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteExpense({ budgetId: b.id, expenseId: exp.id }) },
+                    { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
+                      setEditExpenseName(exp.name);
+                      setEditExpenseAmount(exp.amount.toString());
+                      setEditExpenseDate(exp.date ? new Date(exp.date) : undefined);
+                      setShowEditExpense({ budgetId: b.id, expense: exp });
+                    }},
+                  ]}
                 >
                   <div className="rounded-2xl bg-card border border-border p-3 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "hsl(var(--destructive) / 0.1)" }}>
