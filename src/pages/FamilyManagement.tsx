@@ -148,11 +148,7 @@ const FamilyManagement = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
-  // Swipe state
-  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number; id: string } | null>(null);
-  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
-  const isDragging = useRef(false);
+  // Swipe state managed by SwipeableCard
 
   // Fetch invite code from server on mount
   const fetchInviteCode = useCallback(async () => {
