@@ -168,33 +168,7 @@ const Documents = () => {
     return { label: `${diffDays} يوم`, className: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" };
   };
 
-  // Swipe handlers
-  const closeSwipe = useCallback((id: string) => {
-    setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
-    activeSwipeRef.current = null;
-  }, []);
-
-  const handlePointerDown = (e: React.PointerEvent, id: string) => {
-    touchStartXRef.current = e.clientX;
-    pointerStartYRef.current = e.clientY;
-    activeSwipeRef.current = id;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent, id: string) => {
-    if (activeSwipeRef.current !== id) return;
-    const diffX = e.clientX - touchStartXRef.current;
-    setSwipeOffset((prev) => ({ ...prev, [id]: diffX > 0 ? Math.min(diffX, SWIPE_WIDTH) : 0 }));
-  };
-
-  const handlePointerUp = (e: React.PointerEvent, id: string) => {
-    const offset = swipeOffset[id] || 0;
-    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
-    activeSwipeRef.current = null;
-    if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    }
-  };
+  // Swipe handlers moved to SwipeableCard component
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
