@@ -243,7 +243,6 @@ const Tasks = () => {
     if (!deleteTarget) return;
     haptic.medium();
     deleteItemMutation.mutate(deleteTarget.id);
-    setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   }, [deleteTarget, deleteItemMutation]);
 
