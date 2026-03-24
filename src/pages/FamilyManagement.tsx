@@ -45,8 +45,7 @@ const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: nu
   }
 };
 
-const SWIPE_THRESHOLD = 40;
-const SWIPE_WIDTH = 144; // wider for 2 buttons
+// Swipe constants removed — using shared SwipeableCard
 
 const getProfileName = (): string => {
   return "";
