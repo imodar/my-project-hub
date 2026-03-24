@@ -267,12 +267,9 @@ const Tasks = () => {
       note: editNote.trim(),
       priority: editPriority,
       assigned_to: editAssignedTo || null,
-      repeat_enabled: editRepeatEnabled,
-      repeat_days: editRepeatDays,
-      repeat_count: editRepeatCount,
     });
     setEditTarget(null);
-  }, [editTarget, editName, editNote, editPriority, editAssignedTo, editRepeatEnabled, editRepeatDays, editRepeatCount, updateItemMutation]);
+  }, [editTarget, editName, editNote, editPriority, editAssignedTo, updateItemMutation]);
 
   const addItem = useCallback(() => {
     if (!newItemName.trim() || !activeListId) return;
