@@ -19,7 +19,7 @@ import {
 import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
 import { toast } from "sonner";
-import { saveTrips as saveTripsToStorage, syncTripToBudget, removeTripBudget } from "@/lib/tripBudgetSync";
+// tripBudgetSync removed — trips & budgets are synced via Supabase hooks
 import { useTrips as useTripsHook } from "@/hooks/useTrips";
 
 // Types
