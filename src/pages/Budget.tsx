@@ -709,26 +709,16 @@ const Budget = () => {
         </div>
       </PullToRefresh>
 
-      {/* FAB */}
-      <button
-        onClick={() => {
-          haptic.light();
-          setBudgetType("month");
-          setNewMonthIdx(String(new Date().getMonth()));
-          setNewYear(String(new Date().getFullYear()));
-          setProjectLabel("");
-          setNewIncome("");
-          setShareNames([]);
-          setShowAddMonth(true);
-        }}
-        className="fixed left-4 bottom-24 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
-        style={{
-          background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
-          boxShadow: "0 8px 25px hsl(var(--hero-gradient-from) / 0.4)",
-        }}
-      >
-        <Plus size={24} className="text-white" />
-      </button>
+      <FAB onClick={() => {
+        haptic.light();
+        setBudgetType("month");
+        setNewMonthIdx(String(new Date().getMonth()));
+        setNewYear(String(new Date().getFullYear()));
+        setProjectLabel("");
+        setNewIncome("");
+        setShareNames([]);
+        setShowAddMonth(true);
+      }} />
 
       {/* Add Budget Drawer */}
       <Drawer open={showAddMonth} onOpenChange={setShowAddMonth}>

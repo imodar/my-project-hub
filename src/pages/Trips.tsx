@@ -832,52 +832,20 @@ const Trips = () => {
           </div>
         )}
 
-        {/* FAB for itinerary */}
-        {tripView === "itinerary" && selectedTrip.days.length > 0 && createPortal(
-          <button
-            onClick={() => {
-              setSelectedDayId(selectedTrip.days[selectedTrip.days.length - 1].id);
+        <FAB
+          onClick={() => {
+            if (tripView === "itinerary") {
+              setSelectedDayId(selectedTrip.days[selectedTrip.days.length - 1]?.id ?? "");
               setNewActivityDrawer(true);
-            }}
-            className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-          >
-            <Plus size={24} />
-          </button>,
-          document.body
-        )}
-
-        {/* FAB for suggestions */}
-        {tripView === "suggestions" && createPortal(
-          <button
-            onClick={() => setNewSuggestionDrawer(true)}
-            className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-          >
-            <Plus size={24} />
-          </button>,
-          document.body
-        )}
-
-        {/* FAB for packing */}
-        {tripView === "packing" && createPortal(
-          <button
-            onClick={() => setNewPackingDrawer(true)}
-            className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-          >
-            <Plus size={24} />
-          </button>,
-          document.body
-        )}
-
-        {/* FAB for calculator */}
-        {tripView === "calculator" && createPortal(
-          <button
-            onClick={() => setNewExpenseDrawer(true)}
-            className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-          >
-            <Plus size={24} />
-          </button>,
-          document.body
-        )}
+            } else if (tripView === "suggestions") setNewSuggestionDrawer(true);
+            else if (tripView === "packing") setNewPackingDrawer(true);
+            else if (tripView === "calculator") setNewExpenseDrawer(true);
+          }}
+          show={
+            ["itinerary", "suggestions", "packing", "calculator"].includes(tripView) &&
+            !(tripView === "itinerary" && selectedTrip.days.length === 0)
+          }
+        />
 
         {/* Album view */}
         {tripView === "album" && (() => {
