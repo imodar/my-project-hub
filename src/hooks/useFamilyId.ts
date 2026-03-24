@@ -3,10 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useRef } from "react";
 
+const CACHE_KEY = "cached_family_id";
+
 export function useFamilyId() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const creatingRef = useRef(false);
+
+  // Synchronous fallback from localStorage — available at 0ms
+  const cachedId = user ? localStorage.getItem(CACHE_KEY) : null;
 
   const query = useQuery({
     queryKey: ["family-id", user?.id],
@@ -20,10 +25,17 @@ export function useFamilyId() {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data?.family_id || null;
+      const fid = data?.family_id || null;
+      // Cache for instant access on next visit
+      if (fid) {
+        localStorage.setItem(CACHE_KEY, fid);
+      } else {
+        localStorage.removeItem(CACHE_KEY);
+      }
+      return fid;
     },
     enabled: !!user,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 30 * 60 * 1000, // 30 min
   });
 
   // Auto-create a personal family for solo users
@@ -44,7 +56,7 @@ export function useFamilyId() {
   }, [user, query.isLoading, query.data]);
 
   return {
-    familyId: query.data ?? null,
-    isLoading: query.isLoading || (!!user && !query.data && !query.isFetched),
+    familyId: query.data ?? cachedId ?? null,
+    isLoading: !cachedId && query.isLoading && !!user,
   };
 }

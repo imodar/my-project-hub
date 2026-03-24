@@ -1,7 +1,7 @@
 /**
  * useOfflineFirst — Hook للقراءة مع أولوية البيانات المحلية
  *
- * يقرأ البيانات من IndexedDB فوراً (0ms) ثم يُحدّث في الخلفية من API.
+ * يقرأ البيانات من React Query cache أولاً (0ms)، ثم IndexedDB، ثم API.
  * React Query cache هو المصدر الوحيد للبيانات — لا يوجد state منفصل.
  */
 import { useQuery, type QueryKey, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +22,7 @@ export interface UseOfflineFirstOptions<T> {
   queryKey: QueryKey;
   /** دالة جلب البيانات من API */
   apiFn: () => Promise<{ data: T[] | null; error: string | null }>;
-  /** مدة صلاحية الكاش — افتراضي: 5 دقائق */
+  /** مدة صلاحية الكاش — افتراضي: 10 دقائق */
   staleTime?: number;
   /** فلترة إضافية على البيانات المحلية */
   filterFn?: (items: T[]) => T[];
@@ -46,7 +46,7 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   table: tableName,
   queryKey,
   apiFn,
-  staleTime = 5 * 60 * 1000,
+  staleTime = 10 * 60 * 1000,
   filterFn,
   enabled = true,
 }: UseOfflineFirstOptions<T>): UseOfflineFirstReturn<T> {
@@ -56,16 +56,19 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   const filterFnRef = useRef(filterFn);
   filterFnRef.current = filterFn;
 
-  const [initialLoaded, setInitialLoaded] = useState(false);
-
   /** تطبيق الفلتر */
   const applyFilter = useCallback((items: T[]) => {
     const fn = filterFnRef.current;
     return fn ? fn(items) : items;
   }, []);
 
-  // ── 1. قراءة IndexedDB فوراً وكتابتها في React Query cache مباشرة ──
+  // Check if React Query cache already has data (synchronous — 0ms)
+  const cachedData = qc.getQueryData<T[]>(queryKey);
+  const [initialLoaded, setInitialLoaded] = useState(() => !!cachedData);
+
+  // ── 1. قراءة IndexedDB فقط إذا لم يكن هناك كاش ──
   useEffect(() => {
+    if (initialLoaded) return; // already have data from cache
     if (!enabled) return;
     (async () => {
       const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
@@ -81,7 +84,7 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
       }
       setInitialLoaded(true);
     })();
-  }, [tableName, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tableName, enabled, initialLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 2. جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
