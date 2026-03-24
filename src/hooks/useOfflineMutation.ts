@@ -1,18 +1,9 @@
 /**
  * useOfflineMutation — Hook للكتابة مع Optimistic Update
  *
- * يُحدّث IndexedDB والشاشة فوراً، ثم يُرسل للـ API في الخلفية.
+ * يُحدّث React Query cache و IndexedDB فوراً، ثم يُرسل للـ API في الخلفية.
  * إذا فشل الإرسال أو لم يكن هناك اتصال: يُضاف للـ Sync Queue تلقائياً.
- *
- * @example
- * const { mutate, isPending } = useOfflineMutation({
- *   table: "medications",
- *   operation: "INSERT",
- *   apiFn: (data) => supabase.from("medications").insert(data),
- *   queryKey: ["medications", familyId],
- * });
- *
- * mutate({ id: crypto.randomUUID(), name: "باراسيتامول", ... });
+ * لا يستدعي invalidateQueries إذا كانت العملية queued فقط.
  */
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { db } from "@/lib/db";
@@ -39,6 +30,12 @@ export interface UseOfflineMutationOptions<TData, TVariables> {
   onError?: (error: Error, variables: TVariables) => void;
 }
 
+/** النتيجة الداخلية تُفرّق بين "نجح فعلاً" و "أُضيف للطابور" */
+interface MutationResult<TData> {
+  data: TData | null;
+  queued: boolean;
+}
+
 /* ────────────────────────────────────────────
  *  Hook
  * ──────────────────────────────────────────── */
@@ -56,11 +53,41 @@ export function useOfflineMutation<
 }: UseOfflineMutationOptions<TData, TVariables>) {
   const qc = useQueryClient();
 
-  return useMutation<TData | null, Error, TVariables>({
-    mutationFn: async (variables) => {
+  return useMutation<MutationResult<TData>, Error, TVariables>({
+    /* ── Optimistic cache update قبل أي شيء ── */
+    onMutate: async (variables) => {
+      if (!queryKey) return;
+
+      // إلغاء أي refetch جاري لمنع التعارض
+      await qc.cancelQueries({ queryKey });
+
+      // حفظ الحالة السابقة للـ rollback
+      const previousData = qc.getQueryData<unknown[]>(queryKey);
+
+      // تحديث React Query cache فوراً
+      qc.setQueryData<Record<string, unknown>[]>(queryKey, (old) => {
+        const items = old ?? [];
+        switch (operation) {
+          case "INSERT":
+            return [variables as Record<string, unknown>, ...items];
+          case "UPDATE":
+            return items.map((item) =>
+              item?.id === variables.id ? { ...item, ...variables } : item
+            );
+          case "DELETE":
+            return items.filter((item) => item?.id !== variables.id);
+          default:
+            return items;
+        }
+      });
+
+      return { previousData };
+    },
+
+    mutationFn: async (variables): Promise<MutationResult<TData>> => {
       const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
 
-      // ── 1. Optimistic Update: تحديث IndexedDB فوراً ──
+      // ── 1. تحديث IndexedDB فوراً ──
       if (table) {
         try {
           switch (operation) {
@@ -85,40 +112,41 @@ export function useOfflineMutation<
 
       // ── 2. إرسال للـ API ──
       if (!navigator.onLine) {
-        // لا يوجد اتصال — إضافة للطابور
         await addToQueue(tableName, operation, variables as Record<string, unknown>);
         console.info(`[OfflineMutation] 📴 لا اتصال — أُضيفت ${operation} على ${tableName} للطابور`);
-        return null;
+        return { data: null, queued: true };
       }
 
       try {
         const { data, error } = await apiFn(variables);
 
         if (error) {
-          // فشل API — إضافة للطابور
           await addToQueue(tableName, operation, variables as Record<string, unknown>);
           console.warn(`[OfflineMutation] فشل API — أُضيفت للطابور: ${error}`);
-          return null;
+          return { data: null, queued: true };
         }
 
-        return data;
+        return { data, queued: false };
       } catch {
-        // خطأ شبكة — إضافة للطابور
         await addToQueue(tableName, operation, variables as Record<string, unknown>);
         console.warn(`[OfflineMutation] خطأ شبكة — أُضيفت ${operation} على ${tableName} للطابور`);
-        return null;
+        return { data: null, queued: true };
       }
     },
 
-    onSuccess: (data, variables) => {
-      // إعادة جلب البيانات لتحديث الشاشة
-      if (queryKey) {
+    onSuccess: (result, variables) => {
+      // فقط عند نجاح API الفعلي — ليس عند الإضافة للطابور
+      if (!result.queued && queryKey) {
         qc.invalidateQueries({ queryKey });
       }
-      onSuccess?.(data, variables);
+      onSuccess?.(result.data, variables);
     },
 
-    onError: (error, variables) => {
+    onError: (error, variables, context) => {
+      // Rollback عند فشل كامل
+      if (queryKey && context && typeof context === "object" && "previousData" in context) {
+        qc.setQueryData(queryKey, (context as { previousData: unknown }).previousData);
+      }
       console.error(`[OfflineMutation] خطأ في ${operation} على ${tableName}:`, error);
       onError?.(error, variables);
     },

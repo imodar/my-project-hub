@@ -3,17 +3,9 @@
  *
  * يقرأ البيانات من IndexedDB فوراً (0ms) ثم يُحدّث في الخلفية من API.
  * إذا وُجدت بيانات محلية: isLoading = false فوراً (تجربة سلسة بدون انتظار).
- *
- * @example
- * const { data, isLoading, isSyncing } = useOfflineFirst({
- *   table: "medications",
- *   queryKey: ["medications", familyId],
- *   apiFn: () => supabase.from("medications").select("*").eq("family_id", familyId),
- *   staleTime: 5 * 60 * 1000,
- * });
  */
 import { useQuery, type QueryKey, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { db } from "@/lib/db";
 import { syncTable } from "@/lib/syncManager";
 import { projectPendingChanges } from "@/lib/syncQueue";
@@ -24,30 +16,25 @@ import type { Table } from "dexie";
  * ──────────────────────────────────────────── */
 
 export interface UseOfflineFirstOptions<T> {
-  /** اسم الجدول في Dexie (مثل "medications") */
+  /** اسم الجدول في Dexie */
   table: string;
   /** مفتاح React Query */
   queryKey: QueryKey;
-  /** دالة جلب البيانات من API — تُرجع { data, error } */
+  /** دالة جلب البيانات من API */
   apiFn: () => Promise<{ data: T[] | null; error: string | null }>;
-  /** مدة صلاحية الكاش (بالمللي ثانية) — افتراضي: 5 دقائق */
+  /** مدة صلاحية الكاش — افتراضي: 5 دقائق */
   staleTime?: number;
   /** فلترة إضافية على البيانات المحلية */
   filterFn?: (items: T[]) => T[];
-  /** هل الـ Hook مُفعّل؟ (افتراضي: true) */
+  /** هل الـ Hook مُفعّل؟ */
   enabled?: boolean;
 }
 
 export interface UseOfflineFirstReturn<T> {
-  /** البيانات (محلية أو من API) */
   data: T[];
-  /** true فقط إذا لا توجد بيانات محلية ولا API بعد */
   isLoading: boolean;
-  /** true أثناء الجلب من API في الخلفية */
   isSyncing: boolean;
-  /** رسالة الخطأ إن وُجدت */
   error: string | null;
-  /** إعادة الجلب يدوياً */
   refetch: () => void;
 }
 
@@ -66,16 +53,20 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   const qc = useQueryClient();
   const [localData, setLocalData] = useState<T[] | null>(null);
 
-  /** قراءة البيانات من IndexedDB مع إسقاط التغييرات المعلقة من sync_queue */
+  // تثبيت filterFn بـ useRef لمنع إعادة إنشاء readLocal كل render
+  const filterFnRef = useRef(filterFn);
+  filterFnRef.current = filterFn;
+
+  /** قراءة البيانات من IndexedDB مع إسقاط التغييرات المعلقة */
   const readLocal = useCallback(async () => {
     const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
     if (!table) return;
     const items: T[] = await table.toArray();
     const projected = await projectPendingChanges(tableName, items);
-    const filtered = filterFn ? filterFn(projected) : projected;
+    const filtered = filterFnRef.current ? filterFnRef.current(projected) : projected;
     setLocalData(filtered);
     return filtered;
-  }, [tableName, filterFn]);
+  }, [tableName]);
 
   // ── 1. قراءة IndexedDB فوراً عند التحميل ──
   useEffect(() => {
@@ -87,20 +78,21 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
     });
   }, [tableName, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── 2. جلب من API في الخلفية ──
+  // ── 2. جلب من API في الخلفية — يدمج ولا يمسح البيانات المحلية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
     const result = await syncTable<T>(tableName, () => apiFn());
-    const filtered = filterFn ? filterFn(result) : result;
+    // syncTable يُرجع projectPendingChanges تلقائياً
+    const fn = filterFnRef.current;
+    const filtered = fn ? fn(result) : result;
     setLocalData(filtered);
     return filtered;
-  }, [tableName, apiFn, filterFn]);
+  }, [tableName, apiFn]);
 
   const query = useQuery<T[]>({
     queryKey,
     queryFn: fetchAndSync,
     staleTime,
-    enabled: enabled,
-    // لا نُظهر loading إذا عندنا بيانات محلية
+    enabled,
     placeholderData: localData ?? undefined,
   });
 

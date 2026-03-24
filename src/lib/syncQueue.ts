@@ -45,6 +45,7 @@ const MAX_RETRIES = 3;
  *  حالة المعالجة (لمنع التشغيل المتزامن)
  * ──────────────────────────────────────────── */
 let isProcessing = false;
+const _warnedUnmapped = new Set<string>();
 
 /**
  * تطبّق العمليات غير المتزامنة من sync_queue فوق البيانات الأساسية،
@@ -177,7 +178,11 @@ export async function processQueue(): Promise<void> {
       const mapping = TABLE_API_MAP[item.table];
 
       if (!mapping) {
-        console.warn(`[SyncQueue] الجدول "${item.table}" غير مربوط بـ API — يبقى pending`);
+        // تسجيل تحذير مرة واحدة فقط لكل جدول غير مربوط
+        if (!_warnedUnmapped.has(item.table)) {
+          _warnedUnmapped.add(item.table);
+          console.warn(`[SyncQueue] الجدول "${item.table}" غير مربوط بـ API — يبقى pending`);
+        }
         continue;
       }
 

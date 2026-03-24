@@ -8,7 +8,7 @@
  *
  * ⚠️ هذا مثال توضيحي فقط — لا يُضاف للـ router ولا يُعدّل أي ملف موجود.
  */
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
@@ -54,9 +54,11 @@ const MedicationsExample = () => {
         .order("created_at", { ascending: false });
       return { data: data ?? [], error: error?.message ?? null };
     },
-    // فلترة محلية حسب family_id
-    filterFn: (items) =>
-      familyId ? items.filter((m) => m.family_id === familyId) : items,
+    filterFn: useCallback(
+      (items: Medication[]) =>
+        familyId ? items.filter((m) => m.family_id === familyId) : items,
+      [familyId]
+    ),
     enabled: !!familyId,
   });
 
