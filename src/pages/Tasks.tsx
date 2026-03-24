@@ -204,21 +204,13 @@ const Tasks = () => {
     isLongPressingRef.current = false;
   }, [activeListId, dragActiveId]);
 
-  // Swipe handlers
-  const closeSwipe = useCallback((id: string) => {
-    setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
-    activeSwipeRef.current = null;
-  }, []);
-
+  // Swipe handlers moved to SwipeableCard component
+  // Long-press drag handlers for reorder
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
-    touchStartXRef.current = e.clientX;
-    activeSwipeRef.current = id;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     startLongPress(id, e.clientY);
   };
 
-  const handlePointerMove = (e: React.PointerEvent, id: string) => {
-    // If dragging, find which item we're over
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (isLongPressingRef.current && dragActiveId) {
       e.preventDefault();
       const y = e.clientY;
@@ -231,33 +223,13 @@ const Tasks = () => {
       if (overItem && overItem !== dragActiveId) {
         setDragOverId(overItem);
       }
-      return;
     }
-
-    if (activeSwipeRef.current !== id) return;
-    const diffX = e.clientX - touchStartXRef.current;
-    const diffY = Math.abs(e.clientY - pointerStartYRef.current);
-    // Cancel long press if finger moves horizontally (swipe) or vertically (scroll)
-    if (Math.abs(diffX) > 5 || diffY > 5) {
-      cancelLongPress();
-    }
-    setSwipeOffset((prev) => ({ ...prev, [id]: diffX > 0 ? Math.min(diffX, SWIPE_WIDTH) : 0 }));
   };
 
-  const handlePointerUp = (e: React.PointerEvent, id: string) => {
+  const handlePointerUp = (e: React.PointerEvent) => {
     cancelLongPress();
     if (isLongPressingRef.current) {
       finishDrag(dragOverId);
-      if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
-        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-      }
-      return;
-    }
-    const offset = swipeOffset[id] || 0;
-    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
-    activeSwipeRef.current = null;
-    if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     }
   };
 
