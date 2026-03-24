@@ -1,0 +1,174 @@
+/**
+ * قاعدة البيانات المحلية — Dexie.js (IndexedDB)
+ *
+ * تُخزّن نسخة محلية من جميع بيانات التطبيق لتوفير تجربة فورية
+ * بدون انتظار الشبكة (Offline-First).
+ *
+ * الجداول مطابقة لجداول Supabase مع إضافة:
+ * - sync_queue: طابور العمليات المعلقة
+ * - sync_meta: بيانات آخر مزامنة لكل جدول
+ */
+import Dexie, { type Table } from "dexie";
+
+/* ────────────────────────────────────────────
+ *  أنواع طابور المزامنة
+ * ──────────────────────────────────────────── */
+
+// Re-exported from syncQueue for convenience
+export type SyncStatus = "pending" | "synced" | "failed";
+
+export type SyncOperation = "INSERT" | "UPDATE" | "DELETE";
+
+export interface SyncQueueItem {
+  id?: number;
+  table: string;
+  operation: SyncOperation;
+  data: Record<string, unknown>;
+  created_at: string;
+  status: SyncStatus;
+  retries: number;
+}
+
+export interface SyncMeta {
+  /** اسم الجدول (مفتاح رئيسي) */
+  table: string;
+  /** آخر وقت مزامنة ناجحة (ISO string) */
+  last_synced_at: string;
+}
+
+/* ────────────────────────────────────────────
+ *  تعريف قاعدة البيانات
+ * ──────────────────────────────────────────── */
+
+class AppDatabase extends Dexie {
+  // ── بيانات التطبيق ──
+  medications!: Table;
+  medication_logs!: Table;
+  task_lists!: Table;
+  task_items!: Table;
+  market_lists!: Table;
+  market_items!: Table;
+  calendar_events!: Table;
+  budgets!: Table;
+  budget_expenses!: Table;
+  debts!: Table;
+  debt_payments!: Table;
+  trips!: Table;
+  trip_day_plans!: Table;
+  trip_activities!: Table;
+  trip_expenses!: Table;
+  trip_packing!: Table;
+  trip_documents!: Table;
+  document_lists!: Table;
+  document_items!: Table;
+  document_files!: Table;
+  place_lists!: Table;
+  places!: Table;
+  albums!: Table;
+  album_photos!: Table;
+  families!: Table;
+  family_members!: Table;
+  profiles!: Table;
+  chat_messages!: Table;
+  vehicles!: Table;
+  vaccinations!: Table;
+  zakat_assets!: Table;
+  will_sections!: Table;
+  tasbih_sessions!: Table;
+  kids_worship_data!: Table;
+  prayer_logs!: Table;
+  emergency_contacts!: Table;
+
+  // ── جداول المزامنة ──
+  sync_queue!: Table<SyncQueueItem, number>;
+  sync_meta!: Table<SyncMeta, string>;
+
+  constructor() {
+    super("ailti_offline_db");
+
+    this.version(1).stores({
+      // ── الأدوية ──
+      medications: "id, family_id, member_id, created_at",
+      medication_logs: "id, medication_id, taken_at",
+
+      // ── المهام ──
+      task_lists: "id, family_id, created_by",
+      task_items: "id, list_id, assigned_to, done",
+
+      // ── السوق ──
+      market_lists: "id, family_id, created_by",
+      market_items: "id, list_id, checked",
+
+      // ── التقويم ──
+      calendar_events: "id, family_id, date",
+
+      // ── الميزانية ──
+      budgets: "id, family_id, month, type",
+      budget_expenses: "id, budget_id",
+
+      // ── الديون ──
+      debts: "id, family_id, user_id, direction",
+      debt_payments: "id, debt_id",
+
+      // ── الرحلات ──
+      trips: "id, family_id",
+      trip_day_plans: "id, trip_id, day_number",
+      trip_activities: "id, day_plan_id",
+      trip_expenses: "id, trip_id",
+      trip_packing: "id, trip_id",
+      trip_documents: "id, trip_id",
+
+      // ── المستندات ──
+      document_lists: "id, family_id, created_by",
+      document_items: "id, list_id",
+      document_files: "id, document_id",
+
+      // ── الأماكن ──
+      place_lists: "id, family_id",
+      places: "id, list_id",
+
+      // ── الألبومات ──
+      albums: "id, family_id",
+      album_photos: "id, album_id",
+
+      // ── العائلة ──
+      families: "id",
+      family_members: "id, family_id, user_id",
+      profiles: "id",
+
+      // ── المحادثات ──
+      chat_messages: "id, family_id, sender_id, created_at",
+
+      // ── المركبات ──
+      vehicles: "id",
+
+      // ── التطعيمات ──
+      vaccinations: "id",
+
+      // ── الزكاة ──
+      zakat_assets: "id",
+
+      // ── الوصية ──
+      will_sections: "id",
+
+      // ── التسبيح ──
+      tasbih_sessions: "id, user_id, created_at",
+
+      // ── عبادة الأطفال ──
+      kids_worship_data: "id, child_id, year, month, day",
+      prayer_logs: "id, child_id, date",
+
+      // ── الطوارئ ──
+      emergency_contacts: "id, family_id",
+
+      // ── طابور المزامنة ──
+      sync_queue: "++id, table, status, created_at",
+
+      // ── بيانات المزامنة ──
+      sync_meta: "table",
+    });
+  }
+}
+
+/** نسخة وحيدة من قاعدة البيانات المحلية */
+export const db = new AppDatabase();
