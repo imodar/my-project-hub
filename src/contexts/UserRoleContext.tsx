@@ -80,7 +80,8 @@ export const UserRoleProvider = React.forwardRef<HTMLDivElement, { children: Rea
       {children}
     </UserRoleContext.Provider>
   );
-};
+});
+UserRoleProvider.displayName = "UserRoleProvider";
 
 export const useUserRole = () => {
   const ctx = useContext(UserRoleContext);
