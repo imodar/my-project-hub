@@ -1,5 +1,5 @@
-import React from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React, { useEffect, useRef } from "react";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -13,6 +13,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import OfflineBanner from "@/components/OfflineBanner";
 import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { warmCache } from "@/lib/warmCache";
 import Auth from "./pages/Auth.tsx";
 import GetStarted from "./pages/GetStarted.tsx";
 import Index from "./pages/Index.tsx";
@@ -65,7 +67,10 @@ const queryClient = new QueryClient({
     queries: {
       retry: (failureCount) => navigator.onLine && failureCount < 2,
       networkMode: "offlineFirst",
-      staleTime: 5 * 60 * 1000,
+      staleTime: 10 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
     },
     mutations: {
       networkMode: "offlineFirst",
@@ -73,7 +78,23 @@ const queryClient = new QueryClient({
   },
 });
 
-const AnimatedRoutes = React.forwardRef<HTMLDivElement>((_props, _ref) => {
+/** Pre-warms React Query cache from IndexedDB on startup */
+const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
+  const { familyId } = useFamilyId();
+  const qc = useQueryClient();
+  const warmedRef = useRef(false);
+
+  useEffect(() => {
+    if (familyId && !warmedRef.current) {
+      warmedRef.current = true;
+      warmCache(qc, familyId);
+    }
+  }, [familyId, qc]);
+
+  return <>{children}</>;
+};
+
+const AnimatedRoutes = () => {
   const location = useLocation();
   const isAdminPanel = location.pathname.startsWith("/admin-panel");
 
@@ -137,10 +158,9 @@ const AnimatedRoutes = React.forwardRef<HTMLDivElement>((_props, _ref) => {
       </Routes>
     </PageTransition>
   );
-});
-AnimatedRoutes.displayName = "AnimatedRoutes";
+};
 
-const App = React.forwardRef<HTMLDivElement>((_props, _ref) => (
+const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -153,7 +173,9 @@ const App = React.forwardRef<HTMLDivElement>((_props, _ref) => (
                 <BrowserRouter>
                   <OfflineBanner />
                   <ScrollToTop />
-                  <AnimatedRoutes />
+                  <WarmCacheProvider>
+                    <AnimatedRoutes />
+                  </WarmCacheProvider>
                   <BottomNav />
                 </BrowserRouter>
               </TooltipProvider>
@@ -163,7 +185,6 @@ const App = React.forwardRef<HTMLDivElement>((_props, _ref) => (
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
-));
-App.displayName = "App";
+);
 
 export default App;
