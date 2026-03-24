@@ -31,6 +31,7 @@ const AuthGuard = React.forwardRef<HTMLDivElement, { children: React.ReactNode }
   }
 
   return <>{children}</>;
-};
+});
+AuthGuard.displayName = "AuthGuard";
 
 export default AuthGuard;

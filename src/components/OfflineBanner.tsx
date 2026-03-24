@@ -34,6 +34,7 @@ const OfflineBanner = React.forwardRef<HTMLDivElement>((_props, _ref) => {
       )}
     </AnimatePresence>
   );
-};
+});
+OfflineBanner.displayName = "OfflineBanner";
 
 export default OfflineBanner;
