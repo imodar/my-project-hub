@@ -53,9 +53,10 @@ export const calculateNextDue = (med: Medication): string => {
   const lastTaken = med.reminder.lastConfirmedAt ? new Date(med.reminder.lastConfirmedAt) : null;
   const sortedTimes = med.specificTimes && med.specificTimes.length > 0
     ? [...med.specificTimes].sort()
-    : [];
+    : ["09:00"];
 
-  // Build all scheduled dose times for a given day
+  const searchAfter = lastTaken ?? now;
+
   const getDoseTimesForDay = (day: Date): Date[] => {
     return sortedTimes.map((time) => {
       const [h, m] = time.split(":").map(Number);
@@ -65,70 +66,32 @@ export const calculateNextDue = (med: Medication): string => {
     });
   };
 
-  // Find the dose that was confirmed (the first scheduled time >= lastTaken on the same day)
-  // Then skip it — return only times AFTER that confirmed dose
-  const getNextTimeOnDay = (day: Date): string | null => {
-    if (sortedTimes.length === 0) return null;
-    const doseTimes = getDoseTimesForDay(day);
-
-    for (const candidate of doseTimes) {
-      if (candidate <= now) continue; // already passed
-
-      // If user confirmed a dose today, skip the dose they confirmed
-      // The confirmed dose is the first scheduled time that was >= lastTaken
-      if (lastTaken && lastTaken.toDateString() === candidate.toDateString()) {
-        // Find which dose was confirmed: first scheduled time >= lastTaken
-        const confirmedDose = doseTimes.find((dt) => dt >= lastTaken);
-        if (confirmedDose && candidate.getTime() === confirmedDose.getTime()) {
-          continue; // skip the confirmed dose
-        }
-      }
-
-      return candidate.toISOString();
+  const isSpecificDayEnabled = (day: Date): boolean => {
+    if (med.frequencyType === "daily") return true;
+    if (med.frequencyType === "specific_days" && med.selectedDays && med.selectedDays.length > 0) {
+      const ourToJs = (d: number) => (d + 6) % 7;
+      const jsDays = med.selectedDays.map(ourToJs);
+      return jsDays.includes(day.getDay());
     }
-    return null;
+    return false;
   };
 
-  if (med.frequencyType === "daily") {
-    const todayTime = getNextTimeOnDay(now);
-    if (todayTime) return todayTime;
-    if (sortedTimes.length > 0) {
-      const [h, m] = sortedTimes[0].split(":").map(Number);
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(h, m, 0, 0);
-      return tomorrow.toISOString();
-    }
-    return now.toISOString();
-  }
+  for (let offset = 0; offset <= 14; offset++) {
+    const day = new Date(searchAfter);
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() + offset);
 
-  if (med.frequencyType === "specific_days" && med.selectedDays && med.selectedDays.length > 0) {
-    const ourToJs = (d: number) => (d + 6) % 7;
-    const jsDays = med.selectedDays.map(ourToJs);
-    const currentJsDay = now.getDay();
+    if (!isSpecificDayEnabled(day)) continue;
 
-    if (jsDays.includes(currentJsDay)) {
-      const todayTime = getNextTimeOnDay(now);
-      if (todayTime) return todayTime;
-    }
-
-    for (let offset = jsDays.includes(currentJsDay) ? 1 : 0; offset <= 7; offset++) {
-      const checkDay = (currentJsDay + offset) % 7;
-      if (jsDays.includes(checkDay)) {
-        const next = new Date(now);
-        next.setDate(next.getDate() + (offset === 0 ? 7 : offset));
-        if (sortedTimes.length > 0) {
-          const [h, m] = sortedTimes[0].split(":").map(Number);
-          next.setHours(h, m, 0, 0);
-        } else {
-          next.setHours(9, 0, 0, 0);
-        }
-        return next.toISOString();
+    const doseTimes = getDoseTimesForDay(day);
+    for (const candidate of doseTimes) {
+      if (candidate.getTime() > searchAfter.getTime()) {
+        return candidate.toISOString();
       }
     }
   }
 
-  return now.toISOString();
+  return searchAfter.toISOString();
 };
 
 export const isMedicationDue = (med: Medication): boolean => {
