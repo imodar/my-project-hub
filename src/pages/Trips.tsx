@@ -1395,16 +1395,7 @@ const Trips = () => {
         </div>
       </PullToRefresh>
 
-      {/* FAB */}
-      {createPortal(
-        <button
-          onClick={() => { resetTripForm(); setNewTripDrawer(true); }}
-          className="fixed left-5 bottom-24 z-50 w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-        >
-          <Plus size={24} />
-        </button>,
-        document.body
-      )}
+      <FAB onClick={() => { resetTripForm(); setNewTripDrawer(true); }} />
 
       {/* New/Edit Trip Drawer */}
       <Drawer open={newTripDrawer} onOpenChange={(o) => { setNewTripDrawer(o); if (!o) resetTripForm(); }}>
