@@ -177,7 +177,11 @@ export async function processQueue(): Promise<void> {
       const mapping = TABLE_API_MAP[item.table];
 
       if (!mapping) {
-        console.warn(`[SyncQueue] الجدول "${item.table}" غير مربوط بـ API — يبقى pending`);
+        // تسجيل تحذير مرة واحدة فقط لكل جدول غير مربوط
+        if (!_warnedUnmapped.has(item.table)) {
+          _warnedUnmapped.add(item.table);
+          console.warn(`[SyncQueue] الجدول "${item.table}" غير مربوط بـ API — يبقى pending`);
+        }
         continue;
       }
 
