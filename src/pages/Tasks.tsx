@@ -252,8 +252,7 @@ const Tasks = () => {
     setEditNote(item.note);
     setEditPriority(item.priority);
     setEditAssignedTo(item.assignedTo);
-    closeSwipe(item.id);
-  }, [closeSwipe]);
+  }, []);
 
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
