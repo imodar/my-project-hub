@@ -509,6 +509,11 @@ const FamilyManagement = () => {
       {/* Members List */}
       <div className="flex-1 px-4 pb-32">
         <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
+        {membersLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
         <div className="space-y-2">
           {members.map((member) => {
             const offset = swipeOffsets[member.id] || 0;
