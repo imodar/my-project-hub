@@ -1,7 +1,8 @@
+import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 
-const AuthGuard = ({ children }: { children: React.ReactNode }) => {
+const AuthGuard = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(({ children }, _ref) => {
   const { session, loading } = useAuth();
   const location = useLocation();
 
