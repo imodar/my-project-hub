@@ -216,33 +216,7 @@ const Market = () => {
   const completedItems = activeList?.items.filter((i) => i.checked).length || 0;
   const remainingItems = totalItems - completedItems;
 
-  // Swipe handlers
-  const closeSwipe = useCallback((id: string) => {
-    setSwipeOffset((prev) => ({ ...prev, [id]: 0 }));
-    activeSwipeRef.current = null;
-  }, []);
-
-  const handlePointerDown = (e: React.PointerEvent, id: string) => {
-    touchStartXRef.current = e.clientX;
-    activeSwipeRef.current = id;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent, id: string) => {
-    if (activeSwipeRef.current !== id) return;
-    const diff = e.clientX - touchStartXRef.current;
-    // RTL: swipe right reveals actions on the left side (positive diff)
-    setSwipeOffset((prev) => ({ ...prev, [id]: diff > 0 ? Math.min(diff, SWIPE_WIDTH) : 0 }));
-  };
-
-  const handlePointerUp = (e: React.PointerEvent, id: string) => {
-    const offset = swipeOffset[id] || 0;
-    setSwipeOffset((prev) => ({ ...prev, [id]: offset > 60 ? SWIPE_WIDTH : 0 }));
-    activeSwipeRef.current = null;
-    if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    }
-  };
+  // Swipe handlers moved to SwipeableCard component
 
   const toggleItem = useCallback((itemId: string) => {
     haptic.light();
