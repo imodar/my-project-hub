@@ -81,11 +81,14 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Pre-warms React Query cache from IndexedDB on startup */
+/** Pre-warms React Query cache from IndexedDB on startup + global Realtime */
 const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   const { familyId } = useFamilyId();
   const qc = useQueryClient();
   const warmedRef = useRef(false);
+
+  // Global realtime for cross-device sync
+  useFamilyRealtime();
 
   useEffect(() => {
     if (familyId && !warmedRef.current) {
