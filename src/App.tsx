@@ -178,6 +178,8 @@ const App = () => (
                 <Sonner />
                 <BrowserRouter>
                   <OfflineBanner />
+                  <StaleBanner />
+                  <FirstSyncOverlay />
                   <ScrollToTop />
                   <WarmCacheProvider>
                     <AnimatedRoutes />
