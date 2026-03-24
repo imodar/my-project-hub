@@ -56,8 +56,9 @@ export function useDebts() {
 
   const updateDebt = useMutation({
     mutationFn: async (input: { id: string; [key: string]: unknown }) => {
+      if (!user) throw new Error("No user");
       const { id, ...updates } = input;
-      const { error } = await supabase.from("debts").update(updates as never).eq("id", id);
+      const { error } = await supabase.from("debts").update(updates as never).eq("id", id).eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
@@ -65,7 +66,8 @@ export function useDebts() {
 
   const deleteDebt = useMutation({
     mutationFn: async (debtId: string) => {
-      const { error } = await supabase.from("debts").delete().eq("id", debtId);
+      if (!user) throw new Error("No user");
+      const { error } = await supabase.from("debts").delete().eq("id", debtId).eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
