@@ -404,6 +404,18 @@ const Chat = () => {
           </div>
         )}
 
+        {hasMore && (
+          <div className="flex justify-center py-2">
+            <button
+              onClick={loadOlderMessages}
+              disabled={isLoadingMore}
+              className="text-xs text-primary hover:underline disabled:opacity-50"
+            >
+              {isLoadingMore ? "جاري التحميل..." : "تحميل رسائل أقدم"}
+            </button>
+          </div>
+        )}
+
         {messages.map((msg) => (
           <div key={msg.id} className={`flex flex-col ${msg.isMe ? "items-start" : "items-end"} mb-1 group`}>
             {!msg.isMe && (
