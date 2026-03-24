@@ -282,6 +282,7 @@ export function useChat() {
             minute: "2-digit",
             hour12: true,
           }),
+          createdAt: row.created_at,
           isMe: row.sender_id === user.id,
           pinned: row.pinned || false,
           reactions: (row.reactions as Record<string, number>) || {},
