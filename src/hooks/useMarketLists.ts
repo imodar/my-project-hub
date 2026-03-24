@@ -1,10 +1,38 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
 import { useOfflineMutation } from "./useOfflineMutation";
+
+function normalizeMarketLists(items: any[], familyId: string | null) {
+  if (!familyId) return [];
+
+  const familyScoped = items.filter((item) => item.family_id === familyId);
+  const familyLists = familyScoped.filter((item) => (item.type || "family") === "family");
+
+  if (familyLists.length <= 1) {
+    return familyScoped;
+  }
+
+  const canonicalFamilyList = familyLists
+    .slice()
+    .sort((a, b) => {
+      const aItems = Array.isArray(a.market_items) ? a.market_items.length : 0;
+      const bItems = Array.isArray(b.market_items) ? b.market_items.length : 0;
+
+      if (bItems !== aItems) return bItems - aItems;
+
+      return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+    })[0];
+
+  const nonFamilyLists = familyScoped.filter((item) => (item.type || "family") !== "family");
+
+  return [...nonFamilyLists, canonicalFamilyList].sort(
+    (a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+  );
+}
 
 export function useMarketLists() {
   const { user } = useAuth();
@@ -19,7 +47,7 @@ export function useMarketLists() {
       .select("*, market_items(*)")
       .eq("family_id", familyId)
       .order("created_at", { ascending: true });
-    return { data: data || [], error: error?.message || null };
+    return { data: normalizeMarketLists(data || [], familyId), error: error?.message || null };
   }, [familyId]);
 
   const { data: lists, isLoading, refetch } = useOfflineFirst<any>({
@@ -27,7 +55,16 @@ export function useMarketLists() {
     queryKey: key,
     apiFn,
     enabled: !!familyId,
+    filterFn: useCallback(
+      (items: any[]) => normalizeMarketLists(items, familyId),
+      [familyId]
+    ),
   });
+
+  const normalizedLists = useMemo(
+    () => normalizeMarketLists(lists || [], familyId),
+    [lists, familyId]
+  );
 
   // Realtime subscription (kept alongside offline-first)
   useEffect(() => {
@@ -116,14 +153,13 @@ export function useMarketLists() {
   });
 
   return {
-    lists: lists || [],
+    lists: normalizedLists,
     isLoading,
     createList: {
       ...createList,
       mutate: (input: any, options?: any) => {
         const payload = { id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, market_items: [], ...input };
         if (options?.onSuccess || options?.onError) {
-          // Forward callbacks — call mutate then handle via promise
           createList.mutateAsync(payload).then((result) => options?.onSuccess?.(result?.data)).catch((err: any) => options?.onError?.(err));
         } else {
           createList.mutate(payload);

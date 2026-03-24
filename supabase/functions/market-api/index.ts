@@ -47,9 +47,25 @@ Deno.serve(async (req) => {
 
     if (action === "create-list") {
       const { family_id, name, type } = body;
+      const listType = type || "family";
+
+      if (listType === "family") {
+        const { data: existingList, error: existingError } = await supabase
+          .from("market_lists")
+          .select("*")
+          .eq("family_id", family_id)
+          .eq("type", "family")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (existingError) return json({ error: existingError.message }, 400);
+        if (existingList) return json({ data: existingList });
+      }
+
       const { data, error } = await supabase
         .from("market_lists")
-        .insert({ family_id, name, type: type || "family", created_by: userId })
+        .insert({ family_id, name, type: listType, created_by: userId })
         .select()
         .single();
       if (error) return json({ error: error.message }, 400);
