@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from "react";
+import FAB from "@/components/FAB";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
