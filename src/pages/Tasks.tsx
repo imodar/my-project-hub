@@ -523,11 +523,6 @@ const Tasks = () => {
               <span className="text-[10px] text-muted-foreground">
                 {activeList.lastUpdatedBy} – {activeList.lastUpdatedAt}
               </span>
-              {!activeList.isDefault && (
-                <button className="p-1 rounded-lg hover:bg-muted" onClick={() => setShowListActions(true)}>
-                  <MoreVertical size={16} className="text-muted-foreground" />
-                </button>
-              )}
             </div>
           </div>
         )}
