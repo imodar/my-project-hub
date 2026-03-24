@@ -119,8 +119,8 @@ const AnimatedRoutes = () => {
         <Route path="/budget" element={<AuthGuard><Budget /></AuthGuard>} />
         <Route path="/tasks" element={<AuthGuard><Tasks /></AuthGuard>} />
         <Route path="/documents" element={<AuthGuard><Documents /></AuthGuard>} />
-        <Route path="/zakat" element={<AuthGuard><Zakat /></AuthGuard>} />
-        <Route path="/will" element={<AuthGuard><Will /></AuthGuard>} />
+        <Route path="/zakat" element={<AuthGuard><RoleGuard requireNonStaff><Zakat /></RoleGuard></AuthGuard>} />
+        <Route path="/will" element={<AuthGuard><RoleGuard requireNonStaff><Will /></RoleGuard></AuthGuard>} />
         <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
         <Route path="/albums" element={<AuthGuard><Albums /></AuthGuard>} />
         <Route path="/kids-worship" element={<AuthGuard><KidsWorship /></AuthGuard>} />
