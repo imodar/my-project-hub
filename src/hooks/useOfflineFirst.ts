@@ -97,7 +97,7 @@ export function useOfflineFirst<T extends { id: string }>({
     queryKey,
     queryFn: fetchAndSync,
     staleTime,
-    enabled: enabled && loadedRef.current !== false,
+    enabled: enabled,
     // لا نُظهر loading إذا عندنا بيانات محلية
     placeholderData: localData ?? undefined,
   });
