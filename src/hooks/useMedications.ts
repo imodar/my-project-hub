@@ -17,12 +17,17 @@ export function useMedications() {
 
   /** جلب الأدوية مع سجلاتها من API */
   const apiFn = async () => {
-    if (!familyId) return { data: [], error: null };
+    if (!familyId) {
+      console.warn("[useMedications] familyId فاضي");
+      return { data: [], error: null };
+    }
+    console.log("[useMedications] جاري الجلب، familyId:", familyId);
     const { data, error } = await supabase
       .from("medications")
       .select("*, medication_logs(*)")
       .eq("family_id", familyId)
       .order("created_at", { ascending: false });
+    console.log("[useMedications] النتيجة:", data?.length, error);
     return { data: data || [], error: error?.message || null };
   };
 
