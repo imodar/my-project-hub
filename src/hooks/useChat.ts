@@ -454,5 +454,8 @@ export function useChat() {
     profiles,
     familyId,
     familyKey: !!familyKey,
+    hasMore,
+    isLoadingMore,
+    loadOlderMessages,
   };
 }
