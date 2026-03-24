@@ -55,8 +55,10 @@ export async function syncTable<T extends { id: string }>(
     last_synced_at: new Date().toISOString(),
   });
 
-  console.info(`[SyncManager] ✅ تمت مزامنة "${tableName}" — ${data.length} سجل`);
-  return data;
+  // إرجاع كل البيانات المحلية (تشمل الإضافات الأوفلاين غير المُزامنة)
+  const allLocal = await table.toArray();
+  console.info(`[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، محلي: ${allLocal.length}`);
+  return allLocal as T[];
 }
 
 /* ────────────────────────────────────────────
