@@ -751,10 +751,12 @@ const Vehicle = () => {
                 const soonCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "soon").length;
 
                 return (
-                  <SwipeableCarCard
+                  <SwipeableCard
                     key={car.id}
-                    onDelete={() => setDeleteConfirmCar(car)}
-                    onEdit={() => openEditCar(car)}
+                    actions={[
+                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteConfirmCar(car) },
+                      { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => openEditCar(car) },
+                    ]}
                   >
                     <button
                       onClick={() => setSelectedCar(car)}
