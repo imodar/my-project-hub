@@ -62,7 +62,7 @@ const FAB = ({ onClick, actions, icon, show = true }: FABProps) => {
 
         <button
           onClick={handleClick}
-          className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center transition-transform active:scale-95"
+          className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-xl flex items-center justify-center transition-transform active:scale-95"
         >
           {actions ? (
             <Plus
