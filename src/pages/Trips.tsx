@@ -184,6 +184,7 @@ const Trips = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [tripView, setTripView] = useState<"itinerary" | "suggestions" | "packing" | "calculator" | "album" | "documents">("itinerary");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [openTripCardId, setOpenTripCardId] = useState<string | null>(null);
 
   const { members: familyMembers } = useFamilyMembers();
 
