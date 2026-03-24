@@ -360,10 +360,12 @@ const Medications = () => {
             const takenToday = med.takenLog.some((t) => new Date(t).toDateString() === new Date().toDateString());
 
             return (
-              <SwipeableMedCard
+              <SwipeableCard
                 key={med.id}
-                onEdit={() => { setShowDetailSheet(null); openEditDrawer(med); }}
-                onDelete={() => setShowDeleteConfirm(med)}
+                actions={[
+                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteConfirm(med) },
+                  { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => { setShowDetailSheet(null); openEditDrawer(med); } },
+                ]}
               >
                 <div
                   className={`bg-card rounded-2xl p-4 border transition-colors cursor-pointer ${
