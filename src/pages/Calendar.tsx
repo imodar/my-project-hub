@@ -312,8 +312,7 @@ const CalendarPage = () => {
                     className={`relative py-2 flex flex-col items-center justify-center transition-colors rounded-xl mx-0.5 my-0.5 ${isToday ? "bg-primary text-primary-foreground font-black" : "hover:bg-muted"}`}>
                     <span className={`text-sm ${isToday ? "font-black" : "font-semibold text-foreground"}`}>{toArabicNum(day)}</span>
                     {hasEvent && (
-                      <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isToday ? "bg-primary-foreground" : ""}`}
-                        style={isToday ? {} : { background: "hsl(var(--primary))" }} />
+                      <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isToday ? "bg-primary-foreground" : "bg-red-500"}`} />
                     )}
                   </button>
                 );
