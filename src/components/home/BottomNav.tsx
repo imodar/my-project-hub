@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Home, Map, MessageCircle, Settings, ShieldAlert } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { haptic } from "@/lib/haptics";
@@ -13,7 +13,7 @@ const navItems = [
 
 const SOS_HOLD_DURATION = 3000;
 
-const SOSNavButton = () => {
+const SOSNavButton = React.forwardRef<HTMLButtonElement>((_props, _ref) => {
   const [holdProgress, setHoldProgress] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -117,9 +117,10 @@ const SOSNavButton = () => {
       </span>
     </button>
   );
-};
+});
+SOSNavButton.displayName = "SOSNavButton";
 
-const BottomNav = () => {
+const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -171,6 +172,7 @@ const BottomNav = () => {
       </div>
     </div>
   );
-};
+});
+BottomNav.displayName = "BottomNav";
 
 export default BottomNav;
