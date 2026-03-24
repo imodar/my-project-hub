@@ -180,41 +180,31 @@ export function useChat() {
     }
   }, [familyId, isReady, familyKey, profiles, user]);
 
-  // ─── Load older messages ───
+  // ─── Load older messages (cursor-based) ───
   const loadOlderMessages = useCallback(async () => {
     if (!familyId || !user || !hasMore || isLoadingMore) return;
     setIsLoadingMore(true);
     try {
       const oldestMsg = messages[0];
-      if (!oldestMsg) { setIsLoadingMore(false); return; }
+      if (!oldestMsg?.createdAt) { setIsLoadingMore(false); return; }
 
       const { data, error } = await supabase
         .from("chat_messages")
         .select("*")
         .eq("family_id", familyId)
-        .lt("created_at", oldestMsg.time ? undefined as any : undefined)
+        .lt("created_at", oldestMsg.createdAt)
         .order("created_at", { ascending: false })
         .limit(PAGE_SIZE);
 
-      // We need the actual created_at from DB, so query by id-based cursor
-      // Better approach: use the raw created_at. We'll store it.
-      // For now, re-query using offset approach with the oldest message id
-      const { data: olderData, error: olderError } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("family_id", familyId)
-        .order("created_at", { ascending: false })
-        .range(messages.length, messages.length + PAGE_SIZE - 1);
-
-      if (olderError || !olderData) {
-        console.error("Load older error:", olderError);
+      if (error || !data) {
+        console.error("Load older error:", error);
         setIsLoadingMore(false);
         return;
       }
 
-      setHasMore(olderData.length === PAGE_SIZE);
+      setHasMore(data.length === PAGE_SIZE);
 
-      const sorted = [...olderData].reverse();
+      const sorted = [...data].reverse();
       const decrypted: ChatMessage[] = [];
       for (const m of sorted) {
         const msg = await decryptRef.current(m);
