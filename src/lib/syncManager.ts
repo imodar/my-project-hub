@@ -51,9 +51,15 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
     last_synced_at: new Date().toISOString(),
   });
 
-  // قراءة البيانات + إسقاط العمليات المعلقة
-  const allLocal: T[] = await table.toArray();
-  const projectedData = await projectPendingChanges(tableName, allLocal as T[]);
+  // Build a Set of IDs from the API response for fast lookup
+  const apiIds = new Set(data.map((item) => item.id));
+
+  // Read back ONLY the records that belong to this sync batch
+  const relevantLocal: T[] = await table
+    .filter((item: any) => apiIds.has(item.id))
+    .toArray();
+
+  const projectedData = await projectPendingChanges(tableName, relevantLocal as T[]);
   console.info(
     `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، محلي بعد الإسقاط: ${projectedData.length}`
   );

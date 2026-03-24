@@ -32,12 +32,18 @@ export function useMedications() {
     return { data: data || [], error: error?.message || null };
   }, [familyId]);
 
+  const filterByFamily = useCallback(
+    (items: any[]) => familyId ? items.filter((m) => m.family_id === familyId) : [],
+    [familyId]
+  );
+
   const { data: medications, isLoading, isSyncing, refetch } = useOfflineFirst<any>({
     table: "medications",
     queryKey,
     apiFn,
     enabled: !!familyId,
     staleTime: 5 * 60 * 1000,
+    filterFn: filterByFamily,
   });
 
   /** إضافة دواء */
