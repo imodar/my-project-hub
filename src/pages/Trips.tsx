@@ -231,10 +231,6 @@ const Trips = () => {
     }));
   }, [dbTrips]);
 
-  // Local state wrappers for UI (selected trip sync)
-  const [tripsLocal, setTripsLocal] = useState<Trip[]>([]);
-  useEffect(() => { setTripsLocal(trips); }, [trips]);
-  const setTrips = setTripsLocal;
 
   const [activeTab, setActiveTab] = useState("family");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
@@ -293,7 +289,7 @@ const Trips = () => {
   // Drag state
   const [draggedActivity, setDraggedActivity] = useState<string | null>(null);
 
-  const filteredTrips = tripsLocal.filter((t) => t.type === activeTab);
+  const filteredTrips = trips.filter((t) => t.type === activeTab);
 
   const resetTripForm = () => {
     setTripName(""); setTripDest(""); setTripStart(""); setTripEnd(""); setTripBudget(""); setTripParticipants([]);
@@ -494,7 +490,6 @@ const Trips = () => {
     });
     const updated = { ...selectedTrip, days: updatedDays };
     setSelectedTrip(updated);
-    setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
     setDraggedActivity(null);
   };
 
@@ -823,7 +818,6 @@ const Trips = () => {
                         onClick={() => {
                           const updated = { ...selectedTrip, expenses: selectedTrip.expenses.filter((e) => e.id !== exp.id) };
                           setSelectedTrip(updated);
-                          setTrips((prev) => prev.map((t) => t.id === updated.id ? updated : t));
                           deleteExpense.mutate(exp.id);
                         }}
                         className="text-muted-foreground hover:text-destructive transition-colors"
