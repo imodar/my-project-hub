@@ -102,6 +102,8 @@ const QiblaCompass = () => {
         </foreignObject>
         {/* Moving dot */}
         <motion.circle
+          cx={cx + arcR * Math.sin(toRad(needleRotation))}
+          cy={cy - arcR * Math.cos(toRad(needleRotation))}
           r="4.5"
           fill={isAligned ? "hsl(48, 96%, 53%)" : "hsl(48, 80%, 70%)"}
           animate={{
@@ -112,6 +114,8 @@ const QiblaCompass = () => {
         />
         {isAligned && (
           <motion.circle
+            cx={cx + arcR * Math.sin(toRad(needleRotation))}
+            cy={cy - arcR * Math.cos(toRad(needleRotation))}
             r="7"
             fill="none"
             stroke="hsl(48, 96%, 53%)"
