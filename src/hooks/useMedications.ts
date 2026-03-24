@@ -73,14 +73,16 @@ export function useMedications() {
   });
 
   const addLog = useMutation({
-    mutationFn: async (input: { medication_id: string; skipped?: boolean; notes?: string }) => {
+    mutationFn: async (input: { medication_id: string; skipped?: boolean; notes?: string; taken_at?: string }) => {
       if (!user) throw new Error("No user");
-      const { error } = await supabase.from("medication_logs").insert({
+      const payload = {
         medication_id: input.medication_id,
         taken_by: user.id,
         skipped: input.skipped || false,
         notes: input.notes,
-      });
+        ...(input.taken_at ? { taken_at: input.taken_at } : {}),
+      };
+      const { error } = await supabase.from("medication_logs").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
