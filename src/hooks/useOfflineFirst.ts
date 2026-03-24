@@ -13,7 +13,7 @@
  * });
  */
 import { useQuery, type QueryKey, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { db } from "@/lib/db";
 import { syncTable } from "@/lib/syncManager";
 import type { Table } from "dexie";
