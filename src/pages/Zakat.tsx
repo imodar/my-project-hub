@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useZakatAssets } from "@/hooks/useZakatAssets";
-import { createPortal } from "react-dom";
+import FAB from "@/components/FAB";
 import {
   Plus, Coins, Info, Trash2, Bell, BellOff, ChevronDown, ChevronUp,
   ShieldCheck, Scale, BookOpen, Calculator, X, Check, AlertTriangle, Clock, Pencil, CalendarIcon
