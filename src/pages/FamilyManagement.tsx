@@ -648,8 +648,8 @@ const FamilyManagement = () => {
           </div>
         </div>
 
-        {/* Leave family section — only when user has a family */}
-        {familyId && (
+        {/* Leave family section — only when user has a family and is not the only member */}
+        {familyId && members.length > 1 && (
         <div className="mt-8 mb-8">
           <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">مغادرة العائلة</h2>
           <div className="rounded-2xl p-4 bg-card border border-destructive/20" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
