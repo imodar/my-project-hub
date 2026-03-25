@@ -226,6 +226,7 @@ const Vehicle = () => {
 
   const { addToTrash } = useTrash();
   const [deleteConfirmCar, setDeleteConfirmCar] = useState<CarData | null>(null);
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   // Add car form
   const [newManufacturer, setNewManufacturer] = useState("");
