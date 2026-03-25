@@ -130,7 +130,7 @@ const Albums = () => {
   const [newName, setNewName] = useState("");
   const [linkToTrip, setLinkToTrip] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState("");
-  const [selectedCover, setSelectedCover] = useState(0);
+  
 
   const handleCreateAlbum = () => {
     if (!newName.trim()) {
@@ -139,14 +139,14 @@ const Albums = () => {
     }
     createAlbum.mutate({
       name: newName.trim(),
-      cover_color: COVER_PALETTES[selectedCover],
+      cover_color: COVER_PALETTES[Math.floor(Math.random() * COVER_PALETTES.length)],
       linked_trip_id: linkToTrip && selectedTripId ? selectedTripId : undefined,
     });
     setShowCreate(false);
     setNewName("");
     setLinkToTrip(false);
     setSelectedTripId("");
-    setSelectedCover(0);
+    
     toast.success("تم إنشاء الألبوم");
   };
 
@@ -432,22 +432,6 @@ const Albums = () => {
               />
             </div>
 
-            {/* Cover color */}
-            <div>
-              <label className="text-xs font-bold text-muted-foreground mb-2 block">لون الغلاف</label>
-              <div className="flex gap-2 flex-wrap">
-                {COVER_PALETTES.map((color, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedCover(i)}
-                    className={`w-10 h-10 rounded-xl transition-all active:scale-90 ${
-                      selectedCover === i ? "ring-2 ring-primary ring-offset-2 scale-110" : ""
-                    }`}
-                    style={{ background: color }}
-                  />
-                ))}
-              </div>
-            </div>
 
             {/* Link to trip */}
             <div className="space-y-3">
