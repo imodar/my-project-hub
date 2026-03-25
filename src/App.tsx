@@ -69,6 +69,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount) => navigator.onLine && failureCount < 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
       networkMode: "offlineFirst",
       staleTime: 10 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
@@ -77,6 +78,7 @@ const queryClient = new QueryClient({
     },
     mutations: {
       networkMode: "offlineFirst",
+      retry: 1,
     },
   },
 });
