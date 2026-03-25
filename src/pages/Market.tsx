@@ -172,7 +172,7 @@ const Market = () => {
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
 
-  // Swipe state managed by SwipeableCard component
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<MarketItem | null>(null);
