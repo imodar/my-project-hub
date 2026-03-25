@@ -136,50 +136,6 @@ const Vaccinations = () => {
     setShowNoteSheet(true);
   };
 
-  // Swipe handlers
-  const handleTouchStart = (e: React.TouchEvent, childId: string) => {
-    swipeRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, swiping: false, childId };
-  };
-
-  const handleTouchMove = (e: React.TouchEvent, childId: string, cardEl: HTMLDivElement | null) => {
-    if (!cardEl || swipeRef.current.childId !== childId) return;
-    const diffX = e.touches[0].clientX - swipeRef.current.startX;
-    const diffY = Math.abs(e.touches[0].clientY - swipeRef.current.startY);
-    if (diffY > Math.abs(diffX) && !swipeRef.current.swiping) return;
-    if (Math.abs(diffX) > 10) swipeRef.current.swiping = true;
-    if (swipeRef.current.swiping) {
-      e.preventDefault();
-      const clampedX = Math.max(-112, Math.min(0, diffX));
-      cardEl.style.transform = `translateX(${clampedX}px)`;
-    }
-  };
-
-  const handleTouchEnd = (childId: string, cardEl: HTMLDivElement | null) => {
-    if (!cardEl || swipeRef.current.childId !== childId) return;
-    const wasSwiping = swipeRef.current.swiping;
-    if (wasSwiping) {
-      const currentTransform = cardEl.style.transform;
-      const match = currentTransform.match(/translateX\((-?\d+)px\)/);
-      const currentX = match ? parseInt(match[1]) : 0;
-      cardEl.style.transition = "transform 200ms ease-out";
-      if (currentX < -50) {
-        cardEl.style.transform = "translateX(-112px)";
-        setSwipedChildId(childId);
-      } else {
-        cardEl.style.transform = "translateX(0px)";
-        setSwipedChildId(null);
-      }
-      setTimeout(() => { if (cardEl) cardEl.style.transition = ""; }, 200);
-    }
-    swipeRef.current.swiping = false;
-  };
-
-  const handleCardClick = (child: Child) => {
-    if (swipeRef.current.swiping) return;
-    if (swipedChildId === child.id) { setSwipedChildId(null); return; }
-    if (swipedChildId) { setSwipedChildId(null); return; }
-    setSelectedChild(child);
-  };
 
   const totalVaccines = getTotalVaccines();
 
