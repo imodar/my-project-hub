@@ -29,7 +29,7 @@ import Chat from "./pages/Chat.tsx";
 import Map from "./pages/Map.tsx";
 import Debts from "./pages/Debts.tsx";
 import FamilyManagement from "./pages/FamilyManagement.tsx";
-import JoinFamily from "./pages/JoinFamily.tsx";
+import JoinOrCreate from "./pages/JoinOrCreate.tsx";
 import Profile from "./pages/Profile.tsx";
 import CalendarPage from "./pages/Calendar.tsx";
 import Trash from "./pages/Trash.tsx";
