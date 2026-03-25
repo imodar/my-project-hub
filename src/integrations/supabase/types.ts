@@ -1242,6 +1242,39 @@ export type Database = {
           },
         ]
       }
+      member_locations: {
+        Row: {
+          accuracy: number | null
+          family_id: string
+          id: string
+          is_sharing: boolean
+          lat: number
+          lng: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          family_id: string
+          id?: string
+          is_sharing?: boolean
+          lat: number
+          lng: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          family_id?: string
+          id?: string
+          is_sharing?: boolean
+          lat?: number
+          lng?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       member_removals: {
         Row: {
           deleted_at: string
