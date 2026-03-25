@@ -473,6 +473,10 @@ const Debts = () => {
         </div>
       </PageHeader>
 
+      {isLoading ? (
+        <CardPageSkeleton />
+      ) : (
+      <>
       {/* Tabs */}
       <div className="flex mx-5 mt-5 gap-2">
         <button
