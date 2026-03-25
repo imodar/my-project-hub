@@ -105,7 +105,7 @@ export function useTaskLists() {
       }).select().single();
       return { data, error: error?.message || null };
     },
-    queryKey: key,
+    // Don't pass queryKey — we handle optimistic update manually below
     onSuccess: () => refetch(),
   });
 
