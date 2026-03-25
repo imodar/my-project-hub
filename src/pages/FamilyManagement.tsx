@@ -495,6 +495,19 @@ const FamilyManagement = () => {
           </div>
         ) : (
         <>
+        {/* Role warning banner — admins only, dismissible */}
+        {isMyAdmin && members.length > 1 && !roleWarningDismissed && (
+          <div className="flex items-start gap-2 p-3 rounded-xl mb-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700 dark:text-amber-400 flex-1 leading-relaxed">
+              في حال اختيار دور خاطئ لأي عضو، يجب إزالته وإعادة دعوته لتصحيح الدور.
+            </p>
+            <button onClick={dismissRoleWarning} className="shrink-0 p-0.5 rounded-full text-amber-500 active:bg-amber-200/50">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
         <div className="space-y-2">
           {members.map((member) => {
