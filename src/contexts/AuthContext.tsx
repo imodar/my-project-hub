@@ -63,6 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fetchProfile(newSession.user.id);
         } else {
           setProfileName("");
+          setProfileReady(true);
         }
       }
     );
