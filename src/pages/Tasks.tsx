@@ -511,7 +511,7 @@ const Tasks = () => {
         </div>
         </PullToRefresh>
 
-        <FAB onClick={() => { haptic.medium(); setShowAddItem(true); }} />
+        <FAB onClick={() => { haptic.medium(); setNewItemName(""); setNewItemNote(""); setNewItemPriority("none"); setNewItemAssignedTo(""); setShowAddItem(true); }} />
 
         {/* List Actions Drawer */}
         <Drawer open={showListActions} onOpenChange={setShowListActions}>
