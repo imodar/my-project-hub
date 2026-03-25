@@ -98,4 +98,9 @@
     overscroll-behavior: none;
   }
 
+  /* Force RTL alignment for time inputs */
+  input[type="time"] {
+    direction: rtl;
+  }
+
 }
