@@ -158,7 +158,18 @@ export function useTaskLists() {
     },
     addItem: {
       ...addItem,
-      mutate: (input: any) => addItem.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), done: false, ...input }),
+      mutate: (input: any) => {
+        const newItem = { id: crypto.randomUUID(), created_at: new Date().toISOString(), done: false, ...input };
+        // Optimistic: inject item into the correct list's task_items
+        qc.setQueryData<any[]>(key, (old) =>
+          (old ?? []).map((list: any) =>
+            list.id === newItem.list_id
+              ? { ...list, task_items: [newItem, ...(list.task_items || [])] }
+              : list
+          )
+        );
+        addItem.mutate(newItem);
+      },
       mutateAsync: async (input: any) => addItem.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), done: false, ...input }),
     },
     toggleItem: {
