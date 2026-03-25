@@ -1273,6 +1273,9 @@ const Trips = () => {
     <div className="min-h-screen bg-background pb-32" dir="rtl">
       <PageHeader title="الرحلات" subtitle="خطط لرحلاتك العائلية والشخصية" />
 
+      {tripsLoading ? (
+        <CardPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={async () => {}}>
         <div className="px-5 mt-5">
           <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">

@@ -307,6 +307,9 @@ const Albums = () => {
     <div className="min-h-screen bg-background pb-32" dir="rtl">
         <PageHeader title="الألبومات" subtitle="صور العائلة وذكرياتها" onBack={() => navigate(-1)} />
 
+      {isLoading ? (
+        <CardPageSkeleton />
+      ) : (
         <PullToRefresh onRefresh={async () => {
           await new Promise((r) => setTimeout(r, 600));
           toast.success("تم تحديث الألبومات");

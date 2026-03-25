@@ -191,6 +191,9 @@ const Will = () => {
     <div className="min-h-screen bg-background max-w-2xl mx-auto relative pb-32">
       <PageHeader title="الوصية" subtitle="وصيتك الشرعية محفوظة وآمنة" />
 
+      {isLoading ? (
+        <ListPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={handleRefresh}>
         {/* ── Hero Hadith ── */}
         <div

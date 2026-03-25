@@ -390,6 +390,9 @@ const Documents = () => {
           </div>
         </PageHeader>
 
+      {docsLoading ? (
+        <ListPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 
         {/* Stats bar */}

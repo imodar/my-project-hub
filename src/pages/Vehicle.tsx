@@ -733,6 +733,9 @@ const Vehicle = () => {
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
       <PageHeader title="مركباتي" subtitle={cars.length > 0 ? `${cars.length} مركبة` : undefined} />
+      {vehiclesLoading ? (
+        <CardPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 
         {/* Cars */}

@@ -442,6 +442,8 @@ const Medications = () => {
           })
         )}
       </div>
+      </>
+      )}
 
       {/* Detail Summary Bottom Sheet */}
       <Drawer open={!!showDetailSheet} onOpenChange={(open) => !open && setShowDetailSheet(null)}>

@@ -442,6 +442,9 @@ const Places = () => {
           </div>
         </PageHeader>
 
+      {placesLoading ? (
+        <ListPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 
 

@@ -274,6 +274,9 @@ const Zakat = () => {
         </div>
       </PageHeader>
 
+      {assetsLoading ? (
+        <ListPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={async () => { /* React Query auto-refetches */ }}>
         <div className="px-4 mt-2 space-y-4">
 
