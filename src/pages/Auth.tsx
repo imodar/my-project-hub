@@ -47,14 +47,10 @@ const Auth = () => {
     setLoading(true);
     try {
       if (isTestNumber) {
-        const res = await supabase.functions.invoke("test-login", {
-          body: { phone: fullPhone },
-        });
-        if (res.error) throw res.error;
-        const { access_token, refresh_token } = res.data;
-        if (!access_token) throw new Error(res.data?.error || "فشل الدخول التجريبي");
-        await supabase.auth.setSession({ access_token, refresh_token });
-        toast({ title: "تم الدخول بنجاح ✓" });
+        // Test number goes to OTP screen with fixed code 000000
+        setStep("otp");
+        setCountdown(60);
+        toast({ title: "تم إرسال رمز التحقق (تجريبي)" });
         return;
       }
       const { error } = await supabase.auth.signInWithOtp({ phone: fullPhone });
@@ -89,6 +85,21 @@ const Auth = () => {
     if (code.length < 6) return;
     setLoading(true);
     try {
+      if (isTestNumber) {
+        if (code !== "000000") {
+          toast({ title: "رمز التحقق غير صحيح", variant: "destructive" });
+          return;
+        }
+        const res = await supabase.functions.invoke("test-login", {
+          body: { phone: fullPhone },
+        });
+        if (res.error) throw res.error;
+        const { access_token, refresh_token } = res.data;
+        if (!access_token) throw new Error(res.data?.error || "فشل الدخول التجريبي");
+        await supabase.auth.setSession({ access_token, refresh_token });
+        toast({ title: "تم الدخول بنجاح ✓" });
+        return;
+      }
       const { error } = await supabase.auth.verifyOtp({ phone: fullPhone, token: code, type: "sms" });
       if (error) throw error;
     } catch (err: any) {
