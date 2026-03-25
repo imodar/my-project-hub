@@ -75,7 +75,7 @@ const PhotoThumb = ({ photo, size = "md", onClick }: { photo: Photo; size?: "sm"
       }}
     >
       {photo.url ? (
-        <img src={photo.url} alt={photo.caption} className="w-full h-full object-cover" />
+        <img src={photo.url} alt={photo.caption || ""} className="w-full h-full object-cover" />
       ) : (
         <div className="w-full h-full flex items-center justify-center">
           <Camera size={size === "sm" ? 16 : 24} className="text-white/40" />
