@@ -136,7 +136,8 @@ Deno.serve(async (req) => {
         status: "active",
         role_confirmed: false,
       });
-      if (joinErr) return json({ error: joinErr.message }, 400);
+      console.log("Join insert result:", { joinErr });
+      if (joinErr) return json({ error: "فشل الانضمام: " + joinErr.message }, 400);
 
       // Notify admins about new member
       try {
