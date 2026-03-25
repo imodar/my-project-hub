@@ -16,7 +16,7 @@ const Map = () => {
   const { locations, isSharing, setIsSharing } = useLocationTracking(updateInterval);
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background relative overflow-hidden" dir="rtl">
+    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background relative" dir="rtl">
       <PageHeader
         title="خريطة العائلة"
         subtitle={`تحديث كل ${updateInterval} دقائق`}
