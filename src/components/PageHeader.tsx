@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SyncStatus from "@/components/SyncStatus";
@@ -19,12 +19,14 @@ interface PageHeaderProps {
   showSyncStatus?: boolean;
 }
 
-const PageHeader = ({ title, subtitle, actions, children, onBack, showSyncStatus = true }: PageHeaderProps) => {
-  const navigate = useNavigate();
+const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
+  ({ title, subtitle, actions, children, onBack, showSyncStatus = true }, ref) => {
+    const navigate = useNavigate();
 
-  return (
-    <div
-      className="sticky top-0 z-50 px-4 pt-12 pb-3 rounded-b-3xl"
+    return (
+      <div
+        ref={ref}
+        className="sticky top-0 z-50 px-4 pt-12 pb-3 rounded-b-3xl"
       style={{
         background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
       }}
@@ -56,6 +58,9 @@ const PageHeader = ({ title, subtitle, actions, children, onBack, showSyncStatus
       {children}
     </div>
   );
-};
+  }
+);
+
+PageHeader.displayName = "PageHeader";
 
 export default PageHeader;
