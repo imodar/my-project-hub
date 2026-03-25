@@ -1,8 +1,7 @@
+import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
-// react-leaflet v4 for React 18 compatibility
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
