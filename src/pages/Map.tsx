@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, Suspense, lazy } from "react";
 import { MapPin, EyeOff, Settings2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
-import FamilyMap from "@/components/map/FamilyMap";
+const FamilyMap = lazy(() => import("@/components/map/FamilyMap"));
 import MemberSheet from "@/components/map/MemberSheet";
 import { useLocationTracking } from "@/hooks/useLocationTracking";
 
