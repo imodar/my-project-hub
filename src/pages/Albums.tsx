@@ -130,7 +130,7 @@ const Albums = () => {
   const [newName, setNewName] = useState("");
   const [linkToTrip, setLinkToTrip] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState("");
-  const [selectedCover, setSelectedCover] = useState(0);
+  
 
   const handleCreateAlbum = () => {
     if (!newName.trim()) {
