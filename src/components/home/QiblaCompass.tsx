@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 
 const KAABA_LAT = 21.4225;
@@ -16,14 +16,15 @@ const calculateQiblaAngle = (lat: number, lng: number): number => {
   return (qibla + 360) % 360;
 };
 
-const KaabaIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+const KaabaIcon = React.forwardRef<SVGSVGElement>((_, ref) => (
+  <svg ref={ref} width="16" height="16" viewBox="0 0 24 24" fill="none">
     <rect x="4" y="6" width="16" height="14" rx="1" fill="white" opacity="0.85" />
     <rect x="6" y="4" width="12" height="4" rx="0.5" fill="white" opacity="0.6" />
   </svg>
-);
+));
+KaabaIcon.displayName = "KaabaIcon";
 
-const QiblaCompass = () => {
+const QiblaCompass = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const [qiblaAngle, setQiblaAngle] = useState<number>(253);
   const [heading, setHeading] = useState<number>(0);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -78,14 +79,17 @@ const QiblaCompass = () => {
   const cx = 35;
   const cy = 36;
 
+  const dotCx = cx + arcR * Math.sin(toRad(needleRotation));
+  const dotCy = cy - arcR * Math.cos(toRad(needleRotation));
+
   return (
     <div
+      ref={ref}
       className="bg-white/10 backdrop-blur-md rounded-xl p-3 flex flex-col items-center border border-white/10 cursor-pointer"
       onClick={() => (!hasPermission ? requestPermission() : null)}
     >
       <p className="text-[10px] font-bold text-white/60 mb-1">القبلة</p>
       <svg width="70" height="50" viewBox="0 0 70 50" className="overflow-visible">
-        {/* Arc track */}
         <path
           d={`M ${cx - arcR} ${cy} A ${arcR} ${arcR} 0 1 1 ${cx + arcR} ${cy}`}
           fill="none"
@@ -94,35 +98,33 @@ const QiblaCompass = () => {
           strokeWidth="3"
           strokeLinecap="round"
         />
-        {/* Kaaba at top */}
         <foreignObject x={cx - 8} y={cy - arcR - 10} width="16" height="16">
           <div className="flex items-center justify-center w-full h-full">
             <KaabaIcon />
           </div>
         </foreignObject>
-        {/* Moving dot */}
         <motion.circle
-          cx={cx + arcR * Math.sin(toRad(needleRotation))}
-          cy={cy - arcR * Math.cos(toRad(needleRotation))}
+          cx={dotCx ?? 0}
+          cy={dotCy ?? 0}
           r="4.5"
           fill={isAligned ? "hsl(48, 96%, 53%)" : "hsl(48, 80%, 70%)"}
           animate={{
-            cx: cx + arcR * Math.sin(toRad(needleRotation)),
-            cy: cy - arcR * Math.cos(toRad(needleRotation)),
+            cx: dotCx ?? 0,
+            cy: dotCy ?? 0,
           }}
           transition={{ type: "spring", stiffness: 80, damping: 15 }}
         />
         {isAligned && (
           <motion.circle
-            cx={cx + arcR * Math.sin(toRad(needleRotation))}
-            cy={cy - arcR * Math.cos(toRad(needleRotation))}
+            cx={dotCx ?? 0}
+            cy={dotCy ?? 0}
             r="7"
             fill="none"
             stroke="hsl(48, 96%, 53%)"
             strokeWidth="1.5"
             animate={{
-              cx: cx + arcR * Math.sin(toRad(needleRotation)),
-              cy: cy - arcR * Math.cos(toRad(needleRotation)),
+              cx: dotCx ?? 0,
+              cy: dotCy ?? 0,
               opacity: [0.8, 0],
               scale: [1, 1.8],
             }}
@@ -132,6 +134,8 @@ const QiblaCompass = () => {
       </svg>
     </div>
   );
-};
+});
+
+QiblaCompass.displayName = "QiblaCompass";
 
 export default QiblaCompass;

@@ -1,16 +1,16 @@
+import React from "react";
 import { CalendarDays } from "lucide-react";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useNavigate } from "react-router-dom";
 
-const UpcomingEvents = () => {
+const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
   const { featureAccess } = useUserRole();
   const { events, isLoading } = useCalendarEvents();
   const navigate = useNavigate();
 
-  if (featureAccess.isStaff) return null;
+  if (featureAccess.isStaff) return <section ref={ref} style={{ display: "none" }} />;
 
-  // Get upcoming events (future dates), sorted by date
   const upcoming = (events || [])
     .filter((e) => new Date(e.date) >= new Date(new Date().toDateString()))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -18,7 +18,7 @@ const UpcomingEvents = () => {
 
   if (isLoading) {
     return (
-      <section className="mt-8 px-5">
+      <section ref={ref} className="mt-8 px-5">
         <h2 className="text-lg font-extrabold text-foreground tracking-tight mb-5">المناسبات القادمة</h2>
         <div className="flex gap-4 overflow-x-auto pb-3 -mx-5 px-5" style={{ scrollbarWidth: "none" }}>
           {[1, 2, 3].map((i) => (
@@ -31,7 +31,7 @@ const UpcomingEvents = () => {
 
   if (upcoming.length === 0) {
     return (
-      <section className="mt-8 px-5">
+      <section ref={ref} className="mt-8 px-5">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-extrabold text-foreground tracking-tight">المناسبات القادمة</h2>
         </div>
@@ -63,7 +63,7 @@ const UpcomingEvents = () => {
   ];
 
   return (
-    <section className="mt-8 px-5">
+    <section ref={ref} className="mt-8 px-5">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-extrabold text-foreground tracking-tight">المناسبات القادمة</h2>
       </div>
@@ -105,6 +105,8 @@ const UpcomingEvents = () => {
       </div>
     </section>
   );
-};
+});
+
+UpcomingEvents.displayName = "UpcomingEvents";
 
 export default UpcomingEvents;

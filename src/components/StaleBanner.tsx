@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { db } from "@/lib/db";
 
-const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 min
+const STALE_THRESHOLD_MS = 5 * 60 * 1000;
 const AUTO_HIDE_MS = 10_000;
 
-const StaleBanner = () => {
+const StaleBanner = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -34,7 +34,6 @@ const StaleBanner = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Hide when going offline (OfflineBanner takes over)
   useEffect(() => {
     const hide = () => setShow(false);
     window.addEventListener("offline", hide);
@@ -42,21 +41,25 @@ const StaleBanner = () => {
   }, []);
 
   return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          initial={{ y: -40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -40, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className="fixed top-0 left-0 right-0 z-[190] flex items-center justify-center gap-2 py-2 px-4 text-xs font-medium text-primary-foreground bg-primary/90 backdrop-blur-sm"
-        >
-          <RefreshCw size={14} className="animate-spin" />
-          <span>جاري تحديث بياناتك...</span>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div ref={ref}>
+      <AnimatePresence>
+        {show && (
+          <motion.div
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -40, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed top-0 left-0 right-0 z-[190] flex items-center justify-center gap-2 py-2 px-4 text-xs font-medium text-primary-foreground bg-primary/90 backdrop-blur-sm"
+          >
+            <RefreshCw size={14} className="animate-spin" />
+            <span>جاري تحديث بياناتك...</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
-};
+});
+
+StaleBanner.displayName = "StaleBanner";
 
 export default StaleBanner;
