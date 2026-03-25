@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 interface PrayerTimes {
   Fajr: string;
@@ -65,8 +65,8 @@ const getNextPrayer = (times: PrayerTimes): NextPrayerInfo => {
   };
 };
 
-const PrayerIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
+const PrayerIcon = React.forwardRef<SVGSVGElement>((_, ref) => (
+  <svg ref={ref} width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
     <path d="M12 3C9 3 6 6 6 9h12c0-3-3-6-6-6z" fill="currentColor" fillOpacity="0.5" />
     <rect x="3" y="7" width="2" height="11" rx="0.5" fill="currentColor" fillOpacity="0.4" />
     <circle cx="4" cy="6" r="1" fill="currentColor" fillOpacity="0.6" />
@@ -76,7 +76,8 @@ const PrayerIcon = () => (
     <path d="M10 18h4v-4a2 2 0 0 0-4 0v4z" fill="currentColor" fillOpacity="0.4" />
     <line x1="2" y1="18" x2="22" y2="18" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.5" />
   </svg>
-);
+));
+PrayerIcon.displayName = "PrayerIcon";
 
 const CACHE_KEY = "prayer_times_cache";
 
@@ -85,7 +86,6 @@ const getCachedTimes = (): PrayerTimes | null => {
     const raw = sessionStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const cached = JSON.parse(raw);
-    // Only use cache from same day
     const cachedDate = new Date(cached._cachedAt);
     const now = new Date();
     if (cachedDate.toDateString() !== now.toDateString()) return null;
@@ -105,7 +105,6 @@ export const usePrayerTimes = () => {
   const [loading, setLoading] = useState(!getCachedTimes());
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Fetch once per session/day
   useEffect(() => {
     const cached = getCachedTimes();
     if (cached) {
@@ -147,7 +146,6 @@ export const usePrayerTimes = () => {
     fetchPrayers();
   }, []);
 
-  // Update countdown every 30s without re-fetching
   useEffect(() => {
     if (!prayerTimes) return;
     const update = () => setNextPrayer(getNextPrayer(prayerTimes));
@@ -159,12 +157,12 @@ export const usePrayerTimes = () => {
   return { nextPrayer, loading, lastUpdated };
 };
 
-const NextPrayerBox = () => {
+const NextPrayerBox = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { nextPrayer, loading } = usePrayerTimes();
 
   if (loading || !nextPrayer) {
     return (
-      <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
+      <div ref={ref} className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
             <PrayerIcon />
@@ -180,12 +178,11 @@ const NextPrayerBox = () => {
   }
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-xl px-3 py-1.5 border border-white/10 h-full flex items-center">
+    <div ref={ref} className="bg-white/10 backdrop-blur-md rounded-xl px-3 py-1.5 border border-white/10 h-full flex items-center">
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
           <PrayerIcon />
         </div>
-        {/* 3 lines */}
         <div className="flex flex-col gap-0.5">
           <p className="text-[10px] font-semibold text-white/70">باقي لصلاة {nextPrayer.name}</p>
           <p className="text-sm font-bold leading-tight">{nextPrayer.remaining}</p>
@@ -194,6 +191,8 @@ const NextPrayerBox = () => {
       </div>
     </div>
   );
-};
+});
+
+NextPrayerBox.displayName = "NextPrayerBox";
 
 export default NextPrayerBox;

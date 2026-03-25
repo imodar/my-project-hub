@@ -1,12 +1,12 @@
+import React from "react";
 import { Check, Plus, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTaskLists } from "@/hooks/useTaskLists";
 
-const DailyTasks = () => {
+const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
   const navigate = useNavigate();
   const { lists: taskLists, isLoading } = useTaskLists();
 
-  // Flatten all task items from all lists
   const allTasks = (taskLists || []).flatMap((list) =>
     (list.task_items || []).map((item: any) => ({
       ...item,
@@ -14,14 +14,13 @@ const DailyTasks = () => {
     }))
   );
 
-  // Show undone first, limit to 6
   const displayTasks = allTasks
     .sort((a: any, b: any) => Number(a.done) - Number(b.done))
     .slice(0, 6);
 
   if (isLoading) {
     return (
-      <section className="mt-8 px-5 pb-28">
+      <section ref={ref} className="mt-8 px-5 pb-28">
         <h2 className="text-lg font-extrabold text-foreground tracking-tight mb-4">مهام اليوم</h2>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -34,7 +33,7 @@ const DailyTasks = () => {
 
   if (displayTasks.length === 0) {
     return (
-      <section className="mt-8 px-5 pb-28">
+      <section ref={ref} className="mt-8 px-5 pb-28">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-extrabold text-foreground tracking-tight">مهام اليوم</h2>
           <button
@@ -65,7 +64,7 @@ const DailyTasks = () => {
   ];
 
   return (
-    <section className="mt-8 px-5 pb-28">
+    <section ref={ref} className="mt-8 px-5 pb-28">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-extrabold text-foreground tracking-tight">مهام اليوم</h2>
         <button
@@ -112,6 +111,8 @@ const DailyTasks = () => {
       </div>
     </section>
   );
-};
+});
+
+DailyTasks.displayName = "DailyTasks";
 
 export default DailyTasks;

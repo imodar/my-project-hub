@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ const SOS_DISABLED_KEY = "sos_disabled_members";
 
 type SOSPhase = "idle" | "holding" | "countdown" | "active";
 
-const SOSButton = () => {
+const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
   const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string }[]>([]);
@@ -244,143 +244,131 @@ const SOSButton = () => {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Countdown overlay
-  if (phase === "countdown") {
-    return createPortal(
-      <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center" dir="rtl">
-        <div className="relative">
-          <div className="w-40 h-40 rounded-full border-4 border-red-500 flex items-center justify-center animate-pulse">
-            <span className="text-7xl font-extrabold text-red-500 tabular-nums">{countdown}</span>
-          </div>
-        </div>
-        <p className="text-white/80 text-base font-bold mt-8">جاري إرسال التنبيه...</p>
-        <p className="text-white/50 text-sm mt-2">سيتم إشعار جميع أفراد العائلة</p>
-        <Button
-          onClick={cancelCountdown}
-          className="mt-10 rounded-2xl px-8 h-12 text-base font-bold hover:bg-white/20 active:scale-95"
-          style={{ background: "hsla(0,0%,100%,0.15)", color: "white", border: "1px solid hsla(0,0%,100%,0.3)" }}
-        >
-          <X size={18} /> إلغاء
-        </Button>
-      </div>,
-      document.body
-    );
-  }
-
-  // Active SOS overlay
-  if (phase === "active") {
-    return createPortal(
-      <div className="fixed inset-0 z-[9999] flex flex-col" dir="rtl">
-        {/* Red pulsing background */}
-        <div className="absolute inset-0 bg-red-600 animate-pulse" style={{ animationDuration: "2s" }} />
-        <div className="relative flex-1 flex flex-col items-center justify-center px-6">
-          <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mb-6">
-            <Radio size={40} className="text-white animate-ping" style={{ animationDuration: "1.5s" }} />
-          </div>
-          <h2 className="text-2xl font-extrabold text-white">تنبيه طوارئ نشط</h2>
-          <p className="text-white/80 text-sm mt-2 text-center">تم إشعار جميع أفراد العائلة بموقعك</p>
-
-          {/* Timer */}
-          <div className="mt-6 bg-black/30 rounded-2xl px-6 py-3">
-            <span className="text-white font-mono text-2xl tabular-nums">{formatTime(activeSeconds)}</span>
-          </div>
-
-          {/* Simulated status */}
-          <div className="mt-8 bg-black/20 rounded-2xl p-4 w-full max-w-sm space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <MapPin size={16} className="text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-white/60">آخر تحديث للموقع</p>
-                <p className="text-sm text-white font-bold">قبل {activeSeconds < 30 ? activeSeconds : activeSeconds % 30} ثانية</p>
-              </div>
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <MessageSquare size={16} className="text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-white/60">رسائل SMS</p>
-                <p className="text-sm text-white font-bold">تم إرسال {contacts.length} رسائل</p>
-              </div>
-              <Check size={16} className="text-green-400" />
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <PhoneCall size={16} className="text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-white/60">إشعارات العائلة</p>
-                <p className="text-sm text-white font-bold">{familyMembers.length} أفراد تم إشعارهم</p>
-              </div>
-              <Check size={16} className="text-green-400" />
-            </div>
-          </div>
-
-          {/* Cancel button */}
-          <Button
-            onClick={() => setCancelDrawer(true)}
-            className="mt-8 rounded-2xl px-8 h-14 text-base font-bold bg-white text-red-600 hover:bg-white/90 shadow-xl"
-          >
-            إلغاء التنبيه
-          </Button>
-        </div>
-
-        {/* Cancel SOS Drawer */}
-        <Drawer open={cancelDrawer} onOpenChange={setCancelDrawer}>
-          <DrawerContent className="z-[10000]">
-            <DrawerHeader><DrawerTitle>إلغاء تنبيه الطوارئ</DrawerTitle></DrawerHeader>
-            <div className="px-5 pb-8 space-y-4">
-              <p className="text-sm text-muted-foreground text-center">
-                سيتم إبلاغ جميع أفراد العائلة بأنك بخير
-              </p>
-              <div className="flex gap-2">
-                {["بخير", "كان خطأ"].map((reason) => (
-                  <button
-                    key={reason}
-                    onClick={() => setCancelReason(reason)}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                      cancelReason === reason
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {reason}
-                  </button>
-                ))}
-              </div>
-              <Textarea
-                placeholder="أو اكتب سبباً آخر..."
-                value={!["بخير", "كان خطأ"].includes(cancelReason) ? cancelReason : ""}
-                onChange={(e) => setCancelReason(e.target.value)}
-                className="min-h-[60px]"
-              />
-              <Button
-                className="w-full rounded-xl h-12"
-                onClick={handleCancelSOS}
-              >
-                <Check size={18} /> تأكيد الإلغاء
-              </Button>
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </div>,
-      document.body
-    );
-  }
-
-  // Settings + drawers only (button is now in BottomNav)
   return (
-    <>
+    <div ref={ref}>
+      {/* Countdown overlay */}
+      {phase === "countdown" && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center" dir="rtl">
+          <div className="relative">
+            <div className="w-40 h-40 rounded-full border-4 border-red-500 flex items-center justify-center animate-pulse">
+              <span className="text-7xl font-extrabold text-red-500 tabular-nums">{countdown}</span>
+            </div>
+          </div>
+          <p className="text-white/80 text-base font-bold mt-8">جاري إرسال التنبيه...</p>
+          <p className="text-white/50 text-sm mt-2">سيتم إشعار جميع أفراد العائلة</p>
+          <Button
+            onClick={cancelCountdown}
+            className="mt-10 rounded-2xl px-8 h-12 text-base font-bold hover:bg-white/20 active:scale-95"
+            style={{ background: "hsla(0,0%,100%,0.15)", color: "white", border: "1px solid hsla(0,0%,100%,0.3)" }}
+          >
+            <X size={18} /> إلغاء
+          </Button>
+        </div>,
+        document.body
+      )}
+
+      {/* Active SOS overlay */}
+      {phase === "active" && createPortal(
+        <div className="fixed inset-0 z-[9999] flex flex-col" dir="rtl">
+          <div className="absolute inset-0 bg-red-600 animate-pulse" style={{ animationDuration: "2s" }} />
+          <div className="relative flex-1 flex flex-col items-center justify-center px-6">
+            <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mb-6">
+              <Radio size={40} className="text-white animate-ping" style={{ animationDuration: "1.5s" }} />
+            </div>
+            <h2 className="text-2xl font-extrabold text-white">تنبيه طوارئ نشط</h2>
+            <p className="text-white/80 text-sm mt-2 text-center">تم إشعار جميع أفراد العائلة بموقعك</p>
+
+            <div className="mt-6 bg-black/30 rounded-2xl px-6 py-3">
+              <span className="text-white font-mono text-2xl tabular-nums">{formatTime(activeSeconds)}</span>
+            </div>
+
+            <div className="mt-8 bg-black/20 rounded-2xl p-4 w-full max-w-sm space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                  <MapPin size={16} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-white/60">آخر تحديث للموقع</p>
+                  <p className="text-sm text-white font-bold">قبل {activeSeconds < 30 ? activeSeconds : activeSeconds % 30} ثانية</p>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                  <MessageSquare size={16} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-white/60">رسائل SMS</p>
+                  <p className="text-sm text-white font-bold">تم إرسال {contacts.length} رسائل</p>
+                </div>
+                <Check size={16} className="text-green-400" />
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                  <PhoneCall size={16} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-white/60">إشعارات العائلة</p>
+                  <p className="text-sm text-white font-bold">{familyMembers.length} أفراد تم إشعارهم</p>
+                </div>
+                <Check size={16} className="text-green-400" />
+              </div>
+            </div>
+
+            <Button
+              onClick={() => setCancelDrawer(true)}
+              className="mt-8 rounded-2xl px-8 h-14 text-base font-bold bg-white text-red-600 hover:bg-white/90 shadow-xl"
+            >
+              إلغاء التنبيه
+            </Button>
+          </div>
+
+          <Drawer open={cancelDrawer} onOpenChange={setCancelDrawer}>
+            <DrawerContent className="z-[10000]">
+              <DrawerHeader><DrawerTitle>إلغاء تنبيه الطوارئ</DrawerTitle></DrawerHeader>
+              <div className="px-5 pb-8 space-y-4">
+                <p className="text-sm text-muted-foreground text-center">
+                  سيتم إبلاغ جميع أفراد العائلة بأنك بخير
+                </p>
+                <div className="flex gap-2">
+                  {["بخير", "كان خطأ"].map((reason) => (
+                    <button
+                      key={reason}
+                      onClick={() => setCancelReason(reason)}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                        cancelReason === reason
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {reason}
+                    </button>
+                  ))}
+                </div>
+                <Textarea
+                  placeholder="أو اكتب سبباً آخر..."
+                  value={!["بخير", "كان خطأ"].includes(cancelReason) ? cancelReason : ""}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="min-h-[60px]"
+                />
+                <Button
+                  className="w-full rounded-xl h-12"
+                  onClick={handleCancelSOS}
+                >
+                  <Check size={18} /> تأكيد الإلغاء
+                </Button>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </div>,
+        document.body
+      )}
 
       {/* Settings Drawer */}
       <Drawer open={settingsDrawer} onOpenChange={setSettingsDrawer}>
         <DrawerContent>
           <DrawerHeader><DrawerTitle>إعدادات الطوارئ</DrawerTitle></DrawerHeader>
           <div className="px-5 pb-8 space-y-5 max-h-[70vh] overflow-y-auto">
-            {/* How to use */}
             <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl p-4 space-y-2">
               <h4 className="text-sm font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
                 <AlertTriangle size={16} /> كيفية التفعيل
@@ -392,7 +380,6 @@ const SOSButton = () => {
               </ul>
             </div>
 
-            {/* Emergency contacts */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-bold text-foreground">أرقام الطوارئ الخارجية</h4>
@@ -432,7 +419,6 @@ const SOSButton = () => {
               </div>
             </div>
 
-            {/* Family notification list */}
             <div>
               <h4 className="text-sm font-bold text-foreground mb-3">أفراد العائلة (إشعار تلقائي)</h4>
               <div className="space-y-2">
@@ -463,8 +449,10 @@ const SOSButton = () => {
           </div>
         </DrawerContent>
       </Drawer>
-    </>
+    </div>
   );
-};
+});
+
+SOSButton.displayName = "SOSButton";
 
 export default SOSButton;

@@ -1,3 +1,4 @@
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ShoppingCart, Calendar, HandCoins, Wallet,
@@ -24,7 +25,7 @@ const features = [
   { icon: Pill, label: "الأدوية", bg: "hsl(0 55% 93%)", color: "hsl(0 60% 45%)", route: "/medications" },
 ];
 
-const FeatureGrid = () => {
+const FeatureGrid = React.forwardRef<HTMLElement>((_props, ref) => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
 
@@ -33,7 +34,7 @@ const FeatureGrid = () => {
   );
 
   return (
-    <section className="px-5 mt-8">
+    <section ref={ref} className="px-5 mt-8">
       <div className="mb-5">
         <h2 className="text-lg font-extrabold text-foreground tracking-tight">
           {featureAccess.isStaff ? "الأدوات" : "أدوات العائلة"}
@@ -64,6 +65,8 @@ const FeatureGrid = () => {
       </div>
     </section>
   );
-};
+});
+
+FeatureGrid.displayName = "FeatureGrid";
 
 export default FeatureGrid;
