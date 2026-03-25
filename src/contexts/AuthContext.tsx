@@ -20,12 +20,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileName, setProfileName] = useState("");
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", userId)
-      .single();
-    if (data?.name) setProfileName(data.name);
+    // Try localStorage first (instant, works offline)
+    const cached = localStorage.getItem(`profile_name_${userId}`);
+    if (cached) setProfileName(cached);
+
+    // Then try network
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", userId)
+        .single();
+      if (data?.name) {
+        setProfileName(data.name);
+        localStorage.setItem(`profile_name_${userId}`, data.name);
+      }
+    } catch {
+      // offline — use cached value already set above
+    }
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -74,13 +86,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         db.debts.clear(),
         db.debt_payments.clear(),
         db.trips.clear(),
+        db.trip_day_plans.clear(),
+        db.trip_activities.clear(),
+        db.trip_expenses.clear(),
+        db.trip_packing.clear(),
+        db.trip_documents.clear(),
         db.chat_messages.clear(),
+        db.vehicles.clear(),
+        db.albums.clear(),
+        db.album_photos.clear(),
+        db.document_lists.clear(),
+        db.document_items.clear(),
+        db.document_files.clear(),
+        db.places.clear(),
+        db.place_lists.clear(),
+        db.vaccinations.clear(),
+        db.zakat_assets.clear(),
+        db.will_sections.clear(),
+        db.tasbih_sessions.clear(),
+        db.kids_worship_data.clear(),
+        db.prayer_logs.clear(),
+        db.emergency_contacts.clear(),
+        db.family_members.clear(),
+        db.families.clear(),
+        db.profiles.clear(),
         db.sync_meta.clear(),
         db.sync_queue.clear(),
       ]);
     } catch {
       // silent — logout should always succeed
     }
+    // Clear all cached profile names
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('profile_name_'))
+      .forEach(k => localStorage.removeItem(k));
     localStorage.removeItem("cached_family_id");
     localStorage.removeItem("first_sync_done");
     await supabase.auth.signOut();
