@@ -366,18 +366,7 @@ const FamilyManagement = () => {
     setNewName("");
   };
 
-  // Note: approval flow removed — joining is handled via invite code + edge function
-  // Members appear automatically after joining via /join?code=... route
-
-  const handleApproveJoin = () => {
-    // This was a demo stub — real joining happens via edge function
-    setShowApprovalDialog(false);
-    setApprovalName("");
-    setApprovalRole(null);
-    refetchMembers();
-  };
-
-  // Swipe handlers moved to SwipeableCard component
+  // Note: approval flow removed — joining is instant via edge function
 
   const spouseRole = getSpouseRole();
 
