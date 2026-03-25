@@ -24,28 +24,31 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Try to find existing user by email
+    // Try to find existing user by email (deterministic from phone)
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     let user = existingUsers?.users?.find((u) => u.email === email);
 
     if (!user) {
-      // Check if phone is already on another user and remove it first
+      // Also check if someone already has this phone
       const phoneUser = existingUsers?.users?.find((u) => u.phone === fullPhone);
       if (phoneUser) {
-        await supabaseAdmin.auth.admin.updateUser(phoneUser.id, { phone: "" });
+        // Phone exists on another account — use that account directly
+        user = phoneUser;
+        // Update it to also have our deterministic email/password for future logins
+        await supabaseAdmin.auth.admin.updateUser(phoneUser.id, { email, password });
+      } else {
+        // Brand new user
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          phone: fullPhone,
+          email_confirm: true,
+          phone_confirm: true,
+          user_metadata: { name: "" },
+        });
+        if (createError) throw createError;
+        user = newUser.user;
       }
-
-      // Create user with this phone
-      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        phone: fullPhone,
-        email_confirm: true,
-        phone_confirm: true,
-        user_metadata: { name: "" },
-      });
-      if (createError) throw createError;
-      user = newUser.user;
     }
 
     // Sign in with password
