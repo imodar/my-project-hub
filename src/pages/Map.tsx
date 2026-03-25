@@ -59,13 +59,15 @@ const Map = () => {
       </PageHeader>
 
       {/* Map area */}
-      <div className="relative flex-1 -mt-6" style={{ minHeight: "calc(100vh - 80px)" }}>
-        <FamilyMap
-          locations={locations}
-          selectedMemberId={selectedMemberId}
-          onMemberSelect={setSelectedMemberId}
-          className="absolute inset-0"
-        />
+      <div className="relative flex-1 -mt-6" style={{ height: "calc(100vh - 80px)", minHeight: "400px" }}>
+        <Suspense fallback={<div className="flex-1 bg-muted animate-pulse rounded-2xl" style={{ height: "100%" }} />}>
+          <FamilyMap
+            locations={locations}
+            selectedMemberId={selectedMemberId}
+            onMemberSelect={setSelectedMemberId}
+            className="absolute inset-0"
+          />
+        </Suspense>
 
         <MemberSheet
           locations={locations}
