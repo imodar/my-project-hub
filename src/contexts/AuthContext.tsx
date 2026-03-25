@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  profileReady: boolean;
   profileName: string;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,12 +18,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileReady, setProfileReady] = useState(false);
   const [profileName, setProfileName] = useState("");
 
   const fetchProfile = useCallback(async (userId: string) => {
     // Try localStorage first (instant, works offline)
     const cached = localStorage.getItem(`profile_name_${userId}`);
-    if (cached) setProfileName(cached);
+    if (cached) {
+      setProfileName(cached);
+      localStorage.setItem("profile_complete", "true");
+    }
 
     // Then try network
     try {
@@ -34,9 +39,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data?.name) {
         setProfileName(data.name);
         localStorage.setItem(`profile_name_${userId}`, data.name);
+        localStorage.setItem("profile_complete", "true");
       }
     } catch {
       // offline — use cached value already set above
+    } finally {
+      setProfileReady(true);
     }
   }, []);
 
@@ -55,6 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fetchProfile(newSession.user.id);
         } else {
           setProfileName("");
+          setProfileReady(true);
         }
       }
     );
@@ -133,6 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         session,
         user: session?.user ?? null,
         loading,
+        profileReady,
         profileName,
         refreshProfile,
         signOut,
