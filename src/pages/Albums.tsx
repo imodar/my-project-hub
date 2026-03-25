@@ -139,7 +139,7 @@ const Albums = () => {
     }
     createAlbum.mutate({
       name: newName.trim(),
-      cover_color: COVER_PALETTES[selectedCover],
+      cover_color: COVER_PALETTES[Math.floor(Math.random() * COVER_PALETTES.length)],
       linked_trip_id: linkToTrip && selectedTripId ? selectedTripId : undefined,
     });
     setShowCreate(false);
