@@ -18,17 +18,21 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const adminClient = createClient(supabaseUrl, serviceKey);
 
   const authHeader = req.headers.get("authorization");
-  if (!authHeader) return json({ error: "Unauthorized" }, 401);
+  if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  // Use getClaims to validate the JWT (works with ES256 signing keys)
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { authorization: authHeader } },
   });
-  const { data: { user }, error: authErr } = await userClient.auth.getUser();
-  if (authErr || !user) return json({ error: "Unauthorized" }, 401);
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+  if (claimsErr || !claimsData?.claims) return json({ error: "Unauthorized" }, 401);
+
+  const userId = claimsData.claims.sub as string;
 
   const url = new URL(req.url);
   const action = url.searchParams.get("action");
@@ -39,22 +43,20 @@ Deno.serve(async (req) => {
       const { lat, lng, accuracy, familyId, isSharing } = await req.json();
       if (!lat || !lng || !familyId) return json({ error: "Missing fields" }, 400);
 
-      // Verify membership
       const { data: member } = await adminClient
         .from("family_members")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("family_id", familyId)
         .eq("status", "active")
         .maybeSingle();
       if (!member) return json({ error: "Not a family member" }, 403);
 
-      // Upsert location
       const { error } = await adminClient
         .from("member_locations")
         .upsert(
           {
-            user_id: user.id,
+            user_id: userId,
             family_id: familyId,
             lat,
             lng,
@@ -74,24 +76,21 @@ Deno.serve(async (req) => {
       const familyId = url.searchParams.get("familyId");
       if (!familyId) return json({ error: "Missing familyId" }, 400);
 
-      // Verify membership
       const { data: member } = await adminClient
         .from("family_members")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("family_id", familyId)
         .eq("status", "active")
         .maybeSingle();
       if (!member) return json({ error: "Not a family member" }, 403);
 
-      // Get all locations with profiles
       const { data: locations, error } = await adminClient
         .from("member_locations")
         .select("user_id, lat, lng, accuracy, updated_at, is_sharing")
         .eq("family_id", familyId);
       if (error) throw error;
 
-      // Get profiles for names
       const userIds = (locations || []).map((l: any) => l.user_id);
       let profiles: any[] = [];
       if (userIds.length > 0) {
@@ -102,7 +101,6 @@ Deno.serve(async (req) => {
         profiles = p || [];
       }
 
-      // Get roles
       const { data: members } = await adminClient
         .from("family_members")
         .select("user_id, role")
@@ -118,7 +116,7 @@ Deno.serve(async (req) => {
           name: profile?.name || "عضو",
           avatar_url: profile?.avatar_url,
           role: memberInfo?.role || "member",
-          isMe: loc.user_id === user.id,
+          isMe: loc.user_id === userId,
         };
       });
 
