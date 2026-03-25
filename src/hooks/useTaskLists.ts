@@ -175,6 +175,15 @@ export function useTaskLists() {
     toggleItem: {
       ...toggleItem,
       mutate: (input: { id: string; done: boolean }) => {
+        // Optimistic: update done inside the correct list's task_items instantly
+        qc.setQueryData<any[]>(key, (old) =>
+          (old ?? []).map((list: any) => ({
+            ...list,
+            task_items: (list.task_items || []).map((item: any) =>
+              item.id === input.id ? { ...item, done: input.done } : item
+            ),
+          }))
+        );
         addPending(input.id);
         toggleItem.mutate(input);
         setTimeout(() => removePending(input.id), 2000);
