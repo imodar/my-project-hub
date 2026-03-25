@@ -26,13 +26,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (session) {
-      // Check for pending invite code
-      const pendingCode = localStorage.getItem("pending_invite_code");
-      if (pendingCode) {
-        navigate(`/join?code=${pendingCode}`, { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
+      navigate("/", { replace: true });
     }
   }, [session, navigate]);
 
