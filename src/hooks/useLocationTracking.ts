@@ -27,12 +27,6 @@ export function useLocationTracking(intervalMinutes = 5) {
     queryKey: ["family-locations", familyId],
     queryFn: async (): Promise<MemberLocation[]> => {
       if (!familyId) return [];
-      const { data, error } = await supabase.functions.invoke("location-api", {
-        body: null,
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      // Use query params via manual fetch
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
       if (!token) return [];
