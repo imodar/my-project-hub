@@ -48,11 +48,7 @@ const Vaccinations = () => {
   const [newGender, setNewGender] = useState<"male" | "female">("male");
   const [newBirthDate, setNewBirthDate] = useState("");
 
-  // Swipe state
-  const [swipedChildId, setSwipedChildId] = useState<string | null>(null);
-  const swipeRef = useRef<{ startX: number; startY: number; swiping: boolean; childId: string | null }>({
-    startX: 0, startY: 0, swiping: false, childId: null,
-  });
+  const [openChildCardId, setOpenChildCardId] = useState<string | null>(null);
 
   // Keep selectedChild in sync with data
   const resolvedSelected = selectedChild ? children.find((c) => c.id === selectedChild.id) || selectedChild : null;
