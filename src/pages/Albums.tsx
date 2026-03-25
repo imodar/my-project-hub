@@ -432,22 +432,6 @@ const Albums = () => {
               />
             </div>
 
-            {/* Cover color */}
-            <div>
-              <label className="text-xs font-bold text-muted-foreground mb-2 block">لون الغلاف</label>
-              <div className="flex gap-2 flex-wrap">
-                {COVER_PALETTES.map((color, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedCover(i)}
-                    className={`w-10 h-10 rounded-xl transition-all active:scale-90 ${
-                      selectedCover === i ? "ring-2 ring-primary ring-offset-2 scale-110" : ""
-                    }`}
-                    style={{ background: color }}
-                  />
-                ))}
-              </div>
-            </div>
 
             {/* Link to trip */}
             <div className="space-y-3">
