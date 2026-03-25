@@ -58,6 +58,9 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
       {children}
     </div>
   );
-};
+  }
+);
+
+PageHeader.displayName = "PageHeader";
 
 export default PageHeader;
