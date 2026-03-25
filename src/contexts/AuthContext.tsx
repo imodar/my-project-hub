@@ -20,12 +20,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileName, setProfileName] = useState("");
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", userId)
-      .single();
-    if (data?.name) setProfileName(data.name);
+    // Try localStorage first (instant, works offline)
+    const cached = localStorage.getItem(`profile_name_${userId}`);
+    if (cached) setProfileName(cached);
+
+    // Then try network
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", userId)
+        .single();
+      if (data?.name) {
+        setProfileName(data.name);
+        localStorage.setItem(`profile_name_${userId}`, data.name);
+      }
+    } catch {
+      // offline — use cached value already set above
+    }
   }, []);
 
   const refreshProfile = useCallback(async () => {
