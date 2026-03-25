@@ -443,6 +443,7 @@ const Zakat = () => {
           </div>
         </div>
       </PullToRefresh>
+      )}
 
       <FAB onClick={() => { haptic.medium(); setShowAdd(true); }} />
 

@@ -1355,6 +1355,7 @@ const Trips = () => {
           </Tabs>
         </div>
       </PullToRefresh>
+      )}
 
       <FAB onClick={() => { resetTripForm(); setNewTripDrawer(true); }} />
 

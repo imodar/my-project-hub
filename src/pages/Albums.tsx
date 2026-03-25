@@ -410,6 +410,7 @@ const Albums = () => {
           })()}
         </div>
       </PullToRefresh>
+      )}
 
       <FAB icon={<FolderPlus size={22} />} onClick={() => setShowCreate(true)} />
 

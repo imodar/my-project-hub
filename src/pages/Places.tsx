@@ -955,6 +955,7 @@ const Places = () => {
           </DrawerContent>
         </Drawer>
       </PullToRefresh>
+      )}
 
       <FAB onClick={() => navigate("/places/add", { state: { listId: activeListId } })} />
     </div>

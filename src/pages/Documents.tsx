@@ -843,6 +843,7 @@ const Documents = () => {
           </DrawerContent>
         </Drawer>
       </PullToRefresh>
+      )}
     </div>
   );
 };

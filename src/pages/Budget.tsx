@@ -626,6 +626,7 @@ const Budget = () => {
           )}
         </div>
       </PullToRefresh>
+      )}
 
       <FAB onClick={() => {
         haptic.light();

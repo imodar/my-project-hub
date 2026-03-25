@@ -363,6 +363,7 @@ const Will = () => {
 
         <div className="h-8" />
       </PullToRefresh>
+      )}
 
       {/* ── Password Drawer ── */}
       <Drawer open={passwordDrawer} onOpenChange={setPasswordDrawer}>
