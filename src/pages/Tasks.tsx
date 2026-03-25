@@ -280,7 +280,7 @@ const Tasks = () => {
     });
     setNewItemName("");
     setNewItemNote("");
-    setNewItemPriority("medium");
+    setNewItemPriority("none");
     setNewItemAssignedTo("");
     setShowAddItem(false);
   }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, addItemMutation]);
