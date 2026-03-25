@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
+import SwipeableCard from "@/components/SwipeableCard";
 import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare, PersonStanding } from "lucide-react";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
 import { Button } from "@/components/ui/button";
