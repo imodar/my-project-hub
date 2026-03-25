@@ -1,69 +1,98 @@
 
 
-# Implementation Plan: Post-Login Onboarding + Remove Deep Links
+# Plan: Create Family Flow, Join Notifications, Role Confirmation, Role Warning
 
 ## Overview
-After first login, new users see a "Join or Create Family" screen. The `/join` deep link route is removed entirely. Joining is instant (active status). AuthGuard uses synchronous localStorage check only.
+Four interconnected changes: animated "Create Family" flow in JoinOrCreate, push notifications when someone joins, role confirmation tracking with admin approval drawer, and a dismissible role warning banner.
 
-## Verification Scenarios (from user's notes)
-1. **Existing user, new device**: no `cached_family_id` → sees JoinOrCreate → `useFamilyId()` loads → finds family → sets flag → redirects to `/`
-2. **New user skips**: sets `join_or_create_done=true` → lands on `/` → `/family` shows inline join+create UI
-3. **signOut then re-login**: flag cleared → goes through JoinOrCreate again
+## Migration
+
+Add `role_confirmed` column to `family_members`:
+
+```sql
+ALTER TABLE family_members ADD COLUMN role_confirmed boolean NOT NULL DEFAULT false;
+```
+
+Existing members (created via "create" action) should have `role_confirmed = true` — handle this in the edge function: set `role_confirmed: true` when creating family, `false` when joining via code.
 
 ## Changes
 
-### 1. Create `src/pages/JoinOrCreate.tsx`
-- Public route, self-checks auth via `useAuth()` — redirect to `/auth` if no session
-- Calls `useFamilyId()` internally — if family already exists, sets `join_or_create_done=true` and redirects to `/`
-- Visual style matches Auth page (gradient top, white bottom sheet, RTL)
-- Three options:
-  - **Code input**: 8-char field → edge function `action: "join"` → instant success toast → set flag + invalidate `family-id` → navigate `/`
-  - **QR scan**: Camera with BarcodeDetector (same logic as FamilyManagement scanner) → same join flow
-  - **Skip**: sets flag → navigate `/`
+### 1. Edit `src/pages/JoinOrCreate.tsx` — Animated Create Flow
 
-### 2. Edit `src/components/AuthGuard.tsx`
-After session confirmed, add synchronous check (no hooks/queries):
-```tsx
-const joinDone = localStorage.getItem("join_or_create_done");
-const cachedFamilyId = localStorage.getItem("cached_family_id");
-if (!joinDone) {
-  if (cachedFamilyId) {
-    localStorage.setItem("join_or_create_done", "true");
-  } else {
-    return <Navigate to="/join-or-create" replace />;
-  }
+Add state: `showCreate` (boolean), `createRole` (role selection).
+
+When "إنشاء عائلتي" tapped:
+- Set `showCreate = true`
+- Join section gets CSS class: `opacity-0 -translate-y-5 transition-all duration-300`
+- Role grid fades in with 150ms delay: `opacity-1 translate-y-0`
+- Skip button text changes to "إنشاء العائلة" (disabled until role selected)
+
+Role grid: 4 boxes (father/mother/son/daughter) — same style as FamilyManagement setup drawer.
+
+Info card below grid (CSS transition 200ms):
+- Parent role: "ستكون المشرف الرئيسي..." text
+- Child role: "ستكون المشرف المؤقت..." text
+
+"إنشاء العائلة" button → calls edge function `action: "create"` with selected role → sets `join_or_create_done=true` → invalidates queries → navigates `/`.
+
+**No Framer Motion** — pure CSS transitions via conditional classes + `transition-all duration-300`.
+
+### 2. Edit `supabase/functions/family-management/index.ts` — Notifications on Join
+
+In `action: "join"`:
+- After successful insert, set `role_confirmed: false` in the insert
+- Fetch joiner's profile name from `profiles` table
+- Fetch all admin user_ids for that family (`family_members` where `is_admin = true`)
+- Insert into `user_notifications` for each admin:
+  - `type: "new_member"`, `title: "طلب انضمام جديد"`, `body: "${name} انضم للعائلة — تحقق من دوره"`, `source_type: "family_member"`, `source_id: family.id`
+
+In `action: "create"`:
+- Set `role_confirmed: true` in the member insert (creator confirms their own role)
+
+Add new action `"confirm-role"`:
+- Requires admin authorization (same pattern as toggle-admin)
+- Updates `family_members` SET `role = body.role, role_confirmed = true` WHERE `family_id` AND `user_id = target_user_id`
+- Inserts notification to the target user: "تم تأكيد انضمامك"
+
+### 3. Edit `src/pages/FamilyManagement.tsx`
+
+**A. Role Warning Banner** (above member list, for admins only):
+- Show when `isMyAdmin && members.length > 1 && !localStorage.getItem("role_warning_dismissed_" + familyId)`
+- Yellow/amber card with text: "⚠️ في حال اختيار دور خاطئ لأي عضو، يجب إزالته وإعادة دعوته لتصحيح الدور."
+- Dismiss button (X) → sets localStorage key
+
+**B. Unconfirmed Member Indicator**:
+- `useFamilyMembers` needs to also return `roleConfirmed` from the query
+- Members with `role_confirmed = false` show a badge: "تأكيد الدور" in amber, next to their role label
+- Tapping the badge opens the role confirmation drawer
+
+**C. Role Confirmation Drawer** (replaces old approval concept):
+- Header: "${memberName} — تأكيد الدور"
+- Shows member avatar + name (from profile)
+- Role grid: all 9 roles (father/mother/husband/wife/son/daughter/worker/maid/driver)
+- Pre-selects current role
+- Confirm button → calls edge function `action: "confirm-role"` → refetch members
+
+**D. Remove** the old `addStep === "enter-name"` step entirely — the add-member flow goes straight to `invite-method` (already does this via `handleAddMember`). Remove the `choose-type` step and `enter-name` step UI. The drawer only shows invite sharing options.
+
+### 4. Edit `src/hooks/useFamilyMembers.ts`
+
+Add `role_confirmed` to the select query and `FamilyMemberInfo` interface:
+```ts
+interface FamilyMemberInfo {
+  // ... existing
+  roleConfirmed: boolean;
 }
 ```
-
-### 3. Edit `src/App.tsx`
-- Add public route: `<Route path="/join-or-create" element={<JoinOrCreate />} />`
-- Remove `/join` route and `JoinFamily` import
-
-### 4. Edit `src/pages/Auth.tsx`
-- Remove `pending_invite_code` logic (lines 29-35). After login just navigate to `/`.
-
-### 5. Edit `src/pages/FamilyManagement.tsx`
-- **Remove** auto-open `useEffect` (lines 115-119)
-- **Remove** invite link section (lines 552-568), `handleCopyLink`, `handleShareLink`, `linkCopied` state
-- **Update** `QrPattern` to encode raw invite code (not URL)
-- **Update** share in add-member drawer to share code-only text (no URL)
-- **Update** `handleJoinByCode` toast: "تم الانضمام بنجاح" + invalidate queries
-- **When `!familyId`**: render inline UI (code input + QR scan + divider + create button) instead of auto-drawer
-- **Remove** dead approval drawer (lines 816-924) and related state
-
-### 6. Edit `src/contexts/AuthContext.tsx`
-- Add `localStorage.removeItem("join_or_create_done")` to signOut (after line 124)
-
-### 7. Delete `src/pages/JoinFamily.tsx`
+Query: add `role_confirmed` to the `.select()` on `family_members`.
 
 ## Files
+
 | Action | File |
 |--------|------|
-| Create | `src/pages/JoinOrCreate.tsx` |
-| Edit | `src/components/AuthGuard.tsx` |
-| Edit | `src/App.tsx` |
-| Edit | `src/pages/Auth.tsx` |
+| Migration | Add `role_confirmed` to `family_members` |
+| Edit | `src/pages/JoinOrCreate.tsx` |
+| Edit | `supabase/functions/family-management/index.ts` |
 | Edit | `src/pages/FamilyManagement.tsx` |
-| Edit | `src/contexts/AuthContext.tsx` |
-| Delete | `src/pages/JoinFamily.tsx` |
+| Edit | `src/hooks/useFamilyMembers.ts` |
 
