@@ -57,8 +57,9 @@ const JoinOrCreate = () => {
       const { data, error } = await supabase.functions.invoke("family-management", {
         body: { action: "join", invite_code: inviteCode.trim(), role: "son" },
       });
+      console.log("Join response:", { data, error });
       if (error || data?.error) {
-        const msg = data?.error || "فشل الانضمام";
+        const msg = data?.error || error?.message || "فشل الانضمام — تحقق من الكود وحاول مرة أخرى";
         if (msg.includes("عضو بالفعل")) {
           localStorage.setItem("join_or_create_done", "true");
           queryClient.invalidateQueries({ queryKey: ["family-id"] });
