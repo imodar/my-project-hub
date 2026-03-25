@@ -389,14 +389,66 @@ const FamilyManagement = () => {
         </button>
       </div>
 
-      {/* Members List */}
+      {/* Members List or Inline Join/Create UI */}
       <div className="flex-1 px-4 pb-32">
-        <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
         {membersLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
+        ) : !familyId ? (
+          /* Inline UI when user has no family */
+          <div className="space-y-6 mt-4">
+            {/* Join existing family */}
+            <div className="rounded-2xl p-5 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
+              <h3 className="text-base font-bold text-foreground mb-1 text-center">انضم لعائلة موجودة</h3>
+              <p className="text-xs text-muted-foreground text-center mb-4">أدخل كود الدعوة أو امسح رمز QR</p>
+              <div className="flex gap-2 mb-3" dir="ltr">
+                <input
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  placeholder="أدخل الكود"
+                  className="flex-1 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  maxLength={8}
+                />
+                <button
+                  onClick={handleManualJoin}
+                  disabled={joinCode.length < 8}
+                  className="px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
+                >
+                  انضمام
+                </button>
+              </div>
+              <button
+                onClick={() => setShowScanner(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary border-2 border-primary/20 transition-colors active:bg-primary/5"
+              >
+                <ScanLine size={16} />
+                مسح رمز QR
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-background px-3 text-muted-foreground">أو</span>
+              </div>
+            </div>
+
+            {/* Create new family */}
+            <button
+              onClick={() => setShowSetupDialog(true)}
+              className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus size={18} />
+              إنشاء عائلة جديدة
+            </button>
+          </div>
         ) : (
+        <>
+        <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
         <>
         <div className="space-y-2">
           {members.map((member) => {
