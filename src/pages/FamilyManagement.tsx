@@ -324,16 +324,19 @@ const FamilyManagement = () => {
     }
   }, []);
 
-  const handleJoinByCode = async (code: string) => {
-    if (!code.trim()) return;
+  const handleJoinByCode = async (codeValue: string) => {
+    if (!codeValue.trim()) return;
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "join", invite_code: code.trim(), role: "son" },
+        body: { action: "join", invite_code: codeValue.trim(), role: "son" },
       });
       if (error || data?.error) {
         toast({ title: data?.error || "فشل الانضمام", variant: "destructive" });
       } else {
-        toast({ title: "تم إرسال طلب الانضمام بنجاح!" });
+        toast({ title: "تم الانضمام بنجاح! 🎉" });
+        queryClient.invalidateQueries({ queryKey: ["family-id"] });
+        queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
+        refetchMembers();
       }
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
