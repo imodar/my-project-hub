@@ -450,14 +450,6 @@ const Debts = () => {
     </div>
   );
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background max-w-2xl mx-auto pb-32" dir="rtl">
-        <PageHeader title="دفتر الديون" onBack={() => navigate("/")} />
-        <CardPageSkeleton />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto relative pb-32" dir="rtl">
