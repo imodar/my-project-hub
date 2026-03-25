@@ -24,7 +24,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = useCallback(async (userId: string) => {
     // Try localStorage first (instant, works offline)
     const cached = localStorage.getItem(`profile_name_${userId}`);
-    if (cached) setProfileName(cached);
+    if (cached) {
+      setProfileName(cached);
+      localStorage.setItem("profile_complete", "true");
+    }
 
     // Then try network
     try {
@@ -36,9 +39,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data?.name) {
         setProfileName(data.name);
         localStorage.setItem(`profile_name_${userId}`, data.name);
+        localStorage.setItem("profile_complete", "true");
       }
     } catch {
       // offline — use cached value already set above
+    } finally {
+      setProfileReady(true);
     }
   }, []);
 
