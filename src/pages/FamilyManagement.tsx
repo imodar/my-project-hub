@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, Plus, QrCode, Copy, Link2, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X, RefreshCw, Loader2 } from "lucide-react";
+import { ChevronRight, Plus, QrCode, Copy, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X, RefreshCw, Loader2 } from "lucide-react";
 import SwipeableCard from "@/components/SwipeableCard";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { toast } from "@/hooks/use-toast";
@@ -51,11 +51,10 @@ const getProfileName = (): string => {
   return "";
 };
 
-// Real QR Code using Google Charts API — encodes actual invite URL
+// Real QR Code using Google Charts API — encodes raw invite code
 const QrPattern = React.memo(({ code }: { code: string }) => {
   const qrUrl = useMemo(() => {
-    const joinUrl = `${window.location.origin}/join?code=${encodeURIComponent(code)}`;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(joinUrl)}&margin=4`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(code)}&margin=4`;
   }, [code]);
 
   return (
@@ -106,17 +105,7 @@ const FamilyManagement = () => {
   const scanStreamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Approval dialog state - when someone scans QR / enters code
-  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
-  const [approvalName, setApprovalName] = useState("");
-  const [approvalRole, setApprovalRole] = useState<FamilyRole | null>(null);
-
-  // Show setup only if user has no family yet (familyId will be null)
-  useEffect(() => {
-    if (!membersLoading && !familyId) {
-      setShowSetupDialog(true);
-    }
-  }, [membersLoading, familyId]);
+  // No auto-open setup dialog — inline UI handles !familyId case
 
   const handleSetupComplete = async () => {
     if (!setupRole) return;
@@ -145,7 +134,6 @@ const FamilyManagement = () => {
   const [inviteCode, setInviteCode] = useState("");
   const [codeTimer, setCodeTimer] = useState(300);
   const [codeCopied, setCodeCopied] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
   // Swipe state managed by SwipeableCard
@@ -271,17 +259,8 @@ const FamilyManagement = () => {
     toast({ title: "تم نسخ الكود" });
   };
 
-  const handleCopyLink = () => {
-    const link = `https://ailti.lovable.app/join?code=${inviteCode}`;
-    navigator.clipboard.writeText(link);
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2000);
-    toast({ title: "تم نسخ رابط الدعوة" });
-  };
-
-  const handleShareLink = async () => {
-    const link = `https://ailti.lovable.app/join?code=${inviteCode}`;
-    const text = `انضم لأسرتنا في عيلتي!\n\nكود الانضمام: ${inviteCode}\n\nأو من خلال الرابط:\n${link}`;
+  const handleShareInvite = async () => {
+    const text = `انضم لأسرتنا في عيلتي!\n\nكود الانضمام: ${inviteCode}\n\nافتح التطبيق وأدخل الكود من صفحة "انضم لعائلة"`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "دعوة انضمام للأسرة", text });
@@ -290,7 +269,6 @@ const FamilyManagement = () => {
         toast({ title: "تم نسخ رسالة الدعوة" });
       }
     } catch {
-      // User cancelled or share failed - fallback to copy
       try {
         await navigator.clipboard.writeText(text);
         toast({ title: "تم نسخ رسالة الدعوة" });
@@ -346,16 +324,19 @@ const FamilyManagement = () => {
     }
   }, []);
 
-  const handleJoinByCode = async (code: string) => {
-    if (!code.trim()) return;
+  const handleJoinByCode = async (codeValue: string) => {
+    if (!codeValue.trim()) return;
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "join", invite_code: code.trim(), role: "son" },
+        body: { action: "join", invite_code: codeValue.trim(), role: "son" },
       });
       if (error || data?.error) {
         toast({ title: data?.error || "فشل الانضمام", variant: "destructive" });
       } else {
-        toast({ title: "تم إرسال طلب الانضمام بنجاح!" });
+        toast({ title: "تم الانضمام بنجاح! 🎉" });
+        queryClient.invalidateQueries({ queryKey: ["family-id"] });
+        queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
+        refetchMembers();
       }
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
@@ -385,18 +366,7 @@ const FamilyManagement = () => {
     setNewName("");
   };
 
-  // Note: approval flow removed — joining is handled via invite code + edge function
-  // Members appear automatically after joining via /join?code=... route
-
-  const handleApproveJoin = () => {
-    // This was a demo stub — real joining happens via edge function
-    setShowApprovalDialog(false);
-    setApprovalName("");
-    setApprovalRole(null);
-    refetchMembers();
-  };
-
-  // Swipe handlers moved to SwipeableCard component
+  // Note: approval flow removed — joining is instant via edge function
 
   const spouseRole = getSpouseRole();
 
@@ -419,15 +389,66 @@ const FamilyManagement = () => {
         </button>
       </div>
 
-      {/* Members List */}
+      {/* Members List or Inline Join/Create UI */}
       <div className="flex-1 px-4 pb-32">
-        <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
         {membersLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
+        ) : !familyId ? (
+          /* Inline UI when user has no family */
+          <div className="space-y-6 mt-4">
+            {/* Join existing family */}
+            <div className="rounded-2xl p-5 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
+              <h3 className="text-base font-bold text-foreground mb-1 text-center">انضم لعائلة موجودة</h3>
+              <p className="text-xs text-muted-foreground text-center mb-4">أدخل كود الدعوة أو امسح رمز QR</p>
+              <div className="flex gap-2 mb-3" dir="ltr">
+                <input
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  placeholder="أدخل الكود"
+                  className="flex-1 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  maxLength={8}
+                />
+                <button
+                  onClick={handleManualJoin}
+                  disabled={joinCode.length < 8}
+                  className="px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
+                >
+                  انضمام
+                </button>
+              </div>
+              <button
+                onClick={() => setShowScanner(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary border-2 border-primary/20 transition-colors active:bg-primary/5"
+              >
+                <ScanLine size={16} />
+                مسح رمز QR
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-background px-3 text-muted-foreground">أو</span>
+              </div>
+            </div>
+
+            {/* Create new family */}
+            <button
+              onClick={() => setShowSetupDialog(true)}
+              className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus size={18} />
+              إنشاء عائلة جديدة
+            </button>
+          </div>
         ) : (
         <>
+        <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
         <div className="space-y-2">
           {members.map((member) => {
             const memberIsAdmin = member.isAdmin || isParentRole(member.role);
@@ -549,22 +570,17 @@ const FamilyManagement = () => {
                 </button>
               </div>
 
-              {/* Invite Link */}
+              {/* Share invite button */}
               <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
                 <div className="flex items-center gap-2 mb-3 justify-end">
-                  <span className="text-sm font-semibold text-foreground">رابط الدعوة</span>
-                  <Link2 size={18} className="text-primary" />
+                  <span className="text-sm font-semibold text-foreground">مشاركة الدعوة</span>
+                  <Share2 size={18} className="text-primary" />
                 </div>
-                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل رابط للانضمام</p>
-                <div className="flex gap-2">
-                  <button onClick={handleShareLink} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-colors active:opacity-90 bg-primary">
-                    <Share2 size={16} />
-                    مشاركة الرابط
-                  </button>
-                  <button onClick={handleCopyLink} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10" style={{ background: "hsl(var(--primary) / 0.08)" }}>
-                    {linkCopied ? <Check size={16} /> : <Copy size={16} />}
-                  </button>
-                </div>
+                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل كود الانضمام للعضو الجديد</p>
+                <button onClick={handleShareInvite} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-colors active:opacity-90 bg-primary">
+                  <Share2 size={16} />
+                  مشاركة الكود
+                </button>
               </div>
             </div>
           </div>
@@ -790,16 +806,10 @@ const FamilyManagement = () => {
 
           {addStep === "invite-method" && (
             <div className="space-y-3 mt-2">
-              <p className="text-sm text-muted-foreground text-center">شارك رابط الدعوة أو كود الانضمام مع العضو الجديد:</p>
-              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400 text-center flex items-center justify-center gap-1">
-                  <Clock size={10} />
-                  العضو بانتظار قبول الدعوة
-                </p>
-              </div>
-              <button onClick={handleShareLink} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground bg-primary">
+              <p className="text-sm text-muted-foreground text-center">شارك كود الانضمام مع العضو الجديد:</p>
+              <button onClick={handleShareInvite} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground bg-primary">
                 <Share2 size={16} />
-                مشاركة رابط الدعوة
+                مشاركة كود الدعوة
               </button>
               <button onClick={handleCopyCode} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary" style={{ background: "hsl(var(--primary) / 0.08)" }}>
                 <Copy size={16} />
@@ -813,117 +823,6 @@ const FamilyManagement = () => {
         </DrawerContent>
       </Drawer>
 
-      {/* Approval Drawer - When someone scans QR or enters code */}
-      <Drawer open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
-          <DrawerHeader>
-            <DrawerTitle className="text-center text-lg">طلب انضمام جديد</DrawerTitle>
-          </DrawerHeader>
-
-          <div className="space-y-4 mt-2">
-            {/* Notification */}
-            <div className="bg-primary/5 rounded-2xl p-4 text-center">
-              <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3" style={{ background: "hsl(var(--primary) / 0.15)" }}>
-                <UserPlus size={28} className="text-primary" />
-              </div>
-              <p className="text-sm font-semibold text-foreground mb-1">شخص يريد الانضمام لأسرتك</p>
-              <p className="text-xs text-muted-foreground">يجب أن يكون الجهازان بجانب بعضهما البعض</p>
-            </div>
-
-            {/* Choose role for new member */}
-            <div>
-              <label className="text-sm font-semibold text-foreground block mb-2">اختر دور العضو الجديد</label>
-
-              {!hasSpouse && (
-                <>
-                  <p className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1">شريك/ة الحياة</p>
-                  <div className="flex gap-2 mb-3">
-                    {(creatorRole === "father" ? ["wife"] : creatorRole === "mother" ? ["husband"] : ["husband", "wife"]).map((r) => (
-                      <button
-                        key={r}
-                        onClick={() => setApprovalRole(r as FamilyRole)}
-                        className={`flex-1 flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                          approvalRole === r ? "border-primary bg-primary/10" : "border-border bg-card"
-                        }`}
-                      >
-                        <RoleIcon role={r} size={18} className={approvalRole === r ? "text-primary" : "text-muted-foreground"} />
-                        <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              <p className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1">الأبناء</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setApprovalRole("son")}
-                  className={`flex-1 flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                    approvalRole === "son" ? "border-primary bg-primary/10" : "border-border bg-card"
-                  }`}
-                >
-                  <Baby size={18} className={approvalRole === "son" ? "text-blue-500" : "text-muted-foreground"} />
-                  <span className="text-xs font-bold text-foreground">ابن</span>
-                </button>
-                <button
-                  onClick={() => setApprovalRole("daughter")}
-                  className={`flex-1 flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                    approvalRole === "daughter" ? "border-primary bg-primary/10" : "border-border bg-card"
-                  }`}
-                >
-                  <Baby size={18} className={approvalRole === "daughter" ? "text-pink-500" : "text-muted-foreground"} />
-                  <span className="text-xs font-bold text-foreground">ابنة</span>
-                </button>
-              </div>
-
-              {/* Staff roles in approval */}
-              <p className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1 mt-2">طاقم المنزل</p>
-              <div className="flex gap-2">
-                {(["worker", "maid", "driver"] as FamilyRole[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setApprovalRole(r)}
-                    className={`flex-1 flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                      approvalRole === r ? "border-amber-500 bg-amber-50" : "border-border bg-card"
-                    }`}
-                  >
-                    <RoleIcon role={r} size={16} className={approvalRole === r ? "text-amber-700" : "text-muted-foreground"} />
-                    <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {approvalRole && isParentRole(approvalRole) && (
-              <div className="bg-muted/50 rounded-xl p-3">
-                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
-                  <Crown size={10} className="text-primary" />
-                  سيحصل على صلاحيات الإشراف تلقائياً
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <button
-                onClick={handleApproveJoin}
-                disabled={!approvalRole}
-                className="flex-1 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary transition-colors disabled:opacity-40"
-              >
-                <Check size={16} className="inline ml-1" />
-                قبول
-              </button>
-              <button
-                onClick={() => { setShowApprovalDialog(false); setApprovalRole(null); }}
-                className="flex-1 py-3 rounded-xl text-sm font-bold text-foreground bg-muted transition-colors"
-              >
-                رفض
-              </button>
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
-
-      {/* QR Scanner Drawer */}
       <Drawer open={showScanner} onOpenChange={(open) => { if (!open) { setShowScanner(false); setJoinCode(""); } }}>
         <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
           <DrawerHeader>

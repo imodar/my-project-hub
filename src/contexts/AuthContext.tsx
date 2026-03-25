@@ -122,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .forEach(k => localStorage.removeItem(k));
     localStorage.removeItem("cached_family_id");
     localStorage.removeItem("first_sync_done");
+    localStorage.removeItem("join_or_create_done");
     await supabase.auth.signOut();
   };
 

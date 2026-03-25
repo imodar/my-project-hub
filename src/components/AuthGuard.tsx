@@ -30,6 +30,17 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem("onboarding_seen", "true");
   }
 
+  // Family onboarding check — synchronous localStorage only (no hooks/queries)
+  const joinDone = localStorage.getItem("join_or_create_done");
+  const cachedFamilyId = localStorage.getItem("cached_family_id");
+  if (!joinDone) {
+    if (cachedFamilyId) {
+      localStorage.setItem("join_or_create_done", "true");
+    } else {
+      return <Navigate to="/join-or-create" replace />;
+    }
+  }
+
   return <>{children}</>;
 };
 
