@@ -408,6 +408,28 @@ const FamilyManagement = () => {
     }
   };
 
+  const handleLeaveFamily = async () => {
+    if (!familyId || !user) return;
+    const confirmed = window.confirm("هل أنت متأكد من مغادرة العائلة؟ لن تتمكن من الوصول لبياناتها بعد ذلك.");
+    if (!confirmed) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "leave", family_id: familyId },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل مغادرة العائلة", variant: "destructive" });
+        return;
+      }
+      localStorage.removeItem("cached_family_id");
+      queryClient.invalidateQueries({ queryKey: ["family-id"] });
+      queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
+      toast({ title: "تم مغادرة العائلة بنجاح" });
+      navigate("/", { replace: true });
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
+  };
+
   const dismissRoleWarning = () => {
     if (familyId) {
       localStorage.setItem(`role_warning_dismissed_${familyId}`, "true");
