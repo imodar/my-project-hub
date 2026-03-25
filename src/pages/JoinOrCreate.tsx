@@ -5,9 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useToast } from "@/hooks/use-toast";
-import { ScanLine, Users, ArrowLeft, Loader2, X } from "lucide-react";
+import { ScanLine, Users, ArrowLeft, Loader2, User, Heart, Baby, Crown, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+
+type CreateRole = "father" | "mother" | "son" | "daughter";
+
+const ROLE_INFO: Record<CreateRole, { label: string; icon: typeof User; iconColor: string; bgColor: string }> = {
+  father: { label: "أب", icon: User, iconColor: "text-primary", bgColor: "hsl(var(--primary) / 0.15)" },
+  mother: { label: "أم", icon: Heart, iconColor: "text-primary", bgColor: "hsl(var(--primary) / 0.15)" },
+  son: { label: "ابن", icon: Baby, iconColor: "text-blue-500", bgColor: "hsl(200, 60%, 92%)" },
+  daughter: { label: "ابنة", icon: Baby, iconColor: "text-pink-500", bgColor: "hsl(340, 60%, 92%)" },
+};
 
 const JoinOrCreate = () => {
   const { session, loading: authLoading } = useAuth();
@@ -19,20 +28,21 @@ const JoinOrCreate = () => {
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createRole, setCreateRole] = useState<CreateRole | null>(null);
+  const [creating, setCreating] = useState(false);
 
   // QR scanner refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const scanStreamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Redirect to auth if no session
   useEffect(() => {
     if (!authLoading && !session) {
       navigate("/auth", { replace: true });
     }
   }, [authLoading, session, navigate]);
 
-  // If user already has a family, set flag and go home
   useEffect(() => {
     if (familyId) {
       localStorage.setItem("join_or_create_done", "true");
@@ -68,6 +78,32 @@ const JoinOrCreate = () => {
       toast({ title: "حدث خطأ غير متوقع", variant: "destructive" });
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handleCreateFamily = async () => {
+    if (!createRole || creating) return;
+    setCreating(true);
+    try {
+      const profileName = session?.user?.id
+        ? localStorage.getItem(`profile_name_${session.user.id}`) || "عائلتي"
+        : "عائلتي";
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "create", name: profileName, role: createRole },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل إنشاء الأسرة", variant: "destructive" });
+      } else {
+        localStorage.setItem("join_or_create_done", "true");
+        queryClient.invalidateQueries({ queryKey: ["family-id"] });
+        queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
+        toast({ title: "تم إنشاء الأسرة بنجاح! 🎉" });
+        navigate("/", { replace: true });
+      }
+    } catch {
+      toast({ title: "حدث خطأ غير متوقع", variant: "destructive" });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -109,7 +145,6 @@ const JoinOrCreate = () => {
               if (rawValue) {
                 stopScanner();
                 setShowScanner(false);
-                // Extract code — could be raw code or legacy URL
                 const extracted = rawValue.includes("code=")
                   ? new URL(rawValue).searchParams.get("code") || rawValue
                   : rawValue;
@@ -140,6 +175,8 @@ const JoinOrCreate = () => {
     );
   }
 
+  const isParentRole = createRole === "father" || createRole === "mother";
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir="rtl">
       {/* Top branding */}
@@ -153,8 +190,12 @@ const JoinOrCreate = () => {
           <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-primary-foreground/20">
             <Users size={36} className="text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-primary-foreground mb-1">انضم لعائلتك</h1>
-          <p className="text-primary-foreground/70 text-sm">أدخل كود الدعوة أو امسح رمز QR</p>
+          <h1 className="text-3xl font-bold text-primary-foreground mb-1">
+            {showCreate ? "إنشاء عائلتك" : "انضم لعائلتك"}
+          </h1>
+          <p className="text-primary-foreground/70 text-sm">
+            {showCreate ? "اختر دورك في الأسرة" : "أدخل كود الدعوة أو امسح رمز QR"}
+          </p>
         </motion.div>
       </div>
 
@@ -167,59 +208,155 @@ const JoinOrCreate = () => {
       >
         <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
 
-        {/* Code input */}
-        <div className="space-y-4">
-          <div className="text-center mb-2">
-            <h2 className="text-xl font-bold text-foreground">كود الانضمام</h2>
-            <p className="text-sm text-muted-foreground mt-1">اطلب الكود من مشرف الأسرة</p>
+        {/* Join section — animated out when showCreate */}
+        <div
+          className={`transition-all duration-300 ${
+            showCreate ? "opacity-0 -translate-y-5 pointer-events-none h-0 overflow-hidden" : "opacity-100 translate-y-0"
+          }`}
+        >
+          <div className="space-y-4">
+            <div className="text-center mb-2">
+              <h2 className="text-xl font-bold text-foreground">كود الانضمام</h2>
+              <p className="text-sm text-muted-foreground mt-1">اطلب الكود من مشرف الأسرة</p>
+            </div>
+
+            <div className="flex gap-2" dir="ltr">
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="أدخل الكود"
+                className="flex-1 px-4 py-3.5 rounded-xl text-center text-base font-bold tracking-widest border border-input bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring"
+                maxLength={8}
+              />
+            </div>
+
+            <button
+              onClick={() => handleJoin(code)}
+              disabled={code.length < 8 || joining}
+              className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : "انضمام"}
+            </button>
+
+            <button
+              onClick={() => setShowScanner(true)}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-base font-semibold text-primary border-2 border-primary/20 transition-colors active:bg-primary/5"
+            >
+              <ScanLine size={20} />
+              مسح رمز QR
+            </button>
           </div>
 
-          <div className="flex gap-2" dir="ltr">
-            <input
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="أدخل الكود"
-              className="flex-1 px-4 py-3.5 rounded-xl text-center text-base font-bold tracking-widest border border-input bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring"
-              maxLength={8}
-            />
+          {/* Divider */}
+          <div className="relative py-5">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border/50" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-background px-3 text-muted-foreground">أو</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Create family section — animated in */}
+        <div
+          className={`transition-all duration-300 ${
+            showCreate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5 pointer-events-none h-0 overflow-hidden"
+          }`}
+          style={{ transitionDelay: showCreate ? "150ms" : "0ms" }}
+        >
+          <div className="text-center mb-4">
+            <h2 className="text-xl font-bold text-foreground">اختر دورك في الأسرة</h2>
+            <p className="text-sm text-muted-foreground mt-1">سيتم إنشاء مجموعتك العائلية</p>
           </div>
 
+          {/* Role grid */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {(["father", "mother", "son", "daughter"] as CreateRole[]).map((role) => {
+              const info = ROLE_INFO[role];
+              const Icon = info.icon;
+              const selected = createRole === role;
+              return (
+                <button
+                  key={role}
+                  onClick={() => setCreateRole(role)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    selected ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center"
+                    style={{ background: info.bgColor }}
+                  >
+                    <Icon size={22} className={info.iconColor} />
+                  </div>
+                  <span className="text-sm font-bold text-foreground">{info.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Info card — slides in after role selected */}
+          <div
+            className={`transition-all duration-200 overflow-hidden ${
+              createRole ? "opacity-100 max-h-40" : "opacity-0 max-h-0"
+            }`}
+          >
+            <div className="bg-muted/50 rounded-xl p-3 mb-4">
+              <p className="text-xs text-muted-foreground text-center leading-relaxed flex items-center justify-center gap-1">
+                {isParentRole ? (
+                  <>
+                    <Crown size={12} className="text-primary shrink-0" />
+                    ستكون المشرف الرئيسي على العائلة. عند انضمام أب أو أم لاحقاً، سيحصلان على صلاحيات الإشراف تلقائياً.
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck size={12} className="text-primary shrink-0" />
+                    ستكون المشرف المؤقت على العائلة حتى ينضم أحد الوالدين. عندها سيكون لهم خيار إبقاء إشرافك أو تغييره.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Create button */}
           <button
-            onClick={() => handleJoin(code)}
-            disabled={code.length < 8 || joining}
+            onClick={handleCreateFamily}
+            disabled={!createRole || creating}
             className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : "انضمام"}
+            {creating ? <Loader2 className="h-5 w-5 animate-spin" /> : "إنشاء العائلة"}
           </button>
 
-          {/* QR scan button */}
+          {/* Back to join */}
           <button
-            onClick={() => setShowScanner(true)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-base font-semibold text-primary border-2 border-primary/20 transition-colors active:bg-primary/5"
+            onClick={() => { setShowCreate(false); setCreateRole(null); }}
+            className="w-full py-3 mt-2 rounded-xl text-sm font-semibold text-muted-foreground transition-colors active:bg-muted/50"
           >
-            <ScanLine size={20} />
-            مسح رمز QR
+            العودة للانضمام بكود
+            <ArrowLeft size={14} className="inline mr-1" />
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="relative py-5">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border/50" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-background px-3 text-muted-foreground">أو</span>
-          </div>
-        </div>
+        {/* Show "Create family" button or Skip when in join mode */}
+        {!showCreate && (
+          <>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="w-full py-3.5 rounded-xl text-base font-semibold text-primary border-2 border-primary/20 transition-colors active:bg-primary/5 flex items-center justify-center gap-2"
+            >
+              إنشاء عائلتي
+            </button>
 
-        {/* Skip */}
-        <button
-          onClick={handleSkip}
-          className="w-full py-3 rounded-xl text-sm font-semibold text-muted-foreground transition-colors active:bg-muted/50"
-        >
-          تخطي وإنشاء عائلتي لاحقاً
-          <ArrowLeft size={14} className="inline mr-1" />
-        </button>
+            <button
+              onClick={handleSkip}
+              className="w-full py-3 mt-2 rounded-xl text-sm font-semibold text-muted-foreground transition-colors active:bg-muted/50"
+            >
+              تخطي وإنشاء عائلتي لاحقاً
+              <ArrowLeft size={14} className="inline mr-1" />
+            </button>
+          </>
+        )}
 
         <div className="flex-1" />
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, Plus, QrCode, Copy, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X, RefreshCw, Loader2 } from "lucide-react";
+import { ChevronRight, Plus, QrCode, Copy, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X, RefreshCw, Loader2, AlertTriangle } from "lucide-react";
 import SwipeableCard from "@/components/SwipeableCard";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { toast } from "@/hooks/use-toast";
@@ -22,6 +22,7 @@ interface FamilyMember {
   isAdmin?: boolean;
   status: InviteStatus;
   avatar?: string;
+  roleConfirmed?: boolean;
 }
 
 const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: number; className?: string }) => {
@@ -87,6 +88,7 @@ const FamilyManagement = () => {
       isCreator: m.isCreator,
       isAdmin: m.isAdmin,
       status: "active" as InviteStatus,
+      roleConfirmed: m.roleConfirmed,
     })),
   [dbMembers]);
 
@@ -135,6 +137,22 @@ const FamilyManagement = () => {
   const [codeTimer, setCodeTimer] = useState(300);
   const [codeCopied, setCodeCopied] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
+
+  // Role confirmation drawer
+  const [confirmMember, setConfirmMember] = useState<FamilyMember | null>(null);
+  const [confirmRole, setConfirmRole] = useState<FamilyRole | null>(null);
+  const [confirmingRole, setConfirmingRole] = useState(false);
+
+  // Role warning banner
+  const [roleWarningDismissed, setRoleWarningDismissed] = useState(() =>
+    familyId ? !!localStorage.getItem(`role_warning_dismissed_${familyId}`) : true
+  );
+
+  useEffect(() => {
+    if (familyId) {
+      setRoleWarningDismissed(!!localStorage.getItem(`role_warning_dismissed_${familyId}`));
+    }
+  }, [familyId]);
 
   // Swipe state managed by SwipeableCard
 
@@ -368,6 +386,35 @@ const FamilyManagement = () => {
 
   // Note: approval flow removed — joining is instant via edge function
 
+  const handleConfirmRole = async () => {
+    if (!confirmMember || !confirmRole || !familyId || confirmingRole) return;
+    setConfirmingRole(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "confirm-role", family_id: familyId, target_user_id: confirmMember.id, role: confirmRole },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل تأكيد الدور", variant: "destructive" });
+      } else {
+        refetchMembers();
+        toast({ title: `تم تأكيد دور ${confirmMember.name}` });
+        setConfirmMember(null);
+        setConfirmRole(null);
+      }
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    } finally {
+      setConfirmingRole(false);
+    }
+  };
+
+  const dismissRoleWarning = () => {
+    if (familyId) {
+      localStorage.setItem(`role_warning_dismissed_${familyId}`, "true");
+    }
+    setRoleWarningDismissed(true);
+  };
+
   const spouseRole = getSpouseRole();
 
   return (
@@ -448,6 +495,19 @@ const FamilyManagement = () => {
           </div>
         ) : (
         <>
+        {/* Role warning banner — admins only, dismissible */}
+        {isMyAdmin && members.length > 1 && !roleWarningDismissed && (
+          <div className="flex items-start gap-2 p-3 rounded-xl mb-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700 dark:text-amber-400 flex-1 leading-relaxed">
+              في حال اختيار دور خاطئ لأي عضو، يجب إزالته وإعادة دعوته لتصحيح الدور.
+            </p>
+            <button onClick={dismissRoleWarning} className="shrink-0 p-0.5 rounded-full text-amber-500 active:bg-amber-200/50">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
         <div className="space-y-2">
           {members.map((member) => {
@@ -481,6 +541,15 @@ const FamilyManagement = () => {
                         <Clock size={8} />
                         بانتظار القبول
                       </span>
+                    )}
+                    {!member.roleConfirmed && isMyAdmin && !member.isCreator && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmMember(member); setConfirmRole(member.role); }}
+                        className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 mt-0.5 active:bg-amber-200"
+                      >
+                        <ShieldCheck size={8} />
+                        تأكيد الدور
+                      </button>
                     )}
                   </div>
                   {memberIsAdmin && (
@@ -874,6 +943,42 @@ const FamilyManagement = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Role Confirmation Drawer */}
+      <Drawer open={!!confirmMember} onOpenChange={(open) => { if (!open) { setConfirmMember(null); setConfirmRole(null); } }}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">{confirmMember?.name} — تأكيد الدور</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground text-center">حدد دور {confirmMember?.name} في العائلة:</p>
+            <div className="grid grid-cols-3 gap-2">
+              {(["father", "mother", "husband", "wife", "son", "daughter", "worker", "maid", "driver"] as FamilyRole[]).map((r) => {
+                const selected = confirmRole === r;
+                return (
+                  <button
+                    key={r}
+                    onClick={() => setConfirmRole(r)}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                      selected ? "border-primary bg-primary/10" : "border-border bg-card"
+                    }`}
+                  >
+                    <RoleIcon role={r} size={18} className={selected ? "text-primary" : "text-muted-foreground"} />
+                    <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={handleConfirmRole}
+              disabled={!confirmRole || confirmingRole}
+              className="w-full py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              {confirmingRole ? <Loader2 className="h-4 w-4 animate-spin" /> : "تأكيد الدور"}
+            </button>
           </div>
         </DrawerContent>
       </Drawer>

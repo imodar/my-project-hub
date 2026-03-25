@@ -32,7 +32,6 @@ async function generateUniqueInviteCode(client: any): Promise<string> {
       .maybeSingle();
     if (!data) return code;
   }
-  // Fallback: timestamp-based suffix for guaranteed uniqueness
   const ts = Date.now().toString(36).slice(-4).toUpperCase();
   return generateInviteCode().slice(0, 4) + ts;
 }
@@ -60,7 +59,6 @@ Deno.serve(async (req) => {
     }
     const userId = authUser.id;
 
-    // Use service role for DB operations (user already authenticated above)
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -70,7 +68,7 @@ Deno.serve(async (req) => {
     const action = body.action;
 
     // ── Admin authorization for sensitive actions ──
-    if (action === "toggle-admin" || action === "remove-member") {
+    if (["toggle-admin", "remove-member", "confirm-role"].includes(action)) {
       const { family_id } = body;
       if (!family_id) return json({ error: "family_id مطلوب" }, 400);
       const { data: isAdmin } = await supabase.rpc("is_family_admin", {
@@ -100,6 +98,7 @@ Deno.serve(async (req) => {
         role: role || "father",
         is_admin: true,
         status: "active",
+        role_confirmed: true,
       });
       if (memErr) return json({ error: memErr.message }, 400);
 
@@ -118,7 +117,6 @@ Deno.serve(async (req) => {
         .single();
       if (findErr || !family) return json({ error: "رمز الدعوة غير صحيح" }, 404);
 
-      // Check not already member
       const { data: existing } = await supabase
         .from("family_members")
         .select("id")
@@ -133,10 +131,75 @@ Deno.serve(async (req) => {
         role: role || "son",
         is_admin: false,
         status: "active",
+        role_confirmed: false,
       });
       if (joinErr) return json({ error: joinErr.message }, 400);
 
+      // Notify admins about new member
+      try {
+        const { data: profile } = await adminClient
+          .from("profiles")
+          .select("name")
+          .eq("id", userId)
+          .single();
+        const memberName = profile?.name || "عضو جديد";
+
+        const { data: admins } = await adminClient
+          .from("family_members")
+          .select("user_id")
+          .eq("family_id", family.id)
+          .eq("is_admin", true)
+          .eq("status", "active");
+
+        if (admins && admins.length > 0) {
+          const notifications = admins
+            .filter((a: any) => a.user_id !== userId)
+            .map((a: any) => ({
+              user_id: a.user_id,
+              type: "new_member",
+              title: "طلب انضمام جديد",
+              body: `${memberName} انضم للعائلة — تحقق من دوره`,
+              scheduled_at: new Date().toISOString(),
+              sent: false,
+              data: { family_id: family.id, member_id: userId },
+            }));
+          if (notifications.length > 0) {
+            await adminClient.from("scheduled_notifications").insert(notifications);
+          }
+        }
+      } catch {
+        // Non-critical — don't fail the join
+      }
+
       return json({ data: { family_id: family.id } });
+    }
+
+    // CONFIRM ROLE
+    if (action === "confirm-role") {
+      const { family_id, target_user_id, role } = body;
+      if (!target_user_id || !role) return json({ error: "بيانات ناقصة" }, 400);
+
+      const { error } = await adminClient
+        .from("family_members")
+        .update({ role, role_confirmed: true })
+        .eq("family_id", family_id)
+        .eq("user_id", target_user_id);
+      if (error) return json({ error: error.message }, 400);
+
+      // Notify the member
+      try {
+        await adminClient.from("scheduled_notifications").insert({
+          user_id: target_user_id,
+          type: "role_confirmed",
+          title: "تم تأكيد انضمامك",
+          body: "تم تأكيد دورك في العائلة من قبل المشرف",
+          scheduled_at: new Date().toISOString(),
+          sent: false,
+          data: { family_id },
+        });
+      } catch {}
+
+      return json({ success: true });
     }
 
     // GET members
@@ -183,7 +246,6 @@ Deno.serve(async (req) => {
     if (action === "remove-member") {
       const { family_id, target_user_id, reason } = body;
 
-      // Record removal
       await adminClient.from("member_removals").insert({
         family_id,
         removed_user_id: target_user_id,
@@ -191,14 +253,12 @@ Deno.serve(async (req) => {
         reason,
       });
 
-      // Delete family key
       await supabase
         .from("family_keys")
         .delete()
         .eq("family_id", family_id)
         .eq("user_id", target_user_id);
 
-      // Remove from family
       const { error } = await supabase
         .from("family_members")
         .delete()
@@ -209,7 +269,7 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // REGENERATE invite code (unique)
+    // REGENERATE invite code
     if (action === "regenerate-code") {
       const { family_id } = body;
       if (!family_id) return json({ error: "family_id مطلوب" }, 400);

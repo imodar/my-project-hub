@@ -1,0 +1,1 @@
+ALTER TABLE family_members ADD COLUMN role_confirmed boolean NOT NULL DEFAULT false;

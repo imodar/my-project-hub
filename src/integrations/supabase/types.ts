@@ -939,6 +939,7 @@ export type Database = {
           is_admin: boolean
           joined_at: string
           role: string
+          role_confirmed: boolean
           status: string
           user_id: string
         }
@@ -948,6 +949,7 @@ export type Database = {
           is_admin?: boolean
           joined_at?: string
           role?: string
+          role_confirmed?: boolean
           status?: string
           user_id: string
         }
@@ -957,6 +959,7 @@ export type Database = {
           is_admin?: boolean
           joined_at?: string
           role?: string
+          role_confirmed?: boolean
           status?: string
           user_id?: string
         }

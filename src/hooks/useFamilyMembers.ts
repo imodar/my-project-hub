@@ -10,6 +10,7 @@ export interface FamilyMemberInfo {
   role: string;
   isAdmin: boolean;
   isCreator: boolean;
+  roleConfirmed: boolean;
 }
 
 export function useFamilyMembers({ excludeSelf = true } = {}) {
@@ -21,10 +22,9 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
     queryFn: async (): Promise<FamilyMemberInfo[]> => {
       if (!familyId) return [];
 
-      // Single query with join to get members + creator info
       const { data: members, error } = await supabase
         .from("family_members")
-        .select("user_id, role, is_admin, families!inner(created_by)")
+        .select("user_id, role, is_admin, role_confirmed, families!inner(created_by)")
         .eq("family_id", familyId)
         .eq("status", "active");
       if (error) throw error;
@@ -53,6 +53,7 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
           role: m.role,
           isAdmin: m.is_admin || false,
           isCreator: m.user_id === creatorId,
+          roleConfirmed: (m as any).role_confirmed ?? true,
         };
       });
     },
