@@ -245,8 +245,10 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
   };
 
   // Countdown overlay
-  if (phase === "countdown") {
-    return createPortal(
+    return (
+      <>
+        <div ref={ref} style={{ display: "none" }} />
+        {createPortal(
       <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center" dir="rtl">
         <div className="relative">
           <div className="w-40 h-40 rounded-full border-4 border-red-500 flex items-center justify-center animate-pulse">
