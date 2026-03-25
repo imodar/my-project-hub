@@ -43,25 +43,26 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
     return projectPendingChanges(tableName, localData as T[]);
   }
 
+  // Full replace: remove stale local records not in API response, then upsert
+  const apiIds = new Set(data.map((item) => item.id));
+  const localItems: T[] = await table.toArray();
+  const staleIds = localItems
+    .filter((item) => !apiIds.has(item.id))
+    .map((item) => item.id);
+  if (staleIds.length > 0) {
+    await table.bulkDelete(staleIds);
+  }
   await table.bulkPut(data);
 
-  // تحديث وقت المزامنة قبل القراءة النهائية لتقليل race window
+  // تحديث وقت المزامنة
   await db.sync_meta.put({
     table: tableName,
     last_synced_at: new Date().toISOString(),
   });
 
-  // Build a Set of IDs from the API response for fast lookup
-  const apiIds = new Set(data.map((item) => item.id));
-
-  // Read back ONLY the records that belong to this sync batch
-  const relevantLocal: T[] = await table
-    .filter((item: any) => apiIds.has(item.id))
-    .toArray();
-
-  const projectedData = await projectPendingChanges(tableName, relevantLocal as T[]);
+  const projectedData = await projectPendingChanges(tableName, data);
   console.info(
-    `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، محلي بعد الإسقاط: ${projectedData.length}`
+    `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، حُذف ${staleIds.length} سجل قديم`
   );
   return projectedData;
 }
