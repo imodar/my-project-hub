@@ -30,6 +30,13 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem("onboarding_seen", "true");
   }
 
+  // Profile completion check — synchronous localStorage only
+  const profileComplete = localStorage.getItem("profile_complete");
+  const cachedName = localStorage.getItem(`profile_name_${session.user.id}`);
+  if (!profileComplete && !cachedName) {
+    return <Navigate to="/complete-profile" replace />;
+  }
+
   // Family onboarding check — synchronous localStorage only (no hooks/queries)
   const joinDone = localStorage.getItem("join_or_create_done");
   const cachedFamilyId = localStorage.getItem("cached_family_id");
