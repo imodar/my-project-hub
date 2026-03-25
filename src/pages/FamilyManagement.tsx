@@ -426,9 +426,12 @@ const FamilyManagement = () => {
       queryClient.invalidateQueries({ queryKey: ["family-id"] });
       queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
       toast({ title: "تم مغادرة العائلة بنجاح" });
+      setShowLeaveConfirm(false);
       navigate("/", { replace: true });
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
+    } finally {
+      setLeavingFamily(false);
     }
   };
 
