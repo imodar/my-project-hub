@@ -26,7 +26,7 @@ const SOS_DISABLED_KEY = "sos_disabled_members";
 
 type SOSPhase = "idle" | "holding" | "countdown" | "active";
 
-const SOSButton = () => {
+const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
   const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string }[]>([]);
