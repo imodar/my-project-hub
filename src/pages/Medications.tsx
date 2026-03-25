@@ -311,6 +311,10 @@ const Medications = () => {
         ]}
       />
 
+      {medsLoading ? (
+        <ListPageSkeleton />
+      ) : (
+      <>
       {/* Due Alert Banner */}
       {dueMedications.length > 0 && (
         <div className="px-5 mt-4">
