@@ -45,6 +45,7 @@ const Medications = () => {
   const [showDueAlert, setShowDueAlert] = useState<Medication | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Medication | null>(null);
   const [showDetailSheet, setShowDetailSheet] = useState<Medication | null>(null);
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   // Form state
   const [formName, setFormName] = useState("");
