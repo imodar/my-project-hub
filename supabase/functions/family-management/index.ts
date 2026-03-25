@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
 
       console.log("Join attempt with code:", invite_code.toUpperCase(), "by user:", userId);
 
-      const { data: family, error: findErr } = await supabase
+      const { data: family, error: findErr } = await adminClient
         .from("families")
         .select("id")
         .eq("invite_code", invite_code.toUpperCase())
