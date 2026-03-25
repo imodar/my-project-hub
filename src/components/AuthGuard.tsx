@@ -2,7 +2,7 @@ import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 
-const AuthGuard = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(({ children }, _ref) => {
+const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuth();
   const location = useLocation();
 
@@ -31,7 +31,6 @@ const AuthGuard = React.forwardRef<HTMLDivElement, { children: React.ReactNode }
   }
 
   return <>{children}</>;
-});
-AuthGuard.displayName = "AuthGuard";
+};
 
 export default AuthGuard;
