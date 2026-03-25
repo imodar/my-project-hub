@@ -146,7 +146,7 @@ const Albums = () => {
     setNewName("");
     setLinkToTrip(false);
     setSelectedTripId("");
-    setSelectedCover(0);
+    
     toast.success("تم إنشاء الألبوم");
   };
 
