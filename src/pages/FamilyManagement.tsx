@@ -105,17 +105,7 @@ const FamilyManagement = () => {
   const scanStreamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Approval dialog state - when someone scans QR / enters code
-  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
-  const [approvalName, setApprovalName] = useState("");
-  const [approvalRole, setApprovalRole] = useState<FamilyRole | null>(null);
-
-  // Show setup only if user has no family yet (familyId will be null)
-  useEffect(() => {
-    if (!membersLoading && !familyId) {
-      setShowSetupDialog(true);
-    }
-  }, [membersLoading, familyId]);
+  // No auto-open setup dialog — inline UI handles !familyId case
 
   const handleSetupComplete = async () => {
     if (!setupRole) return;
