@@ -68,15 +68,15 @@ const Map = () => {
             className="absolute inset-0"
           />
         </Suspense>
-
-        <MemberSheet
-          locations={locations}
-          selectedMemberId={selectedMemberId}
-          onMemberSelect={setSelectedMemberId}
-          isExpanded={isSheetExpanded}
-          setIsExpanded={setIsSheetExpanded}
-        />
       </div>
+
+      <MemberSheet
+        locations={locations}
+        selectedMemberId={selectedMemberId}
+        onMemberSelect={setSelectedMemberId}
+        isExpanded={isSheetExpanded}
+        setIsExpanded={setIsSheetExpanded}
+      />
     </div>
   );
 };
