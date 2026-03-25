@@ -759,7 +759,7 @@ const FamilyManagement = () => {
             <DrawerTitle className="text-center">
               {addStep === "choose-type" && "إضافة فرد جديد"}
               {addStep === "enter-name" && `إضافة ${ROLE_LABELS[selectedType || "son"]}`}
-              {addStep === "invite-method" && "تم الإضافة ✓"}
+              {addStep === "invite-method" && "دعوة فرد جديد"}
             </DrawerTitle>
           </DrawerHeader>
 
