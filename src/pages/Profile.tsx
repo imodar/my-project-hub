@@ -138,6 +138,20 @@ const Profile = () => {
           )}
         </div>
 
+        {/* Phone number (read-only) */}
+        <div className="rounded-2xl p-4 mb-4" style={{
+          background: "hsla(0,0%,100%,0.9)",
+          boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
+        }}>
+          <label className="text-xs font-semibold text-muted-foreground block mb-2">
+            <Phone size={12} className="inline ml-1" />
+            رقم الجوال
+          </label>
+          <div className="px-3 py-2 rounded-xl">
+            <span className="text-sm font-semibold text-foreground" dir="ltr">{user?.phone || "غير محدد"}</span>
+          </div>
+        </div>
+
         {/* Email (Gmail) */}
         <div className="rounded-2xl p-4 mb-4" style={{
           background: "hsla(0,0%,100%,0.9)",
