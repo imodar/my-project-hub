@@ -30,6 +30,7 @@ import Map from "./pages/Map.tsx";
 import Debts from "./pages/Debts.tsx";
 import FamilyManagement from "./pages/FamilyManagement.tsx";
 import JoinOrCreate from "./pages/JoinOrCreate.tsx";
+import CompleteProfile from "./pages/CompleteProfile.tsx";
 import Profile from "./pages/Profile.tsx";
 import CalendarPage from "./pages/Calendar.tsx";
 import Trash from "./pages/Trash.tsx";
