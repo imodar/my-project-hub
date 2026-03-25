@@ -59,20 +59,6 @@ const Auth = () => {
     }
   };
 
-  const tryWebOtp = async () => {
-    if (!("OTPCredential" in window)) return;
-    try {
-      abortRef.current = new AbortController();
-      const content = await navigator.credentials.get({
-        // @ts-ignore
-        otp: { transport: ["sms"] },
-        signal: abortRef.current.signal,
-      });
-      if (content && "code" in content) {
-        setOtp((content as any).code);
-      }
-    } catch {}
-  };
 
   const verifyOtp = async (code: string) => {
     if (code.length < 6) return;
