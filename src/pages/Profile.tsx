@@ -1,9 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Camera } from "lucide-react";
+import { ChevronRight, Camera, Mail } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+
+const isGoogleEmail = (email: string): boolean => {
+  const googleDomains = ["gmail.com", "googlemail.com"];
+  const domain = email.split("@")[1]?.toLowerCase();
+  return googleDomains.includes(domain);
+};
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -12,6 +18,10 @@ const Profile = () => {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [gmail, setGmail] = useState("");
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [gmailError, setGmailError] = useState("");
 
   // Load profile from DB
   useEffect(() => {
