@@ -28,7 +28,7 @@ const findAuthUserByPhoneOrEmail = async (
     const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
     if (error) throw error;
 
-    const users = data.users ?? [];
+    const users = (data.users ?? []) as Array<{ id: string; email?: string | null; phone?: string | null }>;
     const matchedUser = users.find((candidate) => {
       const candidatePhone = normalizePhone(candidate.phone ?? "");
       return candidate.email === email || candidatePhone === normalizedPhone;
