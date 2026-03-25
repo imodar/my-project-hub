@@ -96,6 +96,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
           <button
             key={i}
             onClick={() => { action.onClick(); close(); }}
+            aria-label={action.label}
             className={`flex-1 flex flex-col items-center justify-center gap-1 
                         ${action.color} ${action.textColor ?? "text-white"}
                         ${i === 0 ? "rounded-r-none" : ""}

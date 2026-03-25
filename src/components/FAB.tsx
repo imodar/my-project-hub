@@ -51,6 +51,7 @@ const FAB = ({ onClick, actions, icon, show = true }: FABProps) => {
                   action.onClick();
                   setOpen(false);
                 }}
+                aria-label={action.label}
                 className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-lg text-sm font-bold text-white whitespace-nowrap ${action.color ?? "bg-primary"}`}
               >
                 {action.icon}
@@ -62,6 +63,7 @@ const FAB = ({ onClick, actions, icon, show = true }: FABProps) => {
 
         <button
           onClick={handleClick}
+          aria-label="إضافة جديد"
           className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-xl flex items-center justify-center transition-transform active:scale-95"
         >
           {actions ? (

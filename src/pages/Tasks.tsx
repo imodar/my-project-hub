@@ -375,6 +375,9 @@ const Tasks = () => {
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => !dragActiveId && toggleItem(item.id)}
+                role="checkbox"
+                aria-checked={isDone}
+                aria-label={`تحديد ${item.name}`}
                 className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                   isDone
                     ? "bg-primary"

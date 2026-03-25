@@ -361,6 +361,9 @@ const Market = () => {
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
+              role="checkbox"
+              aria-checked={isChecked}
+              aria-label={`تحديد ${item.name}`}
               className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                 isChecked
                   ? "bg-primary"

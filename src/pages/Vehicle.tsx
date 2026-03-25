@@ -168,7 +168,7 @@ const CarLogo = ({ manufacturer, size = 40 }: { manufacturer: string; size?: num
     return (
       <img
         src={logoUrl}
-        alt={CAR_MANUFACTURERS[manufacturer]?.name || manufacturer}
+        alt={`شعار ${CAR_MANUFACTURERS[manufacturer]?.nameAr || CAR_MANUFACTURERS[manufacturer]?.name || manufacturer}`}
         className="object-contain"
         style={{ width: size, height: size }}
         loading="lazy"

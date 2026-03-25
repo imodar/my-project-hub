@@ -62,7 +62,7 @@ const QrPattern = React.memo(({ code }: { code: string }) => {
     <div className="w-40 h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 bg-white border-2 border-border overflow-hidden">
       <img
         src={qrUrl}
-        alt="QR Code"
+        alt="رمز QR للانضمام للعائلة"
         width={140}
         height={140}
         className="rounded"

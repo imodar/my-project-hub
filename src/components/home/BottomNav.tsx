@@ -148,6 +148,9 @@ const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
                   haptic.light();
                   navigate(item.path);
                 }}
+                aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
+                role="link"
                 className="flex flex-col items-center gap-1 px-3 py-2 transition-transform active:scale-90"
               >
                 {isActive ? (

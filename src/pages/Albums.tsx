@@ -215,7 +215,7 @@ const Albums = () => {
         </div>
         <div className="flex-1 flex items-center justify-center px-4">
           {selectedPhoto.url ? (
-            <img src={selectedPhoto.url} alt="" className="max-w-full max-h-full object-contain rounded-lg" />
+            <img src={selectedPhoto.url} alt={selectedPhoto.caption || "صورة من الألبوم"} className="max-w-full max-h-full object-contain rounded-lg" />
           ) : (
             <div
               className="w-72 h-72 rounded-2xl flex items-center justify-center"

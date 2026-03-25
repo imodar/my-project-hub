@@ -52,6 +52,8 @@ const PullToRefresh = React.forwardRef<HTMLDivElement, PullToRefreshProps>(
     return (
       <div
         ref={ref}
+        role="region"
+        aria-live="polite"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}

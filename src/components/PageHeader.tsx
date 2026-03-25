@@ -5,6 +5,7 @@ import SyncStatus from "@/components/SyncStatus";
 
 interface HeaderAction {
   icon: ReactNode;
+  label?: string;
   onClick: () => void;
   style?: React.CSSProperties;
   className?: string;
@@ -34,6 +35,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
       <div className="flex items-center gap-3">
         <button
           onClick={onBack ?? (() => navigate(-1))}
+          aria-label="رجوع"
           className="p-1.5 rounded-full shrink-0"
           style={{ background: "hsla(0,0%,100%,0.12)" }}
         >
@@ -48,6 +50,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
           <button
             key={i}
             onClick={action.onClick}
+            aria-label={action.label || "إجراء"}
             className={`p-1.5 rounded-full shrink-0 ${action.className ?? ""}`}
             style={{ background: "hsla(0,0%,100%,0.12)", ...action.style }}
           >
