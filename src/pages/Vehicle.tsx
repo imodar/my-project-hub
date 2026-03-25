@@ -755,6 +755,7 @@ const Vehicle = () => {
                 return (
                   <SwipeableCard
                     key={car.id}
+                    onSwipeOpen={() => setOpenCardId(car.id)}
                     actions={[
                       { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteConfirmCar(car) },
                       { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => openEditCar(car) },

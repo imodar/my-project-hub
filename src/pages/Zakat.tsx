@@ -365,6 +365,7 @@ const Zakat = () => {
                   return (
                     <SwipeableCard
                       key={asset.id}
+                      onSwipeOpen={() => setOpenCardId(asset.id)}
                       actions={[
                         { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
                           setAddType(asset.type);

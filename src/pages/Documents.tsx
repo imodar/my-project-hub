@@ -281,6 +281,7 @@ const Documents = () => {
     return (
       <SwipeableCard
         key={item.id}
+        onSwipeOpen={() => setOpenCardId(item.id)}
         actions={[
           { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget(item) },
           { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => openEdit(item) },
