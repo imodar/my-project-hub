@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
+import SwipeableCard from "@/components/SwipeableCard";
 import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare, PersonStanding } from "lucide-react";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
 import { Button } from "@/components/ui/button";
@@ -47,11 +48,7 @@ const Vaccinations = () => {
   const [newGender, setNewGender] = useState<"male" | "female">("male");
   const [newBirthDate, setNewBirthDate] = useState("");
 
-  // Swipe state
-  const [swipedChildId, setSwipedChildId] = useState<string | null>(null);
-  const swipeRef = useRef<{ startX: number; startY: number; swiping: boolean; childId: string | null }>({
-    startX: 0, startY: 0, swiping: false, childId: null,
-  });
+  const [openChildCardId, setOpenChildCardId] = useState<string | null>(null);
 
   // Keep selectedChild in sync with data
   const resolvedSelected = selectedChild ? children.find((c) => c.id === selectedChild.id) || selectedChild : null;
@@ -86,7 +83,7 @@ const Vaccinations = () => {
       });
       setShowEditSheet(false);
       setEditingChild(null);
-      setSwipedChildId(null);
+      setOpenChildCardId(null);
       toast.success("تم تحديث بيانات الطفل");
     } catch {
       toast.error("حدث خطأ");
@@ -104,7 +101,7 @@ const Vaccinations = () => {
   const openReminderFromSwipe = (child: Child) => {
     setReminderChild(child);
     setShowReminderSheet(true);
-    setSwipedChildId(null);
+    setOpenChildCardId(null);
   };
 
   const handleToggleVaccine = (childId: string, vaccineId: string) => {
@@ -139,50 +136,6 @@ const Vaccinations = () => {
     setShowNoteSheet(true);
   };
 
-  // Swipe handlers
-  const handleTouchStart = (e: React.TouchEvent, childId: string) => {
-    swipeRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, swiping: false, childId };
-  };
-
-  const handleTouchMove = (e: React.TouchEvent, childId: string, cardEl: HTMLDivElement | null) => {
-    if (!cardEl || swipeRef.current.childId !== childId) return;
-    const diffX = e.touches[0].clientX - swipeRef.current.startX;
-    const diffY = Math.abs(e.touches[0].clientY - swipeRef.current.startY);
-    if (diffY > Math.abs(diffX) && !swipeRef.current.swiping) return;
-    if (Math.abs(diffX) > 10) swipeRef.current.swiping = true;
-    if (swipeRef.current.swiping) {
-      e.preventDefault();
-      const clampedX = Math.max(-112, Math.min(0, diffX));
-      cardEl.style.transform = `translateX(${clampedX}px)`;
-    }
-  };
-
-  const handleTouchEnd = (childId: string, cardEl: HTMLDivElement | null) => {
-    if (!cardEl || swipeRef.current.childId !== childId) return;
-    const wasSwiping = swipeRef.current.swiping;
-    if (wasSwiping) {
-      const currentTransform = cardEl.style.transform;
-      const match = currentTransform.match(/translateX\((-?\d+)px\)/);
-      const currentX = match ? parseInt(match[1]) : 0;
-      cardEl.style.transition = "transform 200ms ease-out";
-      if (currentX < -50) {
-        cardEl.style.transform = "translateX(-112px)";
-        setSwipedChildId(childId);
-      } else {
-        cardEl.style.transform = "translateX(0px)";
-        setSwipedChildId(null);
-      }
-      setTimeout(() => { if (cardEl) cardEl.style.transition = ""; }, 200);
-    }
-    swipeRef.current.swiping = false;
-  };
-
-  const handleCardClick = (child: Child) => {
-    if (swipeRef.current.swiping) return;
-    if (swipedChildId === child.id) { setSwipedChildId(null); return; }
-    if (swipedChildId) { setSwipedChildId(null); return; }
-    setSelectedChild(child);
-  };
 
   const totalVaccines = getTotalVaccines();
 
@@ -216,27 +169,35 @@ const Vaccinations = () => {
             const completedCount = child.completedVaccines.length;
             const progress = Math.round((completedCount / totalVaccines) * 100);
             const dueVaccines = getNextDueVaccines(child.birthDate, child.completedVaccines);
-            const isSwiped = swipedChildId === child.id;
 
             return (
-              <div key={child.id} className="relative overflow-hidden rounded-2xl">
-                <div className="absolute inset-y-0 left-0 flex items-center gap-2 px-3 z-0">
-                  <button onClick={() => openEditSheet(child)} className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center">
-                    <Pencil className="w-5 h-5 text-white" />
-                  </button>
-                  <button onClick={() => openReminderFromSwipe(child)} className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center">
-                    <Bell className="w-5 h-5 text-white" />
-                  </button>
-                </div>
-
-                <div
-                  ref={(el) => { if (el) el.dataset.childId = child.id; }}
-                  onClick={() => handleCardClick(child)}
-                  onTouchStart={(e) => handleTouchStart(e, child.id)}
-                  onTouchMove={(e) => handleTouchMove(e, child.id, e.currentTarget as HTMLDivElement)}
-                  onTouchEnd={(e) => handleTouchEnd(child.id, e.currentTarget as HTMLDivElement)}
-                  className="w-full bg-card rounded-2xl p-4 border border-border/50 text-right relative z-10 cursor-pointer"
-                  style={{ transform: isSwiped ? "translateX(-112px)" : "translateX(0)" }}
+              <SwipeableCard
+                key={child.id}
+                actions={[
+                  {
+                    icon: <Pencil size={16} />,
+                    label: "تعديل",
+                    color: "bg-primary",
+                    onClick: () => openEditSheet(child),
+                  },
+                  {
+                    icon: <Bell size={16} />,
+                    label: "تذكير",
+                    color: "bg-amber-500",
+                    onClick: () => openReminderFromSwipe(child),
+                  },
+                ]}
+                onSwipeOpen={() => setOpenChildCardId(child.id)}
+              >
+                <button
+                  onClick={() => {
+                    if (openChildCardId === child.id) {
+                      setOpenChildCardId(null);
+                      return;
+                    }
+                    setSelectedChild(child);
+                  }}
+                  className="w-full bg-card rounded-2xl p-4 border border-border/50 text-right cursor-pointer"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${child.gender === "male" ? "bg-blue-100 dark:bg-blue-900/30" : "bg-pink-100 dark:bg-pink-900/30"}`}>
@@ -260,8 +221,8 @@ const Vaccinations = () => {
                     </div>
                     <Progress value={progress} className="h-2" />
                   </div>
-                </div>
-              </div>
+                </button>
+              </SwipeableCard>
             );
           })
         )}
