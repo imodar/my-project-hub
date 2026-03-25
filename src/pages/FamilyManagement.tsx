@@ -542,6 +542,15 @@ const FamilyManagement = () => {
                         بانتظار القبول
                       </span>
                     )}
+                    {!member.roleConfirmed && isMyAdmin && !member.isCreator && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmMember(member); setConfirmRole(member.role); }}
+                        className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 mt-0.5 active:bg-amber-200"
+                      >
+                        <ShieldCheck size={8} />
+                        تأكيد الدور
+                      </button>
+                    )}
                   </div>
                   {memberIsAdmin && (
                     <span className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-semibold" style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}>
