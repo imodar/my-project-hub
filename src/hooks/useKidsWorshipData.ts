@@ -38,7 +38,21 @@ export function useKidsWorshipData(childId: string, year: number, month: number)
         );
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async ({ day, items }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<MonthData>(queryKey);
+      queryClient.setQueryData<MonthData>(queryKey, (old) => ({
+        ...old,
+        [day]: items,
+      }));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKey, context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
     },
   });
@@ -54,7 +68,23 @@ export function useKidsWorshipData(childId: string, year: number, month: number)
         .eq("day", day);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (day) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<MonthData>(queryKey);
+      queryClient.setQueryData<MonthData>(queryKey, (old) => {
+        if (!old) return {};
+        const copy = { ...old };
+        delete copy[day];
+        return copy;
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKey, context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
     },
   });
