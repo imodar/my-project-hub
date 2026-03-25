@@ -116,7 +116,7 @@ export function useTaskLists() {
       const { error } = await supabase.from("task_items").update({ done: input.done }).eq("id", input.id);
       return { data: null, error: error?.message || null };
     },
-    queryKey: key,
+    // No queryKey — we handle optimistic update manually in the wrapper
     onError: () => toast.error("فشل تحديث المهمة"),
   });
 
