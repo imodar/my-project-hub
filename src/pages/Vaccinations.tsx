@@ -83,7 +83,7 @@ const Vaccinations = () => {
       });
       setShowEditSheet(false);
       setEditingChild(null);
-      setSwipedChildId(null);
+      setOpenChildCardId(null);
       toast.success("تم تحديث بيانات الطفل");
     } catch {
       toast.error("حدث خطأ");
