@@ -519,22 +519,17 @@ const FamilyManagement = () => {
                 </button>
               </div>
 
-              {/* Invite Link */}
+              {/* Share invite button */}
               <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
                 <div className="flex items-center gap-2 mb-3 justify-end">
-                  <span className="text-sm font-semibold text-foreground">رابط الدعوة</span>
-                  <Link2 size={18} className="text-primary" />
+                  <span className="text-sm font-semibold text-foreground">مشاركة الدعوة</span>
+                  <Share2 size={18} className="text-primary" />
                 </div>
-                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل رابط للانضمام</p>
-                <div className="flex gap-2">
-                  <button onClick={handleShareLink} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-colors active:opacity-90 bg-primary">
-                    <Share2 size={16} />
-                    مشاركة الرابط
-                  </button>
-                  <button onClick={handleCopyLink} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10" style={{ background: "hsl(var(--primary) / 0.08)" }}>
-                    {linkCopied ? <Check size={16} /> : <Copy size={16} />}
-                  </button>
-                </div>
+                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل كود الانضمام للعضو الجديد</p>
+                <button onClick={handleShareInvite} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-colors active:opacity-90 bg-primary">
+                  <Share2 size={16} />
+                  مشاركة الكود
+                </button>
               </div>
             </div>
           </div>
