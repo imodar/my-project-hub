@@ -408,10 +408,12 @@ const FamilyManagement = () => {
     }
   };
 
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [leavingFamily, setLeavingFamily] = useState(false);
+
   const handleLeaveFamily = async () => {
     if (!familyId || !user) return;
-    const confirmed = window.confirm("هل أنت متأكد من مغادرة العائلة؟ لن تتمكن من الوصول لبياناتها بعد ذلك.");
-    if (!confirmed) return;
+    setLeavingFamily(true);
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
         body: { action: "leave", family_id: familyId },
