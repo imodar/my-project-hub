@@ -142,6 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         session,
         user: session?.user ?? null,
         loading,
+        profileReady,
         profileName,
         refreshProfile,
         signOut,
