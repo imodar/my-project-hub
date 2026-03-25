@@ -110,12 +110,15 @@ Deno.serve(async (req) => {
       const { invite_code, role } = body;
       if (!invite_code) return json({ error: "رمز الدعوة مطلوب" }, 400);
 
+      console.log("Join attempt with code:", invite_code.toUpperCase(), "by user:", userId);
+
       const { data: family, error: findErr } = await supabase
         .from("families")
         .select("id")
         .eq("invite_code", invite_code.toUpperCase())
         .single();
-      if (findErr || !family) return json({ error: "رمز الدعوة غير صحيح" }, 404);
+      console.log("Family lookup result:", { family, findErr });
+      if (findErr || !family) return json({ error: "رمز الدعوة غير صحيح — تأكد من الكود" }, 404);
 
       const { data: existing } = await supabase
         .from("family_members")
@@ -133,7 +136,8 @@ Deno.serve(async (req) => {
         status: "active",
         role_confirmed: false,
       });
-      if (joinErr) return json({ error: joinErr.message }, 400);
+      console.log("Join insert result:", { joinErr });
+      if (joinErr) return json({ error: "فشل الانضمام: " + joinErr.message }, 400);
 
       // Notify admins about new member
       try {
