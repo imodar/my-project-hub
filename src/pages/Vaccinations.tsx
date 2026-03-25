@@ -186,14 +186,6 @@ const Vaccinations = () => {
 
   const totalVaccines = getTotalVaccines();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="animate-spin text-muted-foreground" size={32} />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
       <PageHeader
@@ -203,7 +195,9 @@ const Vaccinations = () => {
         ]}
       />
 
-      {/* Children list */}
+      {isLoading ? (
+        <ListPageSkeleton />
+      ) : (
       <div className="px-5 mt-6 space-y-4">
         {children.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
