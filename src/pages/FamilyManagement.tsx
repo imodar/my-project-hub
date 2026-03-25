@@ -648,13 +648,14 @@ const FamilyManagement = () => {
           </div>
         </div>
 
-        {/* Leave family section */}
+        {/* Leave family section — only when user has a family */}
+        {familyId && (
         <div className="mt-8 mb-8">
           <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">مغادرة العائلة</h2>
           <div className="rounded-2xl p-4 bg-card border border-destructive/20" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
             <p className="text-xs text-muted-foreground mb-3 text-right">سيتم إزالتك من العائلة الحالية ولن تتمكن من الوصول لبياناتها</p>
             <button
-              onClick={handleLeaveFamily}
+              onClick={() => setShowLeaveConfirm(true)}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-destructive transition-colors active:bg-destructive/10 border-2 border-destructive/20"
             >
               <Trash2 size={16} />
@@ -662,6 +663,7 @@ const FamilyManagement = () => {
             </button>
           </div>
         </div>
+        )}
         </>
         )}
       </div>
