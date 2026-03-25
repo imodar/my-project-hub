@@ -483,8 +483,9 @@ const Market = () => {
       <div className="px-4 pt-3">
         <div className="relative">
           <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
+           <Input
             placeholder="ابحث في القائمة..."
+            aria-label="بحث في القائمة"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pr-9 bg-card border-border rounded-xl text-sm"
