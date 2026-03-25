@@ -37,6 +37,8 @@ const Profile = () => {
           setAvatar(data.avatar_url || null);
         }
       });
+    // Load current email
+    setGmail(user.email || "");
   }, [user]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
