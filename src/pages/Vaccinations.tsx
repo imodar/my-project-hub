@@ -101,7 +101,7 @@ const Vaccinations = () => {
   const openReminderFromSwipe = (child: Child) => {
     setReminderChild(child);
     setShowReminderSheet(true);
-    setSwipedChildId(null);
+    setOpenChildCardId(null);
   };
 
   const handleToggleVaccine = (childId: string, vaccineId: string) => {
