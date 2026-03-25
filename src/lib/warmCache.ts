@@ -9,6 +9,17 @@ const TABLES_TO_WARM = [
   { table: "budgets", queryKeyPrefix: "budgets" },
   { table: "debts", queryKeyPrefix: "debts" },
   { table: "chat_messages", queryKeyPrefix: "chat-messages" },
+  { table: "trips", queryKeyPrefix: "trips" },
+  { table: "trip_day_plans", queryKeyPrefix: "trips" },
+  { table: "trip_activities", queryKeyPrefix: "trips" },
+  { table: "trip_expenses", queryKeyPrefix: "trips" },
+  { table: "trip_packing", queryKeyPrefix: "trips" },
+  { table: "vehicles", queryKeyPrefix: "vehicles" },
+  { table: "document_lists", queryKeyPrefix: "document-lists" },
+  { table: "document_items", queryKeyPrefix: "document-lists" },
+  { table: "albums", queryKeyPrefix: "albums" },
+  { table: "album_photos", queryKeyPrefix: "albums" },
+  { table: "family_members", queryKeyPrefix: "family-members-list" },
 ] as const;
 
 export async function warmCache(qc: QueryClient, familyId: string | null): Promise<void> {
