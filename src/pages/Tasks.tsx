@@ -117,7 +117,7 @@ const Tasks = () => {
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
 
-  // Swipe state managed by SwipeableCard
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<TaskItem | null>(null);
