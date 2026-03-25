@@ -679,21 +679,22 @@ const FamilyManagement = () => {
               <UserPlus size={18} className="text-primary" />
             </div>
             <p className="text-xs text-muted-foreground mb-3 text-right">أدخل كود الدعوة للانضمام لعائلة جديدة (سيتم مغادرة العائلة الحالية)</p>
-            <div className="flex gap-2 mb-2" dir="ltr">
+            <div className="flex gap-2 mb-2 flex-row-reverse">
+              <button
+                onClick={handleManualJoin}
+                disabled={joinCode.length < 8}
+                className="shrink-0 px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
+              >
+                انضمام
+              </button>
               <input
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 placeholder="أدخل الكود"
-                className="flex-1 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                dir="ltr"
+                className="flex-1 min-w-0 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                 maxLength={8}
               />
-              <button
-                onClick={handleManualJoin}
-                disabled={joinCode.length < 8}
-                className="px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
-              >
-                انضمام
-              </button>
             </div>
             <button
               onClick={() => setShowScanner(true)}
