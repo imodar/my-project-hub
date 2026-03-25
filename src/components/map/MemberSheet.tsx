@@ -31,7 +31,7 @@ interface MemberSheetProps {
   setIsExpanded: (v: boolean) => void;
 }
 
-const SHEET_PEEK = 200;
+const SHEET_PEEK = 264;
 const SHEET_EXPANDED = 480;
 
 function timeSince(dateStr: string): string {
