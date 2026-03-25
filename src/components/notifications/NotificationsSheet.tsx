@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useNotifications, AppNotification } from "@/hooks/useNotifications";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import SwipeableCard from "@/components/SwipeableCard";
 import {
   Bell, BellOff, Calendar, CheckCircle2, CreditCard, FileText,
   ListTodo, MapPin, Pill, Car, BookOpen, ShoppingCart, Users,
@@ -34,69 +34,46 @@ const typeConfig: Record<string, { icon: React.ReactNode; color: string; bg: str
 
 const getConfig = (type: string) => typeConfig[type] || typeConfig.general;
 
-const SWIPE_THRESHOLD = 80;
-
 const NotificationCard = ({
   notification,
   onToggleRead,
   onNavigate,
   onDelete,
+  onSwipeOpen,
 }: {
   notification: AppNotification;
   onToggleRead: () => void;
   onNavigate: () => void;
   onDelete: () => void;
+  onSwipeOpen?: () => void;
 }) => {
   const config = getConfig(notification.type);
-  const [swipeX, setSwipeX] = useState(0);
-  const constraintsRef = useRef(null);
-
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    const offset = info.offset.x;
-    if (Math.abs(offset) > SWIPE_THRESHOLD) {
-      if (offset > 0) {
-        onToggleRead();
-      } else {
-        onDelete();
-      }
-    }
-    setSwipeX(0);
-  };
-
   const timeAgo = formatDistanceToNow(new Date(notification.createdAt), {
     addSuffix: true,
     locale: ar,
   });
 
   return (
-    <div className="relative overflow-hidden rounded-2xl" ref={constraintsRef}>
-      <div className="absolute inset-0 flex">
-        <div
-          className="flex-1 flex items-center justify-start px-5 rounded-2xl"
-          style={{ background: notification.isRead ? "hsl(210 70% 50%)" : "hsl(145 50% 42%)" }}
-        >
-          {notification.isRead ? (
-            <BellOff size={20} className="text-white" />
-          ) : (
-            <CheckCircle2 size={20} className="text-white" />
-          )}
-        </div>
-        <div
-          className="flex-1 flex items-center justify-end px-5 rounded-2xl"
-          style={{ background: "hsl(0 65% 50%)" }}
-        >
-          <Trash2 size={20} className="text-white" />
-        </div>
-      </div>
-
-      <motion.div
-        drag="x"
-        dragConstraints={{ left: -120, right: 120 }}
-        dragElastic={0.15}
-        onDragEnd={handleDragEnd}
-        animate={{ x: 0 }}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        className="relative rounded-2xl cursor-grab active:cursor-grabbing"
+    <SwipeableCard
+      actions={[
+        {
+          icon: notification.isRead ? <BellOff size={16} /> : <CheckCircle2 size={16} />,
+          label: notification.isRead ? "غير مقروء" : "مقروء",
+          color: "bg-primary",
+          onClick: onToggleRead,
+        },
+        {
+          icon: <Trash2 size={16} />,
+          label: "حذف",
+          color: "bg-destructive",
+          onClick: onDelete,
+        },
+      ]}
+      onSwipeOpen={onSwipeOpen}
+    >
+      <button
+        onClick={onNavigate}
+        className="w-full text-right p-3.5 flex gap-3 items-start rounded-2xl"
         style={{
           background: notification.isRead ? "hsl(var(--muted))" : "hsl(var(--card))",
           border: notification.isRead
@@ -104,57 +81,53 @@ const NotificationCard = ({
             : `1px solid ${config.color}20`,
         }}
       >
-        <button
-          onClick={onNavigate}
-          className="w-full text-right p-3.5 flex gap-3 items-start"
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+          style={{
+            background: notification.isRead ? "hsl(var(--muted))" : config.bg,
+            color: notification.isRead ? "hsl(var(--muted-foreground))" : config.color,
+          }}
         >
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-            style={{
-              background: notification.isRead ? "hsl(var(--muted))" : config.bg,
-              color: notification.isRead ? "hsl(var(--muted-foreground))" : config.color,
-            }}
-          >
-            {config.icon}
-          </div>
+          {config.icon}
+        </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <p
-                className={`text-sm leading-snug ${
-                  notification.isRead
-                    ? "text-muted-foreground font-medium"
-                    : "text-foreground font-bold"
-                }`}
-              >
-                {notification.title}
-              </p>
-              {!notification.isRead && (
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0 mt-1"
-                  style={{ background: config.color }}
-                />
-              )}
-            </div>
-            {notification.body && (
-              <p className="text-[12px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-                {notification.body}
-              </p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <p
+              className={`text-sm leading-snug ${
+                notification.isRead
+                  ? "text-muted-foreground font-medium"
+                  : "text-foreground font-bold"
+              }`}
+            >
+              {notification.title}
+            </p>
+            {!notification.isRead && (
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0 mt-1"
+                style={{ background: config.color }}
+              />
             )}
-            <div className="flex items-center gap-1.5 mt-2">
-              <Clock size={11} className="text-muted-foreground/60" />
-              <span className="text-[10px] text-muted-foreground/70">{timeAgo}</span>
-            </div>
           </div>
-        </button>
-      </motion.div>
-    </div>
+          {notification.body && (
+            <p className="text-[12px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+              {notification.body}
+            </p>
+          )}
+          <div className="flex items-center gap-1.5 mt-2">
+            <Clock size={11} className="text-muted-foreground/60" />
+            <span className="text-[10px] text-muted-foreground/70">{timeAgo}</span>
+          </div>
+        </div>
+      </button>
+    </SwipeableCard>
   );
 };
 
 const NotificationsSheet = React.forwardRef<HTMLDivElement, Props>(
   ({ open, onOpenChange }, ref) => {
     const navigate = useNavigate();
+    const [openCardId, setOpenCardId] = useState<string | null>(null);
     const {
       notifications,
       unreadCount,
@@ -166,6 +139,10 @@ const NotificationsSheet = React.forwardRef<HTMLDivElement, Props>(
     } = useNotifications();
 
     const handleNavigate = (notif: AppNotification) => {
+      if (openCardId === notif.id) {
+        setOpenCardId(null);
+        return;
+      }
       if (!notif.isRead) markAsRead.mutate(notif.id);
       const config = getConfig(notif.type);
       if (config.route) {
@@ -271,24 +248,18 @@ const NotificationsSheet = React.forwardRef<HTMLDivElement, Props>(
                   </div>
                 </div>
               ) : (
-                <AnimatePresence initial={false}>
-                  {notifications.map((notif, i) => (
-                    <motion.div
+                <div className="space-y-2.5">
+                  {notifications.map((notif) => (
+                    <NotificationCard
                       key={notif.id}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -100, height: 0, marginBottom: 0 }}
-                      transition={{ delay: i * 0.04, duration: 0.3 }}
-                    >
-                      <NotificationCard
-                        notification={notif}
-                        onToggleRead={() => handleToggleRead(notif)}
-                        onNavigate={() => handleNavigate(notif)}
-                        onDelete={() => deleteNotification.mutate(notif.id)}
-                      />
-                    </motion.div>
+                      notification={notif}
+                      onToggleRead={() => handleToggleRead(notif)}
+                      onNavigate={() => handleNavigate(notif)}
+                      onDelete={() => deleteNotification.mutate(notif.id)}
+                      onSwipeOpen={() => setOpenCardId(notif.id)}
+                    />
                   ))}
-                </AnimatePresence>
+                </div>
               )}
             </div>
           </SheetContent>
