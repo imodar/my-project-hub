@@ -855,6 +855,8 @@ const Debts = () => {
           </div>
         </DrawerContent>
       </Drawer>
+      </>
+      )}
     </div>
   );
 };
