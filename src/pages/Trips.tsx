@@ -1290,68 +1290,78 @@ const Trips = () => {
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-4 space-y-3">
-              {filteredTrips.length === 0 && (
-                <div className="text-center py-16 text-muted-foreground">
-                  <Plane size={48} className="mx-auto mb-4 opacity-30" />
-                  <p className="text-sm font-medium">لا رحلات {activeTab === "family" ? "عائلية" : "شخصية"} بعد</p>
-                  <Button variant="outline" size="sm" className="mt-4" onClick={() => { resetTripForm(); setNewTripDrawer(true); }}>
-                    <Plus size={14} /> أنشئ رحلة
-                  </Button>
+              {!selectedTrip && tripsLoading ? (
+                <div className="px-4 py-4 space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />
+                  ))}
                 </div>
-              )}
+              ) : (
+                <>
+                  {filteredTrips.length === 0 && (
+                    <div className="text-center py-16 text-muted-foreground">
+                      <Plane size={48} className="mx-auto mb-4 opacity-30" />
+                      <p className="text-sm font-medium">لا رحلات {activeTab === "family" ? "عائلية" : "شخصية"} بعد</p>
+                      <Button variant="outline" size="sm" className="mt-4" onClick={() => { resetTripForm(); setNewTripDrawer(true); }}>
+                        <Plus size={14} /> أنشئ رحلة
+                      </Button>
+                    </div>
+                  )}
 
-              {filteredTrips.map((trip) => {
-                const costs = getTripCosts(trip);
-                return (
-                  <SwipeableCard
-                    key={trip.id}
-                    actions={[
-                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => { setDeleteTarget(trip.id); setDeleteDrawer(true); } },
-                      { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditTrip(trip) },
-                    ]}
-                    onSwipeOpen={() => setOpenTripCardId(trip.id)}
-                  >
-                    <button
-                      onClick={() => {
-                        if (openTripCardId === trip.id) {
-                          setOpenTripCardId(null);
-                          return;
-                        }
-                        handleSelectTrip(trip);
-                      }}
-                      className="w-full text-right p-4 active:bg-muted/30 transition-colors"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-bold text-foreground">{trip.name}</h3>
+                  {filteredTrips.map((trip) => {
+                    const costs = getTripCosts(trip);
+                    return (
+                      <SwipeableCard
+                        key={trip.id}
+                        actions={[
+                          { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => { setDeleteTarget(trip.id); setDeleteDrawer(true); } },
+                          { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditTrip(trip) },
+                        ]}
+                        onSwipeOpen={() => setOpenTripCardId(trip.id)}
+                      >
+                        <button
+                          onClick={() => {
+                            if (openTripCardId === trip.id) {
+                              setOpenTripCardId(null);
+                              return;
+                            }
+                            handleSelectTrip(trip);
+                          }}
+                          className="w-full text-right p-4 active:bg-muted/30 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-bold text-foreground">{trip.name}</h3>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <MapPin size={11} /> {trip.destination}
+                              </p>
+                              {trip.startDate && (
+                                <p className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "hsl(145 45% 35%)" }}>
+                                  <Calendar size={11} />
+                                  {format(new Date(trip.startDate), "d MMM", { locale: ar })}
+                                  {trip.endDate && ` — ${format(new Date(trip.endDate), "d MMM", { locale: ar })}`}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-left shrink-0">
+                              <p className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>{trip.budget > 0 ? trip.budget.toLocaleString() : ""}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{trip.days.length} أيام</p>
+                            </div>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                            <MapPin size={11} /> {trip.destination}
-                          </p>
-                          {trip.startDate && (
-                            <p className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "hsl(145 45% 35%)" }}>
-                              <Calendar size={11} />
-                              {format(new Date(trip.startDate), "d MMM", { locale: ar })}
-                              {trip.endDate && ` — ${format(new Date(trip.endDate), "d MMM", { locale: ar })}`}
-                            </p>
+                          {trip.participants.length > 0 && (
+                            <div className="flex items-center gap-1 mt-2">
+                              <Users size={11} className="text-muted-foreground" />
+                              <span className="text-[11px] text-muted-foreground">{trip.participants.join(" · ")}</span>
+                            </div>
                           )}
-                        </div>
-                        <div className="text-left shrink-0">
-                          <p className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>{trip.budget > 0 ? trip.budget.toLocaleString() : ""}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{trip.days.length} أيام</p>
-                        </div>
-                      </div>
-                      {trip.participants.length > 0 && (
-                        <div className="flex items-center gap-1 mt-2">
-                          <Users size={11} className="text-muted-foreground" />
-                          <span className="text-[11px] text-muted-foreground">{trip.participants.join(" · ")}</span>
-                        </div>
-                      )}
-                    </button>
-                  </SwipeableCard>
-                );
-              })}
+                        </button>
+                      </SwipeableCard>
+                    );
+                  })}
+                </>
+              )}
             </TabsContent>
           </Tabs>
         </div>
