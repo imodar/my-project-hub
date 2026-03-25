@@ -103,32 +103,22 @@ const QiblaCompass = React.forwardRef<HTMLDivElement>((_props, ref) => {
             <KaabaIcon />
           </div>
         </foreignObject>
-        <motion.circle
-          cx={dotCx ?? 0}
-          cy={dotCy ?? 0}
+        <circle
+          cx={isNaN(dotCx) ? cx : dotCx}
+          cy={isNaN(dotCy) ? cy - arcR : dotCy}
           r="4.5"
           fill={isAligned ? "hsl(48, 96%, 53%)" : "hsl(48, 80%, 70%)"}
-          animate={{
-            cx: dotCx ?? 0,
-            cy: dotCy ?? 0,
-          }}
-          transition={{ type: "spring", stiffness: 80, damping: 15 }}
+          style={{ transition: "cx 0.3s ease-out, cy 0.3s ease-out" }}
         />
         {isAligned && (
-          <motion.circle
-            cx={dotCx ?? 0}
-            cy={dotCy ?? 0}
+          <circle
+            cx={isNaN(dotCx) ? cx : dotCx}
+            cy={isNaN(dotCy) ? cy - arcR : dotCy}
             r="7"
             fill="none"
             stroke="hsl(48, 96%, 53%)"
             strokeWidth="1.5"
-            animate={{
-              cx: dotCx ?? 0,
-              cy: dotCy ?? 0,
-              opacity: [0.8, 0],
-              scale: [1, 1.8],
-            }}
-            transition={{ duration: 1.2, repeat: Infinity }}
+            opacity="0.6"
           />
         )}
       </svg>
