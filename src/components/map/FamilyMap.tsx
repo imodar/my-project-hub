@@ -90,6 +90,12 @@ export default function FamilyMap({ locations, selectedMemberId, onMemberSelect,
       zoom: 13,
       zoomControl: false,
       attributionControl: false,
+      tap: false,
+      scrollWheelZoom: false,
+      touchZoom: true,
+      doubleClickZoom: true,
+      zoomAnimation: true,
+      markerZoomAnimation: true,
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
