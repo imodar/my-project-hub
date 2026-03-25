@@ -554,6 +554,7 @@ const Vehicle = () => {
                 return (
                   <SwipeableCard
                     key={record.id}
+                    onSwipeOpen={() => setOpenCardId(record.id)}
                     actions={[
                       { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleDeleteMaintenance(record.id) },
                       { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditMaintenance(record) },
