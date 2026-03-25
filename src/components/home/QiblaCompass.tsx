@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+
 
 const KAABA_LAT = 21.4225;
 const KAABA_LNG = 39.8262;
