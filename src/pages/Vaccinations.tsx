@@ -169,27 +169,35 @@ const Vaccinations = () => {
             const completedCount = child.completedVaccines.length;
             const progress = Math.round((completedCount / totalVaccines) * 100);
             const dueVaccines = getNextDueVaccines(child.birthDate, child.completedVaccines);
-            const isSwiped = swipedChildId === child.id;
 
             return (
-              <div key={child.id} className="relative overflow-hidden rounded-2xl">
-                <div className="absolute inset-y-0 left-0 flex items-center gap-2 px-3 z-0">
-                  <button onClick={() => openEditSheet(child)} className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center">
-                    <Pencil className="w-5 h-5 text-white" />
-                  </button>
-                  <button onClick={() => openReminderFromSwipe(child)} className="w-11 h-11 rounded-xl bg-amber-500 flex items-center justify-center">
-                    <Bell className="w-5 h-5 text-white" />
-                  </button>
-                </div>
-
-                <div
-                  ref={(el) => { if (el) el.dataset.childId = child.id; }}
-                  onClick={() => handleCardClick(child)}
-                  onTouchStart={(e) => handleTouchStart(e, child.id)}
-                  onTouchMove={(e) => handleTouchMove(e, child.id, e.currentTarget as HTMLDivElement)}
-                  onTouchEnd={(e) => handleTouchEnd(child.id, e.currentTarget as HTMLDivElement)}
-                  className="w-full bg-card rounded-2xl p-4 border border-border/50 text-right relative z-10 cursor-pointer"
-                  style={{ transform: isSwiped ? "translateX(-112px)" : "translateX(0)" }}
+              <SwipeableCard
+                key={child.id}
+                actions={[
+                  {
+                    icon: <Pencil size={16} />,
+                    label: "تعديل",
+                    color: "bg-primary",
+                    onClick: () => openEditSheet(child),
+                  },
+                  {
+                    icon: <Bell size={16} />,
+                    label: "تذكير",
+                    color: "bg-amber-500",
+                    onClick: () => openReminderFromSwipe(child),
+                  },
+                ]}
+                onSwipeOpen={() => setOpenChildCardId(child.id)}
+              >
+                <button
+                  onClick={() => {
+                    if (openChildCardId === child.id) {
+                      setOpenChildCardId(null);
+                      return;
+                    }
+                    setSelectedChild(child);
+                  }}
+                  className="w-full bg-card rounded-2xl p-4 border border-border/50 text-right cursor-pointer"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${child.gender === "male" ? "bg-blue-100 dark:bg-blue-900/30" : "bg-pink-100 dark:bg-pink-900/30"}`}>
@@ -213,8 +221,8 @@ const Vaccinations = () => {
                     </div>
                     <Progress value={progress} className="h-2" />
                   </div>
-                </div>
-              </div>
+                </button>
+              </SwipeableCard>
             );
           })
         )}
