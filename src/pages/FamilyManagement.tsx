@@ -51,11 +51,10 @@ const getProfileName = (): string => {
   return "";
 };
 
-// Real QR Code using Google Charts API — encodes actual invite URL
+// Real QR Code using Google Charts API — encodes raw invite code
 const QrPattern = React.memo(({ code }: { code: string }) => {
   const qrUrl = useMemo(() => {
-    const joinUrl = `${window.location.origin}/join?code=${encodeURIComponent(code)}`;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(joinUrl)}&margin=4`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(code)}&margin=4`;
   }, [code]);
 
   return (
