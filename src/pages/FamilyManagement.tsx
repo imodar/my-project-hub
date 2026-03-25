@@ -134,7 +134,6 @@ const FamilyManagement = () => {
   const [inviteCode, setInviteCode] = useState("");
   const [codeTimer, setCodeTimer] = useState(300);
   const [codeCopied, setCodeCopied] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
   // Swipe state managed by SwipeableCard
