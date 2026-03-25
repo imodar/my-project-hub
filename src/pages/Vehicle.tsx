@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { CardPageSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useTrash } from "@/contexts/TrashContext";
@@ -733,6 +734,9 @@ const Vehicle = () => {
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
       <PageHeader title="مركباتي" subtitle={cars.length > 0 ? `${cars.length} مركبة` : undefined} />
+      {vehiclesLoading ? (
+        <CardPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 
         {/* Cars */}
@@ -1108,6 +1112,7 @@ const Vehicle = () => {
           </DrawerContent>
         </Drawer>
       </PullToRefresh>
+      )}
     </div>
   );
 };

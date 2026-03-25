@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from "react";
+import { ListPageSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { usePlaceLists } from "@/hooks/usePlaceLists";
 import FAB from "@/components/FAB";
@@ -442,6 +443,9 @@ const Places = () => {
           </div>
         </PageHeader>
 
+      {placesLoading ? (
+        <ListPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 
 
@@ -952,6 +956,7 @@ const Places = () => {
           </DrawerContent>
         </Drawer>
       </PullToRefresh>
+      )}
 
       <FAB onClick={() => navigate("/places/add", { state: { listId: activeListId } })} />
     </div>

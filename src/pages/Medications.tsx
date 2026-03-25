@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { ListPageSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useMedications } from "@/hooks/useMedications";
 import {
@@ -311,6 +312,10 @@ const Medications = () => {
         ]}
       />
 
+      {medsLoading ? (
+        <ListPageSkeleton />
+      ) : (
+      <>
       {/* Due Alert Banner */}
       {dueMedications.length > 0 && (
         <div className="px-5 mt-4">
@@ -438,6 +443,8 @@ const Medications = () => {
           })
         )}
       </div>
+      </>
+      )}
 
       {/* Detail Summary Bottom Sheet */}
       <Drawer open={!!showDetailSheet} onOpenChange={(open) => !open && setShowDetailSheet(null)}>

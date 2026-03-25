@@ -5,6 +5,7 @@ import SwipeableCard from "@/components/SwipeableCard";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane, CalendarIcon } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
+import { CardPageSkeleton } from "@/components/PageSkeletons";
 import PageHeader from "@/components/PageHeader";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { Input } from "@/components/ui/input";
@@ -542,6 +543,9 @@ const Budget = () => {
         </div>
       </PageHeader>
 
+      {isLoading ? (
+        <CardPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={onRefresh}>
         <div className="px-4 mt-4 space-y-3">
           {budgets.length === 0 ? (
@@ -623,6 +627,7 @@ const Budget = () => {
           )}
         </div>
       </PullToRefresh>
+      )}
 
       <FAB onClick={() => {
         haptic.light();

@@ -3,6 +3,7 @@ import FAB from "@/components/FAB";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
+import { CardPageSkeleton } from "@/components/PageSkeletons";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -307,6 +308,9 @@ const Albums = () => {
     <div className="min-h-screen bg-background pb-32" dir="rtl">
         <PageHeader title="الألبومات" subtitle="صور العائلة وذكرياتها" onBack={() => navigate(-1)} />
 
+      {isLoading ? (
+        <CardPageSkeleton />
+      ) : (
         <PullToRefresh onRefresh={async () => {
           await new Promise((r) => setTimeout(r, 600));
           toast.success("تم تحديث الألبومات");
@@ -407,6 +411,7 @@ const Albums = () => {
           })()}
         </div>
       </PullToRefresh>
+      )}
 
       <FAB icon={<FolderPlus size={22} />} onClick={() => setShowCreate(true)} />
 

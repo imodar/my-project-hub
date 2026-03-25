@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { ListPageSkeleton } from "@/components/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { supabase } from "@/integrations/supabase/client";
@@ -191,6 +192,9 @@ const Will = () => {
     <div className="min-h-screen bg-background max-w-2xl mx-auto relative pb-32">
       <PageHeader title="الوصية" subtitle="وصيتك الشرعية محفوظة وآمنة" />
 
+      {isLoading ? (
+        <ListPageSkeleton />
+      ) : (
       <PullToRefresh onRefresh={handleRefresh}>
         {/* ── Hero Hadith ── */}
         <div
@@ -360,6 +364,7 @@ const Will = () => {
 
         <div className="h-8" />
       </PullToRefresh>
+      )}
 
       {/* ── Password Drawer ── */}
       <Drawer open={passwordDrawer} onOpenChange={setPasswordDrawer}>
