@@ -259,17 +259,8 @@ const FamilyManagement = () => {
     toast({ title: "تم نسخ الكود" });
   };
 
-  const handleCopyLink = () => {
-    const link = `https://ailti.lovable.app/join?code=${inviteCode}`;
-    navigator.clipboard.writeText(link);
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2000);
-    toast({ title: "تم نسخ رابط الدعوة" });
-  };
-
-  const handleShareLink = async () => {
-    const link = `https://ailti.lovable.app/join?code=${inviteCode}`;
-    const text = `انضم لأسرتنا في عيلتي!\n\nكود الانضمام: ${inviteCode}\n\nأو من خلال الرابط:\n${link}`;
+  const handleShareInvite = async () => {
+    const text = `انضم لأسرتنا في عيلتي!\n\nكود الانضمام: ${inviteCode}\n\nافتح التطبيق وأدخل الكود من صفحة "انضم لعائلة"`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "دعوة انضمام للأسرة", text });
@@ -278,7 +269,6 @@ const FamilyManagement = () => {
         toast({ title: "تم نسخ رسالة الدعوة" });
       }
     } catch {
-      // User cancelled or share failed - fallback to copy
       try {
         await navigator.clipboard.writeText(text);
         toast({ title: "تم نسخ رسالة الدعوة" });
