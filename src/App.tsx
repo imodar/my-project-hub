@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from "react";
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient, MutationCache } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
+import { toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
 import { UserRoleProvider } from "@/contexts/UserRoleContext";
