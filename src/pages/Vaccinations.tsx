@@ -408,6 +408,9 @@ const Vaccinations = () => {
                                 }`}>
                                   <button
                                     onClick={() => handleToggleVaccine(resolvedSelected.id, vaccine.id)}
+                                    role="checkbox"
+                                    aria-checked={isCompleted}
+                                    aria-label={`تحديد لقاح ${vaccine.name}`}
                                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isCompleted ? "bg-green-500 border-green-500" : "border-border"}`}
                                   >
                                     {isCompleted && <Check className="w-3.5 h-3.5 text-white" />}

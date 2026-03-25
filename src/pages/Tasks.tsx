@@ -375,6 +375,9 @@ const Tasks = () => {
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => !dragActiveId && toggleItem(item.id)}
+                role="checkbox"
+                aria-checked={isDone}
+                aria-label={`تحديد ${item.name}`}
                 className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                   isDone
                     ? "bg-primary"
@@ -477,6 +480,7 @@ const Tasks = () => {
             <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="ابحث في المهام..."
+              aria-label="بحث في المهام"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-9 bg-card border-border rounded-xl text-sm"

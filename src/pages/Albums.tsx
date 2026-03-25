@@ -75,7 +75,7 @@ const PhotoThumb = ({ photo, size = "md", onClick }: { photo: Photo; size?: "sm"
       }}
     >
       {photo.url ? (
-        <img src={photo.url} alt={photo.caption} className="w-full h-full object-cover" />
+        <img src={photo.url} alt={photo.caption || ""} className="w-full h-full object-cover" />
       ) : (
         <div className="w-full h-full flex items-center justify-center">
           <Camera size={size === "sm" ? 16 : 24} className="text-white/40" />
@@ -215,7 +215,7 @@ const Albums = () => {
         </div>
         <div className="flex-1 flex items-center justify-center px-4">
           {selectedPhoto.url ? (
-            <img src={selectedPhoto.url} alt="" className="max-w-full max-h-full object-contain rounded-lg" />
+            <img src={selectedPhoto.url} alt={selectedPhoto.caption || "صورة من الألبوم"} className="max-w-full max-h-full object-contain rounded-lg" />
           ) : (
             <div
               className="w-72 h-72 rounded-2xl flex items-center justify-center"

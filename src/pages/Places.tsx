@@ -378,6 +378,9 @@ const Places = () => {
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); toggleVisited(place.id); }}
+              role="checkbox"
+              aria-checked={place.visited}
+              aria-label={`تحديد زيارة ${place.name}`}
               className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all ${
                 place.visited
                   ? "bg-primary shadow-sm"

@@ -361,6 +361,9 @@ const Market = () => {
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
+              role="checkbox"
+              aria-checked={isChecked}
+              aria-label={`تحديد ${item.name}`}
               className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                 isChecked
                   ? "bg-primary"
@@ -483,8 +486,9 @@ const Market = () => {
       <div className="px-4 pt-3">
         <div className="relative">
           <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
+           <Input
             placeholder="ابحث في القائمة..."
+            aria-label="بحث في القائمة"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pr-9 bg-card border-border rounded-xl text-sm"
