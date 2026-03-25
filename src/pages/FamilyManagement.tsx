@@ -449,7 +449,6 @@ const FamilyManagement = () => {
         ) : (
         <>
         <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">أفراد الأسرة ({members.length})</h2>
-        <>
         <div className="space-y-2">
           {members.map((member) => {
             const memberIsAdmin = member.isAdmin || isParentRole(member.role);
