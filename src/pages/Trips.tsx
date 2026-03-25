@@ -695,6 +695,9 @@ const Trips = () => {
               <button
                 key={item.id}
                 onClick={() => togglePackingItem(item.id)}
+                role="checkbox"
+                aria-checked={item.packed}
+                aria-label={`تحديد ${item.name}`}
                 className="w-full flex items-center gap-3 bg-card rounded-xl border border-border/50 p-3.5 active:scale-[0.98] transition-transform"
               >
                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
