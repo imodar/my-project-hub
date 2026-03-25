@@ -667,7 +667,7 @@ const Medications = () => {
               <Label className="text-right block">أوقات التناول</Label>
               <div className="space-y-2">
                 {formTimes.map((time, i) => (
-                  <div key={i} className="flex items-center gap-2 flex-row-reverse">
+                  <div key={i} className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground shrink-0">الجرعة {i + 1}</span>
                     <Input type="time" value={time} onChange={(e) => { const newTimes = [...formTimes]; newTimes[i] = e.target.value; setFormTimes(newTimes); }} className="text-center flex-1" />
                   </div>
