@@ -138,6 +138,7 @@ const AnimatedRoutes = () => {
         {/* Public routes */}
         <Route path="/get-started" element={<GetStarted />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/join-or-create" element={<JoinOrCreate />} />
 
         {/* Protected routes */}
