@@ -61,8 +61,9 @@ export function useTaskLists() {
     table: "task_lists",
     operation: "INSERT",
     apiFn: async (input) => {
-      const { id, created_at, ...rest } = input;
+      const { created_at, ...rest } = input;
       const { data, error } = await supabase.from("task_lists").insert({
+        id: rest.id,
         name: rest.name,
         type: rest.type || "family",
         shared_with: rest.shared_with || [],
@@ -89,8 +90,9 @@ export function useTaskLists() {
     table: "task_items",
     operation: "INSERT",
     apiFn: async (input) => {
-      const { id, created_at, ...rest } = input;
+      const { created_at, ...rest } = input;
       const { data, error } = await supabase.from("task_items").insert({
+        id: rest.id,
         list_id: rest.list_id,
         name: rest.name,
         note: rest.note || "",
