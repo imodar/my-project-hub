@@ -29,6 +29,12 @@ Deno.serve(async (req) => {
     let user = existingUsers?.users?.find((u) => u.email === email);
 
     if (!user) {
+      // Check if phone is already on another user and remove it first
+      const phoneUser = existingUsers?.users?.find((u) => u.phone === fullPhone);
+      if (phoneUser) {
+        await supabaseAdmin.auth.admin.updateUser(phoneUser.id, { phone: "" });
+      }
+
       // Create user with this phone
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
