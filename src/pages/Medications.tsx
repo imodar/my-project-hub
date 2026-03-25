@@ -599,6 +599,7 @@ const Medications = () => {
             <div className="space-y-2">
               <Label className="text-right block">صاحب العلاقة</Label>
               <Select
+                dir="rtl"
                 value={formMemberId}
                 onValueChange={(val) => {
                   setFormMemberId(val);
@@ -609,7 +610,7 @@ const Medications = () => {
                   }
                 }}
               >
-                <SelectTrigger className="text-right"><SelectValue placeholder="اختر الشخص" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="اختر الشخص" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="me">أنا</SelectItem>
                   {familyMembers.map((m) => (
