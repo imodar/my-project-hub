@@ -45,6 +45,7 @@ const Medications = () => {
   const [showDueAlert, setShowDueAlert] = useState<Medication | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Medication | null>(null);
   const [showDetailSheet, setShowDetailSheet] = useState<Medication | null>(null);
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -362,6 +363,7 @@ const Medications = () => {
             return (
               <SwipeableCard
                 key={med.id}
+                onSwipeOpen={() => setOpenCardId(med.id)}
                 actions={[
                   { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteConfirm(med) },
                   { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => { setShowDetailSheet(null); openEditDrawer(med); } },

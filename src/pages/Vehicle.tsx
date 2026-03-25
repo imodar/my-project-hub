@@ -226,6 +226,7 @@ const Vehicle = () => {
 
   const { addToTrash } = useTrash();
   const [deleteConfirmCar, setDeleteConfirmCar] = useState<CarData | null>(null);
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   // Add car form
   const [newManufacturer, setNewManufacturer] = useState("");
@@ -553,6 +554,7 @@ const Vehicle = () => {
                 return (
                   <SwipeableCard
                     key={record.id}
+                    onSwipeOpen={() => setOpenCardId(record.id)}
                     actions={[
                       { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleDeleteMaintenance(record.id) },
                       { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditMaintenance(record) },
@@ -753,6 +755,7 @@ const Vehicle = () => {
                 return (
                   <SwipeableCard
                     key={car.id}
+                    onSwipeOpen={() => setOpenCardId(car.id)}
                     actions={[
                       { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteConfirmCar(car) },
                       { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => openEditCar(car) },

@@ -172,6 +172,7 @@ const Zakat = () => {
   const [reminderAsset, setReminderAsset] = useState<string | null>(null);
   const [customReminderDays, setCustomReminderDays] = useState("");
   const [zakatPaidAsset, setZakatPaidAsset] = useState<string | null>(null);
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
 
@@ -364,6 +365,7 @@ const Zakat = () => {
                   return (
                     <SwipeableCard
                       key={asset.id}
+                      onSwipeOpen={() => setOpenCardId(asset.id)}
                       actions={[
                         { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
                           setAddType(asset.type);

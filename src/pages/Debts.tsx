@@ -237,6 +237,7 @@ const Debts = () => {
   const [postponeDebtId, setPostponeDebtId] = useState<string | null>(null);
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   const [newDebt, setNewDebt] = useState({ personName: "", date: "", dueDate: "", note: "" });
   const [newDebtAmounts, setNewDebtAmounts] = useState<{ amount: string; currency: CurrencyCode }[]>([{ amount: "", currency: "SAR" }]);
@@ -516,6 +517,7 @@ const Debts = () => {
           return (
             <SwipeableCard
               key={debt.id}
+              onSwipeOpen={() => setOpenCardId(debt.id)}
               actions={[
                 { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget({ id: debt.id, name: debt.personName }) },
                 { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleStartEdit(debt) },

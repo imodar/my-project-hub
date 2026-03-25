@@ -151,6 +151,7 @@ const Budget = () => {
   const [showDeleteExpense, setShowDeleteExpense] = useState<{ budgetId: string; expenseId: string } | null>(null);
   const [showEditBudget, setShowEditBudget] = useState<MonthBudget | null>(null);
   const [showEditExpense, setShowEditExpense] = useState<{ budgetId: string; expense: ExpenseItem } | null>(null);
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   const [budgetType, setBudgetType] = useState<BudgetType>("month");
   const [newMonthIdx, setNewMonthIdx] = useState(String(new Date().getMonth()));
@@ -339,6 +340,7 @@ const Budget = () => {
               b.expenses.map((exp) => (
                 <SwipeableCard
                   key={exp.id}
+                  onSwipeOpen={() => setOpenCardId(exp.id)}
                   actions={[
                     { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteExpense({ budgetId: b.id, expenseId: exp.id }) },
                     { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
@@ -574,6 +576,7 @@ const Budget = () => {
                   {budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length > 0).map(b => (
                     <SwipeableCard
                       key={b.id}
+                      onSwipeOpen={() => setOpenCardId(b.id)}
                       actions={[
                         { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteBudget(b.id) },
                         { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
@@ -600,6 +603,7 @@ const Budget = () => {
                   {budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length === 0).map(b => (
                     <SwipeableCard
                       key={b.id}
+                      onSwipeOpen={() => setOpenCardId(b.id)}
                       actions={[
                         { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteBudget(b.id) },
                         { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
