@@ -69,15 +69,16 @@ const Tasks = () => {
       sharedWith: l.shared_with || [],
       lastUpdatedBy: "",
       lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
-      items: (l.task_items || []).map((i: any) => ({
-        id: i.id,
-        name: i.name,
-        note: i.note || "",
-        priority: (i.priority || "none") as TaskItem["priority"],
-        assignedTo: i.assigned_to || "",
-        done: i.done,
-        
-      })),
+      items: (l.task_items || [])
+        .sort((a: any, b: any) => (b.created_at || "").localeCompare(a.created_at || ""))
+        .map((i: any) => ({
+          id: i.id,
+          name: i.name,
+          note: i.note || "",
+          priority: (i.priority || "none") as TaskItem["priority"],
+          assignedTo: i.assigned_to || "",
+          done: i.done,
+        })),
     }));
     mapped.sort((a, b) => {
       const da = (dbLists || []).find((l: any) => l.id === a.id)?.updated_at || "";
