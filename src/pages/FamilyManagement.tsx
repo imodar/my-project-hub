@@ -87,6 +87,7 @@ const FamilyManagement = () => {
       isCreator: m.isCreator,
       isAdmin: m.isAdmin,
       status: "active" as InviteStatus,
+      roleConfirmed: m.roleConfirmed,
     })),
   [dbMembers]);
 
