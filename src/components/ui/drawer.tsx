@@ -3,12 +3,12 @@ import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/lib/utils";
 
-const Drawer = ({
-  shouldScaleBackground = true,
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Root> & { shouldScaleBackground?: boolean }) => (
+const Drawer = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Root> & { shouldScaleBackground?: boolean }
+>(({ shouldScaleBackground = true, ...props }, _ref) => (
   <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
-);
+));
 Drawer.displayName = "Drawer";
 
 const DrawerTrigger = DrawerPrimitive.Trigger;
