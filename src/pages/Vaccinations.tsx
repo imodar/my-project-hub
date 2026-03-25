@@ -266,6 +266,7 @@ const Vaccinations = () => {
           })
         )}
       </div>
+      )}
 
       {/* Add Child Drawer */}
       <Drawer open={showAddSheet} onOpenChange={setShowAddSheet}>
