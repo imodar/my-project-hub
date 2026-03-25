@@ -26,12 +26,29 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
     if (authError || !authUser) return json({ error: "Unauthorized" }, 401);
     const userId = authUser.id;
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
+
+    // Helper: verify user is a family member for a given family_id
+    async function verifyFamilyMember(familyId: string) {
+      const { data } = await adminClient.rpc("is_family_member", { _user_id: userId, _family_id: familyId });
+      return !!data;
+    }
+
+    // Helper: get family_id from a list_id
+    async function getFamilyIdFromList(listId: string): Promise<string | null> {
+      const { data } = await adminClient.from("task_lists").select("family_id").eq("id", listId).single();
+      return data?.family_id || null;
+    }
 
     // --- LISTS ---
     if (action === "get-lists") {
@@ -46,10 +63,13 @@ Deno.serve(async (req) => {
     }
 
     if (action === "create-list") {
-      const { family_id, name, type } = body;
-      const { data, error } = await supabase
+      const { family_id, name, type, id: clientId } = body;
+      if (!await verifyFamilyMember(family_id)) return json({ error: "Unauthorized" }, 403);
+      const insertData: Record<string, unknown> = { family_id, name, type: type || "family", created_by: userId };
+      if (clientId) insertData.id = clientId;
+      const { data, error } = await adminClient
         .from("task_lists")
-        .insert({ family_id, name, type: type || "family", created_by: userId })
+        .insert(insertData)
         .select()
         .single();
       if (error) return json({ error: error.message }, 400);
@@ -76,16 +96,21 @@ Deno.serve(async (req) => {
     }
 
     if (action === "add-item") {
-      const { list_id, name, note, priority, assigned_to, repeat_enabled, repeat_days } = body;
-      const { data, error } = await supabase
+      const { list_id, name, note, priority, assigned_to, repeat_enabled, repeat_days, id: clientId } = body;
+      // Verify membership via the list's family
+      const familyId = await getFamilyIdFromList(list_id);
+      if (!familyId || !await verifyFamilyMember(familyId)) return json({ error: "Unauthorized" }, 403);
+      const insertData: Record<string, unknown> = {
+        list_id, name, note,
+        priority: priority || "none",
+        assigned_to,
+        repeat_enabled: repeat_enabled || false,
+        repeat_days: repeat_days || [],
+      };
+      if (clientId) insertData.id = clientId;
+      const { data, error } = await adminClient
         .from("task_items")
-        .insert({
-          list_id, name, note,
-          priority: priority || "none",
-          assigned_to,
-          repeat_enabled: repeat_enabled || false,
-          repeat_days: repeat_days || [],
-        })
+        .insert(insertData)
         .select()
         .single();
       if (error) return json({ error: error.message }, 400);
