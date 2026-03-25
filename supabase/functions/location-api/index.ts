@@ -18,21 +18,15 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const adminClient = createClient(supabaseUrl, serviceKey);
 
   const authHeader = req.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
-  // Use getClaims to validate the JWT (works with ES256 signing keys)
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { authorization: authHeader } },
-  });
+  // Validate user via service role client (bypasses JWT algorithm issues)
   const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
-  if (claimsErr || !claimsData?.claims) return json({ error: "Unauthorized" }, 401);
-
-  const userId = claimsData.claims.sub as string;
+  const { data: { user }, error: authErr } = await adminClient.auth.getUser(token);
+  if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
   const url = new URL(req.url);
   const action = url.searchParams.get("action");
@@ -46,7 +40,7 @@ Deno.serve(async (req) => {
       const { data: member } = await adminClient
         .from("family_members")
         .select("id")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .eq("family_id", familyId)
         .eq("status", "active")
         .maybeSingle();
@@ -56,7 +50,7 @@ Deno.serve(async (req) => {
         .from("member_locations")
         .upsert(
           {
-            user_id: userId,
+            user_id: user.id,
             family_id: familyId,
             lat,
             lng,
@@ -79,7 +73,7 @@ Deno.serve(async (req) => {
       const { data: member } = await adminClient
         .from("family_members")
         .select("id")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .eq("family_id", familyId)
         .eq("status", "active")
         .maybeSingle();
@@ -116,7 +110,7 @@ Deno.serve(async (req) => {
           name: profile?.name || "عضو",
           avatar_url: profile?.avatar_url,
           role: memberInfo?.role || "member",
-          isMe: loc.user_id === userId,
+          isMe: loc.user_id === user.id,
         };
       });
 
