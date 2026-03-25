@@ -237,6 +237,7 @@ const Debts = () => {
   const [postponeDebtId, setPostponeDebtId] = useState<string | null>(null);
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
 
   const [newDebt, setNewDebt] = useState({ personName: "", date: "", dueDate: "", note: "" });
   const [newDebtAmounts, setNewDebtAmounts] = useState<{ amount: string; currency: CurrencyCode }[]>([{ amount: "", currency: "SAR" }]);
