@@ -78,23 +78,18 @@ const Auth = () => {
     if (code.length < 6) return;
     setLoading(true);
     try {
-      if (isTestNumber) {
-        if (code !== "000000") {
-          toast({ title: "رمز التحقق غير صحيح", variant: "destructive" });
-          return;
-        }
-        const res = await supabase.functions.invoke("test-login", {
-          body: { phone: fullPhone },
-        });
-        if (res.error) throw res.error;
-        const { access_token, refresh_token } = res.data;
-        if (!access_token) throw new Error(res.data?.error || "فشل الدخول التجريبي");
-        await supabase.auth.setSession({ access_token, refresh_token });
-        toast({ title: "تم الدخول بنجاح ✓" });
+      if (code !== generatedOtp) {
+        toast({ title: "رمز التحقق غير صحيح", variant: "destructive" });
         return;
       }
-      const { error } = await supabase.auth.verifyOtp({ phone: fullPhone, token: code, type: "sms" });
-      if (error) throw error;
+      const res = await supabase.functions.invoke("test-login", {
+        body: { phone: fullPhone },
+      });
+      if (res.error) throw res.error;
+      const { access_token, refresh_token } = res.data;
+      if (!access_token) throw new Error(res.data?.error || "فشل تسجيل الدخول");
+      await supabase.auth.setSession({ access_token, refresh_token });
+      toast({ title: "تم الدخول بنجاح ✓" });
     } catch (err: any) {
       toast({ title: "رمز التحقق غير صحيح", description: err.message, variant: "destructive" });
     } finally {
