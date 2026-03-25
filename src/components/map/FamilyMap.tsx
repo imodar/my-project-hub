@@ -1,6 +1,5 @@
 import "leaflet/dist/leaflet.css";
-import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
 
 // Fix default marker icons
@@ -60,34 +59,6 @@ function createMemberIcon(name: string, role: string, isMe: boolean, isSelected:
   });
 }
 
-// Auto-fit bounds when locations change
-function FitBounds({ locations }: { locations: MemberLocation[] }) {
-  const map = useMap();
-  const fitted = useRef(false);
-
-  useEffect(() => {
-    if (locations.length === 0 || fitted.current) return;
-    const bounds = L.latLngBounds(locations.map((l) => [l.lat, l.lng]));
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-    fitted.current = true;
-  }, [locations, map]);
-
-  return null;
-}
-
-// Fly to selected member
-function FlyToMember({ locations, selectedId }: { locations: MemberLocation[]; selectedId: string | null }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!selectedId) return;
-    const loc = locations.find((l) => l.user_id === selectedId);
-    if (loc) map.flyTo([loc.lat, loc.lng], 16, { duration: 0.8 });
-  }, [selectedId, locations, map]);
-
-  return null;
-}
-
 function timeSince(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -99,39 +70,84 @@ function timeSince(dateStr: string): string {
 }
 
 export default function FamilyMap({ locations, selectedMemberId, onMemberSelect, className }: FamilyMapProps) {
+  const mapRef = useRef<L.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const fittedRef = useRef(false);
+
   const sharingLocations = locations.filter((l) => l.is_sharing);
-  const defaultCenter: [number, number] = sharingLocations.length > 0
-    ? [sharingLocations[0].lat, sharingLocations[0].lng]
-    : [24.7136, 46.6753]; // Riyadh default
+
+  // Initialize map
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const defaultCenter: [number, number] = sharingLocations.length > 0
+      ? [sharingLocations[0].lat, sharingLocations[0].lng]
+      : [24.7136, 46.6753];
+
+    const map = L.map(containerRef.current, {
+      center: defaultCenter,
+      zoom: 13,
+      zoomControl: false,
+      attributionControl: false,
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markersRef.current.clear();
+      fittedRef.current = false;
+    };
+  }, []);
+
+  // Update markers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Remove old markers
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current.clear();
+
+    sharingLocations.forEach((loc) => {
+      const isSelected = loc.user_id === selectedMemberId;
+      const icon = createMemberIcon(loc.name, loc.role, loc.isMe, isSelected);
+      const marker = L.marker([loc.lat, loc.lng], { icon })
+        .addTo(map)
+        .bindPopup(`
+          <div style="text-align:center;direction:rtl">
+            <p style="font-weight:bold;font-size:13px;margin:0">${loc.name} ${loc.isMe ? "(أنا)" : ""}</p>
+            <p style="font-size:11px;color:#888;margin:2px 0 0">${timeSince(loc.updated_at)}</p>
+          </div>
+        `);
+      marker.on("click", () => onMemberSelect(loc.user_id));
+      markersRef.current.set(loc.user_id, marker);
+    });
+
+    // Fit bounds on first load
+    if (sharingLocations.length > 0 && !fittedRef.current) {
+      const bounds = L.latLngBounds(sharingLocations.map((l) => [l.lat, l.lng] as [number, number]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      fittedRef.current = true;
+    }
+  }, [sharingLocations, selectedMemberId, onMemberSelect]);
+
+  // Fly to selected member
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedMemberId) return;
+    const loc = sharingLocations.find((l) => l.user_id === selectedMemberId);
+    if (loc) map.flyTo([loc.lat, loc.lng], 16, { duration: 0.8 });
+  }, [selectedMemberId]);
 
   return (
-    <MapContainer
-      center={defaultCenter}
-      zoom={13}
+    <div
+      ref={containerRef}
       className={className}
       style={{ width: "100%", height: "100%", minHeight: "400px" }}
-      zoomControl={false}
-      attributionControl={false}
-    >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <FitBounds locations={sharingLocations} />
-      <FlyToMember locations={sharingLocations} selectedId={selectedMemberId} />
-
-      {sharingLocations.map((loc) => (
-        <Marker
-          key={loc.user_id}
-          position={[loc.lat, loc.lng]}
-          icon={createMemberIcon(loc.name, loc.role, loc.isMe, loc.user_id === selectedMemberId)}
-          eventHandlers={{ click: () => onMemberSelect(loc.user_id) }}
-        >
-          <Popup>
-            <div className="text-center" dir="rtl">
-              <p className="font-bold text-sm">{loc.name} {loc.isMe ? "(أنا)" : ""}</p>
-              <p className="text-xs text-muted-foreground">{timeSince(loc.updated_at)}</p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    />
   );
 }
