@@ -138,6 +138,69 @@ const Profile = () => {
           )}
         </div>
 
+        {/* Email (Gmail) */}
+        <div className="rounded-2xl p-4 mb-4" style={{
+          background: "hsla(0,0%,100%,0.9)",
+          boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)",
+        }}>
+          <label className="text-xs font-semibold text-muted-foreground block mb-2">
+            <Mail size={12} className="inline ml-1" />
+            بريد Gmail
+          </label>
+          {editingEmail ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  value={gmail}
+                  onChange={(e) => {
+                    setGmail(e.target.value);
+                    if (e.target.value && !isGoogleEmail(e.target.value)) {
+                      setGmailError("يُقبل فقط بريد Gmail (@gmail.com)");
+                    } else {
+                      setGmailError("");
+                    }
+                  }}
+                  placeholder="example@gmail.com"
+                  type="email"
+                  dir="ltr"
+                  className="flex-1 px-3 py-2 rounded-xl text-left text-sm border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  autoFocus
+                />
+                <button
+                  onClick={async () => {
+                    if (!gmail) { setEditingEmail(false); return; }
+                    if (!isGoogleEmail(gmail)) {
+                      setGmailError("يُقبل فقط بريد Gmail (@gmail.com)");
+                      return;
+                    }
+                    setSavingEmail(true);
+                    const { error } = await supabase.auth.updateUser({ email: gmail });
+                    setSavingEmail(false);
+                    if (error) {
+                      toast({ title: "هذا البريد مستخدم بحساب آخر", variant: "destructive" });
+                      setGmail("");
+                    } else {
+                      setEditingEmail(false);
+                      toast({ title: "تم حفظ البريد الإلكتروني" });
+                    }
+                  }}
+                  disabled={savingEmail}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                  style={{ background: "hsl(var(--primary))" }}
+                >
+                  {savingEmail ? "جاري..." : "حفظ"}
+                </button>
+              </div>
+              {gmailError && <p className="text-destructive text-xs">{gmailError}</p>}
+            </div>
+          ) : (
+            <button onClick={() => setEditingEmail(true)} className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-right transition-colors active:bg-muted/50">
+              <span className="text-sm font-semibold text-foreground" dir="ltr">{gmail || "أضف بريد Gmail"}</span>
+              <span className="text-xs text-primary">تعديل</span>
+            </button>
+          )}
+        </div>
+
         {/* Role */}
         <div className="rounded-2xl p-4 mb-4" style={{
           background: "hsla(0,0%,100%,0.9)",
