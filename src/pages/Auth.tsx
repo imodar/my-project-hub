@@ -37,7 +37,7 @@ const Auth = () => {
   }, [countdown]);
 
   const fullPhone = phone.startsWith("+") ? phone : `+966${phone.replace(/^0/, "")}`;
-  const isTestNumber = fullPhone === "+966539998666";
+  const [generatedOtp, setGeneratedOtp] = useState("");
 
   const sendOtp = async () => {
     if (!phone || phone.replace(/\D/g, "").length < 9) {
@@ -46,19 +46,12 @@ const Auth = () => {
     }
     setLoading(true);
     try {
-      if (isTestNumber) {
-        // Test number goes to OTP screen with fixed code 000000
-        setStep("otp");
-        setCountdown(60);
-        toast({ title: "تم إرسال رمز التحقق (تجريبي)" });
-        return;
-      }
-      const { error } = await supabase.auth.signInWithOtp({ phone: fullPhone });
-      if (error) throw error;
+      // Generate a random 6-digit OTP and show it as a toast
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      setGeneratedOtp(code);
       setStep("otp");
       setCountdown(60);
-      toast({ title: "تم إرسال رمز التحقق" });
-      tryWebOtp();
+      toast({ title: `رمز التحقق: ${code}`, description: "سيختفي خلال ٣ ثوانٍ", duration: 3000 });
     } catch (err: any) {
       toast({ title: "خطأ في إرسال الرمز", description: err.message, variant: "destructive" });
     } finally {
@@ -66,42 +59,23 @@ const Auth = () => {
     }
   };
 
-  const tryWebOtp = async () => {
-    if (!("OTPCredential" in window)) return;
-    try {
-      abortRef.current = new AbortController();
-      const content = await navigator.credentials.get({
-        // @ts-ignore
-        otp: { transport: ["sms"] },
-        signal: abortRef.current.signal,
-      });
-      if (content && "code" in content) {
-        setOtp((content as any).code);
-      }
-    } catch {}
-  };
 
   const verifyOtp = async (code: string) => {
     if (code.length < 6) return;
     setLoading(true);
     try {
-      if (isTestNumber) {
-        if (code !== "000000") {
-          toast({ title: "رمز التحقق غير صحيح", variant: "destructive" });
-          return;
-        }
-        const res = await supabase.functions.invoke("test-login", {
-          body: { phone: fullPhone },
-        });
-        if (res.error) throw res.error;
-        const { access_token, refresh_token } = res.data;
-        if (!access_token) throw new Error(res.data?.error || "فشل الدخول التجريبي");
-        await supabase.auth.setSession({ access_token, refresh_token });
-        toast({ title: "تم الدخول بنجاح ✓" });
+      if (code !== generatedOtp) {
+        toast({ title: "رمز التحقق غير صحيح", variant: "destructive" });
         return;
       }
-      const { error } = await supabase.auth.verifyOtp({ phone: fullPhone, token: code, type: "sms" });
-      if (error) throw error;
+      const res = await supabase.functions.invoke("test-login", {
+        body: { phone: fullPhone },
+      });
+      if (res.error) throw res.error;
+      const { access_token, refresh_token } = res.data;
+      if (!access_token) throw new Error(res.data?.error || "فشل تسجيل الدخول");
+      await supabase.auth.setSession({ access_token, refresh_token });
+      toast({ title: "تم الدخول بنجاح ✓" });
     } catch (err: any) {
       toast({ title: "رمز التحقق غير صحيح", description: err.message, variant: "destructive" });
     } finally {
