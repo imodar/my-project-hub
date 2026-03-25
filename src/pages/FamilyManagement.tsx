@@ -1039,6 +1039,39 @@ const FamilyManagement = () => {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Leave Family Confirmation Drawer */}
+      <Drawer open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">مغادرة العائلة</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 mt-2">
+            <div className="flex justify-center">
+              <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle size={28} className="text-destructive" />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              هل أنت متأكد من مغادرة العائلة؟ لن تتمكن من الوصول لبياناتها بعد ذلك.
+            </p>
+            <button
+              onClick={handleLeaveFamily}
+              disabled={leavingFamily}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-destructive-foreground bg-destructive transition-colors disabled:opacity-50"
+            >
+              {leavingFamily ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={16} />}
+              {leavingFamily ? "جاري المغادرة..." : "نعم، مغادرة العائلة"}
+            </button>
+            <button
+              onClick={() => setShowLeaveConfirm(false)}
+              className="w-full py-3 rounded-xl text-sm font-semibold text-foreground bg-muted transition-colors"
+            >
+              إلغاء
+            </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
