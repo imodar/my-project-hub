@@ -755,16 +755,10 @@ const FamilyManagement = () => {
 
           {addStep === "invite-method" && (
             <div className="space-y-3 mt-2">
-              <p className="text-sm text-muted-foreground text-center">شارك رابط الدعوة أو كود الانضمام مع العضو الجديد:</p>
-              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400 text-center flex items-center justify-center gap-1">
-                  <Clock size={10} />
-                  العضو بانتظار قبول الدعوة
-                </p>
-              </div>
-              <button onClick={handleShareLink} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground bg-primary">
+              <p className="text-sm text-muted-foreground text-center">شارك كود الانضمام مع العضو الجديد:</p>
+              <button onClick={handleShareInvite} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground bg-primary">
                 <Share2 size={16} />
-                مشاركة رابط الدعوة
+                مشاركة كود الدعوة
               </button>
               <button onClick={handleCopyCode} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary" style={{ background: "hsl(var(--primary) / 0.08)" }}>
                 <Copy size={16} />
