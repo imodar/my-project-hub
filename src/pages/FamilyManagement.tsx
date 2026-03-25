@@ -877,16 +877,63 @@ const FamilyManagement = () => {
           )}
 
           {addStep === "invite-method" && (
-            <div className="space-y-3 mt-2">
-              <p className="text-sm text-muted-foreground text-center">شارك كود الانضمام مع العضو الجديد:</p>
-              <button onClick={handleShareInvite} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground bg-primary">
-                <Share2 size={16} />
-                مشاركة كود الدعوة
-              </button>
-              <button onClick={handleCopyCode} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary" style={{ background: "hsl(var(--primary) / 0.08)" }}>
-                <Copy size={16} />
-                نسخ كود الانضمام: {inviteCode}
-              </button>
+            <div className="space-y-4 mt-2">
+              {/* QR Code */}
+              <QrPattern code={inviteCode} />
+
+              {/* Progress bar */}
+              <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-1000 ease-linear"
+                  style={{
+                    width: `${(codeTimer / 300) * 100}%`,
+                    background: codeTimer < 60 ? "hsl(var(--destructive))" : "hsl(var(--primary))",
+                  }}
+                />
+              </div>
+
+              {/* Code digits */}
+              <div className="flex items-center justify-center gap-1.5" style={{ direction: "ltr" }}>
+                {(inviteCode || "--------").split("").map((char, i) => (
+                  <div key={i} className="w-9 h-11 rounded-xl flex items-center justify-center text-base font-bold text-foreground bg-muted border border-border">
+                    {isRegeneratingCode ? "·" : char}
+                  </div>
+                ))}
+              </div>
+
+              {/* Timer + refresh */}
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={regenerateCode}
+                  disabled={isRegeneratingCode}
+                  className="p-1 rounded-full transition-colors active:bg-muted"
+                >
+                  <RefreshCw size={13} className={`text-muted-foreground ${isRegeneratingCode ? "animate-spin" : ""}`} />
+                </button>
+                <span className="text-[11px] text-muted-foreground">يتجدد خلال {formatTime(codeTimer)}</span>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCopyCode}
+                  disabled={!inviteCode || isRegeneratingCode}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary transition-colors active:bg-primary/10 disabled:opacity-40"
+                  style={{ background: "hsl(var(--primary) / 0.08)" }}
+                >
+                  {codeCopied ? <Check size={16} /> : <Copy size={16} />}
+                  {codeCopied ? "تم النسخ" : "نسخ الكود"}
+                </button>
+                <button
+                  onClick={handleShareInvite}
+                  disabled={!inviteCode || isRegeneratingCode}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40"
+                >
+                  <Share2 size={16} />
+                  مشاركة
+                </button>
+              </div>
+
               <button onClick={resetDialog} className="w-full py-2.5 text-sm text-muted-foreground">
                 تم
               </button>
