@@ -5,6 +5,7 @@ import SwipeableCard from "@/components/SwipeableCard";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane, CalendarIcon } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
+import { CardPageSkeleton } from "@/components/PageSkeletons";
 import PageHeader from "@/components/PageHeader";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { Input } from "@/components/ui/input";

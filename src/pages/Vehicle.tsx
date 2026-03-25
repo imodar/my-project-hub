@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { CardPageSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useTrash } from "@/contexts/TrashContext";
