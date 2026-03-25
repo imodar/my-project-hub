@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from "react";
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient, MutationCache } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
+import { toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
 import { UserRoleProvider } from "@/contexts/UserRoleContext";
@@ -66,6 +67,12 @@ import AdminAudit from "./pages/admin/AdminAudit";
 import AdminSecurity from "./pages/admin/AdminSecurity";
 
 const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+      toast.error("فشل الحفظ", { description: message });
+    },
+  }),
   defaultOptions: {
     queries: {
       retry: (failureCount) => navigator.onLine && failureCount < 2,
