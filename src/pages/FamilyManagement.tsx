@@ -22,6 +22,7 @@ interface FamilyMember {
   isAdmin?: boolean;
   status: InviteStatus;
   avatar?: string;
+  roleConfirmed?: boolean;
 }
 
 const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: number; className?: string }) => {
