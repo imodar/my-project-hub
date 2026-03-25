@@ -300,6 +300,52 @@ Deno.serve(async (req) => {
       return json({ data: { invite_code: data.invite_code } });
     }
 
+    // LEAVE family (self-removal)
+    if (action === "leave") {
+      const { family_id } = body;
+      if (!family_id) return json({ error: "family_id مطلوب" }, 400);
+
+      // Check membership
+      const { data: membership } = await supabase
+        .from("family_members")
+        .select("id, is_admin")
+        .eq("family_id", family_id)
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .maybeSingle();
+      if (!membership) return json({ error: "أنت لست عضواً في هذه العائلة" }, 400);
+
+      // Count remaining admins to prevent leaving with no admin
+      if (membership.is_admin) {
+        const { data: admins } = await adminClient
+          .from("family_members")
+          .select("id")
+          .eq("family_id", family_id)
+          .eq("is_admin", true)
+          .eq("status", "active");
+        if (admins && admins.length <= 1) {
+          return json({ error: "لا يمكنك المغادرة — أنت المشرف الوحيد. عيّن مشرفاً آخر أولاً." }, 400);
+        }
+      }
+
+      // Remove family key
+      await adminClient
+        .from("family_keys")
+        .delete()
+        .eq("family_id", family_id)
+        .eq("user_id", userId);
+
+      // Delete membership
+      const { error } = await adminClient
+        .from("family_members")
+        .delete()
+        .eq("family_id", family_id)
+        .eq("user_id", userId);
+      if (error) return json({ error: error.message }, 400);
+
+      return json({ success: true });
+    }
+
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
     return json({ error: err.message }, 500);

@@ -408,6 +408,28 @@ const FamilyManagement = () => {
     }
   };
 
+  const handleLeaveFamily = async () => {
+    if (!familyId || !user) return;
+    const confirmed = window.confirm("هل أنت متأكد من مغادرة العائلة؟ لن تتمكن من الوصول لبياناتها بعد ذلك.");
+    if (!confirmed) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "leave", family_id: familyId },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل مغادرة العائلة", variant: "destructive" });
+        return;
+      }
+      localStorage.removeItem("cached_family_id");
+      queryClient.invalidateQueries({ queryKey: ["family-id"] });
+      queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
+      toast({ title: "تم مغادرة العائلة بنجاح" });
+      navigate("/", { replace: true });
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
+  };
+
   const dismissRoleWarning = () => {
     if (familyId) {
       localStorage.setItem(`role_warning_dismissed_${familyId}`, "true");
@@ -639,21 +661,59 @@ const FamilyManagement = () => {
                 </button>
               </div>
 
-              {/* Share invite button */}
-              <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
-                <div className="flex items-center gap-2 mb-3 justify-end">
-                  <span className="text-sm font-semibold text-foreground">مشاركة الدعوة</span>
-                  <Share2 size={18} className="text-primary" />
-                </div>
-                <p className="text-xs text-muted-foreground mb-3 text-right">أرسل كود الانضمام للعضو الجديد</p>
-                <button onClick={handleShareInvite} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground transition-colors active:opacity-90 bg-primary">
-                  <Share2 size={16} />
-                  مشاركة الكود
-                </button>
-              </div>
             </div>
           </div>
         )}
+
+        {/* Join another family section */}
+        <div className="mt-8">
+          <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">الانضمام لعائلة أخرى</h2>
+          <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
+            <div className="flex items-center gap-2 mb-2 justify-end">
+              <span className="text-sm font-semibold text-foreground">انضم لعائلة بالكود</span>
+              <UserPlus size={18} className="text-primary" />
+            </div>
+            <p className="text-xs text-muted-foreground mb-3 text-right">أدخل كود الدعوة للانضمام لعائلة جديدة (سيتم مغادرة العائلة الحالية)</p>
+            <div className="flex gap-2 mb-2" dir="ltr">
+              <input
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                placeholder="أدخل الكود"
+                className="flex-1 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                maxLength={8}
+              />
+              <button
+                onClick={handleManualJoin}
+                disabled={joinCode.length < 8}
+                className="px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
+              >
+                انضمام
+              </button>
+            </div>
+            <button
+              onClick={() => setShowScanner(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-primary border-2 border-primary/20 transition-colors active:bg-primary/5"
+            >
+              <ScanLine size={16} />
+              مسح رمز QR
+            </button>
+          </div>
+        </div>
+
+        {/* Leave family section */}
+        <div className="mt-8 mb-8">
+          <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">مغادرة العائلة</h2>
+          <div className="rounded-2xl p-4 bg-card border border-destructive/20" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
+            <p className="text-xs text-muted-foreground mb-3 text-right">سيتم إزالتك من العائلة الحالية ولن تتمكن من الوصول لبياناتها</p>
+            <button
+              onClick={handleLeaveFamily}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-destructive transition-colors active:bg-destructive/10 border-2 border-destructive/20"
+            >
+              <Trash2 size={16} />
+              مغادرة العائلة
+            </button>
+          </div>
+        </div>
         </>
         )}
       </div>
