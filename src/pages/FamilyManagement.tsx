@@ -674,9 +674,9 @@ const FamilyManagement = () => {
         <div className="mt-8">
           <h2 className="text-xs font-semibold text-muted-foreground mb-3 px-1">الانضمام لعائلة أخرى</h2>
           <div className="rounded-2xl p-4 bg-card" style={{ boxShadow: "0 2px 8px hsla(0,0%,0%,0.05)" }}>
-            <div className="flex items-center gap-2 mb-2 justify-end">
-              <span className="text-sm font-semibold text-foreground">انضم لعائلة بالكود</span>
+            <div className="flex items-center gap-2 mb-2">
               <UserPlus size={18} className="text-primary" />
+              <span className="text-sm font-semibold text-foreground">انضم لعائلة بالكود</span>
             </div>
             <p className="text-xs text-muted-foreground mb-3 text-right">أدخل كود الدعوة للانضمام لعائلة جديدة (سيتم مغادرة العائلة الحالية)</p>
             <div className="flex gap-2 mb-2 flex-row-reverse">
