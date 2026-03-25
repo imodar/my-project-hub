@@ -138,6 +138,22 @@ const FamilyManagement = () => {
   const [codeCopied, setCodeCopied] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
+  // Role confirmation drawer
+  const [confirmMember, setConfirmMember] = useState<FamilyMember | null>(null);
+  const [confirmRole, setConfirmRole] = useState<FamilyRole | null>(null);
+  const [confirmingRole, setConfirmingRole] = useState(false);
+
+  // Role warning banner
+  const [roleWarningDismissed, setRoleWarningDismissed] = useState(() =>
+    familyId ? !!localStorage.getItem(`role_warning_dismissed_${familyId}`) : true
+  );
+
+  useEffect(() => {
+    if (familyId) {
+      setRoleWarningDismissed(!!localStorage.getItem(`role_warning_dismissed_${familyId}`));
+    }
+  }, [familyId]);
+
   // Swipe state managed by SwipeableCard
 
   // Fetch invite code from server on mount
