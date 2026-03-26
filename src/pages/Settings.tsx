@@ -98,15 +98,13 @@ const Settings = () => {
 
   const handleAddContact = async () => {
     if (!newContactName.trim() || !newContactPhone.trim() || !familyId || !user) return;
-    const { data, error } = await supabase
-      .from("emergency_contacts")
-      .insert({ name: newContactName.trim(), phone: newContactPhone.trim(), family_id: familyId, created_by: user.id })
-      .select()
-      .single();
-    if (error) {
+    const { data, error } = await supabase.functions.invoke("settings-api", {
+      body: { action: "add-emergency-contact", family_id: familyId, name: newContactName.trim(), phone: newContactPhone.trim() },
+    });
+    if (error || data?.error) {
       toast.error(t.emergency.addContactFailed);
-    } else if (data) {
-      setContacts(prev => [...prev, { id: data.id, name: data.name, phone: data.phone }]);
+    } else if (data?.data) {
+      setContacts(prev => [...prev, { id: data.data.id, name: data.data.name, phone: data.data.phone }]);
       setNewContactName("");
       setNewContactPhone("");
       setAddContactOpen(false);
@@ -115,8 +113,10 @@ const Settings = () => {
   };
 
   const handleRemoveContact = async (id: string) => {
-    const { error } = await supabase.from("emergency_contacts").delete().eq("id", id);
-    if (!error) {
+    const { data, error } = await supabase.functions.invoke("settings-api", {
+      body: { action: "delete-emergency-contact", id },
+    });
+    if (!error && !data?.error) {
       setContacts(prev => prev.filter(c => c.id !== id));
     }
   };

@@ -14,15 +14,11 @@ export function useFamilyId() {
     queryKey: ["family-id", user?.id],
     queryFn: async (): Promise<string | null> => {
       if (!user) return null;
-      const { data, error } = await supabase
-        .from("family_members")
-        .select("family_id")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .limit(1)
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "get-family-id" },
+      });
       if (error) throw error;
-      const fid = data?.family_id || null;
+      const fid = data?.data?.family_id || null;
       // Cache for instant access on next visit
       if (fid) {
         localStorage.setItem(CACHE_KEY, fid);

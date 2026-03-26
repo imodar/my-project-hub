@@ -16,15 +16,11 @@ export function useMyRole(): MyRoleResult {
     queryKey: ["my-family-role", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from("family_members")
-        .select("role, is_admin")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .limit(1)
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "get-my-role" },
+      });
       if (error) throw error;
-      return data;
+      return data?.data || null;
     },
     enabled: !!user?.id,
     staleTime: 30 * 60 * 1000,

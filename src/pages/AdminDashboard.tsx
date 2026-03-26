@@ -85,42 +85,35 @@ const AdminDashboard = () => {
   }, [user]);
 
   const loadDashboard = async () => {
-    // Load stats
-    const [profilesRes, familiesRes, deletionsRes] = await Promise.all([
-      supabase.from("profiles").select("id, last_login_at", { count: "exact" }),
-      supabase.from("families").select("id", { count: "exact" }),
-      supabase.from("account_deletions").select("id", { count: "exact" }).eq("status", "pending"),
-    ]);
+    try {
+      // Load stats via admin-api
+      const { data: dashData } = await supabase.functions.invoke("admin-api", {
+        body: { action: "dashboard-full" },
+      });
+      if (dashData?.data) {
+        const d = dashData.data;
+        setStats({
+          totalUsers: d.total_users || 0,
+          totalFamilies: d.total_families || 0,
+          activeUsers: d.active_today || 0,
+          pendingDeletions: 0,
+        });
+      }
 
-    const totalUsers = profilesRes.count || 0;
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const activeUsers = (profilesRes.data || []).filter(
-      (p) => p.last_login_at && p.last_login_at > thirtyDaysAgo
-    ).length;
+      // Load audit log via admin-api
+      const { data: auditData } = await supabase.functions.invoke("admin-api", {
+        body: { action: "get-audit-log", limit: 50 },
+      });
+      setAuditLog(auditData?.data || []);
 
-    setStats({
-      totalUsers,
-      totalFamilies: familiesRes.count || 0,
-      activeUsers,
-      pendingDeletions: deletionsRes.count || 0,
-    });
-
-    // Load audit log
-    const { data: audit } = await supabase
-      .from("admin_audit_log")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    setAuditLog(audit || []);
-
-    // Load users
-    const { data: usersList } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(100);
-    setUsers(usersList || []);
+      // Load users via admin-api
+      const { data: usersData } = await supabase.functions.invoke("admin-api", {
+        body: { action: "get-users", limit: 100 },
+      });
+      setUsers(usersData?.data || []);
+    } catch (err) {
+      console.error("Dashboard load error:", err);
+    }
   };
 
   if (loading) {
