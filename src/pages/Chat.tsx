@@ -336,18 +336,7 @@ const Chat = () => {
     }
   };
 
-  if (!isReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto animate-pulse">
-            <ShieldCheck size={24} className="text-primary" />
-          </div>
-          <p className="text-sm text-muted-foreground font-bold">جاري تهيئة التشفير...</p>
-        </div>
-      </div>
-    );
-  }
+  // Don't block the whole UI — show inline encryption banner instead
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
