@@ -106,6 +106,14 @@ Deno.serve(async (req) => {
       return json({ data });
     }
 
+    if (action === "update-maintenance") {
+      const { id, ...updates } = body;
+      delete updates.action;
+      const { data, error } = await supabase.from("vehicle_maintenance").update(updates).eq("id", id).select().single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data });
+    }
+
     if (action === "delete-maintenance") {
       const { id } = body;
       const { error } = await supabase.from("vehicle_maintenance").delete().eq("id", id);

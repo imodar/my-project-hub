@@ -185,6 +185,18 @@ Deno.serve(async (req) => {
       return json({ data });
     }
 
+    if (action === "update-reminder-settings") {
+      const { child_id, settings } = body;
+      const { data, error } = await supabase
+        .from("vaccination_children")
+        .update({ reminder_settings: settings })
+        .eq("id", child_id)
+        .select()
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data });
+    }
+
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
     return json({ error: err.message }, 500);

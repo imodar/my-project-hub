@@ -152,6 +152,15 @@ Deno.serve(async (req) => {
       return json({ data });
     }
 
+    if (action === "update-item") {
+      const { id, ...updates } = body;
+      delete updates.action;
+      if (updates.checked !== undefined) updates.checked_by = updates.checked ? userId : null;
+      const { data, error } = await supabase.from("market_items").update(updates).eq("id", id).select().single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data });
+    }
+
     if (action === "delete-item") {
       const { id } = body;
       const { error } = await supabase.from("market_items").delete().eq("id", id);
