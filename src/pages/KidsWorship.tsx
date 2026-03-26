@@ -8,10 +8,10 @@ import { toast } from "@/hooks/use-toast";
 import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
 import {
   categories, allItems, TOTAL_ITEMS,
-  type ChildProfile,
-  getMonthLabel, loadChildren,
+  getMonthLabel,
 } from "@/components/kids-worship/worshipData";
 import { useKidsWorshipData } from "@/hooks/useKidsWorshipData";
+import { useWorshipChildren } from "@/hooks/useWorshipChildren";
 
 const KidsWorship = () => {
   const navigate = useNavigate();
@@ -19,8 +19,12 @@ const KidsWorship = () => {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   
-  const children = loadChildren();
-  const [activeChildId, setActiveChildId] = useState(children[0]?.id || "default");
+  const { children, isLoading: childrenLoading } = useWorshipChildren();
+  // Fallback to "default" if no children in DB yet
+  const childList = children.length > 0
+    ? children.map(c => ({ id: c.id, name: c.name }))
+    : [{ id: "default", name: "طفلي" }];
+  const [activeChildId, setActiveChildId] = useState(childList[0]?.id || "default");
   
   const { data, isLoading, saveDayData, resetDay } = useKidsWorshipData(activeChildId, selectedYear, selectedMonth);
   const [selectedDay, setSelectedDay] = useState(now.getDate());
