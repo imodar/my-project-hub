@@ -224,12 +224,23 @@ const Auth = () => {
               </Button>
 
               <div className="flex-1" />
-              {/* Terms */}
-              <p className="text-[11px] text-muted-foreground/60 text-center leading-relaxed pt-2 pb-2">
-                بتسجيل دخولك تكون قد وافقت على{" "}
-                <span className="underline underline-offset-2 text-muted-foreground/80">الشروط والأحكام</span>{" "}
-                الخاصة بالتطبيق
-              </p>
+
+              {/* Language switch + Terms */}
+              <div className="flex flex-col items-center gap-3 pt-2 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium ${language === 'ar' ? 'text-foreground' : 'text-muted-foreground'}`}>عربي</span>
+                  <Switch
+                    checked={language === 'en'}
+                    onCheckedChange={(checked) => setLanguage(checked ? 'en' : 'ar')}
+                  />
+                  <span className={`text-xs font-medium ${language === 'en' ? 'text-foreground' : 'text-muted-foreground'}`}>EN</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground/60 text-center leading-relaxed">
+                  {t.auth.termsText}{" "}
+                  <span className="underline underline-offset-2 text-muted-foreground/80">{t.auth.termsLink}</span>{" "}
+                  {t.auth.termsEnd}
+                </p>
+              </div>
             </motion.div>
           ) : (
             <motion.div
