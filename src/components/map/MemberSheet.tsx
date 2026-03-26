@@ -128,7 +128,11 @@ export default function MemberSheet({ locations, selectedMemberId, onMemberSelec
               </div>
 
               <div className="flex flex-col items-center gap-1 shrink-0">
-                {!loc.is_sharing ? (
+                {loc.isMe && isTogglingSharing ? (
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Loader2 size={16} className="animate-spin" />
+                  </div>
+                ) : !loc.is_sharing ? (
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <EyeOff size={16} />
                     <span className="text-[10px]">{t.map.hidden}</span>
