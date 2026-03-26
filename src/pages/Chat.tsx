@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Pin, Lock, Smile, Check, CheckCheck, ShieldCheck, Plus, Image, Mic, MapPin, Play, Pause, Square, X, Loader2 } from "lucide-react";
+import { Send, Pin, Lock, Smile, Check, CheckCheck, ShieldCheck, Plus, Image, Mic, MapPin, Play, Pause, Square, X, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import { useChat, type ChatMessage } from "@/hooks/useChat";
@@ -12,7 +12,7 @@ const emojiOptions = ["❤️", "👍", "😂", "😮", "😢", "🤲"];
 
 const StatusIcon = ({ status }: { status: string }) => {
   if (status === "sending") return <Loader2 size={14} className="text-white/50 animate-spin" />;
-  if (status === "failed") return <X size={14} className="text-destructive" />;
+  if (status === "failed") return <AlertCircle size={14} className="text-destructive" />;
   if (status === "sent") return <Check size={14} className="text-white/50" />;
   if (status === "delivered") return <CheckCheck size={14} className="text-white/50" />;
   return <CheckCheck size={14} className="text-blue-400" />;
@@ -181,6 +181,7 @@ const Chat = () => {
     isReady,
     sendMessage,
     sendMediaMessage,
+    retryMessage,
     togglePin,
     addReaction,
     profiles,
@@ -439,7 +440,16 @@ const Chat = () => {
               </div>
 
               {/* Action buttons */}
-              <div className={`absolute top-0 ${msg.isMe ? "-left-16" : "-right-16"} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1`}>
+              <div className={`absolute top-0 ${msg.isMe ? "-left-20" : "-right-20"} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1`}>
+                {msg.status === "failed" && (
+                  <button
+                    onClick={() => retryMessage(msg.id)}
+                    className="w-7 h-7 rounded-full bg-destructive/10 border border-destructive/30 flex items-center justify-center hover:bg-destructive/20 transition-colors"
+                    title="إعادة الإرسال"
+                  >
+                    <RotateCcw size={14} className="text-destructive" />
+                  </button>
+                )}
                 <button
                   onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
                   className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"

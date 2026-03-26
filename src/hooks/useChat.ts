@@ -439,6 +439,92 @@ export function useChat() {
     [user, familyId, familyKey, addOptimisticMessage]
   );
 
+  // ─── Retry failed message ───
+  const retryMessage = useCallback(
+    async (messageId: string) => {
+      const msg = messages.find((m) => m.id === messageId);
+      if (!msg || msg.status !== "failed") return;
+
+      // Mark as sending again
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, status: "sending" } : m))
+      );
+
+      if (msg.messageType === "text") {
+        let encrypted_text = msg.text;
+        let iv: string | null = null;
+
+        if (familyKey) {
+          try {
+            const payload = await encryptMessage(familyKey, msg.text);
+            encrypted_text = payload.ciphertext;
+            iv = payload.iv;
+          } catch (err) {
+            console.error("Encryption error:", err);
+          }
+        }
+
+        const { error } = await supabase.from("chat_messages").insert({
+          family_id: familyId!,
+          sender_id: user!.id,
+          encrypted_text,
+          iv,
+          mention_user_id: msg.mentionUserId || null,
+          pinned: false,
+          status: "sent",
+          message_type: "text",
+        });
+
+        if (error) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === messageId ? { ...m, status: "failed" } : m))
+          );
+        } else {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === messageId ? { ...m, status: "sent" } : m))
+          );
+        }
+      } else {
+        // Media retry
+        let encrypted_text = msg.text || "";
+        let iv: string | null = null;
+
+        if (familyKey && encrypted_text && encrypted_text !== msg.messageType) {
+          try {
+            const payload = await encryptMessage(familyKey, encrypted_text);
+            encrypted_text = payload.ciphertext;
+            iv = payload.iv;
+          } catch (err) {
+            console.error("Encryption error:", err);
+          }
+        }
+
+        const { error } = await supabase.from("chat_messages").insert({
+          family_id: familyId!,
+          sender_id: user!.id,
+          encrypted_text: encrypted_text || msg.messageType,
+          iv,
+          pinned: false,
+          status: "sent",
+          message_type: msg.messageType,
+          media_url: msg.mediaUrl,
+          media_metadata: msg.mediaMetadata as any,
+        });
+
+        if (error) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === messageId ? { ...m, status: "failed" } : m))
+          );
+        } else {
+          setTimeout(() => {
+            setMessages((prev) => prev.filter((m) => m.id !== messageId));
+          }, 3000);
+        }
+      }
+    },
+    [messages, user, familyId, familyKey]
+  );
+
   // ─── Toggle pin ───
   const togglePin = useCallback(
     async (messageId: string) => {
@@ -478,6 +564,7 @@ export function useChat() {
     isReady,
     sendMessage,
     sendMediaMessage,
+    retryMessage,
     togglePin,
     addReaction,
     profiles,
