@@ -21,6 +21,7 @@ export function useLocationTracking(intervalMinutes = 5) {
   const queryClient = useQueryClient();
   const [isSharing, setIsSharing] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sendMyLocationRef = useRef<() => Promise<void>>(async () => {});
 
   // Fetch family locations
   const { data: locations = [], isLoading } = useQuery({
@@ -108,8 +109,7 @@ export function useLocationTracking(intervalMinutes = 5) {
     }
   }, [isSharing, familyId, updateMutation]);
 
-  // Stable ref to avoid re-running effect on every render
-  const sendMyLocationRef = useRef(sendMyLocation);
+  // Keep ref in sync
   useEffect(() => {
     sendMyLocationRef.current = sendMyLocation;
   }, [sendMyLocation]);
