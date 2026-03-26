@@ -195,24 +195,26 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <UserRoleProvider>
-          <IslamicModeProvider>
-            <TrashProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <OfflineBanner />
-                  <StaleBanner />
-                  <FirstSyncOverlay />
-                  <ScrollToTop />
-                  <WarmCacheProvider>
-                    <AnimatedRoutes />
-                  </WarmCacheProvider>
-                  <BottomNav />
-                </BrowserRouter>
-              </TooltipProvider>
-            </TrashProvider>
-          </IslamicModeProvider>
+          <LanguageProvider>
+            <IslamicModeProvider>
+              <TrashProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <OfflineBanner />
+                    <StaleBanner />
+                    <FirstSyncOverlay />
+                    <ScrollToTop />
+                    <WarmCacheProvider>
+                      <AnimatedRoutes />
+                    </WarmCacheProvider>
+                    <BottomNav />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </TrashProvider>
+            </IslamicModeProvider>
+          </LanguageProvider>
         </UserRoleProvider>
       </AuthProvider>
     </QueryClientProvider>
