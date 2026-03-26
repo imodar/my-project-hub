@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       const { family_id } = body;
       const { data, error } = await supabase
         .from("trips")
-        .select("*")
+        .select("*, trip_day_plans(*, trip_activities(*)), trip_expenses(*), trip_packing(*), trip_suggestions(*), trip_documents(*)")
         .eq("family_id", family_id)
         .order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
