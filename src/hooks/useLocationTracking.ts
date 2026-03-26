@@ -19,7 +19,7 @@ interface MemberLocation {
 export function useLocationTracking(intervalMinutes = 5) {
   const { familyId } = useFamilyId();
   const queryClient = useQueryClient();
-  const [isSharing, setIsSharing] = useState(true);
+  const [isSharing, setIsSharingState] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendMyLocationRef = useRef<() => Promise<void>>(async () => {});
 
