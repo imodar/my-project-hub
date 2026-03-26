@@ -111,7 +111,7 @@ const Auth = () => {
   if (session) return null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir={dir}>
       {/* Top area - branding (1/3 of screen) */}
       <div className="h-[33vh] flex flex-col items-center justify-center px-6">
         <motion.div
