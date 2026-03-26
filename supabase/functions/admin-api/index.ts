@@ -101,17 +101,36 @@ Deno.serve(async (req) => {
       if (search) { query = query.ilike("name", `%${search}%`); }
       const { data: families, error, count } = await query;
       if (error) return json({ error: error.message }, 400);
-      const enriched = [];
-      for (const f of families || []) {
-        const { count: mc } = await adminClient.from("family_members").select("*", { count: "exact", head: true }).eq("family_id", f.id).eq("status", "active");
-        const { data: members } = await adminClient.from("family_members").select("id, user_id, role, is_admin, status").eq("family_id", f.id).eq("status", "active");
-        const membersWithNames = [];
-        for (const m of members || []) {
-          const { data: profile } = await adminClient.from("profiles").select("name").eq("id", m.user_id).maybeSingle();
-          membersWithNames.push({ ...m, profile_name: profile?.name || null });
-        }
-        enriched.push({ ...f, member_count: mc || 0, members: membersWithNames });
+      if (!families?.length) return json({ data: [], total: count });
+
+      // Batch: get all members for these families in ONE query
+      const familyIds = families.map((f: any) => f.id);
+      const { data: allMembers } = await adminClient.from("family_members")
+        .select("id, user_id, role, is_admin, status, family_id")
+        .in("family_id", familyIds)
+        .eq("status", "active");
+
+      // Batch: get all profile names in ONE query
+      const userIds = [...new Set((allMembers || []).map((m: any) => m.user_id))];
+      const profileMap: Record<string, string> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await adminClient.from("profiles").select("id, name").in("id", userIds);
+        (profiles || []).forEach((p: any) => { profileMap[p.id] = p.name || null; });
       }
+
+      // Group members by family_id
+      const membersByFamily: Record<string, any[]> = {};
+      (allMembers || []).forEach((m: any) => {
+        if (!membersByFamily[m.family_id]) membersByFamily[m.family_id] = [];
+        membersByFamily[m.family_id].push({ ...m, profile_name: profileMap[m.user_id] || null });
+      });
+
+      const enriched = families.map((f: any) => ({
+        ...f,
+        member_count: (membersByFamily[f.id] || []).length,
+        members: membersByFamily[f.id] || [],
+      }));
+
       return json({ data: enriched, total: count });
     }
 
