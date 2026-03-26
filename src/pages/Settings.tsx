@@ -70,12 +70,20 @@ const Settings = () => {
       });
   }, [familyId, user]);
 
+  const toggleDark = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+    toast.success(next ? "تم تفعيل الوضع الداكن" : "تم تفعيل الوضع الفاتح");
+  };
+
   const settingsGroups = [
     {
       title: "عام",
       items: [
-        { icon: Bell, label: "الإشعارات", desc: "إدارة التنبيهات والإشعارات" },
-        { icon: Moon, label: "المظهر", desc: "الوضع الداكن والمظهر العام" },
+        { icon: Bell, label: "الإشعارات", desc: "إدارة التنبيهات والإشعارات", onClick: () => setNotifSheet(true) },
+        { icon: Moon, label: "المظهر", desc: darkMode ? "الوضع الداكن" : "الوضع الفاتح", onClick: toggleDark },
         { icon: Globe, label: "اللغة", desc: "العربية" },
       ],
     },
