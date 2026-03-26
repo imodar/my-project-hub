@@ -502,7 +502,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
             {!demoActive && weather?.lastUpdated && (
               <p className="text-[10px] text-white/35">
-                آخر تحديث {formatLastUpdated(weather.lastUpdated)}
+                {t.hero.lastUpdate} {formatLastUpdated(weather.lastUpdated)}
               </p>
             )}
 
