@@ -10,12 +10,12 @@ export function useZakatAssets() {
 
   const apiFn = useCallback(async () => {
     if (!user) return { data: [], error: null };
-    const { data, error } = await supabase
-      .from("zakat_assets")
-      .select("*, zakat_history(*)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    return { data: data || [], error: error?.message || null };
+    const { data, error } = await supabase.functions.invoke("zakat-api", {
+      body: { action: "get-assets" },
+    });
+    if (error) return { data: [], error: error.message };
+    if (data?.error) return { data: [], error: data.error };
+    return { data: data?.data || [], error: null };
   }, [user]);
 
   const { data: assets, isLoading, refetch } = useOfflineFirst<any>({
@@ -29,11 +29,15 @@ export function useZakatAssets() {
     table: "zakat_assets", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("zakat_assets").insert({
-        ...rest, user_id: user!.id, amount: rest.amount || 0,
-        currency: rest.currency || "SAR", reminder: rest.reminder ?? true,
+      const { data, error } = await supabase.functions.invoke("zakat-api", {
+        body: {
+          action: "create-asset",
+          type: rest.type, name: rest.name, amount: rest.amount || 0,
+          currency: rest.currency || "SAR", weight_grams: rest.weight_grams,
+          purchase_date: rest.purchase_date, reminder: rest.reminder ?? true,
+        },
       });
-      return { data: null, error: error?.message || null };
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key, onSuccess: () => refetch(),
   });
@@ -42,8 +46,10 @@ export function useZakatAssets() {
     table: "zakat_assets", operation: "UPDATE",
     apiFn: async (input) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("zakat_assets").update(updates).eq("id", id);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("zakat-api", {
+        body: { action: "update-asset", id, ...updates },
+      });
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -51,22 +57,25 @@ export function useZakatAssets() {
   const deleteAsset = useOfflineMutation<any, any>({
     table: "zakat_assets", operation: "DELETE",
     apiFn: async (input) => {
-      const { error } = await supabase.from("zakat_assets").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("zakat-api", {
+        body: { action: "delete-asset", id: input.id },
+      });
+      return { data: null, error: data?.error || error?.message || null };
     },
     queryKey: key,
   });
 
   const addZakatPayment = useOfflineMutation<any, any>({
-    table: "zakat_assets", operation: "UPDATE", // payment updates asset's zakat_paid_at
+    table: "zakat_assets", operation: "UPDATE",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("zakat_history").insert({
-        asset_id: rest.asset_id, amount_paid: rest.amount_paid, notes: rest.notes,
+      const { data, error } = await supabase.functions.invoke("zakat-api", {
+        body: {
+          action: "pay-zakat",
+          asset_id: rest.asset_id, amount_paid: rest.amount_paid, notes: rest.notes,
+        },
       });
-      if (error) return { data: null, error: error.message };
-      await supabase.from("zakat_assets").update({ zakat_paid_at: new Date().toISOString() }).eq("id", rest.asset_id);
-      return { data: null, error: null };
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key, onSuccess: () => refetch(),
   });

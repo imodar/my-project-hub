@@ -12,12 +12,12 @@ export function useDebts() {
 
   const apiFn = useCallback(async () => {
     if (!user) return { data: [], error: null };
-    const { data, error } = await supabase
-      .from("debts")
-      .select("*, debt_payments(*), debt_postponements(*)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    return { data: data || [], error: error?.message || null };
+    const { data, error } = await supabase.functions.invoke("debts-api", {
+      body: { action: "get-debts" },
+    });
+    if (error) return { data: [], error: error.message };
+    if (data?.error) return { data: [], error: data.error };
+    return { data: data?.data || [], error: null };
   }, [user]);
 
   const { data: debts, isLoading, refetch } = useOfflineFirst<any>({
@@ -32,20 +32,22 @@ export function useDebts() {
     operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const row = {
-        person_name: rest.person_name,
-        amount: rest.amount,
-        currency: rest.currency || "SAR",
-        direction: rest.direction,
-        date: rest.date,
-        due_date: rest.due_date,
-        note: rest.note || "",
-        payment_details: (rest.payment_details || null) as Record<string, unknown> | null,
-        user_id: user!.id,
-        family_id: familyId,
-      };
-      const { error } = await supabase.from("debts").insert(row as never);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("debts-api", {
+        body: {
+          action: "create-debt",
+          family_id: familyId,
+          person_name: rest.person_name,
+          amount: rest.amount,
+          currency: rest.currency || "SAR",
+          direction: rest.direction,
+          date: rest.date,
+          due_date: rest.due_date,
+          note: rest.note || "",
+          payment_details: rest.payment_details || null,
+          has_reminder: rest.has_reminder || false,
+        },
+      });
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),
@@ -56,8 +58,10 @@ export function useDebts() {
     operation: "UPDATE",
     apiFn: async (input) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("debts").update(updates as never).eq("id", id).eq("user_id", user!.id);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("debts-api", {
+        body: { action: "update-debt", id, ...updates },
+      });
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -66,8 +70,10 @@ export function useDebts() {
     table: "debts",
     operation: "DELETE",
     apiFn: async (input) => {
-      const { error } = await supabase.from("debts").delete().eq("id", input.id).eq("user_id", user!.id);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("debts-api", {
+        body: { action: "delete-debt", id: input.id },
+      });
+      return { data: null, error: data?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -77,33 +83,38 @@ export function useDebts() {
     operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const row = {
-        debt_id: rest.debt_id,
-        amount: rest.amount,
-        currency: rest.currency || "SAR",
-        type: rest.type || "cash",
-        item_description: rest.item_description,
-        date: rest.date,
-        payment_details: (rest.payment_details || null) as Record<string, unknown> | null,
-      };
-      const { error } = await supabase.from("debt_payments").insert(row as never);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("debts-api", {
+        body: {
+          action: "add-payment",
+          debt_id: rest.debt_id,
+          amount: rest.amount,
+          currency: rest.currency || "SAR",
+          type: rest.type || "cash",
+          item_description: rest.item_description,
+          date: rest.date,
+          payment_details: rest.payment_details || null,
+        },
+      });
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),
   });
 
   const addPostponement = useOfflineMutation<any, any>({
-    table: "debt_payments", // using debt_payments table for sync queue (closest match)
+    table: "debt_payments",
     operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("debt_postponements").insert({
-        debt_id: rest.debt_id,
-        new_date: rest.new_date,
-        reason: rest.reason,
+      const { data, error } = await supabase.functions.invoke("debts-api", {
+        body: {
+          action: "add-postponement",
+          debt_id: rest.debt_id,
+          new_date: rest.new_date,
+          reason: rest.reason,
+        },
       });
-      return { data: null, error: error?.message || null };
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),

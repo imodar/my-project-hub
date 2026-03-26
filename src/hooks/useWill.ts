@@ -11,60 +11,55 @@ export function useWill() {
     queryKey: key,
     queryFn: async () => {
       if (!user) return null;
-      const { data, error } = await supabase
-        .from("wills")
-        .select("*, will_open_requests(*)")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke("will-api", {
+        body: { action: "get-will" },
+      });
       if (error) throw error;
-      return data;
+      if (data?.error) throw new Error(data.error);
+      return data?.data ?? null;
     },
     enabled: !!user,
   });
 
   const upsertWill = useMutation({
     mutationFn: async (input: { sections: any; is_locked?: boolean; password_hash?: string }) => {
-      if (!user) throw new Error("No user");
-      const existing = willQuery.data;
-      if (existing) {
-        const { error } = await supabase.from("wills").update({
+      const { data, error } = await supabase.functions.invoke("will-api", {
+        body: {
+          action: "save-will",
           sections: input.sections,
-          is_locked: input.is_locked ?? existing.is_locked,
-          password_hash: input.password_hash ?? existing.password_hash,
-          updated_at: new Date().toISOString(),
-        }).eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("wills").insert({
-          user_id: user.id,
-          sections: input.sections,
-          is_locked: input.is_locked ?? false,
-          password_hash: input.password_hash || null,
-        });
-        if (error) throw error;
-      }
+          is_locked: input.is_locked,
+          password_hash: input.password_hash,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data?.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const deleteWill = useMutation({
     mutationFn: async () => {
-      if (!willQuery.data) return;
-      const { error } = await supabase.from("wills").delete().eq("id", willQuery.data.id);
+      const { data, error } = await supabase.functions.invoke("will-api", {
+        body: { action: "delete-will" },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const createOpenRequest = useMutation({
     mutationFn: async (input: { reason?: string }) => {
-      if (!user || !willQuery.data) throw new Error("No will");
-      const { error } = await supabase.from("will_open_requests").insert({
-        will_id: willQuery.data.id,
-        requested_by: user.id,
-        reason: input.reason,
+      const { data, error } = await supabase.functions.invoke("will-api", {
+        body: {
+          action: "request-open",
+          will_id: willQuery.data?.id,
+          reason: input.reason,
+        },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });

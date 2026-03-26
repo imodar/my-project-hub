@@ -67,16 +67,16 @@ const Profile = () => {
       avatarUrl = result.url;
     }
 
-    const updates: Record<string, string> = { name };
-    if (avatarUrl) updates.avatar_url = avatarUrl;
-
-    const { error } = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("id", user.id);
+    const { data: result, error } = await supabase.functions.invoke("auth-management", {
+      body: {
+        action: "update-profile",
+        name,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+      },
+    });
 
     setSaving(false);
-    if (error) {
+    if (error || result?.error) {
       toast({ title: "حدث خطأ أثناء الحفظ", variant: "destructive" });
     } else {
       setEditing(false);

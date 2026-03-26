@@ -12,12 +12,12 @@ export function useBudgets() {
 
   const apiFn = useCallback(async () => {
     if (!familyId) return { data: [], error: null };
-    const { data, error } = await supabase
-      .from("budgets")
-      .select("*, budget_expenses(*)")
-      .eq("family_id", familyId)
-      .order("created_at", { ascending: true });
-    return { data: data || [], error: error?.message || null };
+    const { data, error } = await supabase.functions.invoke("budget-api", {
+      body: { action: "get-budgets", family_id: familyId },
+    });
+    if (error) return { data: [], error: error.message };
+    if (data?.error) return { data: [], error: data.error };
+    return { data: data?.data || [], error: null };
   }, [familyId]);
 
   const { data: budgets, isLoading, refetch } = useOfflineFirst<any>({
@@ -32,17 +32,18 @@ export function useBudgets() {
     operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("budgets").insert({
-        type: rest.type || "month",
-        month: rest.month,
-        label: rest.label,
-        income: rest.income || 0,
-        shared_with: rest.shared_with || [],
-        trip_id: rest.trip_id || null,
-        family_id: familyId,
-        created_by: user?.id,
+      const { data, error } = await supabase.functions.invoke("budget-api", {
+        body: {
+          action: "create-budget",
+          family_id: familyId,
+          type: rest.type || "month",
+          month: rest.month,
+          label: rest.label,
+          income: rest.income || 0,
+          trip_id: rest.trip_id || null,
+        },
       });
-      return { data: null, error: error?.message || null };
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),
@@ -53,8 +54,10 @@ export function useBudgets() {
     operation: "UPDATE",
     apiFn: async (input) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("budgets").update(updates).eq("id", id);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("budget-api", {
+        body: { action: "update-budget", id, ...updates },
+      });
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -63,8 +66,10 @@ export function useBudgets() {
     table: "budgets",
     operation: "DELETE",
     apiFn: async (input) => {
-      const { error } = await supabase.from("budgets").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("budget-api", {
+        body: { action: "delete-budget", id: input.id },
+      });
+      return { data: null, error: data?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -74,14 +79,17 @@ export function useBudgets() {
     operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("budget_expenses").insert({
-        budget_id: rest.budget_id,
-        name: rest.name,
-        amount: rest.amount,
-        date: rest.date || null,
-        currency: rest.currency || "SAR",
+      const { data, error } = await supabase.functions.invoke("budget-api", {
+        body: {
+          action: "add-expense",
+          budget_id: rest.budget_id,
+          name: rest.name,
+          amount: rest.amount,
+          date: rest.date || null,
+          currency: rest.currency || "SAR",
+        },
       });
-      return { data: null, error: error?.message || null };
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),
@@ -92,8 +100,10 @@ export function useBudgets() {
     operation: "UPDATE",
     apiFn: async (input) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("budget_expenses").update(updates).eq("id", id);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("budget-api", {
+        body: { action: "update-expense", id, ...updates },
+      });
+      return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -102,8 +112,10 @@ export function useBudgets() {
     table: "budget_expenses",
     operation: "DELETE",
     apiFn: async (input) => {
-      const { error } = await supabase.from("budget_expenses").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
+      const { data, error } = await supabase.functions.invoke("budget-api", {
+        body: { action: "delete-expense", id: input.id },
+      });
+      return { data: null, error: data?.error || error?.message || null };
     },
     queryKey: key,
   });
