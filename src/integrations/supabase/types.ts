@@ -2516,6 +2516,30 @@ export type Database = {
         }
         Relationships: []
       }
+      worship_children: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          family_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          family_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          family_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       zakat_assets: {
         Row: {
           amount: number
