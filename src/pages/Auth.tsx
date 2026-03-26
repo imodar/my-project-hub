@@ -16,6 +16,7 @@ type Step = "phone" | "otp";
 
 const Auth = () => {
   const { session } = useAuth();
+  const { t, language, setLanguage, dir, isRTL } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
 
