@@ -379,7 +379,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           >
             <span className="text-sm font-bold text-primary">{currentUser.name.charAt(0)}</span>
           </button>
-          <span className="text-xl font-bold text-primary tracking-tight">عائلتنا</span>
+          <span className="text-xl font-bold text-primary tracking-tight">{t.appName}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
