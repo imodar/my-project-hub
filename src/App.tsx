@@ -17,6 +17,7 @@ import StaleBanner from "@/components/StaleBanner";
 import FirstSyncOverlay from "@/components/FirstSyncOverlay";
 import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { warmCache } from "@/lib/warmCache";
 import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
