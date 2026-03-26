@@ -398,6 +398,48 @@ const JoinOrCreate = () => {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Join Role Selection Drawer */}
+      <Drawer open={showJoinRoleGrid} onOpenChange={(open) => { if (!open) { setShowJoinRoleGrid(false); setJoinRole(null); } }}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">اختر دورك في الأسرة</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              {(["father", "mother", "son", "daughter"] as CreateRole[]).map((role) => {
+                const info = ROLE_INFO[role];
+                const Icon = info.icon;
+                const selected = joinRole === role;
+                return (
+                  <button
+                    key={role}
+                    onClick={() => setJoinRole(role)}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                      selected ? "border-primary bg-primary/10" : "border-border bg-card"
+                    }`}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center"
+                      style={{ background: info.bgColor }}
+                    >
+                      <Icon size={22} className={info.iconColor} />
+                    </div>
+                    <span className="text-sm font-bold text-foreground">{info.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => { handleJoin(); setShowJoinRoleGrid(false); }}
+              disabled={!joinRole || joining}
+              className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : "انضمام"}
+            </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
