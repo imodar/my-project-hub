@@ -208,7 +208,7 @@ const Chat = () => {
   }, [messages]);
 
   const handleSend = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !isReady) return;
     sendMessage(newMessage);
     setNewMessage("");
     setShowMentions(false);
@@ -336,18 +336,7 @@ const Chat = () => {
     }
   };
 
-  if (!isReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto animate-pulse">
-            <ShieldCheck size={24} className="text-primary" />
-          </div>
-          <p className="text-sm text-muted-foreground font-bold">جاري تهيئة التشفير...</p>
-        </div>
-      </div>
-    );
-  }
+  // Don't block the whole UI — show inline encryption banner instead
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
@@ -394,6 +383,15 @@ const Chat = () => {
           </div>
         </div>
 
+        {/* Inline encryption loading banner */}
+        {!isReady && (
+          <div className="flex items-center justify-center gap-2 py-3">
+            <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center animate-pulse">
+              <ShieldCheck size={14} className="text-primary" />
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">جاري تهيئة التشفير...</span>
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mb-3">
