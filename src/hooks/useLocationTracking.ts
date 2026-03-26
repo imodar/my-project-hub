@@ -21,6 +21,7 @@ export function useLocationTracking(intervalMinutes = 5) {
   const queryClient = useQueryClient();
   const [isSharing, setIsSharing] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sendMyLocationRef = useRef<() => Promise<void>>(async () => {});
 
   // Fetch family locations
   const { data: locations = [], isLoading } = useQuery({
