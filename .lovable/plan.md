@@ -1,98 +1,216 @@
 
 
-# Plan: Create Family Flow, Join Notifications, Role Confirmation, Role Warning
+# خطة تحويل معمارية الأمان: من Client → DB مباشر إلى Edge Functions
 
-## Overview
-Four interconnected changes: animated "Create Family" flow in JoinOrCreate, push notifications when someone joins, role confirmation tracking with admin approval drawer, and a dismissible role warning banner.
+## الملخص
 
-## Migration
+تحويل **14 ملف متبقي** من `supabase.from()` مباشر إلى Edge Functions، مع تحديث `syncQueue.ts` بعد كل مرحلة والتزام صارم بترتيب التنفيذ.
 
-Add `role_confirmed` column to `family_members`:
+---
 
-```sql
-ALTER TABLE family_members ADD COLUMN role_confirmed boolean NOT NULL DEFAULT false;
+## ✅ تم إنجازه سابقاً
+
+| الملف | Edge Function |
+|-------|-------------|
+| `useWill.ts` | `will-api` |
+| `useZakatAssets.ts` | `zakat-api` |
+| `useDebts.ts` | `debts-api` |
+| `useBudgets.ts` | `budget-api` |
+| `Profile.tsx` | `auth-management` |
+| Rate Limiting | 22 Edge Function |
+
+---
+
+## المرحلة 2 — البنية الأساسية (تُنفَّذ معاً في deploy واحد)
+
+> **تحذير حرج**: `AuthContext.tsx` و `useFamilyMembers.ts` يجب أن يُنشران معاً — لأن `AuthContext` يتحكم بـ `profileReady` الذي يعتمد عليه `AuthGuard`. تغيير سلوكه منفرداً قد يكسر التطبيق بالكامل.
+
+### 2.1 `AuthContext.tsx` → `auth-management`
+- استبدال `supabase.from("profiles").select("name")` بـ `supabase.functions.invoke("auth-management", { body: { action: "get-profile" } })`
+- الإبقاء على `supabase.auth.*` و `db.*` كما هم
+- الـ timeout 5s يبقى
+- يجب أن تكون الاستجابة متوافقة: `data.data.name` أو حسب ما ترجعه الـ Edge Function
+
+### 2.2 `useFamilyMembers.ts` → `family-management`
+- هذا hook **قراءة فقط** — لا `useOfflineMutation` — فقط تغيير `queryFn`
+- استبدال الاستعلامين المباشرين باستدعاء واحد: `{ action: "get-members", family_id }`
+- **تعديل `get-members` في Edge Function**: إضافة `created_by` من `families` في الاستجابة
+- **Fix bug**: نقل تعريف `adminClient` قبل استدعاء `checkRateLimit` في `family-management/index.ts`
+
+> **تنبيه**: بعد التحويل اختبر أن البنية المرجعة تحتوي على: `id`, `name`, `role`, `isAdmin`, `isCreator`, `roleConfirmed` — وإلا ستنكسر `FamilyManagement.tsx` و `UserRoleContext.tsx`
+
+### 2.3 `TrashContext.tsx` → `trash-api`
+- تحويل القراءة/الإضافة/الحذف إلى `trash-api`
+- **نقل منطق الاستعادة بالكامل إلى `trash-api`** (بدل client-side):
+  - `restore` في الـ Edge Function يجلب العنصر، يعيد إدخاله حسب `type` (`market_list` → `market_lists` + `market_items`، `task_list` → `task_lists` + `task_items`، إلخ)، ثم يحدّث `restored = true`
+  - هذا يضمن atomicity — لا بيانات نصف مستعادة
+
+### تحقق بعد المرحلة 2
+- مراجعة `TABLE_API_MAP` في `syncQueue.ts` — لا يوجد تأثير مباشر هنا لأن هذه الملفات لا تكتب عبر `useOfflineMutation`، لكن تأكد أن لا شيء تكسر.
+
+---
+
+## المرحلة 3أ — بيانات عائلية
+
+### 3.1 `useMedications.ts` → `health-api`
+- تحويل كل `apiFn` لـ `health-api`
+- **تعديل Edge Function**: `get-medications` يرجع `medication_logs(*)` مع الأدوية
+
+### 3.2 `useVaccinations.ts` → `health-api`
+- تحويل كل `apiFn`
+- **إضافة action**: `update-reminder-settings`
+
+### 3.3 `useVehicles.ts` → `vehicles-api`
+- تحويل كل `apiFn`
+- **إضافة action**: `update-maintenance`
+
+### 3.4 `useAlbums.ts` → `albums-api`
+- تحويل كل `apiFn`
+- **تعديل Edge Function**: `get-albums` يرجع `album_photos(*)` بدل `album_photos(count)`
+
+### تحقق بعد المرحلة 3أ
+مراجعة `TABLE_API_MAP` في `syncQueue.ts`:
+- `medications`: actions `INSERT: "create-medication"` ✓ موجود
+- `medication_logs`: action `INSERT: "log-medication"` ✓ موجود
+- `vehicles`: actions ✓ موجود
+- `vehicle_maintenance`: يحتاج التأكد أن `update-maintenance` مطابق لـ `UPDATE: "update-maintenance"` ✓ موجود
+- `albums` / `album_photos`: ✓ موجود
+
+---
+
+## المرحلة 3ب — بيانات عائلية (تكملة)
+
+### 3.5 `useTrips.ts` → `trips-api`
+- 13 mutation تحتاج تحويل
+- **إضافة actions ناقصة**: `delete-expense` (موجود في MAP ✓)، `add-document`, `delete-document`
+
+### 3.6 `useDocumentLists.ts` → `documents-api`
+- **تعديل Edge Function**: `get-lists` يرجع `document_items(*, document_files(*))`
+
+### 3.7 `useCalendarEvents.ts` → `calendar-api`
+- تحويل كل `apiFn`
+
+### 3.8 `usePlaceLists.ts` → `places-api`
+- تحويل كل `apiFn`
+
+### تحقق بعد المرحلة 3ب
+مراجعة `TABLE_API_MAP` في `syncQueue.ts`:
+- `trips`, `trip_day_plans`, `trip_activities`, `trip_expenses`, `trip_packing`: ✓ موجود — تأكد أن `add-document` و `delete-document` مضافة إذا لزم (لا يوجد `trip_documents` في MAP حالياً — **يجب إضافته**)
+- `calendar_events`: ✓ موجود
+- `document_lists`, `document_items`: ✓ موجود
+- `places` / `place_lists`: **غير موجود في MAP — يجب إضافته**
+
+---
+
+## المرحلة 3ج — قوائم + مهام
+
+### 3.9 `useMarketLists.ts` → `market-api`
+- **تعديل Edge Function**: `get-lists` يرجع `market_items(*)` + إضافة action `update-item`
+
+### 3.10 `useTaskLists.ts` → `tasks-api`
+- تحويل كل `apiFn`
+
+### تحقق بعد المرحلة 3ج
+- `market_items`: MAP يحتوي `UPDATE: "update-item"` — تأكد أن الـ Edge Function تدعم هذا الـ action فعلاً
+- `task_items`, `task_lists`: ✓ موجود
+
+---
+
+## المرحلة 4 — منخفض الأولوية
+
+### 4.1 `useTasbihSessions.ts` → `worship-api`
+- **إضافة action**: `clear-tasbih`
+
+### 4.2 `useKidsWorshipData.ts` → `worship-api`
+- **إضافة action**: `delete-worship-data`
+
+### 4.3 `AdminDashboard.tsx` → `admin-api`
+- تحويل الاستعلامات المباشرة
+
+### تحقق بعد المرحلة 4
+- `tasbih_sessions` و `kids_worship_data` **غير موجودة في `TABLE_API_MAP`** — يجب إضافتها إذا كانت تُستخدم مع `useOfflineMutation`
+
+---
+
+## Rate Limiting المخصص
+
+| Edge Function | الحد |
+|---------------|------|
+| `family-management` | 10 creates/hour per user |
+| `auth-management` | 20 profile updates/hour |
+| `health-api`, `trips-api`, `market-api` | 200 writes/hour per user |
+| `admin-api` | بلا حد (admins فقط) |
+| الباقي | 60 req/min (الافتراضي الحالي) |
+
+---
+
+## تعديلات Edge Functions المطلوبة
+
+| Edge Function | التعديل |
+|---|---|
+| `family-management` | fix `adminClient` ordering + إرجاع `created_by` في `get-members` |
+| `trash-api` | نقل منطق الاستعادة الكامل للـ backend |
+| `market-api` | `get-lists` → `market_items(*)` + action `update-item` |
+| `albums-api` | `get-albums` → `album_photos(*)` |
+| `documents-api` | `get-lists` → `document_items(*, document_files(*))` |
+| `trips-api` | actions: `add-document`, `delete-document` |
+| `vehicles-api` | action: `update-maintenance` (تأكد من وجوده) |
+| `health-api` | `get-medications` → `medication_logs(*)` + action `update-reminder-settings` |
+| `worship-api` | actions: `clear-tasbih`, `delete-worship-data` |
+
+---
+
+## تحديثات `syncQueue.ts` — `TABLE_API_MAP`
+
+بعد كل مرحلة، تحقق من:
+1. كل جدول mapped لـ Edge Function **تملك فعلاً الـ action المكتوب**
+2. الجداول الناقصة يجب إضافتها:
+
+```text
+مطلوب إضافته في TABLE_API_MAP:
+├─ trip_documents   → trips-api    { INSERT: "add-document", DELETE: "delete-document" }
+├─ places           → places-api   { INSERT: "add-place", UPDATE: "update-place", DELETE: "delete-place" }
+├─ place_lists      → places-api   { INSERT: "create-list", DELETE: "delete-list" }
+├─ tasbih_sessions  → worship-api  { INSERT: "save-tasbih" }
+└─ kids_worship_data→ worship-api  { INSERT: "save-worship-data", DELETE: "delete-worship-data" }
 ```
 
-Existing members (created via "create" action) should have `role_confirmed = true` — handle this in the edge function: set `role_confirmed: true` when creating family, `false` when joining via code.
+3. الجداول الموجودة: تأكد أن أسماء الـ actions تطابق ما هو مكتوب في الـ Edge Functions بالضبط
 
-## Changes
+---
 
-### 1. Edit `src/pages/JoinOrCreate.tsx` — Animated Create Flow
+## النمط الموحد لكل تحويل
 
-Add state: `showCreate` (boolean), `createRole` (role selection).
+```text
+// useOfflineMutation: تغيير apiFn فقط
+// قبل:
+apiFn: async (input) => {
+  const { error } = await supabase.from("table").insert({...});
+  return { data: null, error: error?.message || null };
+}
 
-When "إنشاء عائلتي" tapped:
-- Set `showCreate = true`
-- Join section gets CSS class: `opacity-0 -translate-y-5 transition-all duration-300`
-- Role grid fades in with 150ms delay: `opacity-1 translate-y-0`
-- Skip button text changes to "إنشاء العائلة" (disabled until role selected)
-
-Role grid: 4 boxes (father/mother/son/daughter) — same style as FamilyManagement setup drawer.
-
-Info card below grid (CSS transition 200ms):
-- Parent role: "ستكون المشرف الرئيسي..." text
-- Child role: "ستكون المشرف المؤقت..." text
-
-"إنشاء العائلة" button → calls edge function `action: "create"` with selected role → sets `join_or_create_done=true` → invalidates queries → navigates `/`.
-
-**No Framer Motion** — pure CSS transitions via conditional classes + `transition-all duration-300`.
-
-### 2. Edit `supabase/functions/family-management/index.ts` — Notifications on Join
-
-In `action: "join"`:
-- After successful insert, set `role_confirmed: false` in the insert
-- Fetch joiner's profile name from `profiles` table
-- Fetch all admin user_ids for that family (`family_members` where `is_admin = true`)
-- Insert into `user_notifications` for each admin:
-  - `type: "new_member"`, `title: "طلب انضمام جديد"`, `body: "${name} انضم للعائلة — تحقق من دوره"`, `source_type: "family_member"`, `source_id: family.id`
-
-In `action: "create"`:
-- Set `role_confirmed: true` in the member insert (creator confirms their own role)
-
-Add new action `"confirm-role"`:
-- Requires admin authorization (same pattern as toggle-admin)
-- Updates `family_members` SET `role = body.role, role_confirmed = true` WHERE `family_id` AND `user_id = target_user_id`
-- Inserts notification to the target user: "تم تأكيد انضمامك"
-
-### 3. Edit `src/pages/FamilyManagement.tsx`
-
-**A. Role Warning Banner** (above member list, for admins only):
-- Show when `isMyAdmin && members.length > 1 && !localStorage.getItem("role_warning_dismissed_" + familyId)`
-- Yellow/amber card with text: "⚠️ في حال اختيار دور خاطئ لأي عضو، يجب إزالته وإعادة دعوته لتصحيح الدور."
-- Dismiss button (X) → sets localStorage key
-
-**B. Unconfirmed Member Indicator**:
-- `useFamilyMembers` needs to also return `roleConfirmed` from the query
-- Members with `role_confirmed = false` show a badge: "تأكيد الدور" in amber, next to their role label
-- Tapping the badge opens the role confirmation drawer
-
-**C. Role Confirmation Drawer** (replaces old approval concept):
-- Header: "${memberName} — تأكيد الدور"
-- Shows member avatar + name (from profile)
-- Role grid: all 9 roles (father/mother/husband/wife/son/daughter/worker/maid/driver)
-- Pre-selects current role
-- Confirm button → calls edge function `action: "confirm-role"` → refetch members
-
-**D. Remove** the old `addStep === "enter-name"` step entirely — the add-member flow goes straight to `invite-method` (already does this via `handleAddMember`). Remove the `choose-type` step and `enter-name` step UI. The drawer only shows invite sharing options.
-
-### 4. Edit `src/hooks/useFamilyMembers.ts`
-
-Add `role_confirmed` to the select query and `FamilyMemberInfo` interface:
-```ts
-interface FamilyMemberInfo {
-  // ... existing
-  roleConfirmed: boolean;
+// بعد:
+apiFn: async (input) => {
+  const { data, error } = await supabase.functions.invoke("xxx-api", {
+    body: { action: "action-name", ...fields },
+  });
+  return { data: data?.data ?? null, error: data?.error || error?.message || null };
 }
 ```
-Query: add `role_confirmed` to the `.select()` on `family_members`.
 
-## Files
+- الـ offline-first pattern يبقى كما هو
+- `syncQueue.processQueue()` يستدعي Edge Functions عبر `apiClient` (صحيح وجيد)
+- `supabase.auth.*` يبقى مباشر (مقبول)
 
-| Action | File |
-|--------|------|
-| Migration | Add `role_confirmed` to `family_members` |
-| Edit | `src/pages/JoinOrCreate.tsx` |
-| Edit | `supabase/functions/family-management/index.ts` |
-| Edit | `src/pages/FamilyManagement.tsx` |
-| Edit | `src/hooks/useFamilyMembers.ts` |
+---
+
+## ملخص نهائي
+
+| | العدد |
+|---|---|
+| ✅ ملفات منجزة | 5 |
+| ⏳ ملفات متبقية | 14 |
+| Edge Functions تحتاج تعديل | 9 |
+| إضافات في `TABLE_API_MAP` | 5 جداول |
+| Migrations جديدة | 0 |
 
