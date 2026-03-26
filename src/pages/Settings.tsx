@@ -47,27 +47,19 @@ const Settings = () => {
 
   useEffect(() => {
     if (!familyId || !user) return;
-    supabase
-      .from("family_members")
-      .select("user_id, role")
-      .eq("family_id", familyId)
-      .eq("status", "active")
-      .neq("user_id", user.id)
-      .then(async ({ data }) => {
-        if (!data) return;
-        const ids = data.map((m) => m.user_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, name")
-          .in("id", ids);
-        setMembers(
-          (profiles || []).map((p) => ({
-            id: p.id,
-            name: p.name || t.emergency.noName,
-            sosEnabled: true,
-          }))
-        );
-      });
+    supabase.functions.invoke("family-management", {
+      body: { action: "get-members", family_id: familyId },
+    }).then(({ data }) => {
+      if (!data?.data) return;
+      const membersList = (data.data as any[])
+        .filter((m: any) => m.user_id !== user!.id)
+        .map((m: any) => ({
+          id: m.user_id,
+          name: m.profiles?.name || t.emergency.noName,
+          sosEnabled: true,
+        }));
+      setMembers(membersList);
+    });
   }, [familyId, user, t]);
 
   const toggleDark = () => {
