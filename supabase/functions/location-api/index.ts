@@ -58,9 +58,12 @@ Deno.serve(async (req) => {
             updated_at: new Date().toISOString(),
             is_sharing: isSharing !== false,
           },
-          { onConflict: "user_id,family_id" }
+          { onConflict: "user_id,family_id", ignoreDuplicates: false }
         );
-      if (error) throw error;
+      if (error) {
+        console.error("Upsert error:", error.message);
+        throw error;
+      }
 
       return json({ ok: true });
     }
