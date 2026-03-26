@@ -41,23 +41,21 @@ const ParentDashboard = () => {
 
   const addChild = () => {
     if (!newChildName.trim()) return;
-    const newChild: ChildProfile = {
-      id: `child-${Date.now()}`,
-      name: newChildName.trim(),
-    };
-    const updated = [...children, newChild];
-    setChildren(updated);
-    saveChildren(updated);
-    setNewChildName("");
-    setShowAddChild(false);
-    toast({ title: `تمت إضافة ${newChild.name}` });
+    addChildMutation.mutate(newChildName.trim(), {
+      onSuccess: () => {
+        setNewChildName("");
+        setShowAddChild(false);
+        toast({ title: `تمت إضافة ${newChildName.trim()}` });
+      },
+    });
   };
 
   const removeChild = (id: string) => {
-    const updated = children.filter((c) => c.id !== id);
-    setChildren(updated);
-    saveChildren(updated);
-    toast({ title: "تم حذف الطفل" });
+    removeChildMutation.mutate(id, {
+      onSuccess: () => {
+        toast({ title: "تم حذف الطفل" });
+      },
+    });
   };
 
   const handleExportPdf = async (childId: string) => {
