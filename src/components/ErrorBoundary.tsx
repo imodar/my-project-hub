@@ -1,5 +1,6 @@
 import React from "react";
 import { RefreshCw, WifiOff } from "lucide-react";
+import { reportError } from "@/lib/errorReporting";
 
 interface ErrorBoundaryState {
   hasError: boolean;
