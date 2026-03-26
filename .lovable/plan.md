@@ -204,6 +204,116 @@ apiFn: async (input) => {
 
 ---
 
+## المرحلة 5 — Input Validation (بعد إنجاز كل المراحل)
+
+في كل Edge Function أضف validation للمدخلات في البداية قبل أي عملية DB.
+
+### الثوابت المشتركة
+
+```typescript
+const MAX_NAME_LENGTH = 100;
+const MAX_NOTE_LENGTH = 2000;
+const MAX_DESCRIPTION_LENGTH = 5000;
+const MAX_AMOUNT = 10_000_000;
+const ALLOWED_ROLES = ["father","mother","son","daughter","husband","wife","worker","maid","driver"];
+const ALLOWED_PRIORITIES = ["none","low","medium","high"];
+const ALLOWED_CURRENCIES = ["SAR","USD","EUR","GBP","AED","EGP","KWD","BHD","OMR","QAR","JOD"];
+```
+
+### أمثلة التطبيق حسب الـ Edge Function
+
+#### `family-management`
+```typescript
+if (action === "join") {
+  if (!invite_code || typeof invite_code !== "string")
+    return json({ error: "كود الدعوة مطلوب" }, 400);
+  if (!ALLOWED_ROLES.includes(role))
+    return json({ error: "دور غير صحيح" }, 400);
+}
+```
+
+#### `debts-api`
+```typescript
+if (action === "create-debt") {
+  if (typeof amount !== "number" || amount <= 0 || amount > MAX_AMOUNT)
+    return json({ error: "المبلغ غير صحيح" }, 400);
+  if (person_name && person_name.length > MAX_NAME_LENGTH)
+    return json({ error: "الاسم طويل جداً" }, 400);
+  if (note && note.length > MAX_NOTE_LENGTH)
+    return json({ error: "الملاحظة طويلة جداً" }, 400);
+}
+```
+
+#### `budget-api`
+```typescript
+if (action === "create-budget") {
+  if (income !== undefined && (typeof income !== "number" || income < 0 || income > MAX_AMOUNT))
+    return json({ error: "الدخل غير صحيح" }, 400);
+  if (label && label.length > MAX_NAME_LENGTH)
+    return json({ error: "العنوان طويل جداً" }, 400);
+}
+```
+
+#### `market-api` / `tasks-api`
+```typescript
+if (action === "add-item") {
+  if (!name || typeof name !== "string" || name.trim().length === 0)
+    return json({ error: "اسم العنصر مطلوب" }, 400);
+  if (name.length > MAX_NAME_LENGTH)
+    return json({ error: "الاسم طويل جداً" }, 400);
+}
+```
+
+#### `health-api`
+```typescript
+if (action === "create-medication") {
+  if (!name || name.length > MAX_NAME_LENGTH)
+    return json({ error: "اسم الدواء غير صحيح" }, 400);
+  if (times_per_day !== undefined && (times_per_day < 1 || times_per_day > 24))
+    return json({ error: "عدد المرات غير صحيح" }, 400);
+}
+```
+
+#### `trips-api`
+```typescript
+if (action === "create-trip") {
+  if (!name || name.length > MAX_NAME_LENGTH)
+    return json({ error: "اسم الرحلة مطلوب" }, 400);
+  if (budget !== undefined && (typeof budget !== "number" || budget < 0 || budget > MAX_AMOUNT))
+    return json({ error: "الميزانية غير صحيحة" }, 400);
+}
+```
+
+#### `will-api` / `zakat-api`
+```typescript
+// will-api
+if (action === "save-will") {
+  if (content && content.length > MAX_DESCRIPTION_LENGTH)
+    return json({ error: "المحتوى طويل جداً" }, 400);
+}
+
+// zakat-api
+if (action === "save-assets") {
+  if (!Array.isArray(assets))
+    return json({ error: "البيانات غير صحيحة" }, 400);
+  for (const a of assets) {
+    if (typeof a.value !== "number" || a.value < 0 || a.value > MAX_AMOUNT)
+      return json({ error: "قيمة الأصل غير صحيحة" }, 400);
+  }
+}
+```
+
+### القاعدة العامة لكل action
+
+1. **الحقول النصية**: `typeof x === "string" && x.length <= MAX`
+2. **الأرقام**: `typeof x === "number" && x >= 0 && x <= MAX_AMOUNT`
+3. **القوائم المحددة** (role, priority, currency): `ALLOWED_LIST.includes(x)`
+4. **UUIDs**: تحقق من الصيغة `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i`
+5. **التواريخ**: `!isNaN(Date.parse(x))`
+6. **المصفوفات**: `Array.isArray(x) && x.length <= MAX_ARRAY_LENGTH`
+
+---
+
 ## ملخص نهائي
 
 | | العدد |
@@ -212,5 +322,6 @@ apiFn: async (input) => {
 | ⏳ ملفات متبقية | 14 |
 | Edge Functions تحتاج تعديل | 9 |
 | إضافات في `TABLE_API_MAP` | 5 جداول |
+| Input Validation | كل Edge Function |
 | Migrations جديدة | 0 |
 
