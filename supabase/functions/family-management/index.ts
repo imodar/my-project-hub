@@ -13,6 +13,25 @@ function json(data: unknown, status = 200) {
   });
 }
 
+async function checkRateLimit(
+  ac: any, userId: string, endpoint: string, maxPerMinute = 60
+): Promise<boolean> {
+  const now = new Date();
+  const windowStart = new Date(now.getTime() - 60000).toISOString();
+  const { data } = await ac.from("rate_limit_counters").select("id, count, window_start").eq("user_id", userId).eq("endpoint", endpoint).maybeSingle();
+  if (data) {
+    if (data.window_start > windowStart) {
+      if (data.count >= maxPerMinute) return false;
+      await ac.from("rate_limit_counters").update({ count: data.count + 1 }).eq("id", data.id);
+    } else {
+      await ac.from("rate_limit_counters").update({ count: 1, window_start: now.toISOString() }).eq("id", data.id);
+    }
+  } else {
+    await ac.from("rate_limit_counters").insert({ user_id: userId, endpoint, count: 1, window_start: now.toISOString() });
+  }
+  return true;
+}
+
 function generateInviteCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -58,6 +77,9 @@ Deno.serve(async (req) => {
       return json({ error: "Unauthorized" }, 401);
     }
     const userId = authUser.id;
+
+    const _rl = await checkRateLimit(adminClient, userId, "family-management");
+    if (!_rl) return json({ error: "Too many requests" }, 429);
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,

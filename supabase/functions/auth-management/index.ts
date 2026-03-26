@@ -27,6 +27,10 @@ Deno.serve(async (req) => {
     if (authError || !authUser) return json({ error: "Unauthorized" }, 401);
     const userId = authUser.id;
 
+    const _rlClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const _rl = await checkRateLimit(_rlClient, userId, "auth-management");
+    if (!_rl) return json({ error: "Too many requests" }, 429);
+
     const body = await req.json().catch(() => ({}));
     const action = body._method || body.action || "GET";
 
@@ -77,6 +81,25 @@ Deno.serve(async (req) => {
     return json({ error: err.message }, 500);
   }
 });
+
+async function checkRateLimit(
+  ac: any, userId: string, endpoint: string, maxPerMinute = 60
+): Promise<boolean> {
+  const now = new Date();
+  const windowStart = new Date(now.getTime() - 60000).toISOString();
+  const { data } = await ac.from("rate_limit_counters").select("id, count, window_start").eq("user_id", userId).eq("endpoint", endpoint).maybeSingle();
+  if (data) {
+    if (data.window_start > windowStart) {
+      if (data.count >= maxPerMinute) return false;
+      await ac.from("rate_limit_counters").update({ count: data.count + 1 }).eq("id", data.id);
+    } else {
+      await ac.from("rate_limit_counters").update({ count: 1, window_start: now.toISOString() }).eq("id", data.id);
+    }
+  } else {
+    await ac.from("rate_limit_counters").insert({ user_id: userId, endpoint, count: 1, window_start: now.toISOString() });
+  }
+  return true;
+}
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
