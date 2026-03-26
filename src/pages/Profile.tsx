@@ -57,9 +57,25 @@ const Profile = () => {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
+
+    // Upload avatar if changed
+    let avatarUrl: string | undefined;
+    if (avatarFile) {
+      const result = await uploadImage("avatars", avatarFile, user.id);
+      if (result.error) {
+        toast({ title: result.error, variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+      avatarUrl = result.url;
+    }
+
+    const updates: Record<string, string> = { name };
+    if (avatarUrl) updates.avatar_url = avatarUrl;
+
     const { error } = await supabase
       .from("profiles")
-      .update({ name })
+      .update(updates)
       .eq("id", user.id);
 
     setSaving(false);
@@ -67,6 +83,10 @@ const Profile = () => {
       toast({ title: "حدث خطأ أثناء الحفظ", variant: "destructive" });
     } else {
       setEditing(false);
+      setAvatarFile(null);
+      // Update localStorage cache
+      localStorage.setItem(`profile_name_${user.id}`, name);
+      if (avatarUrl) setAvatar(avatarUrl);
       toast({ title: "تم حفظ التغييرات" });
     }
   };

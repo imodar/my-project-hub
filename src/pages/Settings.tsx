@@ -104,17 +104,29 @@ const Settings = () => {
     },
   ];
 
-  const handleAddContact = () => {
-    if (newContactName.trim() && newContactPhone.trim()) {
-      setContacts(prev => [...prev, { id: Date.now().toString(), name: newContactName, phone: newContactPhone }]);
+  const handleAddContact = async () => {
+    if (!newContactName.trim() || !newContactPhone.trim() || !familyId || !user) return;
+    const { data, error } = await supabase
+      .from("emergency_contacts")
+      .insert({ name: newContactName.trim(), phone: newContactPhone.trim(), family_id: familyId, created_by: user.id })
+      .select()
+      .single();
+    if (error) {
+      toast.error("فشل إضافة جهة الاتصال");
+    } else if (data) {
+      setContacts(prev => [...prev, { id: data.id, name: data.name, phone: data.phone }]);
       setNewContactName("");
       setNewContactPhone("");
       setAddContactOpen(false);
+      toast.success("تمت الإضافة");
     }
   };
 
-  const handleRemoveContact = (id: string) => {
-    setContacts(prev => prev.filter(c => c.id !== id));
+  const handleRemoveContact = async (id: string) => {
+    const { error } = await supabase.from("emergency_contacts").delete().eq("id", id);
+    if (!error) {
+      setContacts(prev => prev.filter(c => c.id !== id));
+    }
   };
 
   const toggleMemberSOS = (id: string) => {
