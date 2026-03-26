@@ -125,7 +125,7 @@ const Auth = () => {
         </motion.div>
         <motion.img
           src={authFamily}
-          alt="عائلة"
+          alt={isRTL ? "عائلة" : "Family"}
           className="h-28 mt-3 object-contain pointer-events-none"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1, y: [0, -5, 0] }}
