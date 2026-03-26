@@ -308,6 +308,8 @@ const Auth = () => {
           )}
         </AnimatePresence>
       </motion.div>
+
+      <LanguageSheet open={langSheetOpen} onOpenChange={setLangSheetOpen} />
     </div>
   );
 };

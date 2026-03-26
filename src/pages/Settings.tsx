@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { toast } from "sonner";
+import LanguageSheet from "@/components/LanguageSheet";
 
 const Settings = () => {
   const { signOut, user } = useAuth();
