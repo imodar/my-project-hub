@@ -215,7 +215,9 @@ const App = () => (
                     <FirstSyncOverlay />
                     <ScrollToTop />
                     <WarmCacheProvider>
-                      <AnimatedRoutes />
+                      <Suspense fallback={<ListPageSkeleton />}>
+                        <AnimatedRoutes />
+                      </Suspense>
                     </WarmCacheProvider>
                     <BottomNav />
                   </BrowserRouter>
