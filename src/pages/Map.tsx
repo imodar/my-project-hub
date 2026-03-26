@@ -1,5 +1,5 @@
 import { useState, Suspense, lazy } from "react";
-import { MapPin, EyeOff, Settings2 } from "lucide-react";
+import { MapPin, EyeOff, Settings2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 const FamilyMap = lazy(() => import("@/components/map/FamilyMap"));
