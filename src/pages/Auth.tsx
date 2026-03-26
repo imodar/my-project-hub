@@ -287,8 +287,8 @@ const Auth = () => {
                   }}
                   className="gap-1 text-muted-foreground"
                 >
-                  <ArrowRight className="h-3 w-3" />
-                  تغيير الرقم
+                  <ArrowRight className={`h-3 w-3 ${!isRTL ? 'rotate-180' : ''}`} />
+                  {t.auth.changeNumber}
                 </Button>
 
                 <Button
@@ -298,7 +298,7 @@ const Auth = () => {
                   disabled={countdown > 0 || loading}
                   className="text-muted-foreground"
                 >
-                  {countdown > 0 ? `إعادة الإرسال (${countdown})` : "إعادة الإرسال"}
+                  {countdown > 0 ? `${t.auth.resendIn} (${countdown})` : t.auth.resend}
                 </Button>
               </div>
             </motion.div>
