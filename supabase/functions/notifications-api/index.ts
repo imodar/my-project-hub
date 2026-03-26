@@ -57,14 +57,20 @@ Deno.serve(async (req) => {
     const action = body.action;
 
     if (action === "get-notifications") {
-      const { data, error } = await supabase
+      const { limit: reqLimit, before } = body;
+      const safeLimit = Math.min(Math.max(Number(reqLimit) || 30, 1), 100);
+      let query = supabase
         .from("user_notifications")
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(safeLimit);
+      if (before && typeof before === "string") {
+        query = query.lt("created_at", before);
+      }
+      const { data, error } = await query;
       if (error) return json({ error: error.message }, 400);
-      return json({ data });
+      return json({ data, hasMore: (data?.length ?? 0) === safeLimit });
     }
 
     if (action === "mark-read") {

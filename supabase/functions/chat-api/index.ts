@@ -114,16 +114,17 @@ Deno.serve(async (req) => {
     // --- MESSAGES ---
     if (action === "get-messages") {
       const { family_id, limit: msgLimit, before } = body;
+      const safeLimit = Math.min(Math.max(Number(msgLimit) || 50, 1), 100);
       let query = supabase
         .from("chat_messages")
         .select("*, profiles:sender_id(name, avatar_url)")
         .eq("family_id", family_id)
         .order("created_at", { ascending: false })
-        .limit(msgLimit || 50);
+        .limit(safeLimit);
       if (before) query = query.lt("created_at", before);
       const { data, error } = await query;
       if (error) return json({ error: error.message }, 400);
-      return json({ data: data?.reverse() });
+      return json({ data: data?.reverse(), hasMore: (data?.length ?? 0) === safeLimit });
     }
 
     if (action === "send-message") {
