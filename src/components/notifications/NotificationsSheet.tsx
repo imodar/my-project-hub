@@ -262,6 +262,22 @@ const NotificationsSheet = React.forwardRef<HTMLDivElement, Props>(
                       onSwipeOpen={() => setOpenCardId(notif.id)}
                     />
                   ))}
+                  {hasMore && (
+                    <button
+                      onClick={() => loadMore()}
+                      disabled={isFetchingMore}
+                      className="w-full py-3 rounded-2xl text-xs font-semibold transition-colors"
+                      style={{
+                        background: "hsl(var(--muted))",
+                        color: "hsl(var(--muted-foreground))",
+                      }}
+                    >
+                      {isFetchingMore ? (
+                        <Clock size={14} className="inline animate-spin ml-1.5" />
+                      ) : null}
+                      {isFetchingMore ? "جاري التحميل..." : "تحميل المزيد"}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
