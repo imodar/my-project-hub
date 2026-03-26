@@ -153,9 +153,9 @@ export default function FamilyMap({ locations, selectedMemberId, onMemberSelect,
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedMemberId) return;
-    const loc = sharingLocations.find((l) => l.user_id === selectedMemberId);
+    const loc = allWithCoords.find((l) => l.user_id === selectedMemberId);
     if (loc) map.flyTo([loc.lat, loc.lng], 16, { duration: 0.8 });
-  }, [selectedMemberId]);
+  }, [selectedMemberId, allWithCoords]);
 
   return (
     <div
