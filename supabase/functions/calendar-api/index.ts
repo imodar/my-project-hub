@@ -57,18 +57,21 @@ Deno.serve(async (req) => {
     const action = body.action;
 
     if (action === "get-events") {
-      const { family_id, month } = body;
+      const { family_id, month, limit: reqLimit, offset } = body;
+      const safeLimit = Math.min(Math.max(Number(reqLimit) || 200, 1), 500);
+      const safeOffset = Math.max(Number(offset) || 0, 0);
       let query = supabase
         .from("calendar_events")
         .select("*")
         .eq("family_id", family_id)
-        .order("date", { ascending: true });
+        .order("date", { ascending: true })
+        .range(safeOffset, safeOffset + safeLimit - 1);
       if (month) {
         query = query.gte("date", `${month}-01`).lte("date", `${month}-31`);
       }
       const { data, error } = await query;
       if (error) return json({ error: error.message }, 400);
-      return json({ data });
+      return json({ data, hasMore: (data?.length ?? 0) === safeLimit });
     }
 
     if (action === "create-event") {

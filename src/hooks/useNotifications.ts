@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 export interface AppNotification {
   id: string;
@@ -15,6 +15,8 @@ export interface AppNotification {
   isRead: boolean;
   createdAt: string;
 }
+
+const PAGE_SIZE = 30;
 
 const mapRow = (row: any): AppNotification => ({
   id: row.id,
@@ -34,15 +36,21 @@ export function useNotifications() {
   const qc = useQueryClient();
   const key = ["notifications", user?.id];
 
-  const query = useQuery({
+  const infiniteQuery = useInfiniteQuery({
     queryKey: key,
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase.functions.invoke("notifications-api", {
-        body: { action: "get-notifications" },
-      });
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }) => {
+      if (!user) return { items: [], hasMore: false };
+      const body: Record<string, unknown> = { action: "get-notifications", limit: PAGE_SIZE };
+      if (pageParam) body.before = pageParam;
+      const { data, error } = await supabase.functions.invoke("notifications-api", { body });
       if (error) throw error;
-      return (data?.data || []).map(mapRow);
+      const items = (data?.data || []).map(mapRow);
+      return { items, hasMore: data?.hasMore ?? false };
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.hasMore || !lastPage.items.length) return undefined;
+      return lastPage.items[lastPage.items.length - 1].createdAt;
     },
     enabled: !!user,
   });
@@ -78,17 +86,7 @@ export function useNotifications() {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
     },
-    onMutate: async (notifId) => {
-      await qc.cancelQueries({ queryKey: key });
-      const prev = qc.getQueryData<AppNotification[]>(key);
-      qc.setQueryData<AppNotification[]>(key, (old) =>
-        old?.map((n) => (n.id === notifId ? { ...n, isRead: true } : n))
-      );
-      return { prev };
-    },
-    onError: (_err, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const markAsUnread = useMutation({
@@ -98,17 +96,7 @@ export function useNotifications() {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
     },
-    onMutate: async (notifId) => {
-      await qc.cancelQueries({ queryKey: key });
-      const prev = qc.getQueryData<AppNotification[]>(key);
-      qc.setQueryData<AppNotification[]>(key, (old) =>
-        old?.map((n) => (n.id === notifId ? { ...n, isRead: false } : n))
-      );
-      return { prev };
-    },
-    onError: (_err, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const markAllAsRead = useMutation({
@@ -119,17 +107,7 @@ export function useNotifications() {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
     },
-    onMutate: async () => {
-      await qc.cancelQueries({ queryKey: key });
-      const prev = qc.getQueryData<AppNotification[]>(key);
-      qc.setQueryData<AppNotification[]>(key, (old) =>
-        old?.map((n) => ({ ...n, isRead: true }))
-      );
-      return { prev };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const deleteNotification = useMutation({
@@ -139,26 +117,22 @@ export function useNotifications() {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
     },
-    onMutate: async (notifId) => {
-      await qc.cancelQueries({ queryKey: key });
-      const prev = qc.getQueryData<AppNotification[]>(key);
-      qc.setQueryData<AppNotification[]>(key, (old) =>
-        old?.filter((n) => n.id !== notifId)
-      );
-      return { prev };
-    },
-    onError: (_err, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
-  const notifications = query.data || [];
+  const notifications = useMemo(
+    () => infiniteQuery.data?.pages.flatMap((p) => p.items) || [],
+    [infiniteQuery.data]
+  );
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return {
     notifications,
     unreadCount,
-    isLoading: query.isLoading,
+    isLoading: infiniteQuery.isLoading,
+    hasMore: infiniteQuery.hasNextPage ?? false,
+    isFetchingMore: infiniteQuery.isFetchingNextPage,
+    loadMore: () => infiniteQuery.fetchNextPage(),
     markAsRead,
     markAsUnread,
     markAllAsRead,
