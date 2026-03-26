@@ -1,93 +1,104 @@
 
 
-# تحويل الاستدعاءات المباشرة المتبقية إلى Edge Functions
+# إصلاح 6 مشاكل حرجة — خطة نهائية
 
-## الوضع الحالي
+## تحقق نوع البيانات: worship_children vs kids_worship_data
 
-الـ hooks المذكورة (budgets, market, tasks, calendar, places, vaccinations) **تم تحويلها بالفعل**. لكن يوجد **6 ملفات** لا تزال تستدعي `supabase.from()` مباشرة:
+`kids_worship_data.child_id` هو `text` وفيه بيانات موجودة. تغييره لـ `uuid` سيكسر البيانات الحالية.
 
-### الاستدعاءات المباشرة المتبقية (من network requests + كود)
-
-| الملف | الجدول | نوع العملية |
-|---|---|---|
-| `useFamilyId.ts` | `family_members` | SELECT family_id |
-| `useMyRole.ts` | `family_members` | SELECT role, is_admin |
-| `useNotifications.ts` | `user_notifications` | SELECT, UPDATE, DELETE |
-| `useChat.ts` | `profiles`, `family_keys`, `chat_messages`, `family_members` | SELECT, INSERT, UPDATE |
-| `Settings.tsx` | `emergency_contacts` | INSERT, DELETE |
-| `AdminDashboard.tsx` | `profiles`, `families`, `account_deletions` | SELECT |
-
-### ملف إضافي (يُتجاهل)
-- `src/examples/MedicationsExample.tsx` — ملف مثال فقط، ليس مستخدماً في الإنتاج
+**القرار**: إبقاء `child_id` كـ `text`. `worship_children.id` يبقى `uuid` لكن عند الربط يُمرَّر كـ `child.id.toString()`.
 
 ---
 
-## خطة التحويل
+## 1. Will.tsx — حماية حقيقية بكلمة مرور (client-side فقط)
 
-### 1. `useFamilyId.ts` → `family-management`
-- استبدال `supabase.from("family_members").select("family_id")` بـ:
+- إضافة `isUnlocked` state يبدأ بـ `false`
+- `handleUnlock()`: حساب SHA-256 محلياً ومقارنته مع `will.password_hash` — بدون API call
+- إذا لم يكن هناك `password_hash`: إجبار إنشاء كلمة مرور أولاً عبر `upsertWill`
+- عندما `!isUnlocked`: عرض شاشة قفل فقط
+- استبدال `supabase.from("family_members")` → `supabase.functions.invoke("family-management", { body: { action: "get-members" } })`
+- **لا تعديل على `will-api` أو `useWill.ts`**
+
+**ملفات**: `src/pages/Will.tsx`
+
+---
+
+## 2. QR Code — رابط كامل + قراءة `?code=`
+
+- تعديل `FamilyManagement.tsx`: QR يرمّز `https://ailti.lovable.app/join-or-create?code=ABC12345`
+- تعديل `JoinOrCreate.tsx`: قراءة `?code=` من `useSearchParams` وملء حقل الكود تلقائياً
+
+**ملفات**: `src/pages/FamilyManagement.tsx`, `src/pages/JoinOrCreate.tsx`
+
+---
+
+## 3. إزالة Realtime Channels المكررة
+
+- حذف `useEffect` الذي ينشئ `supabase.channel(...)` من `useTaskLists.ts` و `useMarketLists.ts`
+- `useFamilyRealtime` يغطي بالفعل هذه الجداول
+
+**ملفات**: `src/hooks/useTaskLists.ts`, `src/hooks/useMarketLists.ts`
+
+---
+
+## 4. KidsWorship — نقل أسماء الأطفال إلى DB
+
+**Migration**:
+```sql
+CREATE TABLE worship_children (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  family_id uuid NOT NULL,
+  name text NOT NULL,
+  created_by uuid NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE worship_children ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Family members access worship children"
+  ON worship_children FOR ALL TO authenticated
+  USING (is_family_member(auth.uid(), family_id));
+CREATE INDEX idx_worship_children_family ON worship_children(family_id);
 ```
-supabase.functions.invoke("family-management", {
-  body: { action: "get-family-id" }
-})
-```
-- **تعديل Edge Function**: إضافة action `get-family-id` يرجع `family_id` للمستخدم الحالي
-- الإبقاء على localStorage cache كما هو
 
-### 2. `useMyRole.ts` → `family-management`
-- استبدال `supabase.from("family_members").select("role, is_admin")` بـ:
-```
-supabase.functions.invoke("family-management", {
-  body: { action: "get-my-role" }
-})
-```
-- **تعديل Edge Function**: إضافة action `get-my-role` يرجع `{ role, is_admin }`
+- إضافة actions في `worship-api`: `get-children`, `add-child`, `remove-child`
+- إنشاء hook `useWorshipChildren.ts` (`useQuery` + `useMutation`)
+- تعديل `KidsWorship.tsx` و `ParentDashboard.tsx` لاستخدام الـ hook
+- عند تمرير `childId` لـ `useKidsWorshipData`: يستخدم `child.id` (uuid as string)
+- إبقاء `worshipData.ts` كـ fallback
 
-### 3. `useNotifications.ts` → `notifications-api` (Edge Function جديدة)
-- 5 عمليات مباشرة تحتاج تحويل: get, markAsRead, markAsUnread, markAllAsRead, delete
-- **إنشاء Edge Function جديدة** `notifications-api` مع actions:
-  - `get-notifications`
-  - `mark-read`
-  - `mark-unread`
-  - `mark-all-read`
-  - `delete-notification`
-- الإبقاء على realtime subscription كما هو (مقبول)
+**ملفات**: migration, `supabase/functions/worship-api/index.ts`, `src/hooks/useWorshipChildren.ts` (جديد), `src/pages/KidsWorship.tsx`, `src/pages/ParentDashboard.tsx`
 
-### 4. `useChat.ts` → `chat-api`
-- أكبر ملف — ~20 استدعاء مباشر عبر 6 جداول
-- تحويل:
-  - قراءة `family_members` + `profiles` → `chat-api/get-members`
-  - قراءة `chat_messages` → `chat-api/get-messages`
-  - إدراج `chat_messages` → `chat-api/send-message`
-  - تحديث `chat_messages` (pin/reactions) → `chat-api/update-message`
-  - `family_keys` upsert/read → `chat-api/manage-keys`
-- **ملاحظة**: الـ Edge Function `chat-api` موجودة بالفعل — تحتاج مراجعة لتغطية كل العمليات
+---
 
-### 5. `Settings.tsx` → `settings-api`
-- عمليتان: إضافة وحذف `emergency_contacts`
-- **تعديل `settings-api`**: إضافة actions `add-emergency-contact` و `remove-emergency-contact`
+## 5. Sentry — تفعيل حقيقي
 
-### 6. `AdminDashboard.tsx` → `admin-api`
-- 3 استعلامات إحصائية: profiles count, families count, pending deletions
-- **تعديل `admin-api`**: إضافة action `get-stats` يرجع الإحصائيات الثلاث
+- تثبيت `@sentry/react`
+- `Sentry.init()` في `main.tsx` مع `VITE_SENTRY_DSN` (optional — إذا غير موجود يظل console.log)
+- `reportError()` يستدعي `Sentry.captureException()`
+- **عند تسجيل الدخول** في `AuthContext`: `Sentry.setUser({ id: user.id, email: user.email })`
+- **عند تسجيل الخروج** في `signOut()` قبل `supabase.auth.signOut()`: `Sentry.setUser(null)` — بدونه ستُنسب أخطاء المستخدم التالي للسابق
+
+**ملفات**: `package.json`, `src/main.tsx`, `src/lib/errorReporting.ts`, `src/contexts/AuthContext.tsx`
+
+---
+
+## 6. TypeScript strict mode
+
+- تفعيل `strict: true` و `noImplicitAny: true` في `tsconfig.app.json`
+- أولوية الإصلاح:
+  1. كل `useOfflineMutation<any, any>` → أنواع حقيقية
+  2. كل `apiFn: async (input: any)` → أنواع حقيقية
+  3. الباقي `// @ts-expect-error TODO 2026-03-26: fix types`
+
+**ملفات**: `tsconfig.app.json`, hooks الرئيسية
 
 ---
 
 ## ترتيب التنفيذ
 
-1. **`useFamilyId.ts` + `useMyRole.ts`** → تعديل `family-management` (action واحد لكل منهما)
-2. **`AdminDashboard.tsx`** → تعديل `admin-api`
-3. **`Settings.tsx`** → تعديل `settings-api`
-4. **`useNotifications.ts`** → إنشاء `notifications-api`
-5. **`useChat.ts`** → تعديل `chat-api` (الأكبر والأعقد)
-
-## تعديلات Edge Functions المطلوبة
-
-| Edge Function | التعديل |
-|---|---|
-| `family-management` | إضافة `get-family-id` + `get-my-role` |
-| `admin-api` | إضافة `get-stats` |
-| `settings-api` | إضافة `add-emergency-contact` + `remove-emergency-contact` |
-| `notifications-api` | **جديدة** — CRUD للإشعارات |
-| `chat-api` | مراجعة وإضافة actions ناقصة |
+1. Will.tsx — إصلاح القفل + إزالة DB call المباشر
+2. QR Code — URL كامل + قراءة `?code=`
+3. Realtime مكرر — حذف channels
+4. KidsWorship — migration + hook + تعديل الصفحات
+5. Sentry — تثبيت + تفعيل (مع `setUser(null)` عند الخروج)
+6. TypeScript strict — تفعيل + إصلاح تدريجي
 
