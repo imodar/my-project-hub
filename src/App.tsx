@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { Suspense, useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient, MutationCache } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,53 +21,55 @@ import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { warmCache } from "@/lib/warmCache";
 import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
-import Auth from "./pages/Auth.tsx";
-import GetStarted from "./pages/GetStarted.tsx";
-import Index from "./pages/Index.tsx";
-import Tasbih from "./pages/Tasbih.tsx";
-import Settings from "./pages/Settings.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import Chat from "./pages/Chat.tsx";
-import Map from "./pages/Map.tsx";
-import Debts from "./pages/Debts.tsx";
-import FamilyManagement from "./pages/FamilyManagement.tsx";
-import JoinOrCreate from "./pages/JoinOrCreate.tsx";
-import CompleteProfile from "./pages/CompleteProfile.tsx";
-import Profile from "./pages/Profile.tsx";
-import CalendarPage from "./pages/Calendar.tsx";
-import Trash from "./pages/Trash.tsx";
-import Market from "./pages/Market.tsx";
-import Places from "./pages/Places.tsx";
-import AddPlace from "./pages/AddPlace.tsx";
-import Budget from "./pages/Budget.tsx";
-import Tasks from "./pages/Tasks.tsx";
-import Documents from "./pages/Documents.tsx";
-import Zakat from "./pages/Zakat.tsx";
-import Will from "./pages/Will.tsx";
-import Trips from "./pages/Trips.tsx";
-import Albums from "./pages/Albums.tsx";
-import KidsWorship from "./pages/KidsWorship.tsx";
-import ParentDashboard from "./pages/ParentDashboard.tsx";
-import Athkar from "./pages/Athkar.tsx";
-import Vehicle from "./pages/Vehicle.tsx";
-import Vaccinations from "./pages/Vaccinations.tsx";
-import Medications from "./pages/Medications.tsx";
-import IslamicReminders from "./pages/IslamicReminders.tsx";
-
+import { ListPageSkeleton } from "@/components/PageSkeletons";
 import BottomNav from "@/components/home/BottomNav";
 import RoleGuard from "@/components/RoleGuard";
 
-// Admin Panel
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminOverview from "./pages/admin/AdminOverview";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminFamilies from "./pages/admin/AdminFamilies";
-import AdminContent from "./pages/admin/AdminContent";
-import AdminNotifications from "./pages/admin/AdminNotifications";
-import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
-import AdminSystem from "./pages/admin/AdminSystem";
-import AdminAudit from "./pages/admin/AdminAudit";
-import AdminSecurity from "./pages/admin/AdminSecurity";
+// ── Lazy-loaded pages ──
+const Auth = React.lazy(() => import("./pages/Auth.tsx"));
+const GetStarted = React.lazy(() => import("./pages/GetStarted.tsx"));
+const Index = React.lazy(() => import("./pages/Index.tsx"));
+const Tasbih = React.lazy(() => import("./pages/Tasbih.tsx"));
+const Settings = React.lazy(() => import("./pages/Settings.tsx"));
+const NotFound = React.lazy(() => import("./pages/NotFound.tsx"));
+const Chat = React.lazy(() => import("./pages/Chat.tsx"));
+const Map = React.lazy(() => import("./pages/Map.tsx"));
+const Debts = React.lazy(() => import("./pages/Debts.tsx"));
+const FamilyManagement = React.lazy(() => import("./pages/FamilyManagement.tsx"));
+const JoinOrCreate = React.lazy(() => import("./pages/JoinOrCreate.tsx"));
+const CompleteProfile = React.lazy(() => import("./pages/CompleteProfile.tsx"));
+const Profile = React.lazy(() => import("./pages/Profile.tsx"));
+const CalendarPage = React.lazy(() => import("./pages/Calendar.tsx"));
+const Trash = React.lazy(() => import("./pages/Trash.tsx"));
+const Market = React.lazy(() => import("./pages/Market.tsx"));
+const Places = React.lazy(() => import("./pages/Places.tsx"));
+const AddPlace = React.lazy(() => import("./pages/AddPlace.tsx"));
+const Budget = React.lazy(() => import("./pages/Budget.tsx"));
+const Tasks = React.lazy(() => import("./pages/Tasks.tsx"));
+const Documents = React.lazy(() => import("./pages/Documents.tsx"));
+const Zakat = React.lazy(() => import("./pages/Zakat.tsx"));
+const Will = React.lazy(() => import("./pages/Will.tsx"));
+const Trips = React.lazy(() => import("./pages/Trips.tsx"));
+const Albums = React.lazy(() => import("./pages/Albums.tsx"));
+const KidsWorship = React.lazy(() => import("./pages/KidsWorship.tsx"));
+const ParentDashboard = React.lazy(() => import("./pages/ParentDashboard.tsx"));
+const Athkar = React.lazy(() => import("./pages/Athkar.tsx"));
+const Vehicle = React.lazy(() => import("./pages/Vehicle.tsx"));
+const Vaccinations = React.lazy(() => import("./pages/Vaccinations.tsx"));
+const Medications = React.lazy(() => import("./pages/Medications.tsx"));
+const IslamicReminders = React.lazy(() => import("./pages/IslamicReminders.tsx"));
+
+// Admin Panel (lazy)
+const AdminLayout = React.lazy(() => import("./pages/admin/AdminLayout"));
+const AdminOverview = React.lazy(() => import("./pages/admin/AdminOverview"));
+const AdminUsers = React.lazy(() => import("./pages/admin/AdminUsers"));
+const AdminFamilies = React.lazy(() => import("./pages/admin/AdminFamilies"));
+const AdminContent = React.lazy(() => import("./pages/admin/AdminContent"));
+const AdminNotifications = React.lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminSubscriptions = React.lazy(() => import("./pages/admin/AdminSubscriptions"));
+const AdminSystem = React.lazy(() => import("./pages/admin/AdminSystem"));
+const AdminAudit = React.lazy(() => import("./pages/admin/AdminAudit"));
+const AdminSecurity = React.lazy(() => import("./pages/admin/AdminSecurity"));
 
 const queryClient = new QueryClient({
   mutationCache: new MutationCache({
