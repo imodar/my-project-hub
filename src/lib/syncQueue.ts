@@ -56,7 +56,7 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   // ── Calendar ──
   calendar_events: {
     functionName: "calendar-api",
-    actions: { INSERT: "add-event", UPDATE: "update-event", DELETE: "delete-event" },
+    actions: { INSERT: "create-event", UPDATE: "update-event", DELETE: "delete-event" },
   },
 
   // ── Budget ──
@@ -100,6 +100,10 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
     functionName: "trips-api",
     actions: { INSERT: "add-packing", UPDATE: "toggle-packing" },
   },
+  trip_documents: {
+    functionName: "trips-api",
+    actions: { INSERT: "add-document", DELETE: "delete-document" },
+  },
 
   // ── Documents ──
   document_lists: {
@@ -109,6 +113,10 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   document_items: {
     functionName: "documents-api",
     actions: { INSERT: "add-item", UPDATE: "update-item", DELETE: "delete-item" },
+  },
+  document_files: {
+    functionName: "documents-api",
+    actions: { INSERT: "add-file", DELETE: "delete-file" },
   },
 
   // ── Medications ──
@@ -124,7 +132,7 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   // ── Vehicles ──
   vehicles: {
     functionName: "vehicles-api",
-    actions: { INSERT: "add-vehicle", UPDATE: "update-vehicle", DELETE: "delete-vehicle" },
+    actions: { INSERT: "create-vehicle", UPDATE: "update-vehicle", DELETE: "delete-vehicle" },
   },
   vehicle_maintenance: {
     functionName: "vehicles-api",
@@ -151,6 +159,26 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   chat_messages: {
     functionName: "chat-api",
     actions: { INSERT: "send-message", UPDATE: "pin-message" },
+  },
+
+  // ── Places ──
+  places: {
+    functionName: "places-api",
+    actions: { INSERT: "add-place", UPDATE: "update-place", DELETE: "delete-place" },
+  },
+  place_lists: {
+    functionName: "places-api",
+    actions: { INSERT: "create-list", DELETE: "delete-list" },
+  },
+
+  // ── Worship ──
+  tasbih_sessions: {
+    functionName: "worship-api",
+    actions: { INSERT: "save-tasbih" },
+  },
+  kids_worship_data: {
+    functionName: "worship-api",
+    actions: { INSERT: "save-worship-data", DELETE: "delete-worship-data" },
   },
 };
 

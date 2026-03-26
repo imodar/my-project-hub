@@ -16,13 +16,12 @@ export function useTasbihSessions() {
     queryKey: ["tasbih-sessions", user?.id],
     queryFn: async (): Promise<TasbihSession[]> => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from("tasbih_sessions")
-        .select("id, count, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      const { data: response, error } = await supabase.functions.invoke("worship-api", {
+        body: { action: "get-tasbih-history" },
+      });
       if (error) throw error;
-      return data || [];
+      if (response?.error) throw new Error(response.error);
+      return response?.data || [];
     },
     enabled: !!user,
   });
@@ -30,28 +29,25 @@ export function useTasbihSessions() {
   const saveSession = useMutation({
     mutationFn: async (count: number) => {
       if (!user || count <= 0) return;
-      const { error } = await supabase
-        .from("tasbih_sessions")
-        .insert({ user_id: user.id, count });
+      const { data: response, error } = await supabase.functions.invoke("worship-api", {
+        body: { action: "save-tasbih", count },
+      });
       if (error) throw error;
+      if (response?.error) throw new Error(response.error);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasbih-sessions", user?.id] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasbih-sessions", user?.id] }),
   });
 
   const clearAll = useMutation({
     mutationFn: async () => {
       if (!user) return;
-      const { error } = await supabase
-        .from("tasbih_sessions")
-        .delete()
-        .eq("user_id", user.id);
+      const { data: response, error } = await supabase.functions.invoke("worship-api", {
+        body: { action: "clear-tasbih" },
+      });
       if (error) throw error;
+      if (response?.error) throw new Error(response.error);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasbih-sessions", user?.id] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasbih-sessions", user?.id] }),
   });
 
   return {
