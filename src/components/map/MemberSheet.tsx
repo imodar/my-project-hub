@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { ChevronUp, MapPin, EyeOff } from "lucide-react";
+import { ChevronUp, MapPin, EyeOff, Loader2 } from "lucide-react";
 import { motion, useMotionValue, animate, PanInfo } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 
