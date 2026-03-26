@@ -257,12 +257,33 @@ Deno.serve(async (req) => {
         .eq("id", family_id)
         .single();
 
-      const { data, error } = await supabase
+      const { data: members, error } = await supabase
         .from("family_members")
-        .select("*, profiles:user_id(name, avatar_url, phone)")
+        .select("*")
         .eq("family_id", family_id)
         .eq("status", "active");
       if (error) return json({ error: error.message }, 400);
+
+      // Fetch profiles separately since there's no FK relationship
+      const userIds = (members || []).map((m: any) => m.user_id);
+      let profilesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await adminClient
+          .from("profiles")
+          .select("id, name, avatar_url, phone")
+          .in("id", userIds);
+        if (profiles) {
+          for (const p of profiles) {
+            profilesMap[p.id] = p;
+          }
+        }
+      }
+
+      const data = (members || []).map((m: any) => ({
+        ...m,
+        profiles: profilesMap[m.user_id] || null,
+      }));
+
       return json({ data, created_by: familyData?.created_by });
     }
 
