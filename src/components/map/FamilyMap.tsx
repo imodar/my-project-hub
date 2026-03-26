@@ -82,6 +82,7 @@ export default function FamilyMap({ locations, selectedMemberId, onMemberSelect,
   const fittedRef = useRef(false);
 
   const sharingLocations = locations.filter((l) => l.is_sharing);
+  const allWithCoords = locations.filter((l) => l.lat && l.lng);
 
   // Initialize map
   useEffect(() => {
