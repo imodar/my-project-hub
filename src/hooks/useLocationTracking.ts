@@ -109,8 +109,7 @@ export function useLocationTracking(intervalMinutes = 5) {
     }
   }, [isSharing, familyId, updateMutation]);
 
-  // Stable ref to avoid re-running effect on every render
-  const sendMyLocationRef = useRef(sendMyLocation);
+  // Keep ref in sync
   useEffect(() => {
     sendMyLocationRef.current = sendMyLocation;
   }, [sendMyLocation]);
