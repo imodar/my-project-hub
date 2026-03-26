@@ -64,8 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(newSession);
         setLoading(false);
         if (newSession?.user?.id) {
+          setSentryUser({ id: newSession.user.id, email: newSession.user.email });
           fetchProfile(newSession.user.id);
         } else {
+          setSentryUser(null);
           setProfileName("");
           setProfileReady(true);
         }
