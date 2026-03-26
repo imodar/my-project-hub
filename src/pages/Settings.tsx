@@ -18,7 +18,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { islamicMode, setIslamicMode } = useIslamicMode();
   const { dbRole, isAdmin: isDbAdmin, isLoading: roleLoading } = useUserRole();
-  const familyId = useFamilyId();
+  const { familyId } = useFamilyId();
   const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
   const [contacts, setContacts] = useState<{ id: string; name: string; phone: string }[]>([]);
   const [members, setMembers] = useState<{ id: string; name: string; sosEnabled: boolean }[]>([]);
