@@ -250,9 +250,9 @@ const Auth = () => {
               className="space-y-6"
             >
               <div className="text-center">
-                <h2 className="text-xl font-bold text-foreground">رمز التحقق</h2>
+                <h2 className="text-xl font-bold text-foreground">{t.auth.otpTitle}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  أدخل الرمز المرسل إلى{" "}
+                  {t.auth.otpSentTo}{" "}
                   <span dir="ltr" className="font-mono text-foreground">{fullPhone}</span>
                 </p>
               </div>
