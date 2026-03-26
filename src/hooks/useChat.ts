@@ -25,7 +25,7 @@ export interface ChatMessage {
   senderName: string;
   text: string;
   time: string;
-  createdAt: string; // raw ISO timestamp for cursor pagination
+  createdAt: string;
   isMe: boolean;
   pinned: boolean;
   reactions: Record<string, number>;
@@ -76,39 +76,31 @@ export function useChat() {
           privateKey = pair.privateKey;
           await savePrivateKeyLocally(user!.id, privateKey);
           const pubKey = await exportPublicKey(pair.publicKey);
-          await supabase.from("profiles").update({
-            avatar_url: undefined,
-          }).eq("id", user!.id);
         }
 
-        const { data: existingKey } = await supabase
-          .from("family_keys")
-          .select("encrypted_key")
-          .eq("family_id", familyId!)
-          .eq("user_id", user!.id)
-          .maybeSingle();
+        // Get existing key via chat-api
+        const { data: existingKeyData } = await supabase.functions.invoke("chat-api", {
+          body: { action: "get-family-key", family_id: familyId },
+        });
 
-        if (existingKey?.encrypted_key) {
-          fKey = await importAESKey(existingKey.encrypted_key);
+        if (existingKeyData?.data?.encrypted_key) {
+          fKey = await importAESKey(existingKeyData.data.encrypted_key);
         } else {
-          const { data: anyKey } = await supabase
-            .from("family_keys")
-            .select("encrypted_key")
-            .eq("family_id", familyId!)
-            .limit(1)
-            .maybeSingle();
+          // Try getting any family key
+          const { data: anyKeyData } = await supabase.functions.invoke("chat-api", {
+            body: { action: "get-any-family-key", family_id: familyId },
+          });
 
-          if (anyKey?.encrypted_key) {
-            fKey = await importAESKey(anyKey.encrypted_key);
+          if (anyKeyData?.data?.encrypted_key) {
+            fKey = await importAESKey(anyKeyData.data.encrypted_key);
           } else {
             fKey = await generateFamilyKey();
           }
 
+          // Upsert the key
           const rawKey = await exportAESKey(fKey);
-          await supabase.from("family_keys").upsert({
-            family_id: familyId!,
-            user_id: user!.id,
-            encrypted_key: rawKey,
+          await supabase.functions.invoke("chat-api", {
+            body: { action: "upsert-family-key", family_id: familyId, encrypted_key: rawKey },
           });
         }
 
@@ -124,25 +116,18 @@ export function useChat() {
     }
   }, [user, familyId]);
 
-  // ─── 2. Load family member profiles ───
+  // ─── 2. Load family member profiles via chat-api ───
   useEffect(() => {
     if (!familyId) return;
     loadProfiles();
     async function loadProfiles() {
-      const { data: members } = await supabase
-        .from("family_members")
-        .select("user_id")
-        .eq("family_id", familyId!)
-        .eq("status", "active");
-      if (!members?.length) return;
-      const ids = members.map((m) => m.user_id);
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("id", ids);
-      if (profs) {
+      const { data } = await supabase.functions.invoke("chat-api", {
+        body: { action: "get-chat-members", family_id: familyId },
+      });
+      const profs = data?.data;
+      if (profs && Array.isArray(profs)) {
         const map: Record<string, string> = {};
-        profs.forEach((p) => {
+        profs.forEach((p: any) => {
           map[p.id] = p.name || "عضو";
         });
         setProfiles(map);
@@ -150,26 +135,20 @@ export function useChat() {
     }
   }, [familyId]);
 
-  // ─── 3. Load messages (latest page) ───
+  // ─── 3. Load messages via chat-api ───
   useEffect(() => {
     if (!familyId || !isReady || !user) return;
     loadMessages();
     async function loadMessages() {
       try {
-        const { data, error } = await supabase
-          .from("chat_messages")
-          .select("*")
-          .eq("family_id", familyId!)
-          .order("created_at", { ascending: false })
-          .limit(PAGE_SIZE);
-        if (error || !data) {
-          console.error("Load messages error:", error);
-          return;
-        }
-        setHasMore(data.length === PAGE_SIZE);
-        const sorted = [...data].reverse();
+        const { data: result } = await supabase.functions.invoke("chat-api", {
+          body: { action: "get-messages", family_id: familyId, limit: PAGE_SIZE },
+        });
+        const msgData = result?.data;
+        if (!msgData) return;
+        setHasMore(msgData.length === PAGE_SIZE);
         const decrypted: ChatMessage[] = [];
-        for (const m of sorted) {
+        for (const m of msgData) {
           const msg = await decryptRef.current(m);
           if (msg) decrypted.push(msg);
         }
@@ -180,7 +159,7 @@ export function useChat() {
     }
   }, [familyId, isReady, familyKey, profiles, user]);
 
-  // ─── Load older messages (cursor-based) ───
+  // ─── Load older messages via chat-api ───
   const loadOlderMessages = useCallback(async () => {
     if (!familyId || !user || !hasMore || isLoadingMore) return;
     setIsLoadingMore(true);
@@ -188,25 +167,16 @@ export function useChat() {
       const oldestMsg = messages[0];
       if (!oldestMsg?.createdAt) { setIsLoadingMore(false); return; }
 
-      const { data, error } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("family_id", familyId)
-        .lt("created_at", oldestMsg.createdAt)
-        .order("created_at", { ascending: false })
-        .limit(PAGE_SIZE);
+      const { data: result } = await supabase.functions.invoke("chat-api", {
+        body: { action: "get-messages", family_id: familyId, limit: PAGE_SIZE, before: oldestMsg.createdAt },
+      });
+      const msgData = result?.data;
+      if (!msgData) { setIsLoadingMore(false); return; }
 
-      if (error || !data) {
-        console.error("Load older error:", error);
-        setIsLoadingMore(false);
-        return;
-      }
+      setHasMore(msgData.length === PAGE_SIZE);
 
-      setHasMore(data.length === PAGE_SIZE);
-
-      const sorted = [...data].reverse();
       const decrypted: ChatMessage[] = [];
-      for (const m of sorted) {
+      for (const m of msgData) {
         const msg = await decryptRef.current(m);
         if (msg) decrypted.push(msg);
       }
@@ -218,7 +188,7 @@ export function useChat() {
     }
   }, [familyId, user, hasMore, isLoadingMore, messages]);
 
-  // ─── 4. Realtime subscription ───
+  // ─── 4. Realtime subscription (kept — read-only listener) ───
   useEffect(() => {
     if (!familyId || !isReady) return;
     subscriptionRef.current = supabase
@@ -254,7 +224,7 @@ export function useChat() {
     };
   }, [familyId, isReady]);
 
-  // ─── Decrypt a DB row (use ref to avoid stale closures) ───
+  // ─── Decrypt a DB row ───
   const decryptDbMessage = useCallback(
     async (row: any): Promise<ChatMessage | null> => {
       try {
@@ -303,12 +273,11 @@ export function useChat() {
   const decryptRef = useRef(decryptDbMessage);
   useEffect(() => { decryptRef.current = decryptDbMessage; }, [decryptDbMessage]);
 
-  // ─── Send text message ───
+  // ─── Send text message via chat-api ───
   const sendMessage = useCallback(
     async (plaintext: string, mentionUserId?: string) => {
       if (!user || !familyId || !plaintext.trim()) return;
 
-      // Optimistic: show message immediately
       const tempId = `temp-${Date.now()}`;
       const optimistic: ChatMessage = {
         id: tempId,
@@ -339,25 +308,22 @@ export function useChat() {
         }
       }
 
-      const { error } = await supabase.from("chat_messages").insert({
-        family_id: familyId,
-        sender_id: user.id,
-        encrypted_text,
-        iv,
-        mention_user_id: mentionUserId || null,
-        pinned: false,
-        status: "sent",
-        message_type: "text",
+      const { error } = await supabase.functions.invoke("chat-api", {
+        body: {
+          action: "send-message",
+          family_id: familyId,
+          encrypted_text,
+          iv,
+          mention_user_id: mentionUserId || null,
+        },
       });
 
       if (error) {
         console.error("Send error:", error);
-        // Mark optimistic message as failed
         setMessages((prev) =>
           prev.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m))
         );
       } else {
-        // Mark as sent (Realtime will replace with real message)
         setMessages((prev) =>
           prev.map((m) => (m.id === tempId ? { ...m, status: "sent" } : m))
         );
@@ -391,12 +357,11 @@ export function useChat() {
     [user, profiles]
   );
 
-  // ─── Send media message (image/voice/location) ───
+  // ─── Send media message via chat-api ───
   const sendMediaMessage = useCallback(
     async (type: MessageType, mediaUrl: string, metadata?: ChatMessage["mediaMetadata"], caption?: string) => {
       if (!user || !familyId) return;
 
-      // Add optimistic message immediately
       const tempId = addOptimisticMessage(type, mediaUrl, metadata, caption);
 
       let encrypted_text = caption || "";
@@ -412,25 +377,19 @@ export function useChat() {
         }
       }
 
-      const { error } = await supabase.from("chat_messages").insert({
-        family_id: familyId,
-        sender_id: user.id,
-        encrypted_text: encrypted_text || type,
-        iv,
-        pinned: false,
-        status: "sent",
-        message_type: type,
-        media_url: mediaUrl,
-        media_metadata: metadata as any,
+      const { error } = await supabase.functions.invoke("chat-api", {
+        body: {
+          action: "send-message",
+          family_id: familyId,
+          encrypted_text: encrypted_text || type,
+          iv,
+        },
       });
 
       if (error) {
         console.error("Send media error:", error);
-        // Mark as failed
         setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, status: "failed" } : m));
       } else {
-        // Remove optimistic message — realtime will add the real one
-        // Give realtime a moment, then remove temp if real arrived
         setTimeout(() => {
           setMessages((prev) => prev.filter((m) => m.id !== tempId));
         }, 3000);
@@ -445,75 +404,41 @@ export function useChat() {
       const msg = messages.find((m) => m.id === messageId);
       if (!msg || msg.status !== "failed") return;
 
-      // Mark as sending again
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, status: "sending" } : m))
       );
 
-      if (msg.messageType === "text") {
-        let encrypted_text = msg.text;
-        let iv: string | null = null;
+      let encrypted_text = msg.text;
+      let iv: string | null = null;
 
-        if (familyKey) {
-          try {
-            const payload = await encryptMessage(familyKey, msg.text);
-            encrypted_text = payload.ciphertext;
-            iv = payload.iv;
-          } catch (err) {
-            console.error("Encryption error:", err);
-          }
+      if (familyKey) {
+        try {
+          const payload = await encryptMessage(familyKey, msg.text);
+          encrypted_text = payload.ciphertext;
+          iv = payload.iv;
+        } catch (err) {
+          console.error("Encryption error:", err);
         }
+      }
 
-        const { error } = await supabase.from("chat_messages").insert({
+      const { error } = await supabase.functions.invoke("chat-api", {
+        body: {
+          action: "send-message",
           family_id: familyId!,
-          sender_id: user!.id,
-          encrypted_text,
-          iv,
-          mention_user_id: msg.mentionUserId || null,
-          pinned: false,
-          status: "sent",
-          message_type: "text",
-        });
-
-        if (error) {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === messageId ? { ...m, status: "failed" } : m))
-          );
-        } else {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === messageId ? { ...m, status: "sent" } : m))
-          );
-        }
-      } else {
-        // Media retry
-        let encrypted_text = msg.text || "";
-        let iv: string | null = null;
-
-        if (familyKey && encrypted_text && encrypted_text !== msg.messageType) {
-          try {
-            const payload = await encryptMessage(familyKey, encrypted_text);
-            encrypted_text = payload.ciphertext;
-            iv = payload.iv;
-          } catch (err) {
-            console.error("Encryption error:", err);
-          }
-        }
-
-        const { error } = await supabase.from("chat_messages").insert({
-          family_id: familyId!,
-          sender_id: user!.id,
           encrypted_text: encrypted_text || msg.messageType,
           iv,
-          pinned: false,
-          status: "sent",
-          message_type: msg.messageType,
-          media_url: msg.mediaUrl,
-          media_metadata: msg.mediaMetadata as any,
-        });
+          mention_user_id: msg.mentionUserId || null,
+        },
+      });
 
-        if (error) {
+      if (error) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === messageId ? { ...m, status: "failed" } : m))
+        );
+      } else {
+        if (msg.messageType === "text") {
           setMessages((prev) =>
-            prev.map((m) => (m.id === messageId ? { ...m, status: "failed" } : m))
+            prev.map((m) => (m.id === messageId ? { ...m, status: "sent" } : m))
           );
         } else {
           setTimeout(() => {
@@ -525,15 +450,14 @@ export function useChat() {
     [messages, user, familyId, familyKey]
   );
 
-  // ─── Toggle pin ───
+  // ─── Toggle pin via chat-api ───
   const togglePin = useCallback(
     async (messageId: string) => {
       const msg = messages.find((m) => m.id === messageId);
       if (!msg) return;
-      await supabase
-        .from("chat_messages")
-        .update({ pinned: !msg.pinned })
-        .eq("id", messageId);
+      await supabase.functions.invoke("chat-api", {
+        body: { action: "pin-message", id: messageId, pinned: !msg.pinned },
+      });
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, pinned: !m.pinned } : m))
       );
@@ -541,17 +465,16 @@ export function useChat() {
     [messages]
   );
 
-  // ─── Add reaction ───
+  // ─── Add reaction via chat-api ───
   const addReaction = useCallback(
     async (messageId: string, emoji: string) => {
       const msg = messages.find((m) => m.id === messageId);
       if (!msg) return;
       const reactions = { ...msg.reactions };
       reactions[emoji] = (reactions[emoji] || 0) + 1;
-      await supabase
-        .from("chat_messages")
-        .update({ reactions: reactions as any })
-        .eq("id", messageId);
+      await supabase.functions.invoke("chat-api", {
+        body: { action: "react", id: messageId, reactions },
+      });
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, reactions } : m))
       );
