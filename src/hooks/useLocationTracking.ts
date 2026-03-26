@@ -82,6 +82,9 @@ export function useLocationTracking(intervalMinutes = 5) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family-locations"] });
     },
+    onError: (err) => {
+      console.warn("[LocationTracking] Update failed:", err);
+    },
   });
 
   // Get current position and send
@@ -105,20 +108,27 @@ export function useLocationTracking(intervalMinutes = 5) {
     }
   }, [isSharing, familyId, updateMutation]);
 
+  // Stable ref to avoid re-running effect on every render
+  const sendMyLocationRef = useRef(sendMyLocation);
+  useEffect(() => {
+    sendMyLocationRef.current = sendMyLocation;
+  }, [sendMyLocation]);
+
   // Start periodic tracking
   useEffect(() => {
     if (!isSharing || !familyId) return;
 
-    // Send immediately
-    sendMyLocation();
+    sendMyLocationRef.current();
 
-    // Then periodically
-    intervalRef.current = setInterval(sendMyLocation, intervalMinutes * 60 * 1000);
+    intervalRef.current = setInterval(
+      () => sendMyLocationRef.current(),
+      intervalMinutes * 60 * 1000
+    );
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isSharing, familyId, intervalMinutes, sendMyLocation]);
+  }, [isSharing, familyId, intervalMinutes]);
 
   return {
     locations,
