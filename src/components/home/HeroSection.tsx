@@ -271,7 +271,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentHour] = useState(() => new Date().getHours());
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
-  const greeting = useMemo(() => getGreeting(currentHour), [currentHour]);
+  const greeting = useMemo(() => getGreeting(currentHour, t), [currentHour, t]);
   const timeIcon = useMemo(() => getTimeIcon(currentHour), [currentHour]);
 
   const [demoActive, setDemoActive] = useState(false);
