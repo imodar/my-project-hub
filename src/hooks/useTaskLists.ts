@@ -34,25 +34,7 @@ export function useTaskLists() {
     enabled: !!familyId,
   });
 
-  // Realtime subscription
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  useEffect(() => {
-    if (!familyId) return;
-    const channel = supabase
-      .channel(`tasks-realtime-${familyId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "task_items" }, () => {
-        qc.invalidateQueries({ queryKey: key });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "task_lists", filter: `family_id=eq.${familyId}` }, () => {
-        qc.invalidateQueries({ queryKey: key });
-      })
-      .subscribe();
-    channelRef.current = channel;
-    return () => {
-      supabase.removeChannel(channel);
-      channelRef.current = null;
-    };
-  }, [familyId, qc, key]);
+  // Realtime handled by useFamilyRealtime — no duplicate channel needed
 
   const invoke = async (action: string, payload: any) => {
     const { data: response, error } = await supabase.functions.invoke("tasks-api", { body: { action, ...payload } });

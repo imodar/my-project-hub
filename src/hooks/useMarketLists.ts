@@ -55,20 +55,7 @@ export function useMarketLists() {
     [lists, familyId]
   );
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!familyId) return;
-    const channel = supabase
-      .channel(`market-items-${familyId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "market_items" }, () => {
-        qc.invalidateQueries({ queryKey: key });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "market_lists", filter: `family_id=eq.${familyId}` }, () => {
-        qc.invalidateQueries({ queryKey: key });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [familyId, qc]);
+  // Realtime handled by useFamilyRealtime — no duplicate channel needed
 
   const invoke = async (action: string, payload: any) => {
     const { data: response, error } = await supabase.functions.invoke("market-api", { body: { action, ...payload } });
