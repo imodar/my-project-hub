@@ -440,7 +440,16 @@ const Chat = () => {
               </div>
 
               {/* Action buttons */}
-              <div className={`absolute top-0 ${msg.isMe ? "-left-16" : "-right-16"} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1`}>
+              <div className={`absolute top-0 ${msg.isMe ? "-left-20" : "-right-20"} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1`}>
+                {msg.status === "failed" && (
+                  <button
+                    onClick={() => retryMessage(msg.id)}
+                    className="w-7 h-7 rounded-full bg-destructive/10 border border-destructive/30 flex items-center justify-center hover:bg-destructive/20 transition-colors"
+                    title="إعادة الإرسال"
+                  >
+                    <RotateCcw size={14} className="text-destructive" />
+                  </button>
+                )}
                 <button
                   onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
                   className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"
