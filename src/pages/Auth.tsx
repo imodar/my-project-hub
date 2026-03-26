@@ -8,13 +8,14 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useToast } from "@/hooks/use-toast";
 import { Phone, ArrowRight, Loader2, Globe } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Switch } from "@/components/ui/switch";
 import { motion, AnimatePresence } from "framer-motion";
 import authFamily from "@/assets/auth-family.png";
+import LanguageSheet from "@/components/LanguageSheet";
 
 type Step = "phone" | "otp";
 
 const Auth = () => {
+  const [langSheetOpen, setLangSheetOpen] = useState(false);
   const { session } = useAuth();
   const { t, language, setLanguage, dir, isRTL } = useLanguage();
   const navigate = useNavigate();
@@ -225,18 +226,20 @@ const Auth = () => {
 
               {/* Language switch + Terms */}
               <div className="flex flex-col items-center gap-3 pt-2 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-medium ${language === 'ar' ? 'text-foreground' : 'text-muted-foreground'}`}>عربي</span>
-                  <Switch
-                    checked={language === 'en'}
-                    onCheckedChange={(checked) => setLanguage(checked ? 'en' : 'ar')}
-                  />
-                  <span className={`text-xs font-medium ${language === 'en' ? 'text-foreground' : 'text-muted-foreground'}`}>EN</span>
-                </div>
                 <p className="text-[11px] text-muted-foreground/60 text-center leading-relaxed">
                   {t.auth.termsText}{" "}
                   <span className="underline underline-offset-2 text-muted-foreground/80">{t.auth.termsLink}</span>{" "}
                   {t.auth.termsEnd}
+                  <button
+                    type="button"
+                    onClick={() => setLangSheetOpen(true)}
+                    className="inline-flex items-center gap-1 text-muted-foreground/80 hover:text-foreground transition-colors mx-1"
+                  >
+                    <Globe className="h-3.5 w-3.5" />
+                    <span className="underline underline-offset-2 text-[11px] font-medium">
+                      {language === "ar" ? "العربية" : "English"}
+                    </span>
+                  </button>
                 </p>
               </div>
             </motion.div>
@@ -305,6 +308,8 @@ const Auth = () => {
           )}
         </AnimatePresence>
       </motion.div>
+
+      <LanguageSheet open={langSheetOpen} onOpenChange={setLangSheetOpen} />
     </div>
   );
 };
