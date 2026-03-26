@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
@@ -9,11 +9,9 @@ import { useUserRole, ROLE_LABELS } from "@/contexts/UserRoleContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-
-
-const emergencyContacts: { id: string; name: string; phone: string }[] = [];
-
-const familyMembers: { id: string; name: string; sosEnabled: boolean }[] = [];
+import { supabase } from "@/integrations/supabase/client";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { toast } from "sonner";
 
 const Settings = () => {
   const { signOut } = useAuth();
