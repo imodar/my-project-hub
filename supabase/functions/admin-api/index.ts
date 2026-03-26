@@ -54,6 +54,9 @@ Deno.serve(async (req) => {
     if (authError || !authUser) return json({ error: "Unauthorized" }, 401);
     const userId = authUser.id;
 
+    const _rl = await checkRateLimit(adminClient, userId, "admin-api", 120);
+    if (!_rl) return json({ error: "Too many requests" }, 429);
+
     // Verify admin role
     const { data: roleData } = await adminClient
       .from("user_roles")

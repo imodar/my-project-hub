@@ -47,6 +47,10 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authErr } = await adminClient.auth.getUser(token);
   if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
+  const _rl = await checkRateLimit(adminClient, user.id, "location-api", 120);
+  if (!_rl) return json({ error: "Too many requests" }, 429);
+  if (authErr || !user) return json({ error: "Unauthorized" }, 401);
+
   const url = new URL(req.url);
   const action = url.searchParams.get("action");
 

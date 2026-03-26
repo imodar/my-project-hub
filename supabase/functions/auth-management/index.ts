@@ -27,6 +27,10 @@ Deno.serve(async (req) => {
     if (authError || !authUser) return json({ error: "Unauthorized" }, 401);
     const userId = authUser.id;
 
+    const _rlClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const _rl = await checkRateLimit(_rlClient, userId, "auth-management");
+    if (!_rl) return json({ error: "Too many requests" }, 429);
+
     const body = await req.json().catch(() => ({}));
     const action = body._method || body.action || "GET";
 

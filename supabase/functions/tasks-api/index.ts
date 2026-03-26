@@ -54,6 +54,9 @@ Deno.serve(async (req) => {
     if (authError || !authUser) return json({ error: "Unauthorized" }, 401);
     const userId = authUser.id;
 
+    const _rl = await checkRateLimit(adminClient, userId, "tasks-api");
+    if (!_rl) return json({ error: "Too many requests" }, 429);
+
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
