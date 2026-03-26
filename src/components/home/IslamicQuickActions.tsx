@@ -2,6 +2,7 @@ import React from "react";
 import { BookOpen, Heart, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import islamicPattern from "@/assets/islamic-pattern.webp";
 
 const TasbihIcon = React.forwardRef<SVGSVGElement, { size?: number; className?: string }>(
@@ -20,16 +21,17 @@ const TasbihIcon = React.forwardRef<SVGSVGElement, { size?: number; className?: 
 );
 TasbihIcon.displayName = "TasbihIcon";
 
-const actions = [
-  { icon: BookOpen, label: "القرآن", path: "/" },
-  { icon: TasbihIcon, label: "المسبحة", path: "/tasbih" },
-  { icon: Heart, label: "الأذكار", path: "/athkar" },
-  { icon: Bell, label: "التنبيهات", path: "/islamic-reminders" },
-];
-
 const IslamicQuickActions = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const navigate = useNavigate();
   const { islamicMode } = useIslamicMode();
+  const { t } = useLanguage();
+
+  const actions = [
+    { icon: BookOpen, label: t.islamic.quran, path: "/" },
+    { icon: TasbihIcon, label: t.islamic.tasbih, path: "/tasbih" },
+    { icon: Heart, label: t.islamic.athkar, path: "/athkar" },
+    { icon: Bell, label: t.islamic.reminders, path: "/islamic-reminders" },
+  ];
 
   if (!islamicMode) return <div ref={ref} style={{ display: "none" }} />;
 
@@ -45,7 +47,7 @@ const IslamicQuickActions = React.forwardRef<HTMLDivElement>((_props, ref) => {
         <div className="relative z-10 flex items-center justify-around">
           {actions.map((action) => (
             <button
-              key={action.label}
+              key={action.path}
               onClick={() => navigate(action.path)}
               className="flex flex-col items-center gap-2 px-3 py-2 rounded-xl transition-transform active:scale-95"
             >

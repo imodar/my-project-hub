@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PrayerTimes {
   Fajr: string;
@@ -10,19 +11,11 @@ interface PrayerTimes {
 }
 
 interface NextPrayerInfo {
+  nameKey: string;
   name: string;
   time: string;
   remaining: string;
 }
-
-const PRAYER_NAMES: Record<string, string> = {
-  Fajr: "الفجر",
-  Sunrise: "الشروق",
-  Dhuhr: "الظهر",
-  Asr: "العصر",
-  Maghrib: "المغرب",
-  Isha: "العشاء",
-};
 
 const PRAYER_ORDER = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"];
 
@@ -34,34 +27,40 @@ const parseTime = (timeStr: string): Date => {
   return now;
 };
 
-const getRemaining = (target: Date): string => {
+const getRemaining = (target: Date, lang: string): string => {
   const now = new Date();
   let diff = target.getTime() - now.getTime();
   if (diff < 0) diff += 24 * 60 * 60 * 1000;
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (lang === "en") {
+    if (hours > 0) return `${hours}h ${mins}m`;
+    return `${mins} min`;
+  }
   if (hours > 0) return `${hours} س ${mins} د`;
   return `${mins} دقيقة`;
 };
 
-const getNextPrayer = (times: PrayerTimes): NextPrayerInfo => {
+const getNextPrayer = (times: PrayerTimes, prayerNames: Record<string, string>, lang: string): NextPrayerInfo => {
   const now = new Date();
   for (const key of PRAYER_ORDER) {
     const prayerTime = parseTime(times[key as keyof PrayerTimes]);
     if (prayerTime > now) {
       return {
-        name: PRAYER_NAMES[key],
+        nameKey: key,
+        name: prayerNames[key] || key,
         time: times[key as keyof PrayerTimes].split(" ")[0],
-        remaining: getRemaining(prayerTime),
+        remaining: getRemaining(prayerTime, lang),
       };
     }
   }
   const fajrTomorrow = parseTime(times.Fajr);
   fajrTomorrow.setDate(fajrTomorrow.getDate() + 1);
   return {
-    name: PRAYER_NAMES.Fajr,
+    nameKey: "Fajr",
+    name: prayerNames.Fajr || "Fajr",
     time: times.Fajr.split(" ")[0],
-    remaining: getRemaining(fajrTomorrow),
+    remaining: getRemaining(fajrTomorrow, lang),
   };
 };
 
@@ -104,6 +103,7 @@ export const usePrayerTimes = () => {
   const [nextPrayer, setNextPrayer] = useState<NextPrayerInfo | null>(null);
   const [loading, setLoading] = useState(!getCachedTimes());
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     const cached = getCachedTimes();
@@ -148,17 +148,18 @@ export const usePrayerTimes = () => {
 
   useEffect(() => {
     if (!prayerTimes) return;
-    const update = () => setNextPrayer(getNextPrayer(prayerTimes));
+    const update = () => setNextPrayer(getNextPrayer(prayerTimes, t.prayerNames, language));
     update();
     const interval = setInterval(update, 30000);
     return () => clearInterval(interval);
-  }, [prayerTimes]);
+  }, [prayerTimes, t, language]);
 
   return { nextPrayer, loading, lastUpdated };
 };
 
 const NextPrayerBox = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { nextPrayer, loading } = usePrayerTimes();
+  const { t } = useLanguage();
 
   if (loading || !nextPrayer) {
     return (
@@ -184,9 +185,9 @@ const NextPrayerBox = React.forwardRef<HTMLDivElement>((_props, ref) => {
           <PrayerIcon />
         </div>
         <div className="flex flex-col gap-0.5">
-          <p className="text-[10px] font-semibold text-white/70">باقي لصلاة {nextPrayer.name}</p>
+          <p className="text-[10px] font-semibold text-white/70">{t.islamic.prayerRemaining} {nextPrayer.name}</p>
           <p className="text-sm font-bold leading-tight">{nextPrayer.remaining}</p>
-          <p className="text-[10px] text-white/50">الأذان {nextPrayer.time}</p>
+          <p className="text-[10px] text-white/50">{t.islamic.adhan} {nextPrayer.time}</p>
         </div>
       </div>
     </div>
