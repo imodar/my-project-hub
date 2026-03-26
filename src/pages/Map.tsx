@@ -89,6 +89,7 @@ const Map = () => {
         onMemberSelect={setSelectedMemberId}
         isExpanded={isSheetExpanded}
         setIsExpanded={setIsSheetExpanded}
+        isTogglingSharing={isToggling}
       />
     </div>
   );

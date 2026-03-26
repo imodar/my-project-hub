@@ -20,6 +20,7 @@ interface MemberSheetProps {
   onMemberSelect: (id: string) => void;
   isExpanded: boolean;
   setIsExpanded: (v: boolean) => void;
+  isTogglingSharing?: boolean;
 }
 
 const SHEET_PEEK = 264;
