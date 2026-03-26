@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const KAABA_LAT = 21.4225;
 const KAABA_LNG = 39.8262;
@@ -25,6 +25,7 @@ const KaabaIcon = React.forwardRef<SVGSVGElement>((_, ref) => (
 KaabaIcon.displayName = "KaabaIcon";
 
 const QiblaCompass = React.forwardRef<HTMLDivElement>((_props, ref) => {
+  const { t } = useLanguage();
   const [qiblaAngle, setQiblaAngle] = useState<number>(253);
   const [heading, setHeading] = useState<number>(0);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -88,7 +89,7 @@ const QiblaCompass = React.forwardRef<HTMLDivElement>((_props, ref) => {
       className="bg-white/10 backdrop-blur-md rounded-xl p-3 flex flex-col items-center border border-white/10 cursor-pointer"
       onClick={() => (!hasPermission ? requestPermission() : null)}
     >
-      <p className="text-[10px] font-bold text-white/60 mb-1">القبلة</p>
+      <p className="text-[10px] font-bold text-white/60 mb-1">{t.islamic.qibla}</p>
       <svg width="70" height="50" viewBox="0 0 70 50" className="overflow-visible">
         <path
           d={`M ${cx - arcR} ${cy} A ${arcR} ${arcR} 0 1 1 ${cx + arcR} ${cy}`}

@@ -3,11 +3,13 @@ import { CalendarDays } from "lucide-react";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
   const { featureAccess } = useUserRole();
   const { events, isLoading } = useCalendarEvents();
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
 
   if (featureAccess.isStaff) return <section ref={ref} style={{ display: "none" }} />;
 
@@ -19,7 +21,7 @@ const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
   if (isLoading) {
     return (
       <section ref={ref} className="mt-8 px-5">
-        <h2 className="text-lg font-extrabold text-foreground tracking-tight mb-5">المناسبات القادمة</h2>
+        <h2 className="text-lg font-extrabold text-foreground tracking-tight mb-5">{t.upcomingEvents.title}</h2>
         <div className="flex gap-4 overflow-x-auto pb-3 -mx-5 px-5" style={{ scrollbarWidth: "none" }}>
           {[1, 2, 3].map((i) => (
             <div key={i} className="min-w-[220px] h-[80px] rounded-xl bg-muted animate-pulse" />
@@ -33,7 +35,7 @@ const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
     return (
       <section ref={ref} className="mt-8 px-5">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-extrabold text-foreground tracking-tight">المناسبات القادمة</h2>
+          <h2 className="text-lg font-extrabold text-foreground tracking-tight">{t.upcomingEvents.title}</h2>
         </div>
         <button
           onClick={() => navigate("/calendar")}
@@ -41,8 +43,8 @@ const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
           style={{ background: "hsla(0,0%,0%,0.02)", border: "1px solid hsla(0,0%,0%,0.06)" }}
         >
           <CalendarDays size={28} className="mx-auto mb-2 text-muted-foreground" />
-          <p className="text-sm font-semibold text-muted-foreground">لا توجد مناسبات قادمة</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">اضغط لإضافة مناسبة جديدة</p>
+          <p className="text-sm font-semibold text-muted-foreground">{t.upcomingEvents.noEvents}</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">{t.upcomingEvents.addEvent}</p>
         </button>
       </section>
     );
@@ -50,8 +52,10 @@ const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
 
   const getDaysLeft = (dateStr: string) => {
     const diff = Math.ceil((new Date(dateStr).getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
-    return diff === 0 ? "اليوم" : `بعد ${diff} يوم`;
+    return diff === 0 ? t.upcomingEvents.today : t.upcomingEvents.inDays.replace("{0}", String(diff));
   };
+
+  const locale = language === "ar" ? "ar-SA" : "en-US";
 
   const colors = [
     { bg: "hsl(145 40% 93%)", color: "hsl(145 50% 30%)", accent: "hsl(145 50% 35%)" },
@@ -65,7 +69,7 @@ const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
   return (
     <section ref={ref} className="mt-8 px-5">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg font-extrabold text-foreground tracking-tight">المناسبات القادمة</h2>
+        <h2 className="text-lg font-extrabold text-foreground tracking-tight">{t.upcomingEvents.title}</h2>
       </div>
       <div className="flex gap-4 overflow-x-auto pb-3 -mx-5 px-5" style={{ scrollbarWidth: "none" }}>
         {upcoming.map((event, i) => {
@@ -96,7 +100,7 @@ const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
                   {event.title}
                 </h3>
                 <p className="text-[11px] font-semibold mt-0.5" style={{ color: `${c.accent}B0` }}>
-                  {new Date(event.date).toLocaleDateString("ar-SA", { weekday: "long", day: "numeric", month: "long" })}
+                  {new Date(event.date).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" })}
                 </p>
               </div>
             </div>

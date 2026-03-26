@@ -2,10 +2,12 @@ import React from "react";
 import { Check, Plus, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTaskLists } from "@/hooks/useTaskLists";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
   const navigate = useNavigate();
   const { lists: taskLists, isLoading } = useTaskLists();
+  const { t } = useLanguage();
 
   const allTasks = (taskLists || []).flatMap((list) =>
     (list.task_items || []).map((item: any) => ({
@@ -21,7 +23,7 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
   if (isLoading) {
     return (
       <section ref={ref} className="mt-8 px-5 pb-28">
-        <h2 className="text-lg font-extrabold text-foreground tracking-tight mb-4">مهام اليوم</h2>
+        <h2 className="text-lg font-extrabold text-foreground tracking-tight mb-4">{t.dailyTasks.title}</h2>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-[72px] rounded-2xl bg-muted animate-pulse" />
@@ -35,7 +37,7 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
     return (
       <section ref={ref} className="mt-8 px-5 pb-28">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-extrabold text-foreground tracking-tight">مهام اليوم</h2>
+          <h2 className="text-lg font-extrabold text-foreground tracking-tight">{t.dailyTasks.title}</h2>
           <button
             onClick={() => navigate("/tasks")}
             className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/10 text-primary"
@@ -49,8 +51,8 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
           style={{ background: "hsla(0,0%,0%,0.02)", border: "1px solid hsla(0,0%,0%,0.06)" }}
         >
           <ClipboardList size={28} className="mx-auto mb-2 text-muted-foreground" />
-          <p className="text-sm font-semibold text-muted-foreground">لا توجد مهام حالياً</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">اضغط لإضافة مهمة جديدة</p>
+          <p className="text-sm font-semibold text-muted-foreground">{t.dailyTasks.noTasks}</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">{t.dailyTasks.addTask}</p>
         </button>
       </section>
     );
@@ -66,7 +68,7 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
   return (
     <section ref={ref} className="mt-8 px-5 pb-28">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-extrabold text-foreground tracking-tight">مهام اليوم</h2>
+        <h2 className="text-lg font-extrabold text-foreground tracking-tight">{t.dailyTasks.title}</h2>
         <button
           onClick={() => navigate("/tasks")}
           className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/10 text-primary"
@@ -97,7 +99,7 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
                     {task.name}
                   </h3>
                   <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 mr-2"
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ms-2"
                     style={{ background: tc.bg, color: tc.text }}
                   >
                     {task.listName}

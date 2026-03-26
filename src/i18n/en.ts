@@ -1,0 +1,381 @@
+import type { Translations } from "./ar";
+
+const en: Translations = {
+  // App name
+  appName: "Our Family",
+
+  // Common
+  back: "Back",
+  save: "Save",
+  cancel: "Cancel",
+  delete: "Delete",
+  add: "Add",
+  edit: "Edit",
+  close: "Close",
+  confirm: "Confirm",
+  loading: "Loading...",
+  noData: "No data",
+  search: "Search",
+  next: "Next",
+  previous: "Previous",
+  yes: "Yes",
+  no: "No",
+  ok: "OK",
+  retry: "Retry",
+  send: "Send",
+  name: "Name",
+  phone: "Phone number",
+  notes: "Notes",
+  today: "Today",
+  notAvailable: "Not available",
+  fromDatabase: "From database",
+
+  // Bottom Nav
+  nav: {
+    home: "Home",
+    map: "Map",
+    emergency: "SOS",
+    chat: "Chat",
+    settings: "Settings",
+  },
+
+  // Auth
+  auth: {
+    appTitle: "My Family",
+    appSubtitle: "Organize your family life in one place",
+    welcome: "Welcome",
+    loginWithPhone: "Sign in with your phone number",
+    sendOtp: "Send verification code",
+    orLoginWith: "Or sign in with",
+    termsText: "By signing in, you agree to the",
+    termsLink: "Terms & Conditions",
+    termsEnd: "of the application",
+    otpTitle: "Verification Code",
+    otpSentTo: "Enter the code sent to",
+    changeNumber: "Change number",
+    resend: "Resend",
+    resendIn: "Resend",
+    enterValidPhone: "Enter a valid phone number",
+    otpCode: "Verification code",
+    otpDisappear: "Will disappear in 3 seconds",
+    otpError: "Error sending code",
+    wrongOtp: "Incorrect verification code",
+    loginFailed: "Login failed",
+    loginSuccess: "Logged in successfully ✓",
+    loginError: "Login error",
+    family: "Family",
+  },
+
+  // GetStarted / Onboarding
+  onboarding: {
+    skip: "Skip",
+    getStarted: "Let's Go! 🚀",
+    slide1Title: "Your Family, One Place",
+    slide1Subtitle: "Bring all family members together in one app that simplifies your daily life",
+    slide2Title: "Organize Together",
+    slide2Subtitle: "Tasks, shopping, appointments, and budget... everything at your fingertips",
+    slide3Title: "Memories Preserved",
+    slide3Subtitle: "Save your memories and photos in shared family albums",
+    slide4Title: "Start Your Journey",
+    slide4Subtitle: "Sign up now and start organizing your family life with ease",
+  },
+
+  // Hero Section
+  hero: {
+    goodMorning: "Good Morning",
+    goodEvening: "Good Evening",
+    lastUpdate: "Last update",
+    yourLocation: "Your location",
+    clear: "Clear",
+    clearNight: "Clear Night",
+    partlyCloudy: "Partly Cloudy",
+    cloudy: "Cloudy",
+    foggy: "Foggy",
+    rainy: "Rainy",
+    drizzle: "Drizzle",
+    snowy: "Snowy",
+    night: "Night",
+    day: "Day",
+  },
+
+  // Feature Grid
+  features: {
+    familyTools: "Family Tools",
+    tools: "Tools",
+    market: "Market",
+    budget: "Budget",
+    calendar: "Calendar",
+    tasks: "Tasks",
+    trips: "Trips",
+    documents: "Documents",
+    places: "Places",
+    debts: "Debts",
+    albums: "Albums",
+    zakat: "Zakat",
+    will: "Will",
+    vehicles: "Vehicles",
+    kidsWorship: "Kids Worship",
+    vaccinations: "Vaccinations",
+    medications: "Medications",
+  },
+
+  // Islamic Quick Actions
+  islamic: {
+    quran: "Quran",
+    tasbih: "Tasbih",
+    athkar: "Athkar",
+    reminders: "Reminders",
+    qibla: "Qibla",
+    prayerRemaining: "Until",
+    adhan: "Adhan",
+    minute: "minute",
+    fajr: "Fajr",
+    sunrise: "Sunrise",
+    dhuhr: "Dhuhr",
+    asr: "Asr",
+    maghrib: "Maghrib",
+    isha: "Isha",
+  },
+
+  // Daily Tasks
+  dailyTasks: {
+    title: "Today's Tasks",
+    noTasks: "No tasks currently",
+    addTask: "Tap to add a new task",
+  },
+
+  // Upcoming Events
+  upcomingEvents: {
+    title: "Upcoming Events",
+    noEvents: "No upcoming events",
+    addEvent: "Tap to add a new event",
+    today: "Today",
+    inDays: "In {0} days",
+  },
+
+  // Settings
+  settings: {
+    title: "Settings",
+    general: "General",
+    notifications: "Notifications",
+    notificationsDesc: "Manage alerts and notifications",
+    appearance: "Appearance",
+    darkMode: "Dark Mode",
+    lightMode: "Light Mode",
+    darkEnabled: "Dark mode enabled",
+    lightEnabled: "Light mode enabled",
+    language: "Language",
+    arabic: "العربية",
+    english: "English",
+    aboutApp: "About the App",
+    about: "About",
+    version: "Version 1.0.0",
+    privacy: "Privacy Policy",
+    other: "Other",
+    trash: "Trash",
+    trashDesc: "Restore or permanently delete items",
+    clearData: "Clear Data",
+    clearDataDesc: "Delete all saved data",
+    logout: "Sign Out",
+    logoutDesc: "Sign out of account",
+    islamicMode: "Islamic Mode",
+    islamicModeOnDesc: "Shows Quran, Athkar, Tasbih, Prayer, and Qibla",
+    islamicModeOffDesc: "Shows Market, Calendar, and Debts",
+    familyRole: "Family Role",
+    roleUnset: "Not set",
+    roleSetByAdmin: "Role is set by the family admin",
+    modeSection: "Mode",
+    notifSettings: "Notification Settings",
+    notifAutoMsg: "Notifications work automatically via the browser. Make sure notifications are allowed in your device settings.",
+    selectLanguage: "Select Language",
+    languageChanged: "Language changed",
+  },
+
+  // Emergency
+  emergency: {
+    settings: "Emergency Settings",
+    settingsTitle: "Emergency System Settings",
+    settingsDesc: "Emergency numbers, tracking, and member permissions",
+    adminOnly: "Available for admins only (Father & Mother)",
+    externalContacts: "External Emergency Contacts",
+    externalContactsDesc: "People outside the family who will receive SMS when emergency is activated",
+    addContact: "+ Add emergency number",
+    addContactFailed: "Failed to add contact",
+    contactAdded: "Added",
+    alertSettings: "Alert Settings",
+    distinctSound: "Distinct alert sound",
+    distinctSoundDesc: "Different sound from other notifications",
+    liveTracking: "Live location tracking",
+    liveTrackingDesc: "Update location every 30 seconds when activated",
+    sosPermissions: "SOS Button Permissions",
+    sosPermissionsDesc: "Enable or disable SOS button for each member",
+    sosEnabled: "SOS button enabled",
+    sosDisabled: "SOS button disabled",
+    customize: "Customize emergency system and alerts",
+    sendingAlert: "Sending alert...",
+    notifyAll: "All family members will be notified",
+    cancelAlert: "Alert cancelled",
+    activeAlert: "Emergency Alert Active",
+    familyNotified: "All family members have been notified of your location",
+    cancelAlertBtn: "Cancel Alert",
+    cancelAlertTitle: "Cancel Emergency Alert",
+    cancelAlertDesc: "All family members will be informed that you are safe",
+    imFine: "I'm fine",
+    wasMistake: "It was a mistake",
+    otherReason: "Or write another reason...",
+    confirmCancel: "Confirm Cancel",
+    lastLocationUpdate: "Last location update",
+    secondsAgo: "{0} seconds ago",
+    smsMessages: "SMS Messages",
+    sentMessages: "{0} messages sent",
+    familyNotifications: "Family Notifications",
+    membersNotified: "{0} members notified",
+    howToActivate: "How to activate",
+    holdInstructions: "Hold SOS button for 3 seconds",
+    tripleTapInstructions: "Or tap 3 times quickly",
+    countdownInstructions: "A 3-second countdown appears before sending with option to cancel",
+    externalContactsDesc2: "People outside the family who will receive SMS when activated",
+    noExternalContacts: "No external emergency contacts added yet",
+    familyMembersAuto: "Family Members (auto-notified)",
+    addEmergencyNumber: "Add emergency number",
+    relation: "Relation (grandfather, uncle, friend...)",
+    contactDeleted: "Contact deleted",
+    contactAddedSuccess: "Contact added",
+    alertActivated: "🚨 Emergency alert activated — Notifications sent to all family members",
+    noName: "No name",
+  },
+
+  // Profile Sheet
+  profile: {
+    myProfile: "My Profile",
+    profileDesc: "Name and profile picture",
+    familyManagement: "Family Management",
+    familyManagementDesc: "Add or remove family members",
+    settingsDesc: "Notifications, appearance, and language",
+    parent: "Parent",
+    familyMember: "Family Member",
+  },
+
+  // Map
+  map: {
+    title: "Family Map",
+    updateEvery: "Update every {0} minutes",
+    myLocationOn: "My location on",
+    myLocationOff: "My location off",
+    updateInterval: "Location update interval",
+    minutes: "minutes",
+    moreBattery: "1 minute (more battery)",
+    lessBattery: "30 minutes (less battery)",
+    hiddenWarning: "Parents will be notified that you turned off location sharing",
+    familyMembers: "Family Members",
+    memberLocations: "Member locations",
+    noLocations: "No shared locations currently",
+    hidden: "Hidden",
+    locationHidden: "Location hidden",
+    online: "Online",
+    inactive: "Inactive",
+    now: "Now",
+    minutesAgo: "{0}m ago",
+    hoursAgo: "{0}h ago",
+    daysAgo: "{0}d ago",
+    me: "Me",
+  },
+
+  // Roles
+  roles: {
+    father: "Father",
+    mother: "Mother",
+    son: "Son",
+    daughter: "Daughter",
+    worker: "Worker",
+    maid: "Maid",
+    driver: "Driver",
+  },
+
+  // 404
+  notFound: {
+    title: "404",
+    message: "Page not found",
+    goHome: "Go to Home",
+  },
+
+  // Prayer names
+  prayerNames: {
+    Fajr: "Fajr",
+    Sunrise: "Sunrise",
+    Dhuhr: "Dhuhr",
+    Asr: "Asr",
+    Maghrib: "Maghrib",
+    Isha: "Isha",
+  },
+
+  // Page Header
+  pageHeader: {
+    action: "Action",
+  },
+
+  // Chat
+  chat: {
+    encryptionInit: "Initializing encryption...",
+    typeMessage: "Type a message...",
+  },
+
+  // Sync
+  sync: {
+    failedSync: "Failed to sync {0}",
+    checkConnection: "Check your connection and try again",
+    saveFailed: "Save failed",
+    unexpectedError: "An unexpected error occurred",
+    data: "data",
+  },
+
+  // Notifications
+  notifications: {
+    title: "Notifications",
+  },
+
+  // Error boundary / Offline
+  offline: {
+    noConnection: "No connection",
+  },
+
+  // Complete Profile / Join
+  completeProfile: {
+    title: "Complete your profile",
+  },
+  joinOrCreate: {
+    title: "Join or create a family",
+  },
+
+  // Miscellaneous page titles
+  pages: {
+    tasbih: "Tasbih",
+    athkar: "Athkar",
+    market: "Market",
+    budget: "Budget",
+    calendar: "Calendar",
+    tasks: "Tasks",
+    trips: "Trips",
+    documents: "Documents",
+    places: "Places",
+    debts: "Debts",
+    albums: "Albums",
+    zakat: "Zakat",
+    will: "Will",
+    vehicles: "Vehicles",
+    kidsWorship: "Kids Worship",
+    vaccinations: "Vaccinations",
+    medications: "Medications",
+    familyManagement: "Family Management",
+    profile: "Profile",
+    trash: "Trash",
+    islamicReminders: "Islamic Reminders",
+    parentDashboard: "Parent Dashboard",
+    chat: "Chat",
+    map: "Map",
+    settings: "Settings",
+    addPlace: "Add Place",
+  },
+};
+
+export default en;

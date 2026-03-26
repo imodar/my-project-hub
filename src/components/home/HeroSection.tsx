@@ -2,6 +2,7 @@ import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, P
 import QiblaCompass from "./QiblaCompass";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import ProfileSheet from "./ProfileSheet";
 import NotificationsSheet from "@/components/notifications/NotificationsSheet";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,9 +20,9 @@ interface WeatherData {
   lastUpdated: Date;
 }
 
-const getGreeting = (hour: number) => {
-  if (hour >= 5 && hour < 18) return "صباح الخير";
-  return "مساء الخير";
+const getGreeting = (hour: number, t: any) => {
+  if (hour >= 5 && hour < 18) return t.hero.goodMorning;
+  return t.hero.goodEvening;
 };
 
 const getTimeIcon = (hour: number): { icon: React.ReactNode; glow: string } => {
@@ -257,19 +258,20 @@ const formatLastUpdated = (date: Date): string => {
 
 const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { islamicMode } = useIslamicMode();
+  const { t, language } = useLanguage();
   const { profileName } = useAuth();
   const { unreadCount } = useNotifications();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const hijriDate = "٤ شوّال ١٤٤٧";
-  const gregorianDate = "٢٣ مارس ٢٠٢٦";
+  const gregorianDate = language === "ar" ? "٢٣ مارس ٢٠٢٦" : "March 23, 2026";
 
   const currentUser = { name: profileName, role: "parent" as const };
 
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentHour] = useState(() => new Date().getHours());
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
-  const greeting = useMemo(() => getGreeting(currentHour), [currentHour]);
+  const greeting = useMemo(() => getGreeting(currentHour, t), [currentHour, t]);
   const timeIcon = useMemo(() => getTimeIcon(currentHour), [currentHour]);
 
   const [demoActive, setDemoActive] = useState(false);
@@ -377,7 +379,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           >
             <span className="text-sm font-bold text-primary">{currentUser.name.charAt(0)}</span>
           </button>
-          <span className="text-xl font-bold text-primary tracking-tight">عائلتنا</span>
+          <span className="text-xl font-bold text-primary tracking-tight">{t.appName}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -500,7 +502,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
             {!demoActive && weather?.lastUpdated && (
               <p className="text-[10px] text-white/35">
-                آخر تحديث {formatLastUpdated(weather.lastUpdated)}
+                {t.hero.lastUpdate} {formatLastUpdated(weather.lastUpdated)}
               </p>
             )}
 

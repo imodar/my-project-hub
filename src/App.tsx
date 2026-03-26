@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { UserRoleProvider } from "@/contexts/UserRoleContext";
 import { TrashProvider } from "@/contexts/TrashContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -194,24 +195,26 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <UserRoleProvider>
-          <IslamicModeProvider>
-            <TrashProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <OfflineBanner />
-                  <StaleBanner />
-                  <FirstSyncOverlay />
-                  <ScrollToTop />
-                  <WarmCacheProvider>
-                    <AnimatedRoutes />
-                  </WarmCacheProvider>
-                  <BottomNav />
-                </BrowserRouter>
-              </TooltipProvider>
-            </TrashProvider>
-          </IslamicModeProvider>
+          <LanguageProvider>
+            <IslamicModeProvider>
+              <TrashProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <OfflineBanner />
+                    <StaleBanner />
+                    <FirstSyncOverlay />
+                    <ScrollToTop />
+                    <WarmCacheProvider>
+                      <AnimatedRoutes />
+                    </WarmCacheProvider>
+                    <BottomNav />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </TrashProvider>
+            </IslamicModeProvider>
+          </LanguageProvider>
         </UserRoleProvider>
       </AuthProvider>
     </QueryClientProvider>
