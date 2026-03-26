@@ -258,12 +258,13 @@ const formatLastUpdated = (date: Date): string => {
 
 const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { islamicMode } = useIslamicMode();
+  const { t, language } = useLanguage();
   const { profileName } = useAuth();
   const { unreadCount } = useNotifications();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const hijriDate = "٤ شوّال ١٤٤٧";
-  const gregorianDate = "٢٣ مارس ٢٠٢٦";
+  const gregorianDate = language === "ar" ? "٢٣ مارس ٢٠٢٦" : "March 23, 2026";
 
   const currentUser = { name: profileName, role: "parent" as const };
 
