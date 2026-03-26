@@ -4,6 +4,7 @@ import { ChevronRight, Camera, Mail, Phone } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadImage } from "@/lib/storage";
 
 const isGoogleEmail = (email: string): boolean => {
   const googleDomains = ["gmail.com", "googlemail.com"];
