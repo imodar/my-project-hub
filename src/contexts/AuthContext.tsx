@@ -32,14 +32,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Race network fetch against a 5s timeout so offline users aren't stuck
     const networkFetch = async () => {
       try {
-        const { data } = await supabase
-          .from("profiles")
-          .select("name")
-          .eq("id", userId)
-          .single();
-        if (data?.name) {
-          setProfileName(data.name);
-          localStorage.setItem(`profile_name_${userId}`, data.name);
+        const { data, error } = await supabase.functions.invoke("auth-management", {
+          body: { action: "get-profile" },
+        });
+        if (!error && data?.data?.name) {
+          setProfileName(data.data.name);
+          localStorage.setItem(`profile_name_${userId}`, data.data.name);
           localStorage.setItem("profile_complete", "true");
         }
       } catch {

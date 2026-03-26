@@ -22,40 +22,28 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
     queryFn: async (): Promise<FamilyMemberInfo[]> => {
       if (!familyId) return [];
 
-      const { data: members, error } = await supabase
-        .from("family_members")
-        .select("user_id, role, is_admin, role_confirmed, families!inner(created_by)")
-        .eq("family_id", familyId)
-        .eq("status", "active");
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: { action: "get-members", family_id: familyId },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      const creatorId = (members?.[0] as any)?.families?.created_by;
+      const members = data?.data || [];
+      const creatorId = data?.created_by;
 
-      let filtered = members || [];
+      let filtered = members;
       if (excludeSelf && user) {
-        filtered = filtered.filter((m) => m.user_id !== user.id);
+        filtered = filtered.filter((m: any) => m.user_id !== user.id);
       }
 
-      if (filtered.length === 0) return [];
-
-      const userIds = filtered.map((m) => m.user_id);
-      const { data: profiles, error: pErr } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("id", userIds);
-      if (pErr) throw pErr;
-
-      return filtered.map((m) => {
-        const profile = (profiles || []).find((p) => p.id === m.user_id);
-        return {
-          id: m.user_id,
-          name: profile?.name || ROLE_LABELS[m.role] || "عضو",
-          role: m.role,
-          isAdmin: m.is_admin || false,
-          isCreator: m.user_id === creatorId,
-          roleConfirmed: (m as any).role_confirmed ?? true,
-        };
-      });
+      return filtered.map((m: any) => ({
+        id: m.user_id,
+        name: m.profiles?.name || ROLE_LABELS[m.role] || "عضو",
+        role: m.role,
+        isAdmin: m.is_admin || false,
+        isCreator: m.user_id === creatorId,
+        roleConfirmed: m.role_confirmed ?? true,
+      }));
     },
     enabled: !!familyId && !!user,
   });
