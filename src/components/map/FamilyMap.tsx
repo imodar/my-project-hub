@@ -38,21 +38,27 @@ const ROLE_COLORS: Record<string, string> = {
   driver: "#f59e0b",
 };
 
-function createMemberIcon(name: string, role: string, isMe: boolean, isSelected: boolean) {
-  const color = isMe ? "#ef4444" : (ROLE_COLORS[role] || "#6b7280");
+function createMemberIcon(name: string, role: string, isMe: boolean, isSelected: boolean, isHidden = false) {
+  const baseColor = isMe ? "#ef4444" : (ROLE_COLORS[role] || "#6b7280");
+  const color = isHidden ? "#9ca3af" : baseColor;
+  const opacity = isHidden ? 0.5 : 1;
   const size = isSelected ? 44 : 36;
   const initial = name.charAt(0) || "?";
   const border = isSelected ? "3px solid white" : "2px solid white";
 
+  const eyeOffSvg = isHidden
+    ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;bottom:-4px;right:-4px;background:#6b7280;border-radius:50%;padding:1px;border:1.5px solid white;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+    : "";
+
   return L.divIcon({
     className: "custom-member-marker",
     html: `<div style="
-      width:${size}px;height:${size}px;border-radius:50%;
+      position:relative;width:${size}px;height:${size}px;border-radius:50%;
       background:${color};color:white;display:flex;align-items:center;justify-content:center;
       font-weight:700;font-size:${isSelected ? 16 : 14}px;
       border:${border};box-shadow:0 2px 8px rgba(0,0,0,0.3);
-      transition:all 0.2s;
-    ">${initial}</div>`,
+      opacity:${opacity};transition:all 0.2s;
+    ">${initial}${eyeOffSvg}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -size / 2],
@@ -76,6 +82,7 @@ export default function FamilyMap({ locations, selectedMemberId, onMemberSelect,
   const fittedRef = useRef(false);
 
   const sharingLocations = locations.filter((l) => l.is_sharing);
+  const allWithCoords = locations.filter((l) => l.lat && l.lng);
 
   // Initialize map
   useEffect(() => {
@@ -117,15 +124,17 @@ export default function FamilyMap({ locations, selectedMemberId, onMemberSelect,
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current.clear();
 
-    sharingLocations.forEach((loc) => {
+    allWithCoords.forEach((loc) => {
       const isSelected = loc.user_id === selectedMemberId;
-      const icon = createMemberIcon(loc.name, loc.role, loc.isMe, isSelected);
+      const isHidden = !loc.is_sharing;
+      const icon = createMemberIcon(loc.name, loc.role, loc.isMe, isSelected, isHidden);
+      const statusText = isHidden ? "الموقع مخفي" : timeSince(loc.updated_at);
       const marker = L.marker([loc.lat, loc.lng], { icon })
         .addTo(map)
         .bindPopup(`
           <div style="text-align:center;direction:rtl">
             <p style="font-weight:bold;font-size:13px;margin:0">${loc.name} ${loc.isMe ? "(أنا)" : ""}</p>
-            <p style="font-size:11px;color:#888;margin:2px 0 0">${timeSince(loc.updated_at)}</p>
+            <p style="font-size:11px;color:${isHidden ? "#ef4444" : "#888"};margin:2px 0 0">${statusText}</p>
           </div>
         `);
       marker.on("click", () => onMemberSelect(loc.user_id));
@@ -133,20 +142,20 @@ export default function FamilyMap({ locations, selectedMemberId, onMemberSelect,
     });
 
     // Fit bounds on first load
-    if (sharingLocations.length > 0 && !fittedRef.current) {
-      const bounds = L.latLngBounds(sharingLocations.map((l) => [l.lat, l.lng] as [number, number]));
+    if (allWithCoords.length > 0 && !fittedRef.current) {
+      const bounds = L.latLngBounds(allWithCoords.map((l) => [l.lat, l.lng] as [number, number]));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
       fittedRef.current = true;
     }
-  }, [sharingLocations, selectedMemberId, onMemberSelect]);
+  }, [allWithCoords, selectedMemberId, onMemberSelect]);
 
   // Fly to selected member
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedMemberId) return;
-    const loc = sharingLocations.find((l) => l.user_id === selectedMemberId);
+    const loc = allWithCoords.find((l) => l.user_id === selectedMemberId);
     if (loc) map.flyTo([loc.lat, loc.lng], 16, { duration: 0.8 });
-  }, [selectedMemberId]);
+  }, [selectedMemberId, allWithCoords]);
 
   return (
     <div
