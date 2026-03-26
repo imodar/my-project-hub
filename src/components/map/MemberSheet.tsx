@@ -95,33 +95,62 @@ export default function MemberSheet({ locations, selectedMemberId, onMemberSelec
             <p>لا توجد مواقع مشاركة حالياً</p>
           </div>
         )}
-        {locations.map((loc, idx) => (
-          <button
-            key={loc.user_id}
-            onClick={() => handleMemberClick(loc.user_id)}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-right ${
-              selectedMemberId === loc.user_id ? "bg-primary/10" : "active:bg-muted"
-            } ${idx < locations.length - 1 ? "mb-1" : ""}`}
-          >
-            <div className="w-11 h-11 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0"
-              style={{ background: loc.isMe ? "#ef4444" : "#2563eb" }}
+        {locations.map((loc, idx) => {
+          const isOnline = loc.is_sharing && (Date.now() - new Date(loc.updated_at).getTime()) < 10 * 60 * 1000;
+          return (
+            <button
+              key={loc.user_id}
+              onClick={() => handleMemberClick(loc.user_id)}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-right ${
+                selectedMemberId === loc.user_id ? "bg-primary/10" : "active:bg-muted"
+              } ${idx < locations.length - 1 ? "mb-1" : ""}`}
             >
-              {loc.name.charAt(0) || "?"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-foreground">
-                  {loc.name} {loc.isMe ? "(أنا)" : ""}
-                </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                  {ROLE_LABELS[loc.role] || loc.role}
+              {/* Avatar with online indicator */}
+              <div className="relative shrink-0">
+                <div className="w-11 h-11 rounded-full flex items-center justify-center text-lg font-bold text-white"
+                  style={{ background: loc.isMe ? "#ef4444" : "#2563eb" }}
+                >
+                  {loc.name.charAt(0) || "?"}
+                </div>
+                <span
+                  className={`absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 rounded-full border-2 border-background ${
+                    !loc.is_sharing ? "bg-gray-400" : isOnline ? "bg-green-500" : "bg-yellow-500"
+                  }`}
+                />
+              </div>
+
+              {/* Name + role + time */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-foreground">
+                    {loc.name} {loc.isMe ? "(أنا)" : ""}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    {ROLE_LABELS[loc.role] || loc.role}
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {loc.is_sharing ? timeSince(loc.updated_at) : "الموقع مخفي"}
                 </span>
               </div>
-              <span className="text-xs text-muted-foreground">{timeSince(loc.updated_at)}</span>
-            </div>
-            {!loc.is_sharing && <EyeOff size={14} className="text-muted-foreground shrink-0" />}
-          </button>
-        ))}
+
+              {/* Status indicator on the left side */}
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                {!loc.is_sharing ? (
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <EyeOff size={16} />
+                    <span className="text-[10px]">مخفي</span>
+                  </div>
+                ) : (
+                  <div className={`flex items-center gap-1 ${isOnline ? "text-green-600" : "text-yellow-600"}`}>
+                    <MapPin size={16} />
+                    <span className="text-[10px]">{isOnline ? "متصل" : "غير نشط"}</span>
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </motion.div>
   );
