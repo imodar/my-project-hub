@@ -13,9 +13,19 @@ function json(data: unknown, status = 200) {
   });
 }
 
-async function checkRateLimit(
-  ac: any, userId: string, endpoint: string, maxPerMinute = 60
-): Promise<boolean> {
+const MAX_NAME = 100;
+const MAX_LABEL = 100;
+const MAX_AMOUNT = 10_000_000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ALLOWED_TYPES = ["month", "trip", "custom"];
+const ALLOWED_CURRENCIES = ["SAR", "USD", "EUR", "GBP", "AED", "KWD", "BHD", "QAR", "OMR", "EGP", "JOD"];
+
+function validUuid(v: unknown): v is string { return typeof v === "string" && UUID_RE.test(v); }
+function validStr(v: unknown, max = MAX_NAME): v is string { return typeof v === "string" && v.trim().length > 0 && v.length <= max; }
+function validAmount(v: unknown): v is number { return typeof v === "number" && v > 0 && v <= MAX_AMOUNT && isFinite(v); }
+function sanitize(s: string, max = MAX_NAME): string { return s.trim().slice(0, max); }
+
+async function checkRateLimit(ac: any, userId: string, endpoint: string, maxPerMinute = 60): Promise<boolean> {
   const now = new Date();
   const windowStart = new Date(now.getTime() - 60000).toISOString();
   const { data } = await ac.from("rate_limit_counters").select("id, count, window_start").eq("user_id", userId).eq("endpoint", endpoint).maybeSingle();
@@ -39,12 +49,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
     if (authError || !authUser) return json({ error: "Unauthorized" }, 401);
     const userId = authUser.id;
@@ -56,14 +61,11 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
-    // --- BUDGETS ---
     if (action === "get-budgets") {
       const { family_id, type } = body;
-      let query = supabase
-        .from("budgets")
-        .select("*, budget_expenses(*)")
-        .eq("family_id", family_id)
-        .order("created_at", { ascending: false });
+      if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      if (type && !ALLOWED_TYPES.includes(type)) return json({ error: "نوع غير صالح" }, 400);
+      let query = supabase.from("budgets").select("*, budget_expenses(*)").eq("family_id", family_id).order("created_at", { ascending: false });
       if (type) query = query.eq("type", type);
       const { data, error } = await query;
       if (error) return json({ error: error.message }, 400);
@@ -72,68 +74,69 @@ Deno.serve(async (req) => {
 
     if (action === "create-budget") {
       const { family_id, type, month, label, income, trip_id } = body;
-      const { data, error } = await supabase
-        .from("budgets")
-        .insert({ family_id, type: type || "month", month, label, income, trip_id, created_by: userId })
-        .select()
-        .single();
+      if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      if (type && !ALLOWED_TYPES.includes(type)) return json({ error: "نوع غير صالح" }, 400);
+      if (label && !validStr(label, MAX_LABEL)) return json({ error: "العنوان طويل جداً (حد أقصى 100)" }, 400);
+      if (income !== undefined && income !== null && (typeof income !== "number" || income < 0 || income > MAX_AMOUNT)) return json({ error: "الدخل غير صالح" }, 400);
+      if (month && (typeof month !== "string" || month.length > 10)) return json({ error: "الشهر غير صالح" }, 400);
+      if (trip_id && !validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
+      const { data, error } = await supabase.from("budgets").insert({ family_id, type: type || "month", month, label: label ? sanitize(label, MAX_LABEL) : null, income, trip_id, created_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "update-budget") {
       const { id, income, label } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      if (income !== undefined && income !== null && (typeof income !== "number" || income < 0 || income > MAX_AMOUNT)) return json({ error: "الدخل غير صالح" }, 400);
+      if (label !== undefined && label !== null && !validStr(label, MAX_LABEL)) return json({ error: "العنوان طويل جداً" }, 400);
       const updates: Record<string, unknown> = {};
       if (income !== undefined) updates.income = income;
-      if (label !== undefined) updates.label = label;
-      const { data, error } = await supabase
-        .from("budgets")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      if (label !== undefined) updates.label = label ? sanitize(label, MAX_LABEL) : label;
+      const { data, error } = await supabase.from("budgets").update(updates).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "delete-budget") {
       const { id } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       const { error } = await supabase.from("budgets").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
     }
 
-    // --- EXPENSES ---
     if (action === "add-expense") {
       const { budget_id, name, amount, currency, date } = body;
-      const { data, error } = await supabase
-        .from("budget_expenses")
-        .insert({ budget_id, name, amount, currency: currency || "SAR", date })
-        .select()
-        .single();
+      if (!validUuid(budget_id)) return json({ error: "budget_id غير صالح" }, 400);
+      if (!validStr(name, MAX_NAME)) return json({ error: "اسم المصروف مطلوب (حد أقصى 100)" }, 400);
+      if (!validAmount(amount)) return json({ error: "المبلغ غير صالح (1 - 10,000,000)" }, 400);
+      if (currency && !ALLOWED_CURRENCIES.includes(currency)) return json({ error: "عملة غير مدعومة" }, 400);
+      if (date && (typeof date !== "string" || date.length > 20)) return json({ error: "تاريخ غير صالح" }, 400);
+      const { data, error } = await supabase.from("budget_expenses").insert({ budget_id, name: sanitize(name), amount, currency: currency || "SAR", date }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "update-expense") {
       const { id, name, amount, currency, date } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      if (name !== undefined && !validStr(name, MAX_NAME)) return json({ error: "الاسم غير صالح" }, 400);
+      if (amount !== undefined && !validAmount(amount)) return json({ error: "المبلغ غير صالح" }, 400);
+      if (currency !== undefined && !ALLOWED_CURRENCIES.includes(currency)) return json({ error: "عملة غير مدعومة" }, 400);
       const updates: Record<string, unknown> = {};
-      if (name !== undefined) updates.name = name;
+      if (name !== undefined) updates.name = sanitize(name);
       if (amount !== undefined) updates.amount = amount;
       if (currency !== undefined) updates.currency = currency;
       if (date !== undefined) updates.date = date;
-      const { data, error } = await supabase
-        .from("budget_expenses")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      const { data, error } = await supabase.from("budget_expenses").update(updates).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "delete-expense") {
       const { id } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       const { error } = await supabase.from("budget_expenses").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });

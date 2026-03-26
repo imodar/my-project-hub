@@ -7,28 +7,29 @@ const corsHeaders = {
 };
 
 function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
-async function checkRateLimit(
-  ac: any, userId: string, endpoint: string, maxPerMinute = 60
-): Promise<boolean> {
+const MAX_TITLE = 200;
+const MAX_BODY = 1000;
+const MAX_SEARCH = 100;
+const MAX_VERSION = 50;
+const MAX_NOTES = 2000;
+const MAX_KEY = 100;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validUuid(v: unknown): v is string { return typeof v === "string" && UUID_RE.test(v); }
+function validStr(v: unknown, max: number): v is string { return typeof v === "string" && v.trim().length > 0 && v.length <= max; }
+function sanitize(s: string, max: number): string { return s.trim().slice(0, max); }
+
+async function checkRateLimit(ac: any, userId: string, endpoint: string, maxPerMinute = 60): Promise<boolean> {
   const now = new Date();
   const windowStart = new Date(now.getTime() - 60000).toISOString();
   const { data } = await ac.from("rate_limit_counters").select("id, count, window_start").eq("user_id", userId).eq("endpoint", endpoint).maybeSingle();
   if (data) {
-    if (data.window_start > windowStart) {
-      if (data.count >= maxPerMinute) return false;
-      await ac.from("rate_limit_counters").update({ count: data.count + 1 }).eq("id", data.id);
-    } else {
-      await ac.from("rate_limit_counters").update({ count: 1, window_start: now.toISOString() }).eq("id", data.id);
-    }
-  } else {
-    await ac.from("rate_limit_counters").insert({ user_id: userId, endpoint, count: 1, window_start: now.toISOString() });
-  }
+    if (data.window_start > windowStart) { if (data.count >= maxPerMinute) return false; await ac.from("rate_limit_counters").update({ count: data.count + 1 }).eq("id", data.id); }
+    else { await ac.from("rate_limit_counters").update({ count: 1, window_start: now.toISOString() }).eq("id", data.id); }
+  } else { await ac.from("rate_limit_counters").insert({ user_id: userId, endpoint, count: 1, window_start: now.toISOString() }); }
   return true;
 }
 
@@ -38,116 +39,53 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+    const adminClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
     if (authError || !authUser) return json({ error: "Unauthorized" }, 401);
     const userId = authUser.id;
+    if (!await checkRateLimit(adminClient, userId, "admin-api", 120)) return json({ error: "Too many requests" }, 429);
 
-    const _rl = await checkRateLimit(adminClient, userId, "admin-api", 120);
-    if (!_rl) return json({ error: "Too many requests" }, 429);
-
-    // Verify admin role
-    const { data: roleData } = await adminClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-
+    const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
     if (!roleData) return json({ error: "Admin access required" }, 403);
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
     const logAudit = async (actionName: string, targetType?: string, targetId?: string, details?: unknown) => {
-      await adminClient.from("admin_audit_log").insert({
-        admin_id: userId,
-        action: actionName,
-        target_type: targetType,
-        target_id: targetId,
-        details: details || {},
-      });
+      await adminClient.from("admin_audit_log").insert({ admin_id: userId, action: actionName, target_type: targetType, target_id: targetId, details: details || {} });
     };
 
-    // ─── FULL DASHBOARD ───
+    // ─── DASHBOARD ───
     if (action === "dashboard-full") {
       const now = new Date();
       const todayStr = now.toISOString().split("T")[0];
       const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
-
-      const [
-        { count: userCount },
-        { count: familyCount },
-        { count: activeToday },
-        { count: newUsers7d },
-      ] = await Promise.all([
+      const [{ count: userCount }, { count: familyCount }, { count: activeToday }, { count: newUsers7d }] = await Promise.all([
         adminClient.from("profiles").select("*", { count: "exact", head: true }).eq("is_deleted", false),
         adminClient.from("families").select("*", { count: "exact", head: true }),
         adminClient.from("profiles").select("*", { count: "exact", head: true }).gte("last_login_at", `${todayStr}T00:00:00Z`),
         adminClient.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", weekAgo),
       ]);
-
-      // Subscription breakdown
       const { data: profiles } = await adminClient.from("profiles").select("subscription_plan").eq("is_deleted", false);
       const planCounts: Record<string, number> = {};
-      (profiles || []).forEach((p: any) => {
-        const plan = p.subscription_plan || "free";
-        planCounts[plan] = (planCounts[plan] || 0) + 1;
-      });
+      (profiles || []).forEach((p: any) => { const plan = p.subscription_plan || "free"; planCounts[plan] = (planCounts[plan] || 0) + 1; });
       const subscription_breakdown = Object.entries(planCounts).map(([plan, count]) => ({ plan, count }));
-
-      // Top features
-      const { data: featureData } = await adminClient
-        .from("feature_usage")
-        .select("feature_name")
-        .gte("created_at", weekAgo);
-
+      const { data: featureData } = await adminClient.from("feature_usage").select("feature_name").gte("created_at", weekAgo);
       const featureCounts: Record<string, number> = {};
-      (featureData || []).forEach((f: any) => {
-        featureCounts[f.feature_name] = (featureCounts[f.feature_name] || 0) + 1;
-      });
-      const top_features = Object.entries(featureCounts)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-
-      return json({
-        data: {
-          total_users: userCount || 0,
-          total_families: familyCount || 0,
-          active_today: activeToday || 0,
-          new_users_7d: newUsers7d || 0,
-          subscription_breakdown,
-          top_features,
-        },
-      });
+      (featureData || []).forEach((f: any) => { featureCounts[f.feature_name] = (featureCounts[f.feature_name] || 0) + 1; });
+      const top_features = Object.entries(featureCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10);
+      return json({ data: { total_users: userCount || 0, total_families: familyCount || 0, active_today: activeToday || 0, new_users_7d: newUsers7d || 0, subscription_breakdown, top_features } });
     }
 
     // ─── USERS ───
     if (action === "get-users") {
       const { page = 1, limit = 20, search } = body;
-      let query = adminClient
-        .from("profiles")
-        .select("*", { count: "exact" })
-        .eq("is_deleted", false)
-        .order("created_at", { ascending: false })
-        .range((page - 1) * limit, page * limit - 1);
-
-      if (search) {
-        query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
-      }
-
+      const safePage = Math.max(1, Math.min(Number(page) || 1, 1000));
+      const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+      if (search && typeof search === "string" && search.length > MAX_SEARCH) return json({ error: "البحث طويل جداً" }, 400);
+      let query = adminClient.from("profiles").select("*", { count: "exact" }).eq("is_deleted", false).order("created_at", { ascending: false }).range((safePage - 1) * safeLimit, safePage * safeLimit - 1);
+      if (search) { query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`); }
       const { data, error, count } = await query;
       if (error) return json({ error: error.message }, 400);
       return json({ data, total: count });
@@ -156,50 +94,24 @@ Deno.serve(async (req) => {
     // ─── FAMILIES ───
     if (action === "get-families") {
       const { page = 1, limit = 20, search } = body;
-      let query = adminClient
-        .from("families")
-        .select("*", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range((page - 1) * limit, page * limit - 1);
-
-      if (search) {
-        query = query.ilike("name", `%${search}%`);
-      }
-
+      const safePage = Math.max(1, Math.min(Number(page) || 1, 1000));
+      const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+      if (search && typeof search === "string" && search.length > MAX_SEARCH) return json({ error: "البحث طويل جداً" }, 400);
+      let query = adminClient.from("families").select("*", { count: "exact" }).order("created_at", { ascending: false }).range((safePage - 1) * safeLimit, safePage * safeLimit - 1);
+      if (search) { query = query.ilike("name", `%${search}%`); }
       const { data: families, error, count } = await query;
       if (error) return json({ error: error.message }, 400);
-
-      // Get member counts
-      const familyIds = (families || []).map((f: any) => f.id);
       const enriched = [];
-
       for (const f of families || []) {
-        const { count: mc } = await adminClient
-          .from("family_members")
-          .select("*", { count: "exact", head: true })
-          .eq("family_id", f.id)
-          .eq("status", "active");
-
-        // Get members with profiles for detail view
-        const { data: members } = await adminClient
-          .from("family_members")
-          .select("id, user_id, role, is_admin, status")
-          .eq("family_id", f.id)
-          .eq("status", "active");
-
+        const { count: mc } = await adminClient.from("family_members").select("*", { count: "exact", head: true }).eq("family_id", f.id).eq("status", "active");
+        const { data: members } = await adminClient.from("family_members").select("id, user_id, role, is_admin, status").eq("family_id", f.id).eq("status", "active");
         const membersWithNames = [];
         for (const m of members || []) {
-          const { data: profile } = await adminClient
-            .from("profiles")
-            .select("name")
-            .eq("id", m.user_id)
-            .maybeSingle();
+          const { data: profile } = await adminClient.from("profiles").select("name").eq("id", m.user_id).maybeSingle();
           membersWithNames.push({ ...m, profile_name: profile?.name || null });
         }
-
         enriched.push({ ...f, member_count: mc || 0, members: membersWithNames });
       }
-
       return json({ data: enriched, total: count });
     }
 
@@ -207,7 +119,6 @@ Deno.serve(async (req) => {
     if (action === "content-stats") {
       const now = new Date();
       const in7Days = new Date(now.getTime() + 7 * 86400000).toISOString().split("T")[0];
-
       const counts = await Promise.all([
         adminClient.from("calendar_events").select("*", { count: "exact", head: true }),
         adminClient.from("task_items").select("*", { count: "exact", head: true }),
@@ -227,107 +138,40 @@ Deno.serve(async (req) => {
         adminClient.from("places").select("*", { count: "exact", head: true }),
         adminClient.from("vaccination_children").select("*", { count: "exact", head: true }),
       ]);
-
-      // Vehicle count - check if table exists
-      let vehicleCount = 0;
-      try {
-        const { count } = await adminClient.from("vehicles").select("*", { count: "exact", head: true });
-        vehicleCount = count || 0;
-      } catch {}
-
-      let willCount = 0;
-      try {
-        const { count } = await adminClient.from("wills").select("*", { count: "exact", head: true });
-        willCount = count || 0;
-      } catch {}
-
-      let zakatCount = 0;
-      try {
-        const { count } = await adminClient.from("zakat_assets").select("*", { count: "exact", head: true });
-        zakatCount = count || 0;
-      } catch {}
-
-      return json({
-        data: {
-          events: counts[0].count || 0,
-          tasks: counts[1].count || 0,
-          tasks_done: counts[2].count || 0,
-          market_lists: counts[3].count || 0,
-          market_items: counts[4].count || 0,
-          medications: counts[5].count || 0,
-          med_logs: counts[6].count || 0,
-          debts: counts[7].count || 0,
-          debts_paid: counts[8].count || 0,
-          trips: counts[9].count || 0,
-          documents: counts[10].count || 0,
-          docs_expiring: counts[11].count || 0,
-          albums: counts[12].count || 0,
-          photos: counts[13].count || 0,
-          chat_messages: counts[14].count || 0,
-          places: counts[15].count || 0,
-          vacc_children: counts[16].count || 0,
-          vehicles: vehicleCount,
-          wills: willCount,
-          zakat: zakatCount,
-        },
-      });
+      let vehicleCount = 0; try { const { count } = await adminClient.from("vehicles").select("*", { count: "exact", head: true }); vehicleCount = count || 0; } catch {}
+      let willCount = 0; try { const { count } = await adminClient.from("wills").select("*", { count: "exact", head: true }); willCount = count || 0; } catch {}
+      let zakatCount = 0; try { const { count } = await adminClient.from("zakat_assets").select("*", { count: "exact", head: true }); zakatCount = count || 0; } catch {}
+      return json({ data: { events: counts[0].count || 0, tasks: counts[1].count || 0, tasks_done: counts[2].count || 0, market_lists: counts[3].count || 0, market_items: counts[4].count || 0, medications: counts[5].count || 0, med_logs: counts[6].count || 0, debts: counts[7].count || 0, debts_paid: counts[8].count || 0, trips: counts[9].count || 0, documents: counts[10].count || 0, docs_expiring: counts[11].count || 0, albums: counts[12].count || 0, photos: counts[13].count || 0, chat_messages: counts[14].count || 0, places: counts[15].count || 0, vacc_children: counts[16].count || 0, vehicles: vehicleCount, wills: willCount, zakat: zakatCount } });
     }
 
-    // ─── AUDIT LOG ───
     if (action === "get-audit-log") {
       const { page = 1, limit = 50 } = body;
-      const { data, error } = await adminClient
-        .from("admin_audit_log")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .range((page - 1) * limit, page * limit - 1);
+      const safePage = Math.max(1, Number(page) || 1);
+      const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+      const { data, error } = await adminClient.from("admin_audit_log").select("*").order("created_at", { ascending: false }).range((safePage - 1) * safeLimit, safePage * safeLimit - 1);
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
-    // ─── NOTIFICATION LOG ───
     if (action === "get-notification-log") {
       const { page = 1, limit = 50 } = body;
-      const { data, error } = await adminClient
-        .from("notification_log")
-        .select("*")
-        .order("sent_at", { ascending: false })
-        .range((page - 1) * limit, page * limit - 1);
+      const safePage = Math.max(1, Number(page) || 1);
+      const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+      const { data, error } = await adminClient.from("notification_log").select("*").order("sent_at", { ascending: false }).range((safePage - 1) * safeLimit, safePage * safeLimit - 1);
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
-    // ─── SUBSCRIPTIONS ───
     if (action === "get-subscriptions") {
       const { data: profiles } = await adminClient.from("profiles").select("subscription_plan").eq("is_deleted", false);
       const planCounts: Record<string, number> = {};
       let paid = 0, free = 0;
-      (profiles || []).forEach((p: any) => {
-        const plan = p.subscription_plan || "free";
-        planCounts[plan] = (planCounts[plan] || 0) + 1;
-        if (plan === "free") free++; else paid++;
-      });
-
-      const { data: events } = await adminClient
-        .from("subscription_events")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
-
+      (profiles || []).forEach((p: any) => { const plan = p.subscription_plan || "free"; planCounts[plan] = (planCounts[plan] || 0) + 1; if (plan === "free") free++; else paid++; });
+      const { data: events } = await adminClient.from("subscription_events").select("*").order("created_at", { ascending: false }).limit(50);
       const totalRevenue = (events || []).reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
-
-      return json({
-        data: {
-          breakdown: Object.entries(planCounts).map(([plan, count]) => ({ plan, count })),
-          paid_count: paid,
-          free_count: free,
-          total_revenue: totalRevenue,
-          recent_events: events || [],
-        },
-      });
+      return json({ data: { breakdown: Object.entries(planCounts).map(([plan, count]) => ({ plan, count })), paid_count: paid, free_count: free, total_revenue: totalRevenue, recent_events: events || [] } });
     }
 
-    // ─── SETTINGS ───
     if (action === "get-settings") {
       const { data, error } = await adminClient.from("system_settings").select("*").order("updated_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
@@ -336,17 +180,14 @@ Deno.serve(async (req) => {
 
     if (action === "update-setting") {
       const { key, value } = body;
+      if (!validStr(key, MAX_KEY)) return json({ error: "المفتاح مطلوب (حد أقصى 100)" }, 400);
       const { data: existing } = await adminClient.from("system_settings").select("id").eq("key", key).maybeSingle();
-      if (existing) {
-        await adminClient.from("system_settings").update({ value, updated_by: userId }).eq("id", existing.id);
-      } else {
-        await adminClient.from("system_settings").insert({ key, value, updated_by: userId });
-      }
+      if (existing) { await adminClient.from("system_settings").update({ value, updated_by: userId }).eq("id", existing.id); }
+      else { await adminClient.from("system_settings").insert({ key: sanitize(key, MAX_KEY), value, updated_by: userId }); }
       await logAudit("update_setting", "setting", key, { value });
       return json({ success: true });
     }
 
-    // ─── VERSIONS ───
     if (action === "get-versions") {
       const { data, error } = await adminClient.from("app_versions").select("*").order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
@@ -355,59 +196,32 @@ Deno.serve(async (req) => {
 
     if (action === "add-version") {
       const { version, release_notes, force_update, min_supported_version, update_message } = body;
-      const { error } = await adminClient.from("app_versions").insert({
-        version, release_notes, force_update: force_update || false,
-        min_supported_version: min_supported_version || null,
-        update_message: update_message || null,
-      });
+      if (!validStr(version, MAX_VERSION)) return json({ error: "الإصدار مطلوب (حد أقصى 50)" }, 400);
+      if (release_notes && typeof release_notes === "string" && release_notes.length > MAX_NOTES) return json({ error: "ملاحظات الإصدار طويلة جداً" }, 400);
+      if (update_message && typeof update_message === "string" && update_message.length > 500) return json({ error: "رسالة التحديث طويلة جداً" }, 400);
+      const { error } = await adminClient.from("app_versions").insert({ version: sanitize(version, MAX_VERSION), release_notes: release_notes ? sanitize(release_notes, MAX_NOTES) : null, force_update: force_update || false, min_supported_version: min_supported_version || null, update_message: update_message || null });
       if (error) return json({ error: error.message }, 400);
       await logAudit("add_version", "app_version", version, { release_notes });
       return json({ success: true });
     }
 
-    // ─── SECURITY ───
     if (action === "get-security") {
       const todayStr = new Date().toISOString().split("T")[0];
-
-      const [
-        { count: otpToday },
-        { count: consentCount },
-        { count: exportReqs },
-        { count: deletionReqs },
-      ] = await Promise.all([
+      const [{ count: otpToday }, { count: consentCount }, { count: exportReqs }, { count: deletionReqs }] = await Promise.all([
         adminClient.from("otp_codes").select("*", { count: "exact", head: true }).gte("created_at", `${todayStr}T00:00:00Z`),
         adminClient.from("consent_log").select("*", { count: "exact", head: true }),
         adminClient.from("data_export_requests").select("*", { count: "exact", head: true }),
         adminClient.from("account_deletions").select("*", { count: "exact", head: true }).eq("status", "pending"),
       ]);
-
-      const { data: recentOtps } = await adminClient
-        .from("otp_codes")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      const { data: deletionList } = await adminClient
-        .from("account_deletions")
-        .select("*")
-        .order("requested_at", { ascending: false })
-        .limit(20);
-
-      return json({
-        data: {
-          otp_today: otpToday || 0,
-          consent_count: consentCount || 0,
-          export_requests: exportReqs || 0,
-          deletion_requests: deletionReqs || 0,
-          recent_otps: recentOtps || [],
-          deletion_list: deletionList || [],
-        },
-      });
+      const { data: recentOtps } = await adminClient.from("otp_codes").select("*").order("created_at", { ascending: false }).limit(20);
+      const { data: deletionList } = await adminClient.from("account_deletions").select("*").order("requested_at", { ascending: false }).limit(20);
+      return json({ data: { otp_today: otpToday || 0, consent_count: consentCount || 0, export_requests: exportReqs || 0, deletion_requests: deletionReqs || 0, recent_otps: recentOtps || [], deletion_list: deletionList || [] } });
     }
 
-    // ─── SUSPEND / UNSUSPEND ───
     if (action === "suspend-user") {
       const { target_user_id, reason } = body;
+      if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
+      if (reason && typeof reason === "string" && reason.length > 500) return json({ error: "السبب طويل جداً" }, 400);
       await adminClient.auth.admin.updateUserById(target_user_id, { ban_duration: "876000h" });
       await logAudit("suspend_user", "user", target_user_id, { reason });
       return json({ success: true });
@@ -415,21 +229,17 @@ Deno.serve(async (req) => {
 
     if (action === "unsuspend-user") {
       const { target_user_id } = body;
+      if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
       await adminClient.auth.admin.updateUserById(target_user_id, { ban_duration: "none" });
       await logAudit("unsuspend_user", "user", target_user_id);
       return json({ success: true });
     }
 
-    // ─── BROADCAST ───
     if (action === "send-broadcast") {
       const { title, body: notifBody } = body;
-      // Log the broadcast
-      await adminClient.from("notification_log").insert({
-        title,
-        body: notifBody,
-        sent_by: userId,
-        target_type: "broadcast",
-      });
+      if (!validStr(title, MAX_TITLE)) return json({ error: "العنوان مطلوب (حد أقصى 200)" }, 400);
+      if (notifBody && typeof notifBody === "string" && notifBody.length > MAX_BODY) return json({ error: "المحتوى طويل جداً" }, 400);
+      await adminClient.from("notification_log").insert({ title: sanitize(title, MAX_TITLE), body: notifBody ? sanitize(notifBody, MAX_BODY) : null, sent_by: userId, target_type: "broadcast" });
       await logAudit("send_broadcast", "notification", null, { title });
       return json({ success: true });
     }

@@ -7,28 +7,27 @@ const corsHeaders = {
 };
 
 function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
-async function checkRateLimit(
-  ac: any, userId: string, endpoint: string, maxPerMinute = 60
-): Promise<boolean> {
+const MAX_NAME = 200;
+const MAX_NOTE = 1000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ALLOWED_TYPES = ["family", "personal"];
+const ALLOWED_PRIORITIES = ["none", "low", "medium", "high"];
+
+function validUuid(v: unknown): v is string { return typeof v === "string" && UUID_RE.test(v); }
+function validStr(v: unknown, max: number): v is string { return typeof v === "string" && v.trim().length > 0 && v.length <= max; }
+function sanitize(s: string, max: number): string { return s.trim().slice(0, max); }
+
+async function checkRateLimit(ac: any, userId: string, endpoint: string, maxPerMinute = 60): Promise<boolean> {
   const now = new Date();
   const windowStart = new Date(now.getTime() - 60000).toISOString();
   const { data } = await ac.from("rate_limit_counters").select("id, count, window_start").eq("user_id", userId).eq("endpoint", endpoint).maybeSingle();
   if (data) {
-    if (data.window_start > windowStart) {
-      if (data.count >= maxPerMinute) return false;
-      await ac.from("rate_limit_counters").update({ count: data.count + 1 }).eq("id", data.id);
-    } else {
-      await ac.from("rate_limit_counters").update({ count: 1, window_start: now.toISOString() }).eq("id", data.id);
-    }
-  } else {
-    await ac.from("rate_limit_counters").insert({ user_id: userId, endpoint, count: 1, window_start: now.toISOString() });
-  }
+    if (data.window_start > windowStart) { if (data.count >= maxPerMinute) return false; await ac.from("rate_limit_counters").update({ count: data.count + 1 }).eq("id", data.id); }
+    else { await ac.from("rate_limit_counters").update({ count: 1, window_start: now.toISOString() }).eq("id", data.id); }
+  } else { await ac.from("rate_limit_counters").insert({ user_id: userId, endpoint, count: 1, window_start: now.toISOString() }); }
   return true;
 }
 
@@ -38,135 +37,112 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+    const adminClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
     if (authError || !authUser) return json({ error: "Unauthorized" }, 401);
     const userId = authUser.id;
-
-    const _rl = await checkRateLimit(adminClient, userId, "tasks-api");
-    if (!_rl) return json({ error: "Too many requests" }, 429);
+    if (!await checkRateLimit(adminClient, userId, "tasks-api")) return json({ error: "Too many requests" }, 429);
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
-    // Helper: verify user is a family member for a given family_id
     async function verifyFamilyMember(familyId: string) {
       const { data } = await adminClient.rpc("is_family_member", { _user_id: userId, _family_id: familyId });
       return !!data;
     }
-
-    // Helper: get family_id from a list_id
     async function getFamilyIdFromList(listId: string): Promise<string | null> {
       const { data } = await adminClient.from("task_lists").select("family_id").eq("id", listId).single();
       return data?.family_id || null;
     }
 
-    // --- LISTS ---
     if (action === "get-lists") {
       const { family_id } = body;
-      const { data, error } = await supabase
-        .from("task_lists")
-        .select("*, task_items(*)")
-        .eq("family_id", family_id)
-        .order("updated_at", { ascending: false })
-        .order("created_at", { ascending: false, referencedTable: "task_items" });
+      if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const { data, error } = await supabase.from("task_lists").select("*, task_items(*)").eq("family_id", family_id).order("updated_at", { ascending: false }).order("created_at", { ascending: false, referencedTable: "task_items" });
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "create-list") {
       const { family_id, name, type, id: clientId } = body;
+      if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب (حد أقصى 200)" }, 400);
+      if (type && !ALLOWED_TYPES.includes(type)) return json({ error: "نوع غير صالح" }, 400);
+      if (clientId && !validUuid(clientId)) return json({ error: "id غير صالح" }, 400);
       if (!await verifyFamilyMember(family_id)) return json({ error: "Unauthorized" }, 403);
-      const insertData: Record<string, unknown> = { family_id, name, type: type || "family", created_by: userId };
+      const insertData: Record<string, unknown> = { family_id, name: sanitize(name, MAX_NAME), type: type || "family", created_by: userId };
       if (clientId) insertData.id = clientId;
-      const { data, error } = await adminClient
-        .from("task_lists")
-        .insert(insertData)
-        .select()
-        .single();
+      const { data, error } = await adminClient.from("task_lists").insert(insertData).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "delete-list") {
       const { id } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       const { error } = await supabase.from("task_lists").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
     }
 
-    // --- ITEMS ---
     if (action === "get-items") {
       const { list_id } = body;
-      const { data, error } = await supabase
-        .from("task_items")
-        .select("*")
-        .eq("list_id", list_id)
-        .order("created_at", { ascending: false });
+      if (!validUuid(list_id)) return json({ error: "list_id غير صالح" }, 400);
+      const { data, error } = await supabase.from("task_items").select("*").eq("list_id", list_id).order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "add-item") {
       const { list_id, name, note, priority, assigned_to, repeat_enabled, repeat_days, id: clientId } = body;
-      // Verify membership via the list's family
+      if (!validUuid(list_id)) return json({ error: "list_id غير صالح" }, 400);
+      if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب (حد أقصى 200)" }, 400);
+      if (note && typeof note === "string" && note.length > MAX_NOTE) return json({ error: "الملاحظة طويلة جداً (حد أقصى 1000)" }, 400);
+      if (priority && !ALLOWED_PRIORITIES.includes(priority)) return json({ error: "أولوية غير صالحة" }, 400);
+      if (assigned_to && !validUuid(assigned_to)) return json({ error: "assigned_to غير صالح" }, 400);
+      if (clientId && !validUuid(clientId)) return json({ error: "id غير صالح" }, 400);
+      if (repeat_days && (!Array.isArray(repeat_days) || repeat_days.length > 7)) return json({ error: "repeat_days غير صالح" }, 400);
       const familyId = await getFamilyIdFromList(list_id);
       if (!familyId || !await verifyFamilyMember(familyId)) return json({ error: "Unauthorized" }, 403);
-      const insertData: Record<string, unknown> = {
-        list_id, name, note,
-        priority: priority || "none",
-        assigned_to,
-        repeat_enabled: repeat_enabled || false,
-        repeat_days: repeat_days || [],
-      };
+      const insertData: Record<string, unknown> = { list_id, name: sanitize(name, MAX_NAME), note: note ? sanitize(note, MAX_NOTE) : null, priority: priority || "none", assigned_to, repeat_enabled: repeat_enabled || false, repeat_days: repeat_days || [] };
       if (clientId) insertData.id = clientId;
-      const { data, error } = await adminClient
-        .from("task_items")
-        .insert(insertData)
-        .select()
-        .single();
+      const { data, error } = await adminClient.from("task_items").insert(insertData).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "update-item") {
-      const { id, ...updates } = body;
-      delete updates.action;
-      const { data, error } = await supabase
-        .from("task_items")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      const { id, name, note, priority, assigned_to, done, repeat_enabled, repeat_days } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      if (name !== undefined && !validStr(name, MAX_NAME)) return json({ error: "الاسم غير صالح" }, 400);
+      if (note !== undefined && note !== null && typeof note === "string" && note.length > MAX_NOTE) return json({ error: "الملاحظة طويلة جداً" }, 400);
+      if (priority !== undefined && !ALLOWED_PRIORITIES.includes(priority)) return json({ error: "أولوية غير صالحة" }, 400);
+      const updates: Record<string, unknown> = {};
+      if (name !== undefined) updates.name = sanitize(name, MAX_NAME);
+      if (note !== undefined) updates.note = note;
+      if (priority !== undefined) updates.priority = priority;
+      if (assigned_to !== undefined) updates.assigned_to = assigned_to;
+      if (done !== undefined) updates.done = done;
+      if (repeat_enabled !== undefined) updates.repeat_enabled = repeat_enabled;
+      if (repeat_days !== undefined) updates.repeat_days = repeat_days;
+      const { data, error } = await supabase.from("task_items").update(updates).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "toggle-item") {
       const { id, done } = body;
-      const { data, error } = await supabase
-        .from("task_items")
-        .update({ done })
-        .eq("id", id)
-        .select()
-        .single();
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      if (typeof done !== "boolean") return json({ error: "done يجب أن يكون true أو false" }, 400);
+      const { data, error } = await supabase.from("task_items").update({ done }).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "delete-item") {
       const { id } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       const { error } = await supabase.from("task_items").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
