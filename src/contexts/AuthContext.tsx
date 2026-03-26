@@ -29,23 +29,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("profile_complete", "true");
     }
 
-    // Then try network
-    try {
-      const { data } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("id", userId)
-        .single();
-      if (data?.name) {
-        setProfileName(data.name);
-        localStorage.setItem(`profile_name_${userId}`, data.name);
-        localStorage.setItem("profile_complete", "true");
+    // Race network fetch against a 5s timeout so offline users aren't stuck
+    const networkFetch = async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("id", userId)
+          .single();
+        if (data?.name) {
+          setProfileName(data.name);
+          localStorage.setItem(`profile_name_${userId}`, data.name);
+          localStorage.setItem("profile_complete", "true");
+        }
+      } catch {
+        // offline — use cached value already set above
       }
-    } catch {
-      // offline — use cached value already set above
-    } finally {
-      setProfileReady(true);
-    }
+    };
+
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 5000));
+
+    await Promise.race([networkFetch(), timeout]);
+    setProfileReady(true);
   }, []);
 
   const refreshProfile = useCallback(async () => {

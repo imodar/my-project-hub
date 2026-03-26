@@ -53,12 +53,18 @@ const JoinOrCreate = () => {
     }
   }, [familyId, navigate]);
 
-  const handleJoin = async (inviteCode: string) => {
+  const initiateJoin = (inviteCode: string) => {
     if (!inviteCode.trim() || joining) return;
+    setPendingJoinCode(inviteCode.trim());
+    setShowJoinRoleGrid(true);
+  };
+
+  const handleJoin = async () => {
+    if (!pendingJoinCode || !joinRole || joining) return;
     setJoining(true);
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "join", invite_code: inviteCode.trim(), role: "son" },
+        body: { action: "join", invite_code: pendingJoinCode, role: joinRole },
       });
       console.log("Join response:", { data, error });
       if (error || data?.error) {
