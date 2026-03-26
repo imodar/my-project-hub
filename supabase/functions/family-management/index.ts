@@ -78,13 +78,13 @@ Deno.serve(async (req) => {
     }
     const userId = authUser.id;
 
-    const _rl = await checkRateLimit(adminClient, userId, "family-management");
-    if (!_rl) return json({ error: "Too many requests" }, 429);
-
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    const _rl = await checkRateLimit(adminClient, userId, "family-management");
+    if (!_rl) return json({ error: "Too many requests" }, 429);
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
