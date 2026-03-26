@@ -24,20 +24,17 @@ const Profile = () => {
   const [savingEmail, setSavingEmail] = useState(false);
   const [gmailError, setGmailError] = useState("");
 
-  // Load profile from DB
+  // Load profile via Edge Function
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("name, avatar_url")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setName(data.name || "");
-          setAvatar(data.avatar_url || null);
-        }
-      });
+    supabase.functions.invoke("auth-management", {
+      body: { action: "get-profile" },
+    }).then(({ data }) => {
+      if (data?.data) {
+        setName(data.data.name || "");
+        setAvatar(data.data.avatar_url || null);
+      }
+    });
     // Load current email
     setGmail(user.email || "");
   }, [user]);
@@ -70,16 +67,16 @@ const Profile = () => {
       avatarUrl = result.url;
     }
 
-    const updates: Record<string, string> = { name };
-    if (avatarUrl) updates.avatar_url = avatarUrl;
-
-    const { error } = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("id", user.id);
+    const { data: result, error } = await supabase.functions.invoke("auth-management", {
+      body: {
+        action: "update-profile",
+        name,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+      },
+    });
 
     setSaving(false);
-    if (error) {
+    if (error || result?.error) {
       toast({ title: "حدث خطأ أثناء الحفظ", variant: "destructive" });
     } else {
       setEditing(false);

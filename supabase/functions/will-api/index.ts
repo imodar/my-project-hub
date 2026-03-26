@@ -84,6 +84,21 @@ Deno.serve(async (req) => {
       return json({ data });
     }
 
+    if (action === "delete-will") {
+      const { data: existing } = await supabase
+        .from("wills" as any)
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!existing) return json({ error: "No will found" }, 404);
+      const { error } = await supabase
+        .from("wills" as any)
+        .delete()
+        .eq("id", existing.id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
     return json({ error: err.message }, 500);
