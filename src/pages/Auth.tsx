@@ -120,8 +120,8 @@ const Auth = () => {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="text-center"
         >
-          <h1 className="text-4xl font-bold text-primary-foreground mb-2">عائلتي</h1>
-          <p className="text-primary-foreground/70 text-sm">نظّم حياة عائلتك في مكان واحد</p>
+          <h1 className="text-4xl font-bold text-primary-foreground mb-2">{t.auth.appTitle}</h1>
+          <p className="text-primary-foreground/70 text-sm">{t.auth.appSubtitle}</p>
         </motion.div>
         <motion.img
           src={authFamily}
