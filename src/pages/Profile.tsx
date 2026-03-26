@@ -42,13 +42,15 @@ const Profile = () => {
     setGmail(user.email || "");
   }, [user]);
 
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onload = (ev) => setAvatar(ev.target?.result as string);
       reader.readAsDataURL(file);
-      toast({ title: "تم تحديث الصورة الشخصية" });
     }
   };
 
