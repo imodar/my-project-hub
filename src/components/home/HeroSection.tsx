@@ -2,6 +2,7 @@ import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, P
 import QiblaCompass from "./QiblaCompass";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import ProfileSheet from "./ProfileSheet";
 import NotificationsSheet from "@/components/notifications/NotificationsSheet";
 import { motion, AnimatePresence } from "framer-motion";
