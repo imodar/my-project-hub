@@ -135,11 +135,8 @@ const Settings = () => {
     setMembers(prev => prev.map(m => m.id === id ? { ...m, sosEnabled: !m.sosEnabled } : m));
   };
 
-  const handleLanguageChange = (lang: "ar" | "en") => {
-    setLanguage(lang);
-    setLangSheet(false);
-    toast.success(t.settings.languageChanged);
-  };
+
+
 
   return (
     <div
