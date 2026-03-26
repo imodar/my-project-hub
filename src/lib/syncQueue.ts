@@ -160,6 +160,31 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
 const MAX_RETRIES = 3;
 
 /* ────────────────────────────────────────────
+ *  إشعار المستخدم عند فشل المزامنة
+ * ──────────────────────────────────────────── */
+const TABLE_LABELS: Record<string, string> = {
+  task_items: "المهام", task_lists: "قوائم المهام",
+  market_items: "قائمة السوق", market_lists: "قوائم السوق",
+  calendar_events: "المواعيد", budgets: "الميزانيات",
+  budget_expenses: "المصروفات", debts: "الديون",
+  debt_payments: "السدادات", trips: "الرحلات",
+  medications: "الأدوية", medication_logs: "سجل الأدوية",
+  vehicles: "المركبات", vehicle_maintenance: "صيانة المركبات",
+  zakat_assets: "أصول الزكاة", albums: "الألبومات",
+  album_photos: "الصور", chat_messages: "الرسائل",
+  document_lists: "المستندات", document_items: "عناصر المستندات",
+};
+
+function _notifyFailed(table: string) {
+  const label = TABLE_LABELS[table] || table;
+  if (typeof window !== "undefined" && "dispatchEvent" in window) {
+    window.dispatchEvent(
+      new CustomEvent("sync-queue-failed", { detail: { table, label } })
+    );
+  }
+}
+
+/* ────────────────────────────────────────────
  *  حالة المعالجة (لمنع التشغيل المتزامن)
  * ──────────────────────────────────────────── */
 let isProcessing = false;
@@ -340,6 +365,10 @@ export async function processQueue(): Promise<void> {
           `[SyncQueue] ❌ فشل ${item.operation} على ${item.table} (محاولة ${newRetries}/${MAX_RETRIES})`,
           err
         );
+
+        if (newStatus === "failed") {
+          _notifyFailed(item.table);
+        }
       }
     }
 
