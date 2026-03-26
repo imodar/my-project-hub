@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, ArrowRight, Loader2 } from "lucide-react";
+import { Phone, ArrowRight, Loader2, Globe } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Switch } from "@/components/ui/switch";
 import { motion, AnimatePresence } from "framer-motion";
 import authFamily from "@/assets/auth-family.png";
 
