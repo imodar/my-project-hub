@@ -383,6 +383,15 @@ const Chat = () => {
           </div>
         </div>
 
+        {/* Inline encryption loading banner */}
+        {!isReady && (
+          <div className="flex items-center justify-center gap-2 py-3">
+            <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center animate-pulse">
+              <ShieldCheck size={14} className="text-primary" />
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">جاري تهيئة التشفير...</span>
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mb-3">
