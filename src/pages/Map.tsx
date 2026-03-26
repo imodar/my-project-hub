@@ -36,7 +36,7 @@ const Map = () => {
         actions={[
           {
             icon: isToggling
-              ? <><Loader2 size={14} className="text-white/70 animate-spin" /><span className="text-[11px] text-white/70 font-bold">{t.map.updating || "..."}</span></>
+              ? <><Loader2 size={14} className="text-white/70 animate-spin" /><span className="text-[11px] text-white/70 font-bold">...</span></>
               : isSharing
                 ? <><MapPin size={14} className="text-green-300" /><span className="text-[11px] text-green-300 font-bold">{t.map.myLocationOn}</span></>
                 : <><EyeOff size={14} className="text-white/60" /><span className="text-[11px] text-white/60 font-bold">{t.map.myLocationOff}</span></>,
