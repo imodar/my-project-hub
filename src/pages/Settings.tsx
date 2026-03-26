@@ -509,6 +509,22 @@ const Settings = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Notifications Sheet */}
+      <Sheet open={notifSheet} onOpenChange={setNotifSheet}>
+        <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl p-0 border-none" style={{ direction: "rtl" }}>
+          <div className="h-full flex flex-col">
+            <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+              <SheetTitle className="text-foreground text-lg font-bold text-right">إعدادات الإشعارات</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+              <p className="text-sm text-muted-foreground text-center py-8">
+                الإشعارات تعمل تلقائياً عبر المتصفح. تأكد من السماح بالإشعارات في إعدادات جهازك.
+              </p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
