@@ -158,8 +158,9 @@ const Auth = () => {
               className="space-y-5 flex-1 flex flex-col"
             >
               <div className="text-center mb-2">
-                <h2 className="text-xl font-bold text-foreground">أهلاً بك</h2>
-                <p className="text-sm text-muted-foreground mt-1">سجّل دخولك برقم الجوال</p>
+                <h2 className="text-xl font-bold text-foreground">{t.auth.welcome}</h2>
+                <p className="text-sm text-muted-foreground mt-1">{t.auth.loginWithPhone}</p>
+              </div>
               </div>
 
               {/* Phone input */}
