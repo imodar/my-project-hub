@@ -308,6 +308,24 @@ export function useChat() {
     async (plaintext: string, mentionUserId?: string) => {
       if (!user || !familyId || !plaintext.trim()) return;
 
+      // Optimistic: show message immediately
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: ChatMessage = {
+        id: tempId,
+        senderId: user.id,
+        senderName: profiles[user.id] || "أنا",
+        text: plaintext,
+        time: new Date().toLocaleTimeString("ar-SA", { hour: "numeric", minute: "2-digit", hour12: true }),
+        createdAt: new Date().toISOString(),
+        isMe: true,
+        pinned: false,
+        reactions: {},
+        mentionUserId: mentionUserId || undefined,
+        status: "sending",
+        messageType: "text",
+      };
+      setMessages((prev) => [...prev, optimistic]);
+
       let encrypted_text = plaintext;
       let iv: string | null = null;
 
@@ -332,9 +350,20 @@ export function useChat() {
         message_type: "text",
       });
 
-      if (error) console.error("Send error:", error);
+      if (error) {
+        console.error("Send error:", error);
+        // Mark optimistic message as failed
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m))
+        );
+      } else {
+        // Mark as sent (Realtime will replace with real message)
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, status: "sent" } : m))
+        );
+      }
     },
-    [user, familyId, familyKey]
+    [user, familyId, familyKey, profiles]
   );
 
   // ─── Helper: add optimistic message ───
