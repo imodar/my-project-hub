@@ -38,13 +38,11 @@ const Settings = () => {
 
   useEffect(() => {
     if (!familyId) return;
-    supabase
-      .from("emergency_contacts")
-      .select("id, name, phone")
-      .eq("family_id", familyId)
-      .then(({ data }) => {
-        if (data) setContacts(data);
-      });
+    supabase.functions.invoke("settings-api", {
+      body: { action: "get-emergency-contacts", family_id: familyId },
+    }).then(({ data }) => {
+      if (data?.data) setContacts(data.data);
+    });
   }, [familyId]);
 
   useEffect(() => {
