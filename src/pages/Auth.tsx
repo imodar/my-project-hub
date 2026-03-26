@@ -203,7 +203,7 @@ const Auth = () => {
                   <span className="w-full border-t border-border/50" />
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="bg-background px-3 text-muted-foreground">أو سجّل دخول بواسطة</span>
+                  <span className="bg-background px-3 text-muted-foreground">{t.auth.orLoginWith}</span>
                 </div>
               </div>
 
