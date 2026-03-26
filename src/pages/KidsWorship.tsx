@@ -144,10 +144,10 @@ const KidsWorship = () => {
       />
 
       {/* Child selector */}
-      {children.length > 1 && (
+      {childList.length > 1 && (
         <div className="px-4 -mt-1 mb-2">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
-            {children.map((child) => (
+            {childList.map((child) => (
               <button
                 key={child.id}
                 onClick={() => setActiveChildId(child.id)}
