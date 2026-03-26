@@ -241,7 +241,7 @@ const JoinOrCreate = () => {
             </div>
 
             <button
-              onClick={() => handleJoin(code)}
+              onClick={() => initiateJoin(code)}
               disabled={code.length < 8 || joining}
               className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
             >
