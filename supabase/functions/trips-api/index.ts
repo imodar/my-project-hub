@@ -130,10 +130,33 @@ Deno.serve(async (req) => {
     }
 
     if (action === "toggle-activity") {
-      const { id, completed } = body;
-      const { data, error } = await supabase.from("trip_activities").update({ completed }).eq("id", id).select().single();
+      const { id, completed, ...rest } = body;
+      delete rest.action;
+      const updates = completed !== undefined ? { completed, ...rest } : rest;
+      const { data, error } = await supabase.from("trip_activities").update(updates).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
+    }
+
+    if (action === "delete-expense") {
+      const { id } = body;
+      const { error } = await supabase.from("trip_expenses").delete().eq("id", id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
+    if (action === "add-document") {
+      const { trip_id, name, type, file_url, file_name, notes } = body;
+      const { data, error } = await supabase.from("trip_documents").insert({ trip_id, name, type, file_url, file_name, notes }).select().single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data });
+    }
+
+    if (action === "delete-document") {
+      const { id } = body;
+      const { error } = await supabase.from("trip_documents").delete().eq("id", id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
     }
 
     // --- PACKING ---

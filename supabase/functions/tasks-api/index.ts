@@ -77,9 +77,10 @@ Deno.serve(async (req) => {
       const { family_id } = body;
       const { data, error } = await supabase
         .from("task_lists")
-        .select("*, task_items(count)")
+        .select("*, task_items(*)")
         .eq("family_id", family_id)
-        .order("updated_at", { ascending: false });
+        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false, referencedTable: "task_items" });
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
