@@ -12,12 +12,12 @@ export function useCalendarEvents() {
 
   const apiFn = useCallback(async () => {
     if (!familyId) return { data: [], error: null };
-    const { data, error } = await supabase
-      .from("calendar_events")
-      .select("*")
-      .eq("family_id", familyId)
-      .order("date", { ascending: true });
-    return { data: data || [], error: error?.message || null };
+    const { data: response, error } = await supabase.functions.invoke("calendar-api", {
+      body: { action: "get-events", family_id: familyId },
+    });
+    if (error) return { data: [], error: error.message };
+    if (response?.error) return { data: [], error: response.error };
+    return { data: response?.data || [], error: null };
   }, [familyId]);
 
   const { data: events, isLoading, refetch } = useOfflineFirst<any>({
@@ -32,16 +32,10 @@ export function useCalendarEvents() {
     operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("calendar_events").insert({
-        title: rest.title,
-        date: rest.date,
-        icon: rest.icon || "calendar",
-        reminder_before: rest.reminder_before || [],
-        personal_reminders: rest.personal_reminders || [],
-        family_id: familyId,
-        added_by: user?.id,
+      const { data: response, error } = await supabase.functions.invoke("calendar-api", {
+        body: { action: "create-event", family_id: familyId, title: rest.title, date: rest.date, icon: rest.icon || "calendar", reminder_before: rest.reminder_before || [] },
       });
-      return { data: null, error: error?.message || null };
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),
@@ -52,8 +46,10 @@ export function useCalendarEvents() {
     operation: "UPDATE",
     apiFn: async (input) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("calendar_events").update(updates).eq("id", id);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("calendar-api", {
+        body: { action: "update-event", id, ...updates },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -62,8 +58,10 @@ export function useCalendarEvents() {
     table: "calendar_events",
     operation: "DELETE",
     apiFn: async (input) => {
-      const { error } = await supabase.from("calendar_events").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("calendar-api", {
+        body: { action: "delete-event", id: input.id },
+      });
+      return { data: null, error: response?.error || error?.message || null };
     },
     queryKey: key,
   });
