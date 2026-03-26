@@ -56,6 +56,61 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    // --- GET MEMBERS (profiles for chat) ---
+    if (action === "get-chat-members") {
+      const { family_id } = body;
+      if (!family_id) return json({ error: "family_id مطلوب" }, 400);
+      const { data: members } = await supabase
+        .from("family_members")
+        .select("user_id")
+        .eq("family_id", family_id)
+        .eq("status", "active");
+      if (!members?.length) return json({ data: [] });
+      const ids = members.map((m: any) => m.user_id);
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", ids);
+      return json({ data: profs || [] });
+    }
+
+    // --- FAMILY KEYS ---
+    if (action === "get-family-key") {
+      const { family_id } = body;
+      if (!family_id) return json({ error: "family_id مطلوب" }, 400);
+      const { data } = await supabase
+        .from("family_keys")
+        .select("encrypted_key")
+        .eq("family_id", family_id)
+        .eq("user_id", userId)
+        .maybeSingle();
+      return json({ data });
+    }
+
+    if (action === "get-any-family-key") {
+      const { family_id } = body;
+      if (!family_id) return json({ error: "family_id مطلوب" }, 400);
+      const { data } = await supabase
+        .from("family_keys")
+        .select("encrypted_key")
+        .eq("family_id", family_id)
+        .limit(1)
+        .maybeSingle();
+      return json({ data });
+    }
+
+    if (action === "upsert-family-key") {
+      const { family_id, encrypted_key } = body;
+      if (!family_id || !encrypted_key) return json({ error: "بيانات ناقصة" }, 400);
+      const { data, error } = await supabase.from("family_keys").upsert({
+        family_id,
+        user_id: userId,
+        encrypted_key,
+      }).select().single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data });
+    }
+
     // --- MESSAGES ---
     if (action === "get-messages") {
       const { family_id, limit: msgLimit, before } = body;

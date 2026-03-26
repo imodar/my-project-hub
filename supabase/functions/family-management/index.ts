@@ -378,6 +378,32 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // GET family-id for current user
+    if (action === "get-family-id") {
+      const { data, error } = await adminClient
+        .from("family_members")
+        .select("family_id")
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data: { family_id: data?.family_id || null } });
+    }
+
+    // GET my role
+    if (action === "get-my-role") {
+      const { data, error } = await adminClient
+        .from("family_members")
+        .select("role, is_admin")
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data: data || null });
+    }
+
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
     return json({ error: err.message }, 500);

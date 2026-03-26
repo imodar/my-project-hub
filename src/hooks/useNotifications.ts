@@ -38,19 +38,16 @@ export function useNotifications() {
     queryKey: key,
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from("user_notifications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(100);
+      const { data, error } = await supabase.functions.invoke("notifications-api", {
+        body: { action: "get-notifications" },
+      });
       if (error) throw error;
-      return (data || []).map(mapRow);
+      return (data?.data || []).map(mapRow);
     },
     enabled: !!user,
   });
 
-  // Real-time subscription
+  // Real-time subscription (kept as-is — read-only listener)
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -76,11 +73,10 @@ export function useNotifications() {
 
   const markAsRead = useMutation({
     mutationFn: async (notifId: string) => {
-      const { error } = await supabase
-        .from("user_notifications")
-        .update({ is_read: true } as any)
-        .eq("id", notifId);
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("notifications-api", {
+        body: { action: "mark-read", id: notifId },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
     },
     onMutate: async (notifId) => {
       await qc.cancelQueries({ queryKey: key });
@@ -97,11 +93,10 @@ export function useNotifications() {
 
   const markAsUnread = useMutation({
     mutationFn: async (notifId: string) => {
-      const { error } = await supabase
-        .from("user_notifications")
-        .update({ is_read: false } as any)
-        .eq("id", notifId);
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("notifications-api", {
+        body: { action: "mark-unread", id: notifId },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
     },
     onMutate: async (notifId) => {
       await qc.cancelQueries({ queryKey: key });
@@ -119,12 +114,10 @@ export function useNotifications() {
   const markAllAsRead = useMutation({
     mutationFn: async () => {
       if (!user) return;
-      const { error } = await supabase
-        .from("user_notifications")
-        .update({ is_read: true } as any)
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("notifications-api", {
+        body: { action: "mark-all-read" },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
     },
     onMutate: async () => {
       await qc.cancelQueries({ queryKey: key });
@@ -141,11 +134,10 @@ export function useNotifications() {
 
   const deleteNotification = useMutation({
     mutationFn: async (notifId: string) => {
-      const { error } = await supabase
-        .from("user_notifications")
-        .delete()
-        .eq("id", notifId);
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("notifications-api", {
+        body: { action: "delete-notification", id: notifId },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
     },
     onMutate: async (notifId) => {
       await qc.cancelQueries({ queryKey: key });
