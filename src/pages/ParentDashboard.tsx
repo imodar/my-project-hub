@@ -8,16 +8,21 @@ import { toast } from "@/hooks/use-toast";
 import {
   categories, allItems, TOTAL_ITEMS,
   type ChildProfile, type MonthData,
-  loadChildren, saveChildren, getMonthLabel,
+  getMonthLabel,
 } from "@/components/kids-worship/worshipData";
 import { exportWorshipPdf } from "@/components/kids-worship/exportPdf";
 import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
 import { useKidsWorshipData } from "@/hooks/useKidsWorshipData";
+import { useWorshipChildren } from "@/hooks/useWorshipChildren";
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
   const now = new Date();
-  const [children, setChildren] = useState<ChildProfile[]>(loadChildren);
+  const { children: dbChildren, isLoading: childrenLoading, addChild: addChildMutation, removeChild: removeChildMutation } = useWorshipChildren();
+  // Map DB children to ChildProfile
+  const children: ChildProfile[] = dbChildren.length > 0
+    ? dbChildren.map(c => ({ id: c.id, name: c.name }))
+    : [{ id: "default", name: "طفلي" }];
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedChild, setSelectedChild] = useState<string | null>(null);
