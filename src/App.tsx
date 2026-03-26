@@ -52,7 +52,7 @@ import Vehicle from "./pages/Vehicle.tsx";
 import Vaccinations from "./pages/Vaccinations.tsx";
 import Medications from "./pages/Medications.tsx";
 import IslamicReminders from "./pages/IslamicReminders.tsx";
-import MedicationsExample from "./examples/MedicationsExample.tsx";
+
 import BottomNav from "@/components/home/BottomNav";
 import RoleGuard from "@/components/RoleGuard";
 
