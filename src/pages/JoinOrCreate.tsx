@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,10 +22,14 @@ const JoinOrCreate = () => {
   const { session, loading: authLoading } = useAuth();
   const { familyId, isLoading: familyLoading } = useFamilyId();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const [code, setCode] = useState("");
+  // Read ?code= from URL (e.g. from QR scan)
+  const urlCode = searchParams.get("code") || "";
+
+  const [code, setCode] = useState(urlCode);
   const [joining, setJoining] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
