@@ -8,9 +8,9 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useToast } from "@/hooks/use-toast";
 import { Phone, ArrowRight, Loader2, Globe } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Switch } from "@/components/ui/switch";
 import { motion, AnimatePresence } from "framer-motion";
 import authFamily from "@/assets/auth-family.png";
+import LanguageSheet from "@/components/LanguageSheet";
 
 type Step = "phone" | "otp";
 
