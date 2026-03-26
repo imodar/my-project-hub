@@ -1,5 +1,5 @@
 import { useState, Suspense, lazy } from "react";
-import { MapPin, EyeOff, Settings2 } from "lucide-react";
+import { MapPin, EyeOff, Settings2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 const FamilyMap = lazy(() => import("@/components/map/FamilyMap"));
@@ -16,6 +16,16 @@ const Map = () => {
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
 
   const { locations, isSharing, setIsSharing } = useLocationTracking(updateInterval);
+  const [isToggling, setIsToggling] = useState(false);
+
+  const handleToggleSharing = async () => {
+    setIsToggling(true);
+    try {
+      await setIsSharing(!isSharing);
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background relative" dir={dir}>
@@ -25,12 +35,14 @@ const Map = () => {
         onBack={() => navigate("/")}
         actions={[
           {
-            icon: isSharing
-              ? <><MapPin size={14} className="text-green-300" /><span className="text-[11px] text-green-300 font-bold">{t.map.myLocationOn}</span></>
-              : <><EyeOff size={14} className="text-white/60" /><span className="text-[11px] text-white/60 font-bold">{t.map.myLocationOff}</span></>,
-            onClick: () => setIsSharing(!isSharing),
+            icon: isToggling
+              ? <><Loader2 size={14} className="text-white/70 animate-spin" /><span className="text-[11px] text-white/70 font-bold">...</span></>
+              : isSharing
+                ? <><MapPin size={14} className="text-green-300" /><span className="text-[11px] text-green-300 font-bold">{t.map.myLocationOn}</span></>
+                : <><EyeOff size={14} className="text-white/60" /><span className="text-[11px] text-white/60 font-bold">{t.map.myLocationOff}</span></>,
+            onClick: handleToggleSharing,
             className: "px-3 py-1.5 flex items-center gap-2",
-            style: { background: isSharing ? "hsla(145, 60%, 50%, 0.25)" : "hsla(0,0%,100%,0.12)" },
+            style: { background: isToggling ? "hsla(0,0%,100%,0.18)" : isSharing ? "hsla(145, 60%, 50%, 0.25)" : "hsla(0,0%,100%,0.12)" },
           },
           {
             icon: <Settings2 size={18} className="text-white" />,
