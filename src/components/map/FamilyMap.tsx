@@ -124,15 +124,17 @@ export default function FamilyMap({ locations, selectedMemberId, onMemberSelect,
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current.clear();
 
-    sharingLocations.forEach((loc) => {
+    allWithCoords.forEach((loc) => {
       const isSelected = loc.user_id === selectedMemberId;
-      const icon = createMemberIcon(loc.name, loc.role, loc.isMe, isSelected);
+      const isHidden = !loc.is_sharing;
+      const icon = createMemberIcon(loc.name, loc.role, loc.isMe, isSelected, isHidden);
+      const statusText = isHidden ? "الموقع مخفي" : timeSince(loc.updated_at);
       const marker = L.marker([loc.lat, loc.lng], { icon })
         .addTo(map)
         .bindPopup(`
           <div style="text-align:center;direction:rtl">
             <p style="font-weight:bold;font-size:13px;margin:0">${loc.name} ${loc.isMe ? "(أنا)" : ""}</p>
-            <p style="font-size:11px;color:#888;margin:2px 0 0">${timeSince(loc.updated_at)}</p>
+            <p style="font-size:11px;color:${isHidden ? "#ef4444" : "#888"};margin:2px 0 0">${statusText}</p>
           </div>
         `);
       marker.on("click", () => onMemberSelect(loc.user_id));
@@ -140,12 +142,12 @@ export default function FamilyMap({ locations, selectedMemberId, onMemberSelect,
     });
 
     // Fit bounds on first load
-    if (sharingLocations.length > 0 && !fittedRef.current) {
-      const bounds = L.latLngBounds(sharingLocations.map((l) => [l.lat, l.lng] as [number, number]));
+    if (allWithCoords.length > 0 && !fittedRef.current) {
+      const bounds = L.latLngBounds(allWithCoords.map((l) => [l.lat, l.lng] as [number, number]));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
       fittedRef.current = true;
     }
-  }, [sharingLocations, selectedMemberId, onMemberSelect]);
+  }, [allWithCoords, selectedMemberId, onMemberSelect]);
 
   // Fly to selected member
   useEffect(() => {
