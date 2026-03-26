@@ -7,28 +7,27 @@ const corsHeaders = {
 };
 
 function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
-async function checkRateLimit(
-  ac: any, userId: string, endpoint: string, maxPerMinute = 60
-): Promise<boolean> {
+const MAX_NAME = 100;
+const MAX_NOTE = 1000;
+const MAX_PLATE = 30;
+const MAX_COLOR = 30;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validUuid(v: unknown): v is string { return typeof v === "string" && UUID_RE.test(v); }
+function validStr(v: unknown, max: number): v is string { return typeof v === "string" && v.trim().length > 0 && v.length <= max; }
+function sanitize(s: string, max: number): string { return s.trim().slice(0, max); }
+
+async function checkRateLimit(ac: any, userId: string, endpoint: string, maxPerMinute = 60): Promise<boolean> {
   const now = new Date();
   const windowStart = new Date(now.getTime() - 60000).toISOString();
   const { data } = await ac.from("rate_limit_counters").select("id, count, window_start").eq("user_id", userId).eq("endpoint", endpoint).maybeSingle();
   if (data) {
-    if (data.window_start > windowStart) {
-      if (data.count >= maxPerMinute) return false;
-      await ac.from("rate_limit_counters").update({ count: data.count + 1 }).eq("id", data.id);
-    } else {
-      await ac.from("rate_limit_counters").update({ count: 1, window_start: now.toISOString() }).eq("id", data.id);
-    }
-  } else {
-    await ac.from("rate_limit_counters").insert({ user_id: userId, endpoint, count: 1, window_start: now.toISOString() });
-  }
+    if (data.window_start > windowStart) { if (data.count >= maxPerMinute) return false; await ac.from("rate_limit_counters").update({ count: data.count + 1 }).eq("id", data.id); }
+    else { await ac.from("rate_limit_counters").update({ count: 1, window_start: now.toISOString() }).eq("id", data.id); }
+  } else { await ac.from("rate_limit_counters").insert({ user_id: userId, endpoint, count: 1, window_start: now.toISOString() }); }
   return true;
 }
 
@@ -38,49 +37,50 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
     if (authError || !authUser) return json({ error: "Unauthorized" }, 401);
     const userId = authUser.id;
-
     const adminClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const _rl = await checkRateLimit(adminClient, userId, "vehicles-api");
-    if (!_rl) return json({ error: "Too many requests" }, 429);
+    if (!await checkRateLimit(adminClient, userId, "vehicles-api")) return json({ error: "Too many requests" }, 429);
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
-    // Vehicles tables need to be created
     if (action === "get-vehicles") {
       const { family_id } = body;
-      const { data, error } = await supabase
-        .from("vehicles" as any)
-        .select("*, vehicle_maintenance(*)")
-        .eq("family_id", family_id)
-        .order("created_at", { ascending: false });
+      if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const { data, error } = await supabase.from("vehicles" as any).select("*, vehicle_maintenance(*)").eq("family_id", family_id).order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "create-vehicle") {
       const { family_id, manufacturer, model, year, mileage, mileage_unit, color, plate_number } = body;
-      const { data, error } = await supabase
-        .from("vehicles" as any)
-        .insert({ family_id, manufacturer, model, year, mileage, mileage_unit, color, plate_number, created_by: userId })
-        .select()
-        .single();
+      if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      if (manufacturer && typeof manufacturer === "string" && manufacturer.length > MAX_NAME) return json({ error: "الشركة المصنعة طويلة جداً" }, 400);
+      if (model && typeof model === "string" && model.length > MAX_NAME) return json({ error: "الموديل طويل جداً" }, 400);
+      if (year !== undefined && year !== null && (typeof year !== "number" || year < 1900 || year > 2100)) return json({ error: "السنة غير صالحة" }, 400);
+      if (mileage !== undefined && mileage !== null && (typeof mileage !== "number" || mileage < 0 || mileage > 10_000_000)) return json({ error: "المسافة غير صالحة" }, 400);
+      if (plate_number && typeof plate_number === "string" && plate_number.length > MAX_PLATE) return json({ error: "رقم اللوحة طويل جداً" }, 400);
+      if (color && typeof color === "string" && color.length > MAX_COLOR) return json({ error: "اللون طويل جداً" }, 400);
+      const { data, error } = await supabase.from("vehicles" as any).insert({ family_id, manufacturer: manufacturer ? sanitize(manufacturer, MAX_NAME) : null, model: model ? sanitize(model, MAX_NAME) : null, year, mileage, mileage_unit, color, plate_number: plate_number ? sanitize(plate_number, MAX_PLATE) : null, created_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "update-vehicle") {
-      const { id, ...updates } = body;
+      const { id, manufacturer, model, year, mileage, ...rest } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      if (manufacturer !== undefined && manufacturer !== null && typeof manufacturer === "string" && manufacturer.length > MAX_NAME) return json({ error: "الشركة المصنعة طويلة جداً" }, 400);
+      if (model !== undefined && model !== null && typeof model === "string" && model.length > MAX_NAME) return json({ error: "الموديل طويل جداً" }, 400);
+      if (year !== undefined && year !== null && (typeof year !== "number" || year < 1900 || year > 2100)) return json({ error: "السنة غير صالحة" }, 400);
+      const updates: Record<string, unknown> = {};
+      if (manufacturer !== undefined) updates.manufacturer = manufacturer;
+      if (model !== undefined) updates.model = model;
+      if (year !== undefined) updates.year = year;
+      if (mileage !== undefined) updates.mileage = mileage;
+      for (const k of ["mileage_unit", "color", "plate_number"]) { if (rest[k] !== undefined) updates[k] = rest[k]; }
       delete updates.action;
       const { data, error } = await supabase.from("vehicles" as any).update(updates).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
@@ -89,25 +89,31 @@ Deno.serve(async (req) => {
 
     if (action === "delete-vehicle") {
       const { id } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       const { error } = await supabase.from("vehicles" as any).delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
     }
 
-    // --- MAINTENANCE ---
     if (action === "add-maintenance") {
       const { vehicle_id, type, label, date, mileage_at_service, next_mileage, next_date, notes } = body;
-      const { data, error } = await supabase
-        .from("vehicle_maintenance")
-        .insert({ vehicle_id, type, label, date, mileage_at_service, next_mileage, next_date, notes })
-        .select()
-        .single();
+      if (!validUuid(vehicle_id)) return json({ error: "vehicle_id غير صالح" }, 400);
+      if (label && typeof label === "string" && label.length > MAX_NAME) return json({ error: "العنوان طويل جداً" }, 400);
+      if (notes && typeof notes === "string" && notes.length > MAX_NOTE) return json({ error: "الملاحظات طويلة جداً" }, 400);
+      const { data, error } = await supabase.from("vehicle_maintenance").insert({ vehicle_id, type, label: label ? sanitize(label, MAX_NAME) : null, date, mileage_at_service, next_mileage, next_date, notes: notes ? sanitize(notes, MAX_NOTE) : null }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "update-maintenance") {
-      const { id, ...updates } = body;
+      const { id, label, notes, ...rest } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      if (label !== undefined && label !== null && typeof label === "string" && label.length > MAX_NAME) return json({ error: "العنوان طويل جداً" }, 400);
+      if (notes !== undefined && notes !== null && typeof notes === "string" && notes.length > MAX_NOTE) return json({ error: "الملاحظات طويلة جداً" }, 400);
+      const updates: Record<string, unknown> = {};
+      if (label !== undefined) updates.label = label;
+      if (notes !== undefined) updates.notes = notes;
+      for (const k of ["type", "date", "mileage_at_service", "next_mileage", "next_date"]) { if (rest[k] !== undefined) updates[k] = rest[k]; }
       delete updates.action;
       const { data, error } = await supabase.from("vehicle_maintenance").update(updates).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
@@ -116,6 +122,7 @@ Deno.serve(async (req) => {
 
     if (action === "delete-maintenance") {
       const { id } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       const { error } = await supabase.from("vehicle_maintenance").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
