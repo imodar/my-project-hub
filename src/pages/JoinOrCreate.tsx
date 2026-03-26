@@ -31,6 +31,9 @@ const JoinOrCreate = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [createRole, setCreateRole] = useState<CreateRole | null>(null);
   const [creating, setCreating] = useState(false);
+  const [joinRole, setJoinRole] = useState<CreateRole | null>(null);
+  const [showJoinRoleGrid, setShowJoinRoleGrid] = useState(false);
+  const [pendingJoinCode, setPendingJoinCode] = useState("");
 
   // QR scanner refs
   const videoRef = useRef<HTMLVideoElement>(null);
