@@ -161,7 +161,6 @@ const Auth = () => {
                 <h2 className="text-xl font-bold text-foreground">{t.auth.welcome}</h2>
                 <p className="text-sm text-muted-foreground mt-1">{t.auth.loginWithPhone}</p>
               </div>
-              </div>
 
               {/* Phone input */}
               <div className="relative" dir="ltr">
