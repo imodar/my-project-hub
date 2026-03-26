@@ -1,5 +1,6 @@
 import React from "react";
 import { RefreshCw, WifiOff } from "lucide-react";
+import { reportError } from "@/lib/errorReporting";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -19,7 +20,7 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, info);
+    reportError(error, { source: "AppErrorBoundary", componentStack: info.componentStack || undefined });
   }
 
   handleReload = () => {

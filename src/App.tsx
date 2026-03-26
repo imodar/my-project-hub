@@ -17,6 +17,7 @@ import StaleBanner from "@/components/StaleBanner";
 import FirstSyncOverlay from "@/components/FirstSyncOverlay";
 import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { warmCache } from "@/lib/warmCache";
 import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
@@ -123,6 +124,11 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+/** Wraps a page element with a per-route ErrorBoundary */
+const R = ({ route, children }: { route: string; children: React.ReactNode }) => (
+  <RouteErrorBoundary route={route}>{children}</RouteErrorBoundary>
+);
+
 const AnimatedRoutes = () => {
   const location = useLocation();
   const isAdminPanel = location.pathname.startsWith("/admin-panel");
@@ -130,16 +136,16 @@ const AnimatedRoutes = () => {
   if (isAdminPanel) {
     return (
       <Routes>
-        <Route path="/admin-panel" element={<AuthGuard><AdminLayout /></AuthGuard>}>
-          <Route index element={<AdminOverview />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="families" element={<AdminFamilies />} />
-          <Route path="content" element={<AdminContent />} />
-          <Route path="notifications" element={<AdminNotifications />} />
-          <Route path="subscriptions" element={<AdminSubscriptions />} />
-          <Route path="system" element={<AdminSystem />} />
-          <Route path="audit" element={<AdminAudit />} />
-          <Route path="security" element={<AdminSecurity />} />
+        <Route path="/admin-panel" element={<AuthGuard><R route="admin"><AdminLayout /></R></AuthGuard>}>
+          <Route index element={<R route="admin-overview"><AdminOverview /></R>} />
+          <Route path="users" element={<R route="admin-users"><AdminUsers /></R>} />
+          <Route path="families" element={<R route="admin-families"><AdminFamilies /></R>} />
+          <Route path="content" element={<R route="admin-content"><AdminContent /></R>} />
+          <Route path="notifications" element={<R route="admin-notifications"><AdminNotifications /></R>} />
+          <Route path="subscriptions" element={<R route="admin-subscriptions"><AdminSubscriptions /></R>} />
+          <Route path="system" element={<R route="admin-system"><AdminSystem /></R>} />
+          <Route path="audit" element={<R route="admin-audit"><AdminAudit /></R>} />
+          <Route path="security" element={<R route="admin-security"><AdminSecurity /></R>} />
         </Route>
       </Routes>
     );
@@ -149,40 +155,40 @@ const AnimatedRoutes = () => {
     <PageTransition key={location.pathname}>
       <Routes location={location}>
         {/* Public routes */}
-        <Route path="/get-started" element={<GetStarted />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/complete-profile" element={<CompleteProfile />} />
-        <Route path="/join-or-create" element={<JoinOrCreate />} />
+        <Route path="/get-started" element={<R route="get-started"><GetStarted /></R>} />
+        <Route path="/auth" element={<R route="auth"><Auth /></R>} />
+        <Route path="/complete-profile" element={<R route="complete-profile"><CompleteProfile /></R>} />
+        <Route path="/join-or-create" element={<R route="join-or-create"><JoinOrCreate /></R>} />
 
         {/* Protected routes */}
-        <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
-        <Route path="/tasbih" element={<AuthGuard><Tasbih /></AuthGuard>} />
-        <Route path="/chat" element={<AuthGuard><Chat /></AuthGuard>} />
-        <Route path="/map" element={<AuthGuard><Map /></AuthGuard>} />
-        <Route path="/debts" element={<AuthGuard><Debts /></AuthGuard>} />
-        <Route path="/family" element={<AuthGuard><FamilyManagement /></AuthGuard>} />
-        <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-        <Route path="/calendar" element={<AuthGuard><RoleGuard requireNonStaff><CalendarPage /></RoleGuard></AuthGuard>} />
-        <Route path="/trash" element={<AuthGuard><Trash /></AuthGuard>} />
-        <Route path="/market" element={<AuthGuard><Market /></AuthGuard>} />
-        <Route path="/places" element={<AuthGuard><RoleGuard requireNonStaff><Places /></RoleGuard></AuthGuard>} />
-        <Route path="/places/add" element={<AuthGuard><AddPlace /></AuthGuard>} />
-        <Route path="/places/edit/:id" element={<AuthGuard><AddPlace /></AuthGuard>} />
-        <Route path="/budget" element={<AuthGuard><Budget /></AuthGuard>} />
-        <Route path="/tasks" element={<AuthGuard><Tasks /></AuthGuard>} />
-        <Route path="/documents" element={<AuthGuard><Documents /></AuthGuard>} />
-        <Route path="/zakat" element={<AuthGuard><RoleGuard requireNonStaff><Zakat /></RoleGuard></AuthGuard>} />
-        <Route path="/will" element={<AuthGuard><RoleGuard requireNonStaff><Will /></RoleGuard></AuthGuard>} />
-        <Route path="/trips" element={<AuthGuard><Trips /></AuthGuard>} />
-        <Route path="/albums" element={<AuthGuard><RoleGuard requireNonStaff><Albums /></RoleGuard></AuthGuard>} />
-        <Route path="/kids-worship" element={<AuthGuard><KidsWorship /></AuthGuard>} />
-        <Route path="/parent-dashboard" element={<AuthGuard><ParentDashboard /></AuthGuard>} />
-        <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
-        <Route path="/athkar" element={<AuthGuard><Athkar /></AuthGuard>} />
-        <Route path="/vehicle" element={<AuthGuard><Vehicle /></AuthGuard>} />
-        <Route path="/vaccinations" element={<AuthGuard><Vaccinations /></AuthGuard>} />
-        <Route path="/medications" element={<AuthGuard><Medications /></AuthGuard>} />
-        <Route path="/islamic-reminders" element={<AuthGuard><IslamicReminders /></AuthGuard>} />
+        <Route path="/" element={<AuthGuard><R route="home"><Index /></R></AuthGuard>} />
+        <Route path="/tasbih" element={<AuthGuard><R route="tasbih"><Tasbih /></R></AuthGuard>} />
+        <Route path="/chat" element={<AuthGuard><R route="chat"><Chat /></R></AuthGuard>} />
+        <Route path="/map" element={<AuthGuard><R route="map"><Map /></R></AuthGuard>} />
+        <Route path="/debts" element={<AuthGuard><R route="debts"><Debts /></R></AuthGuard>} />
+        <Route path="/family" element={<AuthGuard><R route="family"><FamilyManagement /></R></AuthGuard>} />
+        <Route path="/profile" element={<AuthGuard><R route="profile"><Profile /></R></AuthGuard>} />
+        <Route path="/calendar" element={<AuthGuard><RoleGuard requireNonStaff><R route="calendar"><CalendarPage /></R></RoleGuard></AuthGuard>} />
+        <Route path="/trash" element={<AuthGuard><R route="trash"><Trash /></R></AuthGuard>} />
+        <Route path="/market" element={<AuthGuard><R route="market"><Market /></R></AuthGuard>} />
+        <Route path="/places" element={<AuthGuard><RoleGuard requireNonStaff><R route="places"><Places /></R></RoleGuard></AuthGuard>} />
+        <Route path="/places/add" element={<AuthGuard><R route="places-add"><AddPlace /></R></AuthGuard>} />
+        <Route path="/places/edit/:id" element={<AuthGuard><R route="places-edit"><AddPlace /></R></AuthGuard>} />
+        <Route path="/budget" element={<AuthGuard><R route="budget"><Budget /></R></AuthGuard>} />
+        <Route path="/tasks" element={<AuthGuard><R route="tasks"><Tasks /></R></AuthGuard>} />
+        <Route path="/documents" element={<AuthGuard><R route="documents"><Documents /></R></AuthGuard>} />
+        <Route path="/zakat" element={<AuthGuard><RoleGuard requireNonStaff><R route="zakat"><Zakat /></R></RoleGuard></AuthGuard>} />
+        <Route path="/will" element={<AuthGuard><RoleGuard requireNonStaff><R route="will"><Will /></R></RoleGuard></AuthGuard>} />
+        <Route path="/trips" element={<AuthGuard><R route="trips"><Trips /></R></AuthGuard>} />
+        <Route path="/albums" element={<AuthGuard><RoleGuard requireNonStaff><R route="albums"><Albums /></R></RoleGuard></AuthGuard>} />
+        <Route path="/kids-worship" element={<AuthGuard><R route="kids-worship"><KidsWorship /></R></AuthGuard>} />
+        <Route path="/parent-dashboard" element={<AuthGuard><R route="parent-dashboard"><ParentDashboard /></R></AuthGuard>} />
+        <Route path="/settings" element={<AuthGuard><R route="settings"><Settings /></R></AuthGuard>} />
+        <Route path="/athkar" element={<AuthGuard><R route="athkar"><Athkar /></R></AuthGuard>} />
+        <Route path="/vehicle" element={<AuthGuard><R route="vehicle"><Vehicle /></R></AuthGuard>} />
+        <Route path="/vaccinations" element={<AuthGuard><R route="vaccinations"><Vaccinations /></R></AuthGuard>} />
+        <Route path="/medications" element={<AuthGuard><R route="medications"><Medications /></R></AuthGuard>} />
+        <Route path="/islamic-reminders" element={<AuthGuard><R route="islamic-reminders"><IslamicReminders /></R></AuthGuard>} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>
