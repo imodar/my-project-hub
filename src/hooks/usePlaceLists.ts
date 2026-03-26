@@ -13,13 +13,12 @@ export function usePlaceLists() {
     queryKey: key,
     queryFn: async () => {
       if (!familyId) return [];
-      const { data, error } = await supabase
-        .from("place_lists")
-        .select("*, places(*)")
-        .eq("family_id", familyId)
-        .order("updated_at", { ascending: false });
+      const { data: response, error } = await supabase.functions.invoke("places-api", {
+        body: { action: "get-lists", family_id: familyId },
+      });
       if (error) throw error;
-      return data || [];
+      if (response?.error) throw new Error(response.error);
+      return response?.data || [];
     },
     enabled: !!familyId,
   });
@@ -27,22 +26,22 @@ export function usePlaceLists() {
   const createList = useMutation({
     mutationFn: async (input: { name: string; type?: string; shared_with?: string[] }) => {
       if (!familyId || !user) throw new Error("No family");
-      const { error } = await supabase.from("place_lists").insert({
-        name: input.name,
-        type: input.type || "family",
-        shared_with: input.shared_with || [],
-        family_id: familyId,
-        created_by: user.id,
+      const { data: response, error } = await supabase.functions.invoke("places-api", {
+        body: { action: "create-list", family_id: familyId, name: input.name, type: input.type || "family" },
       });
       if (error) throw error;
+      if (response?.error) throw new Error(response.error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const deleteList = useMutation({
     mutationFn: async (listId: string) => {
-      const { error } = await supabase.from("place_lists").delete().eq("id", listId);
+      const { data: response, error } = await supabase.functions.invoke("places-api", {
+        body: { action: "delete-list", id: listId },
+      });
       if (error) throw error;
+      if (response?.error) throw new Error(response.error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
@@ -55,25 +54,11 @@ export function usePlaceLists() {
       kid_friendly?: string; must_visit?: boolean; note?: string; suggested_by?: string;
     }) => {
       if (!user) throw new Error("No user");
-      const { error } = await supabase.from("places").insert({
-        list_id: input.list_id,
-        name: input.name,
-        category: input.category || "أخرى",
-        description: input.description,
-        lat: input.lat,
-        lng: input.lng,
-        address: input.address,
-        social_link: input.social_link,
-        phone: input.phone,
-        price_range: input.price_range || "$$",
-        rating: input.rating,
-        kid_friendly: input.kid_friendly || "no",
-        must_visit: input.must_visit || false,
-        note: input.note,
-        added_by: user.id,
-        suggested_by: input.suggested_by,
+      const { data: response, error } = await supabase.functions.invoke("places-api", {
+        body: { action: "add-place", ...input, category: input.category || "أخرى", price_range: input.price_range || "$$", kid_friendly: input.kid_friendly || "no", must_visit: input.must_visit || false },
       });
       if (error) throw error;
+      if (response?.error) throw new Error(response.error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
@@ -81,16 +66,22 @@ export function usePlaceLists() {
   const updatePlace = useMutation({
     mutationFn: async (input: { id: string; [key: string]: any }) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("places").update(updates).eq("id", id);
+      const { data: response, error } = await supabase.functions.invoke("places-api", {
+        body: { action: "update-place", id, ...updates },
+      });
       if (error) throw error;
+      if (response?.error) throw new Error(response.error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
   const deletePlace = useMutation({
     mutationFn: async (placeId: string) => {
-      const { error } = await supabase.from("places").delete().eq("id", placeId);
+      const { data: response, error } = await supabase.functions.invoke("places-api", {
+        body: { action: "delete-place", id: placeId },
+      });
       if (error) throw error;
+      if (response?.error) throw new Error(response.error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });

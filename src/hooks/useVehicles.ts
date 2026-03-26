@@ -12,12 +12,12 @@ export function useVehicles() {
 
   const apiFn = useCallback(async () => {
     if (!familyId) return { data: [], error: null };
-    const { data, error } = await supabase
-      .from("vehicles")
-      .select("*, vehicle_maintenance(*)")
-      .eq("family_id", familyId)
-      .order("created_at", { ascending: false });
-    return { data: data || [], error: error?.message || null };
+    const { data: response, error } = await supabase.functions.invoke("vehicles-api", {
+      body: { action: "get-vehicles", family_id: familyId },
+    });
+    if (error) return { data: [], error: error.message };
+    if (response?.error) return { data: [], error: response.error };
+    return { data: response?.data || [], error: null };
   }, [familyId]);
 
   const { data: vehicles, isLoading, refetch } = useOfflineFirst<any>({
@@ -31,11 +31,10 @@ export function useVehicles() {
     table: "vehicles", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("vehicles").insert({
-        ...rest, created_by: user?.id, family_id: familyId,
-        mileage: rest.mileage || 0, mileage_unit: rest.mileage_unit || "km",
+      const { data: response, error } = await supabase.functions.invoke("vehicles-api", {
+        body: { action: "create-vehicle", family_id: familyId, ...rest, mileage: rest.mileage || 0, mileage_unit: rest.mileage_unit || "km" },
       });
-      return { data: null, error: error?.message || null };
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key, onSuccess: () => refetch(),
   });
@@ -44,8 +43,10 @@ export function useVehicles() {
     table: "vehicles", operation: "UPDATE",
     apiFn: async (input) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("vehicles").update(updates).eq("id", id);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("vehicles-api", {
+        body: { action: "update-vehicle", id, ...updates },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -53,8 +54,10 @@ export function useVehicles() {
   const deleteVehicle = useOfflineMutation<any, any>({
     table: "vehicles", operation: "DELETE",
     apiFn: async (input) => {
-      const { error } = await supabase.from("vehicles").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("vehicles-api", {
+        body: { action: "delete-vehicle", id: input.id },
+      });
+      return { data: null, error: response?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -63,12 +66,10 @@ export function useVehicles() {
     table: "vehicle_maintenance", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("vehicle_maintenance").insert({
-        vehicle_id: rest.vehicle_id, type: rest.type, label: rest.label,
-        date: rest.date, mileage_at_service: rest.mileage_at_service,
-        next_mileage: rest.next_mileage, next_date: rest.next_date, notes: rest.notes,
+      const { data: response, error } = await supabase.functions.invoke("vehicles-api", {
+        body: { action: "add-maintenance", vehicle_id: rest.vehicle_id, type: rest.type, label: rest.label, date: rest.date, mileage_at_service: rest.mileage_at_service, next_mileage: rest.next_mileage, next_date: rest.next_date, notes: rest.notes },
       });
-      return { data: null, error: error?.message || null };
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key, onSuccess: () => refetch(),
   });
@@ -77,8 +78,10 @@ export function useVehicles() {
     table: "vehicle_maintenance", operation: "UPDATE",
     apiFn: async (input) => {
       const { id, ...updates } = input;
-      const { error } = await supabase.from("vehicle_maintenance").update(updates).eq("id", id);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("vehicles-api", {
+        body: { action: "update-maintenance", id, ...updates },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -86,8 +89,10 @@ export function useVehicles() {
   const deleteMaintenance = useOfflineMutation<any, any>({
     table: "vehicle_maintenance", operation: "DELETE",
     apiFn: async (input) => {
-      const { error } = await supabase.from("vehicle_maintenance").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("vehicles-api", {
+        body: { action: "delete-maintenance", id: input.id },
+      });
+      return { data: null, error: response?.error || error?.message || null };
     },
     queryKey: key,
   });

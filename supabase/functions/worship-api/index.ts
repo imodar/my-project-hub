@@ -202,6 +202,28 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (action === "clear-tasbih") {
+      const { error } = await supabase
+        .from("tasbih_sessions")
+        .delete()
+        .eq("user_id", userId);
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
+    if (action === "delete-worship-data") {
+      const { child_id, year, month, day } = body;
+      const { error } = await supabase
+        .from("kids_worship_data")
+        .delete()
+        .eq("child_id", child_id)
+        .eq("year", year)
+        .eq("month", month)
+        .eq("day", day);
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
     return json({ error: err.message }, 500);

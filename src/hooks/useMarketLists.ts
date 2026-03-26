@@ -8,27 +8,16 @@ import { useOfflineMutation } from "./useOfflineMutation";
 
 function normalizeMarketLists(items: any[], familyId: string | null) {
   if (!familyId) return [];
-
   const familyScoped = items.filter((item) => item.family_id === familyId);
   const familyLists = familyScoped.filter((item) => (item.type || "family") === "family");
-
-  if (familyLists.length <= 1) {
-    return familyScoped;
-  }
-
-  const canonicalFamilyList = familyLists
-    .slice()
-    .sort((a, b) => {
-      const aItems = Array.isArray(a.market_items) ? a.market_items.length : 0;
-      const bItems = Array.isArray(b.market_items) ? b.market_items.length : 0;
-
-      if (bItems !== aItems) return bItems - aItems;
-
-      return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
-    })[0];
-
+  if (familyLists.length <= 1) return familyScoped;
+  const canonicalFamilyList = familyLists.slice().sort((a, b) => {
+    const aItems = Array.isArray(a.market_items) ? a.market_items.length : 0;
+    const bItems = Array.isArray(b.market_items) ? b.market_items.length : 0;
+    if (bItems !== aItems) return bItems - aItems;
+    return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+  })[0];
   const nonFamilyLists = familyScoped.filter((item) => (item.type || "family") !== "family");
-
   return [...nonFamilyLists, canonicalFamilyList].sort(
     (a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
   );
@@ -42,12 +31,12 @@ export function useMarketLists() {
 
   const apiFn = useCallback(async () => {
     if (!familyId) return { data: [], error: null };
-    const { data, error } = await supabase
-      .from("market_lists")
-      .select("*, market_items(*)")
-      .eq("family_id", familyId)
-      .order("created_at", { ascending: true });
-    return { data: normalizeMarketLists(data || [], familyId), error: error?.message || null };
+    const { data: response, error } = await supabase.functions.invoke("market-api", {
+      body: { action: "get-lists", family_id: familyId },
+    });
+    if (error) return { data: [], error: error.message };
+    if (response?.error) return { data: [], error: response.error };
+    return { data: normalizeMarketLists(response?.data || [], familyId), error: null };
   }, [familyId]);
 
   const { data: lists, isLoading, refetch } = useOfflineFirst<any>({
@@ -66,7 +55,7 @@ export function useMarketLists() {
     [lists, familyId]
   );
 
-  // Realtime subscription (kept alongside offline-first)
+  // Realtime subscription
   useEffect(() => {
     if (!familyId) return;
     const channel = supabase
@@ -81,74 +70,38 @@ export function useMarketLists() {
     return () => { supabase.removeChannel(channel); };
   }, [familyId, qc]);
 
+  const invoke = async (action: string, payload: any) => {
+    const { data: response, error } = await supabase.functions.invoke("market-api", { body: { action, ...payload } });
+    return { data: response?.data ?? null, error: response?.error || error?.message || null };
+  };
+
   const createList = useOfflineMutation<any, any>({
-    table: "market_lists",
-    operation: "INSERT",
-    apiFn: async (input) => {
-      const { id, created_at, ...rest } = input;
-      const { data, error } = await supabase.from("market_lists").insert({
-        name: rest.name,
-        type: rest.type || "family",
-        shared_with: rest.shared_with || [],
-        family_id: familyId,
-        created_by: user?.id,
-        use_categories: rest.use_categories ?? true,
-      }).select("id").single();
-      return { data, error: error?.message || null };
-    },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    table: "market_lists", operation: "INSERT",
+    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family" }); },
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const deleteList = useOfflineMutation<any, any>({
-    table: "market_lists",
-    operation: "DELETE",
-    apiFn: async (input) => {
-      const { error } = await supabase.from("market_lists").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
-    },
+    table: "market_lists", operation: "DELETE",
+    apiFn: async (input) => invoke("delete-list", { id: input.id }),
     queryKey: key,
   });
 
   const addItem = useOfflineMutation<any, any>({
-    table: "market_items",
-    operation: "INSERT",
-    apiFn: async (input) => {
-      const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("market_items").insert({
-        list_id: rest.list_id,
-        name: rest.name,
-        category: rest.category || "أخرى",
-        quantity: rest.quantity || "1",
-        added_by: user?.id,
-      });
-      return { data: null, error: error?.message || null };
-    },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    table: "market_items", operation: "INSERT",
+    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-item", { list_id: rest.list_id, name: rest.name, category: rest.category || "أخرى", quantity: rest.quantity || "1" }); },
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const updateItem = useOfflineMutation<any, any>({
-    table: "market_items",
-    operation: "UPDATE",
-    apiFn: async (input) => {
-      const { id, ...updates } = input;
-      if (updates.checked !== undefined) {
-        (updates as any).checked_by = user?.id;
-      }
-      const { error } = await supabase.from("market_items").update(updates).eq("id", id);
-      return { data: null, error: error?.message || null };
-    },
+    table: "market_items", operation: "UPDATE",
+    apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-item", { id, ...updates }); },
     queryKey: key,
   });
 
   const deleteItem = useOfflineMutation<any, any>({
-    table: "market_items",
-    operation: "DELETE",
-    apiFn: async (input) => {
-      const { error } = await supabase.from("market_items").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
-    },
+    table: "market_items", operation: "DELETE",
+    apiFn: async (input) => invoke("delete-item", { id: input.id }),
     queryKey: key,
   });
 

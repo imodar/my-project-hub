@@ -13,36 +13,21 @@ export function useVaccinations() {
 
   const apiFn = useCallback(async () => {
     if (!familyId) return { data: [], error: null };
-    const { data: childrenData, error: childrenError } = await supabase
-      .from("vaccination_children")
-      .select("*")
-      .eq("family_id", familyId);
-    if (childrenError) return { data: [], error: childrenError.message };
+    const { data: response, error } = await supabase.functions.invoke("health-api", {
+      body: { action: "get-children", family_id: familyId },
+    });
+    if (error) return { data: [], error: error.message };
+    if (response?.error) return { data: [], error: response.error };
 
-    const childIds = (childrenData || []).map((c: any) => c.id);
-    let notesData: any[] = [];
-    if (childIds.length > 0) {
-      const { data } = await supabase
-        .from("vaccine_notes")
-        .select("*")
-        .in("child_id", childIds);
-      notesData = data || [];
-    }
-
-    const children: Child[] = (childrenData || []).map((c: any): Child => ({
+    const childrenData = response?.data || [];
+    const children: Child[] = childrenData.map((c: any): Child => ({
       id: c.id,
       name: c.name,
       gender: (c.gender || "male") as "male" | "female",
       birthDate: c.birth_date || "",
       completedVaccines: c.completed_vaccines || [],
-      vaccineNotes: notesData
-        .filter((n: any) => n.child_id === c.id)
-        .map((n: any) => ({ vaccineId: n.vaccine_id, note: n.note })),
-      reminderSettings: (c.reminder_settings as any) || {
-        beforeDay: true,
-        beforeWeek: true,
-        beforeMonth: true,
-      },
+      vaccineNotes: (c.vaccine_notes || []).map((n: any) => ({ vaccineId: n.vaccine_id, note: n.note })),
+      reminderSettings: (c.reminder_settings as any) || { beforeDay: true, beforeWeek: true, beforeMonth: true },
     }));
 
     return { data: children, error: null };
@@ -60,15 +45,10 @@ export function useVaccinations() {
     operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("vaccination_children").insert({
-        name: rest.name,
-        gender: rest.gender,
-        birth_date: rest.birthDate,
-        family_id: familyId,
-        completed_vaccines: [],
-        reminder_settings: { beforeDay: true, beforeWeek: true, beforeMonth: true },
-      } as never);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("health-api", {
+        body: { action: "add-child", family_id: familyId, name: rest.name, gender: rest.gender, birth_date: rest.birthDate },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),
@@ -83,11 +63,10 @@ export function useVaccinations() {
       if (rest.name !== undefined) updates.name = rest.name;
       if (rest.gender !== undefined) updates.gender = rest.gender;
       if (rest.birthDate !== undefined) updates.birth_date = rest.birthDate;
-      const { error } = await supabase
-        .from("vaccination_children")
-        .update(updates)
-        .eq("id", id);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("health-api", {
+        body: { action: "update-child", id, ...updates },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),
@@ -99,14 +78,10 @@ export function useVaccinations() {
     apiFn: async (input) => {
       const { childId, vaccineId, completed } = input;
       const isCompleted = completed.includes(vaccineId);
-      const newCompleted = isCompleted
-        ? completed.filter((v: string) => v !== vaccineId)
-        : [...completed, vaccineId];
-      const { error } = await supabase
-        .from("vaccination_children")
-        .update({ completed_vaccines: newCompleted })
-        .eq("id", childId);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("health-api", {
+        body: { action: "toggle-vaccine", child_id: childId, vaccine_id: vaccineId, completed: !isCompleted },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),
@@ -117,11 +92,10 @@ export function useVaccinations() {
     operation: "UPDATE",
     apiFn: async (input) => {
       const { childId, settings } = input;
-      const { error } = await supabase
-        .from("vaccination_children")
-        .update({ reminder_settings: settings as any })
-        .eq("id", childId);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("health-api", {
+        body: { action: "update-reminder-settings", child_id: childId, settings },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),
@@ -132,21 +106,10 @@ export function useVaccinations() {
     operation: "UPDATE",
     apiFn: async (input) => {
       const { childId, vaccineId, note } = input;
-      await supabase
-        .from("vaccine_notes")
-        .delete()
-        .eq("child_id", childId)
-        .eq("vaccine_id", vaccineId);
-
-      if (note.trim()) {
-        const { error } = await supabase.from("vaccine_notes").insert({
-          child_id: childId,
-          vaccine_id: vaccineId,
-          note: note.trim(),
-        } as never);
-        if (error) return { data: null, error: error.message };
-      }
-      return { data: null, error: null };
+      const { data: response, error } = await supabase.functions.invoke("health-api", {
+        body: { action: "add-vaccine-note", child_id: childId, vaccine_id: vaccineId, note: note.trim() },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
     onSuccess: () => refetch(),

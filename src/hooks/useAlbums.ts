@@ -12,12 +12,12 @@ export function useAlbums() {
 
   const apiFn = useCallback(async () => {
     if (!familyId) return { data: [], error: null };
-    const { data, error } = await supabase
-      .from("albums")
-      .select("*, album_photos(*)")
-      .eq("family_id", familyId)
-      .order("created_at", { ascending: false });
-    return { data: data || [], error: error?.message || null };
+    const { data: response, error } = await supabase.functions.invoke("albums-api", {
+      body: { action: "get-albums", family_id: familyId },
+    });
+    if (error) return { data: [], error: error.message };
+    if (response?.error) return { data: [], error: response.error };
+    return { data: response?.data || [], error: null };
   }, [familyId]);
 
   const { data: albums, isLoading, refetch } = useOfflineFirst<any>({
@@ -31,11 +31,10 @@ export function useAlbums() {
     table: "albums", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("albums").insert({
-        name: rest.name, cover_color: rest.cover_color, linked_trip_id: rest.linked_trip_id,
-        family_id: familyId, created_by: user?.id,
+      const { data: response, error } = await supabase.functions.invoke("albums-api", {
+        body: { action: "create-album", family_id: familyId, name: rest.name, cover_color: rest.cover_color, linked_trip_id: rest.linked_trip_id },
       });
-      return { data: null, error: error?.message || null };
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key, onSuccess: () => refetch(),
   });
@@ -43,8 +42,10 @@ export function useAlbums() {
   const deleteAlbum = useOfflineMutation<any, any>({
     table: "albums", operation: "DELETE",
     apiFn: async (input) => {
-      const { error } = await supabase.from("albums").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("albums-api", {
+        body: { action: "delete-album", id: input.id },
+      });
+      return { data: null, error: response?.error || error?.message || null };
     },
     queryKey: key,
   });
@@ -53,10 +54,10 @@ export function useAlbums() {
     table: "album_photos", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { error } = await supabase.from("album_photos").insert({
-        album_id: rest.album_id, url: rest.url, caption: rest.caption, date: rest.date,
+      const { data: response, error } = await supabase.functions.invoke("albums-api", {
+        body: { action: "add-photo", album_id: rest.album_id, url: rest.url, caption: rest.caption, date: rest.date },
       });
-      return { data: null, error: error?.message || null };
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key, onSuccess: () => refetch(),
   });
@@ -64,8 +65,10 @@ export function useAlbums() {
   const deletePhoto = useOfflineMutation<any, any>({
     table: "album_photos", operation: "DELETE",
     apiFn: async (input) => {
-      const { error } = await supabase.from("album_photos").delete().eq("id", input.id);
-      return { data: null, error: error?.message || null };
+      const { data: response, error } = await supabase.functions.invoke("albums-api", {
+        body: { action: "delete-photo", id: input.id },
+      });
+      return { data: null, error: response?.error || error?.message || null };
     },
     queryKey: key,
   });

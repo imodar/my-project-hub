@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       const { family_id } = body;
       const { data, error } = await supabase
         .from("medications")
-        .select("*")
+        .select("*, medication_logs(*)")
         .eq("family_id", family_id)
         .order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
@@ -179,6 +179,18 @@ Deno.serve(async (req) => {
       const { data, error } = await supabase
         .from("vaccine_notes")
         .insert({ child_id, vaccine_id, note })
+        .select()
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ data });
+    }
+
+    if (action === "update-reminder-settings") {
+      const { child_id, settings } = body;
+      const { data, error } = await supabase
+        .from("vaccination_children")
+        .update({ reminder_settings: settings })
+        .eq("id", child_id)
         .select()
         .single();
       if (error) return json({ error: error.message }, 400);
