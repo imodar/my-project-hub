@@ -208,7 +208,7 @@ const Chat = () => {
   }, [messages]);
 
   const handleSend = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !isReady) return;
     sendMessage(newMessage);
     setNewMessage("");
     setShowMentions(false);
