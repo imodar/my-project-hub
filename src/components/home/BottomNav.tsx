@@ -2,18 +2,11 @@ import React, { useState, useRef, useCallback } from "react";
 import { Home, Map, MessageCircle, Settings, ShieldAlert } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { haptic } from "@/lib/haptics";
-
-const navItems = [
-  { icon: Home, label: "الرئيسية", path: "/" },
-  { icon: Map, label: "الخريطة", path: "/map" },
-  { icon: ShieldAlert, label: "طوارئ", path: "", isSOS: true },
-  { icon: MessageCircle, label: "المحادثة", path: "/chat" },
-  { icon: Settings, label: "الإعدادات", path: "/settings" },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const SOS_HOLD_DURATION = 3000;
 
-const SOSNavButton = React.forwardRef<HTMLButtonElement>((_props, _ref) => {
+const SOSNavButton = React.forwardRef<HTMLButtonElement, { label: string }>(({ label }, _ref) => {
   const [holdProgress, setHoldProgress] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -50,11 +43,8 @@ const SOSNavButton = React.forwardRef<HTMLButtonElement>((_props, _ref) => {
     cleanup();
   }, [cleanup]);
 
-  const circumference = 2 * Math.PI * 26;
-
   return (
     <button
-      key="طوارئ"
       onTouchStart={startHold}
       onTouchEnd={cancelHold}
       onMouseDown={startHold}
@@ -63,7 +53,6 @@ const SOSNavButton = React.forwardRef<HTMLButtonElement>((_props, _ref) => {
       className="flex flex-col items-center gap-1 px-3 py-1 -mt-6 select-none touch-none"
     >
       <div className="relative w-12 h-12">
-        {/* Background circle */}
         <div
           className="absolute inset-0 rounded-full flex items-center justify-center transition-transform duration-100"
           style={{
@@ -83,24 +72,15 @@ const SOSNavButton = React.forwardRef<HTMLButtonElement>((_props, _ref) => {
           />
         </div>
 
-        {/* Progress ring */}
         {isHolding && (
           <svg
             className="absolute inset-[-32px] w-[calc(100%+64px)] h-[calc(100%+64px)] pointer-events-none"
             viewBox="0 0 112 112"
             style={{ transform: "rotate(-90deg)" }}
           >
+            <circle cx="56" cy="56" r="52" fill="none" stroke="hsla(0, 72%, 51%, 0.12)" strokeWidth="2.5" />
             <circle
-              cx="56" cy="56" r="52"
-              fill="none"
-              stroke="hsla(0, 72%, 51%, 0.12)"
-              strokeWidth="2.5"
-            />
-            <circle
-              cx="56" cy="56" r="52"
-              fill="none"
-              stroke="hsl(0, 72%, 51%)"
-              strokeWidth="3"
+              cx="56" cy="56" r="52" fill="none" stroke="hsl(0, 72%, 51%)" strokeWidth="3"
               strokeLinecap="round"
               strokeDasharray={2 * Math.PI * 52}
               strokeDashoffset={2 * Math.PI * 52 * (1 - holdProgress)}
@@ -113,7 +93,7 @@ const SOSNavButton = React.forwardRef<HTMLButtonElement>((_props, _ref) => {
         className="text-[10px] font-bold transition-colors"
         style={{ color: isHolding ? "hsl(0, 84%, 50%)" : "hsl(0, 72%, 51%)" }}
       >
-        طوارئ
+        {label}
       </span>
     </button>
   );
@@ -123,6 +103,15 @@ SOSNavButton.displayName = "SOSNavButton";
 const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
+
+  const navItems = [
+    { icon: Home, label: t.nav.home, path: "/" },
+    { icon: Map, label: t.nav.map, path: "/map" },
+    { icon: ShieldAlert, label: t.nav.emergency, path: "", isSOS: true },
+    { icon: MessageCircle, label: t.nav.chat, path: "/chat" },
+    { icon: Settings, label: t.nav.settings, path: "/settings" },
+  ];
 
   const hiddenRoutes = ["/auth", "/get-started", "/complete-profile", "/join-or-create"];
   if (hiddenRoutes.includes(location.pathname) || location.pathname.startsWith("/admin-panel")) return null;
@@ -133,7 +122,7 @@ const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
         <div className="flex items-center justify-around px-4 py-2 mx-4 mb-3 rounded-2xl bg-background/92 backdrop-blur-xl border border-border shadow-lg">
           {navItems.map((item) => {
             if ((item as any).isSOS) {
-              return <SOSNavButton key={item.label} />;
+              return <SOSNavButton key={item.label} label={item.label} />;
             }
 
             const isActive = location.pathname === item.path;

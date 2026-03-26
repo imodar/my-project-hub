@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useUserRole, ROLE_LABELS } from "@/contexts/UserRoleContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -17,6 +18,7 @@ const Settings = () => {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { islamicMode, setIslamicMode } = useIslamicMode();
+  const { language, setLanguage, t, dir, isRTL } = useLanguage();
   const { dbRole, isAdmin: isDbAdmin, isLoading: roleLoading } = useUserRole();
   const { familyId } = useFamilyId();
   const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
@@ -28,11 +30,11 @@ const Settings = () => {
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
   const [notifSheet, setNotifSheet] = useState(false);
+  const [langSheet, setLangSheet] = useState(false);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
 
   const isAdmin = isDbAdmin;
 
-  // Load emergency contacts from DB
   useEffect(() => {
     if (!familyId) return;
     supabase
@@ -44,7 +46,6 @@ const Settings = () => {
       });
   }, [familyId]);
 
-  // Load family members for SOS permissions
   useEffect(() => {
     if (!familyId || !user) return;
     supabase
@@ -63,43 +64,43 @@ const Settings = () => {
         setMembers(
           (profiles || []).map((p) => ({
             id: p.id,
-            name: p.name || "بدون اسم",
+            name: p.name || t.emergency.noName,
             sosEnabled: true,
           }))
         );
       });
-  }, [familyId, user]);
+  }, [familyId, user, t]);
 
   const toggleDark = () => {
     const next = !darkMode;
     setDarkMode(next);
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
-    toast.success(next ? "تم تفعيل الوضع الداكن" : "تم تفعيل الوضع الفاتح");
+    toast.success(next ? t.settings.darkEnabled : t.settings.lightEnabled);
   };
 
   const settingsGroups = [
     {
-      title: "عام",
+      title: t.settings.general,
       items: [
-        { icon: Bell, label: "الإشعارات", desc: "إدارة التنبيهات والإشعارات", onClick: () => setNotifSheet(true) },
-        { icon: Moon, label: "المظهر", desc: darkMode ? "الوضع الداكن" : "الوضع الفاتح", onClick: toggleDark },
-        { icon: Globe, label: "اللغة", desc: "العربية" },
+        { icon: Bell, label: t.settings.notifications, desc: t.settings.notificationsDesc, onClick: () => setNotifSheet(true) },
+        { icon: Moon, label: t.settings.appearance, desc: darkMode ? t.settings.darkMode : t.settings.lightMode, onClick: toggleDark },
+        { icon: Globe, label: t.settings.language, desc: language === "ar" ? t.settings.arabic : t.settings.english, onClick: () => setLangSheet(true) },
       ],
     },
     {
-      title: "حول التطبيق",
+      title: t.settings.aboutApp,
       items: [
-        { icon: Info, label: "عن التطبيق", desc: "الإصدار 1.0.0" },
-        { icon: Shield, label: "سياسة الخصوصية", desc: "" },
+        { icon: Info, label: t.settings.about, desc: t.settings.version },
+        { icon: Shield, label: t.settings.privacy, desc: "" },
       ],
     },
     {
-      title: "أخرى",
+      title: t.settings.other,
       items: [
-        { icon: Archive, label: "سلة المحذوفات", desc: "استعادة أو حذف العناصر نهائياً", onClick: () => navigate("/trash") },
-        { icon: Trash2, label: "مسح البيانات", desc: "حذف جميع البيانات المحفوظة", danger: true },
-        { icon: LogOut, label: "تسجيل الخروج", desc: "الخروج من الحساب", danger: true, onClick: async () => { await signOut(); navigate("/auth", { replace: true }); } },
+        { icon: Archive, label: t.settings.trash, desc: t.settings.trashDesc, onClick: () => navigate("/trash") },
+        { icon: Trash2, label: t.settings.clearData, desc: t.settings.clearDataDesc, danger: true },
+        { icon: LogOut, label: t.settings.logout, desc: t.settings.logoutDesc, danger: true, onClick: async () => { await signOut(); navigate("/auth", { replace: true }); } },
       ],
     },
   ];
@@ -112,13 +113,13 @@ const Settings = () => {
       .select()
       .single();
     if (error) {
-      toast.error("فشل إضافة جهة الاتصال");
+      toast.error(t.emergency.addContactFailed);
     } else if (data) {
       setContacts(prev => [...prev, { id: data.id, name: data.name, phone: data.phone }]);
       setNewContactName("");
       setNewContactPhone("");
       setAddContactOpen(false);
-      toast.success("تمت الإضافة");
+      toast.success(t.emergency.contactAdded);
     }
   };
 
@@ -133,9 +134,16 @@ const Settings = () => {
     setMembers(prev => prev.map(m => m.id === id ? { ...m, sosEnabled: !m.sosEnabled } : m));
   };
 
+  const handleLanguageChange = (lang: "ar" | "en") => {
+    setLanguage(lang);
+    setLangSheet(false);
+    toast.success(t.settings.languageChanged);
+  };
+
   return (
     <div
       className="min-h-screen max-w-2xl mx-auto flex flex-col pb-28"
+      dir={dir}
       style={{
         background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)",
       }}
@@ -147,10 +155,10 @@ const Settings = () => {
           className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground"
           style={{ background: "hsla(0,0%,0%,0.05)" }}
         >
-          رجوع
-          <ChevronRight size={18} />
+          {t.back}
+          <ChevronRight size={18} className={isRTL ? "" : "rotate-180"} />
         </button>
-        <h1 className="text-lg font-bold text-foreground">الإعدادات</h1>
+        <h1 className="text-lg font-bold text-foreground">{t.settings.title}</h1>
         <div />
       </div>
 
@@ -161,7 +169,7 @@ const Settings = () => {
         {isAdmin && (
           <div>
             <h2 className="text-xs font-semibold mb-2 px-1" style={{ color: "hsl(0, 72%, 51%)" }}>
-              🚨 إعدادات الطوارئ
+              🚨 {t.emergency.settings}
             </h2>
             <div
               className="rounded-2xl overflow-hidden"
@@ -171,10 +179,9 @@ const Settings = () => {
                 border: "1px solid hsla(0, 72%, 51%, 0.15)",
               }}
             >
-              {/* Main emergency settings button */}
               <button
                 onClick={() => setEmergencySheetOpen(true)}
-                className="w-full flex items-center gap-3 px-4 py-4 text-right transition-colors active:bg-red-100/50"
+                className={`w-full flex items-center gap-3 px-4 py-4 ${isRTL ? "text-right" : "text-left"} transition-colors active:bg-red-100/50`}
               >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -185,22 +192,21 @@ const Settings = () => {
                 >
                   <ShieldAlert size={20} className="text-white" />
                 </div>
-                <div className="flex-1 text-right">
+                <div className={`flex-1 ${isRTL ? "text-right" : "text-left"}`}>
                   <p className="text-sm font-bold" style={{ color: "hsl(0, 72%, 40%)" }}>
-                    إعدادات نظام الطوارئ
+                    {t.emergency.settingsTitle}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: "hsl(0, 40%, 55%)" }}>
-                    أرقام الطوارئ، التتبع، وإدارة صلاحيات الأفراد
+                    {t.emergency.settingsDesc}
                   </p>
                 </div>
-                <ChevronRight size={16} style={{ color: "hsl(0, 50%, 60%)" }} className="rotate-180" />
+                <ChevronRight size={16} style={{ color: "hsl(0, 50%, 60%)" }} className={isRTL ? "rotate-180" : ""} />
               </button>
 
-              {/* Quick info */}
               <div className="px-4 py-2.5 flex items-center gap-2 border-t" style={{ borderColor: "hsla(0, 72%, 51%, 0.1)" }}>
                 <Lock size={12} style={{ color: "hsl(0, 50%, 55%)" }} />
                 <p className="text-[11px]" style={{ color: "hsl(0, 40%, 55%)" }}>
-                  متاح فقط للمشرفين (الأب والأم)
+                  {t.emergency.adminOnly}
                 </p>
               </div>
             </div>
@@ -209,7 +215,7 @@ const Settings = () => {
 
         {/* Islamic Mode Toggle */}
         <div>
-          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">الوضع</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">{t.settings.modeSection}</h2>
           <div
             className="rounded-2xl overflow-hidden"
             style={{
@@ -219,7 +225,7 @@ const Settings = () => {
           >
             <button
               type="button"
-              className="w-full flex items-center gap-3 px-4 py-3.5 text-right cursor-pointer"
+              className="w-full flex items-center gap-3 px-4 py-3.5 cursor-pointer"
               onClick={() => setIslamicMode(!islamicMode)}
             >
               <div
@@ -228,10 +234,10 @@ const Settings = () => {
               >
                 <BookOpen size={18} style={{ color: "hsl(145, 40%, 42%)" }} />
               </div>
-              <div className="flex-1 text-right">
-                <p className="text-sm font-semibold text-foreground">الوضع الإسلامي</p>
+              <div className={`flex-1 ${isRTL ? "text-right" : "text-left"}`}>
+                <p className="text-sm font-semibold text-foreground">{t.settings.islamicMode}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {islamicMode ? "يعرض القرآن والأذكار والمسبحة والصلاة والقبلة" : "يعرض السوق والتقويم والديون"}
+                  {islamicMode ? t.settings.islamicModeOnDesc : t.settings.islamicModeOffDesc}
                 </p>
               </div>
               <div
@@ -247,9 +253,9 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Role Display (Read-Only from DB) */}
+        {/* Role Display */}
         <div>
-          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">الدور في العائلة</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">{t.settings.familyRole}</h2>
           <div
             className="rounded-2xl overflow-hidden p-4"
             style={{
@@ -270,19 +276,19 @@ const Settings = () => {
                 >
                   <User size={20} className="text-primary" />
                 </div>
-                <div className="flex-1 text-right">
+                <div className={`flex-1 ${isRTL ? "text-right" : "text-left"}`}>
                   <p className="text-sm font-bold text-foreground">
-                    {dbRole ? ROLE_LABELS[dbRole] || dbRole : "غير محدد"}
+                    {dbRole ? ROLE_LABELS[dbRole] || dbRole : t.settings.roleUnset}
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    يتم تحديد الدور من قبل مشرف العائلة
+                    {t.settings.roleSetByAdmin}
                   </p>
                 </div>
                 <span
                   className="text-[10px] font-semibold px-2 py-1 rounded-full"
                   style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}
                 >
-                  من قاعدة البيانات
+                  {t.fromDatabase}
                 </span>
               </div>
             )}
@@ -306,7 +312,7 @@ const Settings = () => {
                 <button
                   key={item.label}
                   onClick={(item as any).onClick}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 text-right transition-colors active:bg-muted/50"
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 ${isRTL ? "text-right" : "text-left"} transition-colors active:bg-muted/50`}
                 >
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -321,7 +327,7 @@ const Settings = () => {
                       className={(item as any).danger ? "text-destructive" : "text-primary"}
                     />
                   </div>
-                  <div className="flex-1 text-right">
+                  <div className={`flex-1 ${isRTL ? "text-right" : "text-left"}`}>
                     <p className={`text-sm font-semibold ${(item as any).danger ? "text-destructive" : "text-foreground"}`}>
                       {item.label}
                     </p>
@@ -329,7 +335,7 @@ const Settings = () => {
                       <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
                     )}
                   </div>
-                  <ChevronRight size={16} className="text-muted-foreground rotate-180" />
+                  <ChevronRight size={16} className={`text-muted-foreground ${isRTL ? "rotate-180" : ""}`} />
                 </button>
               ))}
             </div>
@@ -339,9 +345,8 @@ const Settings = () => {
 
       {/* Emergency Settings Sheet */}
       <Sheet open={emergencySheetOpen} onOpenChange={setEmergencySheetOpen}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0 border-none" style={{ direction: "rtl" }}>
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0 border-none" style={{ direction: dir }}>
           <div className="h-full flex flex-col overflow-hidden">
-            {/* Sheet Header */}
             <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
                 <div
@@ -353,8 +358,8 @@ const Settings = () => {
                   <ShieldAlert size={20} className="text-white" />
                 </div>
                 <div>
-                  <SheetTitle className="text-foreground text-lg font-bold text-right">إعدادات الطوارئ</SheetTitle>
-                  <p className="text-xs text-muted-foreground text-right">تخصيص نظام الطوارئ والتنبيهات</p>
+                  <SheetTitle className={`text-foreground text-lg font-bold ${isRTL ? "text-right" : "text-left"}`}>{t.emergency.settings}</SheetTitle>
+                  <p className={`text-xs text-muted-foreground ${isRTL ? "text-right" : "text-left"}`}>{t.emergency.customize}</p>
                 </div>
               </div>
             </SheetHeader>
@@ -365,10 +370,10 @@ const Settings = () => {
               <div>
                 <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
                   <Phone size={16} style={{ color: "hsl(0, 72%, 51%)" }} />
-                  أرقام الطوارئ الخارجية
+                  {t.emergency.externalContacts}
                 </h3>
                 <p className="text-xs text-muted-foreground mb-3">
-                  أشخاص من خارج العائلة يتم إرسال SMS لهم عند تفعيل الطوارئ
+                  {t.emergency.externalContactsDesc}
                 </p>
                 <div className="space-y-2">
                   {contacts.map((contact) => (
@@ -380,9 +385,9 @@ const Settings = () => {
                       <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "hsla(0, 72%, 51%, 0.1)" }}>
                         <Phone size={14} style={{ color: "hsl(0, 72%, 51%)" }} />
                       </div>
-                      <div className="flex-1 text-right">
+                      <div className={`flex-1 ${isRTL ? "text-right" : "text-left"}`}>
                         <p className="text-sm font-semibold text-foreground">{contact.name}</p>
-                        <p className="text-xs text-muted-foreground" style={{ direction: "ltr", textAlign: "right" }}>{contact.phone}</p>
+                        <p className="text-xs text-muted-foreground" style={{ direction: "ltr", textAlign: isRTL ? "right" : "left" }}>{contact.phone}</p>
                       </div>
                       <button
                         onClick={() => handleRemoveContact(contact.id)}
@@ -395,21 +400,20 @@ const Settings = () => {
                   ))}
                 </div>
 
-                {/* Add Contact */}
                 {addContactOpen ? (
                   <div className="mt-3 p-4 rounded-xl space-y-3" style={{ background: "hsla(0,0%,0%,0.03)", border: "1px dashed hsla(0,0%,0%,0.1)" }}>
                     <input
                       value={newContactName}
                       onChange={e => setNewContactName(e.target.value)}
-                      placeholder="الاسم"
-                      className="w-full px-3 py-2.5 rounded-xl text-sm bg-background border border-border text-right focus:outline-none focus:ring-2 focus:ring-red-300"
+                      placeholder={t.name}
+                      className="w-full px-3 py-2.5 rounded-xl text-sm bg-background border border-border focus:outline-none focus:ring-2 focus:ring-red-300"
                     />
                     <input
                       value={newContactPhone}
                       onChange={e => setNewContactPhone(e.target.value)}
-                      placeholder="رقم الهاتف"
-                      className="w-full px-3 py-2.5 rounded-xl text-sm bg-background border border-border text-right focus:outline-none focus:ring-2 focus:ring-red-300"
-                      style={{ direction: "ltr", textAlign: "right" }}
+                      placeholder={t.phone}
+                      className="w-full px-3 py-2.5 rounded-xl text-sm bg-background border border-border focus:outline-none focus:ring-2 focus:ring-red-300"
+                      style={{ direction: "ltr" }}
                     />
                     <div className="flex gap-2">
                       <Button
@@ -417,14 +421,14 @@ const Settings = () => {
                         className="flex-1 rounded-xl h-10 text-sm font-bold"
                         style={{ background: "hsl(0, 72%, 51%)", color: "white" }}
                       >
-                        إضافة
+                        {t.add}
                       </Button>
                       <Button
                         onClick={() => { setAddContactOpen(false); setNewContactName(""); setNewContactPhone(""); }}
                         variant="outline"
                         className="flex-1 rounded-xl h-10 text-sm"
                       >
-                        إلغاء
+                        {t.cancel}
                       </Button>
                     </div>
                   </div>
@@ -434,7 +438,7 @@ const Settings = () => {
                     className="w-full mt-3 py-3 rounded-xl text-sm font-semibold transition-colors active:scale-[0.98]"
                     style={{ border: "2px dashed hsla(0, 72%, 51%, 0.25)", color: "hsl(0, 72%, 51%)" }}
                   >
-                    + إضافة رقم طوارئ
+                    {t.emergency.addContact}
                   </button>
                 )}
               </div>
@@ -443,15 +447,15 @@ const Settings = () => {
               <div>
                 <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
                   <Volume2 size={16} style={{ color: "hsl(0, 72%, 51%)" }} />
-                  إعدادات التنبيه
+                  {t.emergency.alertSettings}
                 </h3>
                 <div className="space-y-1 rounded-xl overflow-hidden" style={{ background: "hsla(0,0%,0%,0.02)", border: "1px solid hsla(0,0%,0%,0.06)" }}>
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div className="flex items-center gap-3">
                       <Volume2 size={16} style={{ color: "hsl(0, 72%, 51%)" }} />
                       <div>
-                        <p className="text-sm font-semibold text-foreground">صوت تنبيه مميز</p>
-                        <p className="text-xs text-muted-foreground">صوت مختلف عن باقي الإشعارات</p>
+                        <p className="text-sm font-semibold text-foreground">{t.emergency.distinctSound}</p>
+                        <p className="text-xs text-muted-foreground">{t.emergency.distinctSoundDesc}</p>
                       </div>
                     </div>
                     <Switch checked={emergencySound} onCheckedChange={setEmergencySound} />
@@ -461,8 +465,8 @@ const Settings = () => {
                     <div className="flex items-center gap-3">
                       <MapPin size={16} style={{ color: "hsl(0, 72%, 51%)" }} />
                       <div>
-                        <p className="text-sm font-semibold text-foreground">تتبع الموقع المباشر</p>
-                        <p className="text-xs text-muted-foreground">تحديث الموقع كل 30 ثانية عند التفعيل</p>
+                        <p className="text-sm font-semibold text-foreground">{t.emergency.liveTracking}</p>
+                        <p className="text-xs text-muted-foreground">{t.emergency.liveTrackingDesc}</p>
                       </div>
                     </div>
                     <Switch checked={liveTracking} onCheckedChange={setLiveTracking} />
@@ -474,10 +478,10 @@ const Settings = () => {
               <div>
                 <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
                   <UserX size={16} style={{ color: "hsl(0, 72%, 51%)" }} />
-                  صلاحيات زر الطوارئ
+                  {t.emergency.sosPermissions}
                 </h3>
                 <p className="text-xs text-muted-foreground mb-3">
-                  تعطيل أو تفعيل زر الطوارئ لكل فرد
+                  {t.emergency.sosPermissionsDesc}
                 </p>
                 <div className="space-y-2">
                   {members.map((member) => (
@@ -493,7 +497,7 @@ const Settings = () => {
                         <div>
                           <p className="text-sm font-semibold text-foreground">{member.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {member.sosEnabled ? "زر الطوارئ مفعّل" : "زر الطوارئ معطّل"}
+                            {member.sosEnabled ? t.emergency.sosEnabled : t.emergency.sosDisabled}
                           </p>
                         </div>
                       </div>
@@ -512,15 +516,55 @@ const Settings = () => {
 
       {/* Notifications Sheet */}
       <Sheet open={notifSheet} onOpenChange={setNotifSheet}>
-        <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl p-0 border-none" style={{ direction: "rtl" }}>
+        <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl p-0 border-none" style={{ direction: dir }}>
           <div className="h-full flex flex-col">
             <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-              <SheetTitle className="text-foreground text-lg font-bold text-right">إعدادات الإشعارات</SheetTitle>
+              <SheetTitle className={`text-foreground text-lg font-bold ${isRTL ? "text-right" : "text-left"}`}>{t.settings.notifSettings}</SheetTitle>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
               <p className="text-sm text-muted-foreground text-center py-8">
-                الإشعارات تعمل تلقائياً عبر المتصفح. تأكد من السماح بالإشعارات في إعدادات جهازك.
+                {t.settings.notifAutoMsg}
               </p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Language Sheet */}
+      <Sheet open={langSheet} onOpenChange={setLangSheet}>
+        <SheetContent side="bottom" className="rounded-t-3xl p-0 border-none" style={{ direction: dir }}>
+          <div className="flex flex-col">
+            <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+              <SheetTitle className={`text-foreground text-lg font-bold ${isRTL ? "text-right" : "text-left"}`}>
+                {t.settings.selectLanguage}
+              </SheetTitle>
+            </SheetHeader>
+            <div className="px-6 py-5 space-y-3">
+              {[
+                { code: "ar" as const, label: "العربية", desc: "Arabic", flag: "🇸🇦" },
+                { code: "en" as const, label: "English", desc: "الإنجليزية", flag: "🇺🇸" },
+              ].map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => handleLanguageChange(lang.code)}
+                  className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-colors active:scale-[0.98] ${
+                    language === lang.code
+                      ? "bg-primary/10 border-2 border-primary/30"
+                      : "bg-card border border-border/50 hover:bg-muted"
+                  }`}
+                >
+                  <span className="text-2xl">{lang.flag}</span>
+                  <div className={`flex-1 ${isRTL ? "text-right" : "text-left"}`}>
+                    <p className="text-sm font-bold text-foreground">{lang.label}</p>
+                    <p className="text-xs text-muted-foreground">{lang.desc}</p>
+                  </div>
+                  {language === lang.code && (
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                      <Check size={14} className="text-primary-foreground" />
+                    </div>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         </SheetContent>

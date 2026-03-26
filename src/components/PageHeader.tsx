@@ -1,7 +1,8 @@
 import React, { ReactNode } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SyncStatus from "@/components/SyncStatus";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface HeaderAction {
   icon: ReactNode;
@@ -23,6 +24,7 @@ interface PageHeaderProps {
 const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
   ({ title, subtitle, actions, children, onBack, showSyncStatus = true }, ref) => {
     const navigate = useNavigate();
+    const { t, isRTL } = useLanguage();
 
     return (
       <div
@@ -35,11 +37,11 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
       <div className="flex items-center gap-3">
         <button
           onClick={onBack ?? (() => navigate(-1))}
-          aria-label="رجوع"
+          aria-label={t.back}
           className="p-1.5 rounded-full shrink-0"
           style={{ background: "hsla(0,0%,100%,0.12)" }}
         >
-          <ArrowRight size={20} className="text-white" />
+          {isRTL ? <ArrowRight size={20} className="text-white" /> : <ArrowLeft size={20} className="text-white" />}
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-bold text-white">{title}</h1>
@@ -50,7 +52,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
           <button
             key={i}
             onClick={action.onClick}
-            aria-label={action.label || "إجراء"}
+            aria-label={action.label || t.pageHeader.action}
             className={`p-1.5 rounded-full shrink-0 ${action.className ?? ""}`}
             style={{ background: "hsla(0,0%,100%,0.12)", ...action.style }}
           >
