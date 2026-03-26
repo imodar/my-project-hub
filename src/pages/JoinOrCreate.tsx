@@ -159,7 +159,7 @@ const JoinOrCreate = () => {
                   ? new URL(rawValue).searchParams.get("code") || rawValue
                   : rawValue;
                 setCode(extracted);
-                handleJoin(extracted);
+                initiateJoin(extracted);
               }
             }
           } catch {}
