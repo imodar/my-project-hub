@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       return json({ data });
     }
 
-    // --- RESTORE ---
+    // --- RESTORE (with full server-side re-insertion) ---
     if (action === "restore") {
       const { id } = body;
       const { data: item, error: getErr } = await supabase
@@ -105,6 +105,72 @@ Deno.serve(async (req) => {
         .eq("id", id)
         .single();
       if (getErr || !item) return json({ error: "Item not found" }, 404);
+
+      const originalData = item.original_data;
+      const relatedRecords = item.related_records;
+
+      // Restore data based on type
+      if (item.type === "market_list" && originalData) {
+        const { error: listError } = await adminClient.from("market_lists").insert({
+          id: originalData.id,
+          name: originalData.name,
+          type: originalData.type,
+          family_id: originalData.family_id,
+          created_by: originalData.created_by,
+          shared_with: originalData.shared_with || [],
+          use_categories: originalData.use_categories ?? true,
+        });
+        if (listError) return json({ error: "فشل استعادة القائمة: " + listError.message }, 400);
+
+        if (relatedRecords && relatedRecords.length > 0) {
+          const itemsToInsert = relatedRecords.map((it: any) => ({
+            id: it.id,
+            list_id: originalData.id,
+            name: it.name,
+            category: it.category,
+            quantity: it.quantity,
+            checked: it.checked,
+            checked_by: it.checked_by,
+            added_by: it.added_by,
+          }));
+          const { error: itemsError } = await adminClient.from("market_items").insert(itemsToInsert);
+          if (itemsError) {
+            // Rollback: delete the list we just inserted
+            await adminClient.from("market_lists").delete().eq("id", originalData.id);
+            return json({ error: "فشل استعادة العناصر: " + itemsError.message }, 400);
+          }
+        }
+      } else if (item.type === "task_list" && originalData) {
+        const { error: listError } = await adminClient.from("task_lists").insert({
+          id: originalData.id,
+          name: originalData.name,
+          type: originalData.type,
+          family_id: originalData.family_id,
+          created_by: originalData.created_by,
+          shared_with: originalData.shared_with || [],
+        });
+        if (listError) return json({ error: "فشل استعادة القائمة: " + listError.message }, 400);
+
+        if (relatedRecords && relatedRecords.length > 0) {
+          const itemsToInsert = relatedRecords.map((it: any) => ({
+            id: it.id,
+            list_id: originalData.id,
+            name: it.name,
+            note: it.note,
+            priority: it.priority,
+            assigned_to: it.assigned_to,
+            done: it.done,
+            repeat_enabled: it.repeat_enabled,
+            repeat_days: it.repeat_days,
+            repeat_count: it.repeat_count,
+          }));
+          const { error: itemsError } = await adminClient.from("task_items").insert(itemsToInsert);
+          if (itemsError) {
+            await adminClient.from("task_lists").delete().eq("id", originalData.id);
+            return json({ error: "فشل استعادة المهام: " + itemsError.message }, 400);
+          }
+        }
+      }
 
       // Mark as restored
       const { error } = await supabase

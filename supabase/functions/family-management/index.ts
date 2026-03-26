@@ -233,13 +233,19 @@ Deno.serve(async (req) => {
       const { family_id } = body;
       if (!family_id) return json({ error: "family_id مطلوب" }, 400);
 
+      const { data: familyData } = await supabase
+        .from("families")
+        .select("created_by")
+        .eq("id", family_id)
+        .single();
+
       const { data, error } = await supabase
         .from("family_members")
         .select("*, profiles:user_id(name, avatar_url, phone)")
         .eq("family_id", family_id)
         .eq("status", "active");
       if (error) return json({ error: error.message }, 400);
-      return json({ data });
+      return json({ data, created_by: familyData?.created_by });
     }
 
     // GET my family
