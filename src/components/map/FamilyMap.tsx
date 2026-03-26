@@ -38,21 +38,27 @@ const ROLE_COLORS: Record<string, string> = {
   driver: "#f59e0b",
 };
 
-function createMemberIcon(name: string, role: string, isMe: boolean, isSelected: boolean) {
-  const color = isMe ? "#ef4444" : (ROLE_COLORS[role] || "#6b7280");
+function createMemberIcon(name: string, role: string, isMe: boolean, isSelected: boolean, isHidden = false) {
+  const baseColor = isMe ? "#ef4444" : (ROLE_COLORS[role] || "#6b7280");
+  const color = isHidden ? "#9ca3af" : baseColor;
+  const opacity = isHidden ? 0.5 : 1;
   const size = isSelected ? 44 : 36;
   const initial = name.charAt(0) || "?";
   const border = isSelected ? "3px solid white" : "2px solid white";
 
+  const eyeOffSvg = isHidden
+    ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;bottom:-4px;right:-4px;background:#6b7280;border-radius:50%;padding:1px;border:1.5px solid white;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+    : "";
+
   return L.divIcon({
     className: "custom-member-marker",
     html: `<div style="
-      width:${size}px;height:${size}px;border-radius:50%;
+      position:relative;width:${size}px;height:${size}px;border-radius:50%;
       background:${color};color:white;display:flex;align-items:center;justify-content:center;
       font-weight:700;font-size:${isSelected ? 16 : 14}px;
       border:${border};box-shadow:0 2px 8px rgba(0,0,0,0.3);
-      transition:all 0.2s;
-    ">${initial}</div>`,
+      opacity:${opacity};transition:all 0.2s;
+    ">${initial}${eyeOffSvg}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -size / 2],
