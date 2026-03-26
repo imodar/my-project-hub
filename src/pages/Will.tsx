@@ -20,6 +20,14 @@ import { toast } from "@/hooks/use-toast";
 import { useWill } from "@/hooks/useWill";
 import { ROLE_LABELS } from "@/contexts/UserRoleContext";
 
+// ── SHA-256 helper ──
+async function sha256(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 // ── Types ──
 interface WillSection {
   id: string;
@@ -44,8 +52,6 @@ const DEFAULT_SECTIONS: WillSection[] = [
   { id: "funeral", icon: "🌿", label: "تعليمات الجنازة", completed: false, content: "" },
 ];
 
-// Family members are now fetched from DB inside the component
-
 const Will = () => {
   const { will, isLoading, upsertWill, deleteWill, createOpenRequest } = useWill();
   const { user } = useAuth();
@@ -58,33 +64,32 @@ const Will = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
 
-  // Fetch family members from DB
+  // ── Lock state ──
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [unlockError, setUnlockError] = useState("");
+
+  // ── Setup password state (for new wills without password_hash) ──
+  const [setupPasswordDrawer, setSetupPasswordDrawer] = useState(false);
+  const [setupPassword, setSetupPassword] = useState("");
+  const [setupPasswordConfirm, setSetupPasswordConfirm] = useState("");
+  const [showSetupPassword, setShowSetupPassword] = useState(false);
+
+  // Fetch family members via Edge Function (not direct DB)
   useEffect(() => {
     if (!familyId) return;
-    supabase
-      .from("family_members")
-      .select("user_id, role")
-      .eq("family_id", familyId)
-      .eq("status", "active")
-      .then(async ({ data }) => {
-        if (!data) return;
-        const memberIds = data.map((m) => m.user_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, name")
-          .in("id", memberIds);
-        if (profiles) {
-          const roleMap: Record<string, string> = {};
-          data.forEach((m) => { roleMap[m.user_id] = m.role; });
-          setFamilyMembers(
-            profiles.map((p) => ({
-              id: p.id,
-              name: p.name || "بدون اسم",
-              role: ROLE_LABELS[roleMap[p.id]] || roleMap[p.id] || "فرد",
-              hasWill: false, // Will be determined by actual will data
-            }))
-          );
-        }
+    supabase.functions
+      .invoke("family-management", { body: { action: "get-members", family_id: familyId } })
+      .then(({ data: response }) => {
+        if (!response?.data) return;
+        const members = response.data;
+        setFamilyMembers(
+          members.map((m: any) => ({
+            id: m.user_id || m.id,
+            name: m.name || "بدون اسم",
+            role: ROLE_LABELS[m.role] || m.role || "فرد",
+            hasWill: false,
+          }))
+        );
       });
   }, [familyId]);
 
@@ -116,12 +121,43 @@ const Will = () => {
     await new Promise((r) => setTimeout(r, 800));
   };
 
-  const handleUnlock = () => {
+  // ── Client-side SHA-256 unlock ──
+  const handleUnlock = async () => {
     if (!password.trim()) return;
+    setUnlockError("");
+
+    // If will has no password_hash yet, prompt to create one first
+    if (!will?.password_hash) {
+      setPasswordDrawer(false);
+      setPassword("");
+      setSetupPasswordDrawer(true);
+      return;
+    }
+
+    const hash = await sha256(password);
+    if (hash === will.password_hash) {
+      haptic.medium();
+      setIsUnlocked(true);
+      setPasswordDrawer(false);
+      setPassword("");
+      toast({ title: "تم فتح الوصية", description: "يمكنك الآن تعديل وصيتك" });
+    } else {
+      setUnlockError("كلمة المرور غير صحيحة");
+      haptic.heavy();
+    }
+  };
+
+  // ── Setup password for new wills ──
+  const handleSetupPassword = async () => {
+    if (!setupPassword.trim() || setupPassword !== setupPasswordConfirm) return;
+    const hash = await sha256(setupPassword);
+    upsertWill.mutate({ sections, password_hash: hash });
+    setSetupPasswordDrawer(false);
+    setSetupPassword("");
+    setSetupPasswordConfirm("");
+    setIsUnlocked(true);
     haptic.medium();
-    setPasswordDrawer(false);
-    setPassword("");
-    toast({ title: "تم فتح الوصية", description: "يمكنك الآن تعديل وصيتك" });
+    toast({ title: "تم إنشاء كلمة المرور", description: "وصيتك الآن محمية بكلمة مرور" });
   };
 
   const handleRequestOpen = () => {
@@ -133,8 +169,10 @@ const Will = () => {
     });
   };
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!newPassword.trim() || newPassword !== confirmPassword) return;
+    const hash = await sha256(newPassword);
+    upsertWill.mutate({ sections, password_hash: hash });
     haptic.medium();
     setResetDrawer(false);
     setNewPassword("");
@@ -147,6 +185,7 @@ const Will = () => {
     deleteWill.mutate();
     setSections(DEFAULT_SECTIONS.map(s => ({ ...s, completed: false, content: "" })));
     setDeleteDrawer(false);
+    setIsUnlocked(false);
     toast({ title: "تم حذف الوصية", description: "تم مسح جميع محتويات الوصية" });
   };
 
@@ -188,6 +227,9 @@ const Will = () => {
 
   const completedCount = sections.filter((s) => s.completed).length;
 
+  // Determine if will has no password yet
+  const willHasNoPassword = will && !will.password_hash;
+
   return (
     <div className="min-h-screen bg-background max-w-2xl mx-auto relative pb-32">
       <PageHeader title="الوصية" subtitle="وصيتك الشرعية محفوظة وآمنة" />
@@ -221,152 +263,184 @@ const Will = () => {
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <Lock size={14} className="text-emerald-600" />
-                وصيتك محمية ومكتوبة
+                {isUnlocked ? "الوصية مفتوحة" : "وصيتك محمية ومكتوبة"}
               </h3>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                مشفّرة بكلمة مرور خاصة. لا يمكن فتحها إلا بموافقة جميع أفراد الأسرة.
-              </p>
-              <p className="text-[10px] text-emerald-600 mt-2 flex items-center gap-1">
-                <CheckCircle2 size={12} />
-                آخر تعديل: 10 مارس 2026
+                {isUnlocked
+                  ? "يمكنك تعديل أقسام وصيتك الآن."
+                  : "مشفّرة بكلمة مرور خاصة. لا يمكن فتحها إلا بموافقة جميع أفراد الأسرة."}
               </p>
             </div>
           </div>
         </div>
 
-        {/* ── Sections ── */}
-        <div className="mx-4 mt-5">
-          <h2 className="text-sm font-bold text-foreground mb-3">أقسام الوصية</h2>
-          <div className="space-y-2">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => handleOpenSection(section)}
-                className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
-              >
-                <span className="text-xl">{section.icon}</span>
-                <span className="flex-1 text-right text-sm font-medium text-foreground">
-                  {section.label}
-                </span>
-                {section.completed ? (
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <CheckCircle2 size={10} />
-                    مكتمل
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Circle size={10} />
-                    لم يكتمل
-                  </span>
-                )}
-                <ChevronLeft size={16} className="text-muted-foreground" />
-              </button>
-            ))}
-          </div>
-
-          {/* Progress */}
-          <div className="mt-3 flex items-center gap-2 text-[10px] text-muted-foreground">
-            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 rounded-full transition-all"
-                style={{ width: `${(completedCount / sections.length) * 100}%` }}
-              />
-            </div>
-            <span>{completedCount}/{sections.length} مكتمل</span>
-          </div>
-        </div>
-
-        {/* ── Family Wills ── */}
-        <div className="mx-4 mt-5">
-          <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-            <Users size={16} className="text-muted-foreground" />
-            وصايا أفراد العائلة
-          </h2>
-          <div className="space-y-2">
-            {familyMembers.filter(m => m.hasWill).map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5"
-              >
-                <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
-                  <UserCheck size={16} className="text-emerald-600" />
-                </div>
-                <div className="flex-1 min-w-0 text-right">
-                  <p className="text-sm font-medium text-foreground">{member.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{member.role} · لديه وصية مكتوبة</p>
-                </div>
+        {/* ── LOCKED VIEW ── */}
+        {!isUnlocked ? (
+          <div className="mx-4 mt-6 space-y-3">
+            {/* Show setup password prompt if will has no password */}
+            {willHasNoPassword && (
+              <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-right mb-4">
+                <p className="text-sm text-amber-800 font-medium mb-1">⚠️ وصيتك غير محمية</p>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  أنشئ كلمة مرور لحماية وصيتك. بدون كلمة مرور لا يمكن تأمين المحتوى.
+                </p>
                 <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleFamilyRequest(member)}
-                  className="text-[10px] h-8 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/5 gap-1 shrink-0"
+                  onClick={() => setSetupPasswordDrawer(true)}
+                  className="w-full h-11 rounded-xl text-sm font-bold gap-2 mt-3"
                 >
-                  <ScrollText size={12} />
-                  طلب فتح
+                  <KeyRound size={16} />
+                  إنشاء كلمة مرور
                 </Button>
               </div>
-            ))}
-            {familyMembers.filter(m => !m.hasWill).map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 opacity-50"
-              >
-                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0">
-                  <Circle size={16} className="text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0 text-right">
-                  <p className="text-sm font-medium text-foreground">{member.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{member.role} · لم يكتب وصية بعد</p>
-                </div>
+            )}
+
+            <Button
+              onClick={() => { haptic.light(); setPasswordDrawer(true); }}
+              className="w-full h-12 rounded-2xl bg-primary text-primary-foreground gap-2 text-sm font-bold"
+              disabled={willHasNoPassword}
+            >
+              <KeyRound size={18} />
+              فتح وتعديل الوصية
+            </Button>
+
+            <Button
+              onClick={() => { haptic.light(); setRequestDrawer(true); }}
+              variant="outline"
+              className="w-full h-12 rounded-2xl gap-2 text-sm font-bold border-destructive/30 text-destructive hover:bg-destructive/5"
+            >
+              <Users size={18} />
+              طلب فتح الوصية — بعد الوفاة
+            </Button>
+          </div>
+        ) : (
+          <>
+            {/* ── UNLOCKED VIEW — Sections ── */}
+            <div className="mx-4 mt-5">
+              <h2 className="text-sm font-bold text-foreground mb-3">أقسام الوصية</h2>
+              <div className="space-y-2">
+                {sections.map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => handleOpenSection(section)}
+                    className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
+                  >
+                    <span className="text-xl">{section.icon}</span>
+                    <span className="flex-1 text-right text-sm font-medium text-foreground">
+                      {section.label}
+                    </span>
+                    {section.completed ? (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle2 size={10} />
+                        مكتمل
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Circle size={10} />
+                        لم يكتمل
+                      </span>
+                    )}
+                    <ChevronLeft size={16} className="text-muted-foreground" />
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* ── Bottom Actions ── */}
-        <div className="mx-4 mt-6 space-y-3">
-          <Button
-            onClick={() => { haptic.light(); setPasswordDrawer(true); }}
-            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground gap-2 text-sm font-bold"
-          >
-            <KeyRound size={18} />
-            فتح وتعديل الوصية
-          </Button>
+              {/* Progress */}
+              <div className="mt-3 flex items-center gap-2 text-[10px] text-muted-foreground">
+                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all"
+                    style={{ width: `${(completedCount / sections.length) * 100}%` }}
+                  />
+                </div>
+                <span>{completedCount}/{sections.length} مكتمل</span>
+              </div>
+            </div>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={() => { haptic.light(); setResetDrawer(true); }}
-              variant="outline"
-              className="flex-1 h-11 rounded-2xl gap-1.5 text-xs font-bold"
-            >
-              <RotateCcw size={14} />
-              إعادة تعيين كلمة المرور
-            </Button>
-            <Button
-              onClick={() => { haptic.light(); setDeleteDrawer(true); }}
-              variant="outline"
-              className="flex-1 h-11 rounded-2xl gap-1.5 text-xs font-bold border-destructive/30 text-destructive hover:bg-destructive/5"
-            >
-              <Trash2 size={14} />
-              حذف الوصية
-            </Button>
-          </div>
+            {/* ── Family Wills ── */}
+            <div className="mx-4 mt-5">
+              <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                <Users size={16} className="text-muted-foreground" />
+                وصايا أفراد العائلة
+              </h2>
+              <div className="space-y-2">
+                {familyMembers.filter(m => m.hasWill).map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                      <UserCheck size={16} className="text-emerald-600" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-right">
+                      <p className="text-sm font-medium text-foreground">{member.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{member.role} · لديه وصية مكتوبة</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleFamilyRequest(member)}
+                      className="text-[10px] h-8 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/5 gap-1 shrink-0"
+                    >
+                      <ScrollText size={12} />
+                      طلب فتح
+                    </Button>
+                  </div>
+                ))}
+                {familyMembers.filter(m => !m.hasWill).map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 opacity-50"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                      <Circle size={16} className="text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-right">
+                      <p className="text-sm font-medium text-foreground">{member.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{member.role} · لم يكتب وصية بعد</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-          <Button
-            onClick={() => { haptic.light(); setRequestDrawer(true); }}
-            variant="outline"
-            className="w-full h-12 rounded-2xl gap-2 text-sm font-bold border-destructive/30 text-destructive hover:bg-destructive/5"
-          >
-            <Users size={18} />
-            طلب فتح الوصية — بعد الوفاة
-          </Button>
-        </div>
+            {/* ── Bottom Actions ── */}
+            <div className="mx-4 mt-6 space-y-3">
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => { haptic.light(); setResetDrawer(true); }}
+                  variant="outline"
+                  className="flex-1 h-11 rounded-2xl gap-1.5 text-xs font-bold"
+                >
+                  <RotateCcw size={14} />
+                  إعادة تعيين كلمة المرور
+                </Button>
+                <Button
+                  onClick={() => { haptic.light(); setDeleteDrawer(true); }}
+                  variant="outline"
+                  className="flex-1 h-11 rounded-2xl gap-1.5 text-xs font-bold border-destructive/30 text-destructive hover:bg-destructive/5"
+                >
+                  <Trash2 size={14} />
+                  حذف الوصية
+                </Button>
+              </div>
+
+              <Button
+                onClick={() => { haptic.light(); setRequestDrawer(true); }}
+                variant="outline"
+                className="w-full h-12 rounded-2xl gap-2 text-sm font-bold border-destructive/30 text-destructive hover:bg-destructive/5"
+              >
+                <Users size={18} />
+                طلب فتح الوصية — بعد الوفاة
+              </Button>
+            </div>
+          </>
+        )}
 
         <div className="h-8" />
       </PullToRefresh>
       )}
 
-      {/* ── Password Drawer ── */}
+      {/* ── Password Drawer (unlock) ── */}
       <Drawer open={passwordDrawer} onOpenChange={setPasswordDrawer}>
         <DrawerContent>
           <DrawerHeader>
@@ -379,9 +453,10 @@ const Will = () => {
                 type={showPassword ? "text" : "password"}
                 placeholder="كلمة المرور"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setUnlockError(""); }}
                 className="h-12 rounded-xl pr-4 pl-12 text-right"
                 dir="rtl"
+                onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
               />
               <button
                 type="button"
@@ -391,6 +466,9 @@ const Will = () => {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            {unlockError && (
+              <p className="text-[11px] text-destructive text-right">{unlockError}</p>
+            )}
             <Button
               onClick={handleUnlock}
               disabled={!password.trim()}
@@ -398,6 +476,54 @@ const Will = () => {
             >
               <KeyRound size={16} />
               فتح الوصية
+            </Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* ── Setup Password Drawer (new will) ── */}
+      <Drawer open={setupPasswordDrawer} onOpenChange={setSetupPasswordDrawer}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>إنشاء كلمة مرور للوصية</DrawerTitle>
+            <DrawerDescription>اختر كلمة مرور قوية لحماية وصيتك</DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 space-y-3">
+            <div className="relative">
+              <Input
+                type={showSetupPassword ? "text" : "password"}
+                placeholder="كلمة المرور"
+                value={setupPassword}
+                onChange={(e) => setSetupPassword(e.target.value)}
+                className="h-12 rounded-xl pr-4 pl-12 text-right"
+                dir="rtl"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSetupPassword(!showSetupPassword)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              >
+                {showSetupPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <Input
+              type={showSetupPassword ? "text" : "password"}
+              placeholder="تأكيد كلمة المرور"
+              value={setupPasswordConfirm}
+              onChange={(e) => setSetupPasswordConfirm(e.target.value)}
+              className="h-12 rounded-xl pr-4 text-right"
+              dir="rtl"
+            />
+            {setupPassword && setupPasswordConfirm && setupPassword !== setupPasswordConfirm && (
+              <p className="text-[10px] text-destructive text-right">كلمتا المرور غير متطابقتين</p>
+            )}
+            <Button
+              onClick={handleSetupPassword}
+              disabled={!setupPassword.trim() || setupPassword !== setupPasswordConfirm}
+              className="w-full h-12 rounded-xl text-sm font-bold gap-2"
+            >
+              <KeyRound size={16} />
+              حفظ كلمة المرور
             </Button>
           </div>
         </DrawerContent>

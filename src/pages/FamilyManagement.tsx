@@ -49,10 +49,11 @@ const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: nu
 // Swipe constants removed — using shared SwipeableCard
 
 
-// Real QR Code using Google Charts API — encodes raw invite code
+// Real QR Code — encodes full URL with invite code
 const QrPattern = React.memo(({ code }: { code: string }) => {
   const qrUrl = useMemo(() => {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(code)}&margin=4`;
+    const fullUrl = `https://ailti.lovable.app/join-or-create?code=${encodeURIComponent(code)}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(fullUrl)}&margin=4`;
   }, [code]);
 
   return (
