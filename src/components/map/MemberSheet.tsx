@@ -66,7 +66,7 @@ export default function MemberSheet({ locations, selectedMemberId, onMemberSelec
 
   return (
     <motion.div
-      className="fixed bottom-0 left-0 right-0 z-20 bg-background rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)] max-w-2xl mx-auto"
+      className="fixed bottom-0 left-0 right-0 z-[1000] bg-background rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)] max-w-2xl mx-auto"
       style={{ height: SHEET_EXPANDED, y: sheetY, bottom: -(SHEET_EXPANDED - SHEET_PEEK), paddingBottom: "64px" }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
