@@ -20,7 +20,7 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, info);
+    reportError(error, { source: "AppErrorBoundary", componentStack: info.componentStack || undefined });
   }
 
   handleReload = () => {
