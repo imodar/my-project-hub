@@ -107,6 +107,18 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [familyId, qc]);
 
+  // Listen for sync queue failures and notify user
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      toast.error(`فشلت مزامنة ${detail.label || "البيانات"}`, {
+        description: "تحقق من الاتصال وحاول مرة أخرى",
+      });
+    };
+    window.addEventListener("sync-queue-failed", handler);
+    return () => window.removeEventListener("sync-queue-failed", handler);
+  }, []);
+
   return <>{children}</>;
 };
 
