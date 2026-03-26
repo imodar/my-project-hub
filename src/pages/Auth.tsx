@@ -189,9 +189,10 @@ const Auth = () => {
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <>
+                    <>
                     <Phone className="h-5 w-5" />
-                    إرسال رمز التحقق
+                    {t.auth.sendOtp}
+                  </>
                   </>
                 )}
               </Button>
