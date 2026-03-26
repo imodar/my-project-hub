@@ -183,7 +183,7 @@ const AnimatedRoutes = () => {
         <Route path="/vaccinations" element={<AuthGuard><Vaccinations /></AuthGuard>} />
         <Route path="/medications" element={<AuthGuard><Medications /></AuthGuard>} />
         <Route path="/islamic-reminders" element={<AuthGuard><IslamicReminders /></AuthGuard>} />
-        <Route path="/offline-demo" element={<AuthGuard><MedicationsExample /></AuthGuard>} />
+        
         <Route path="*" element={<NotFound />} />
       </Routes>
     </PageTransition>

@@ -48,16 +48,6 @@ const RoleIcon = ({ role, size = 20, className = "" }: { role: string; size?: nu
 
 // Swipe constants removed — using shared SwipeableCard
 
-const getProfileName = (): string => {
-  try {
-    const cached = localStorage.getItem("cached_profile");
-    if (cached) {
-      const profile = JSON.parse(cached);
-      return profile?.name || "";
-    }
-  } catch {}
-  return "";
-};
 
 // Real QR Code using Google Charts API — encodes raw invite code
 const QrPattern = React.memo(({ code }: { code: string }) => {
