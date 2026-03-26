@@ -20,9 +20,9 @@ interface WeatherData {
   lastUpdated: Date;
 }
 
-const getGreeting = (hour: number) => {
-  if (hour >= 5 && hour < 18) return "صباح الخير";
-  return "مساء الخير";
+const getGreeting = (hour: number, t: any) => {
+  if (hour >= 5 && hour < 18) return t.hero.goodMorning;
+  return t.hero.goodEvening;
 };
 
 const getTimeIcon = (hour: number): { icon: React.ReactNode; glow: string } => {
