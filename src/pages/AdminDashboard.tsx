@@ -52,19 +52,34 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Check admin role
+  // Check admin role via admin-api
   useEffect(() => {
     if (!user) return;
     checkAdmin();
     async function checkAdmin() {
-      const { data } = await supabase
-        .from("user_roles" as any)
-        .select("role")
-        .eq("user_id", user!.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      setIsAdmin(!!data);
-      if (data) loadDashboard();
+      try {
+        const { data, error } = await supabase.functions.invoke("admin-api", {
+          body: { action: "dashboard-full" },
+        });
+        if (error || data?.error) {
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(true);
+          // Use the dashboard data directly
+          const d = data?.data;
+          if (d) {
+            setStats({
+              totalUsers: d.total_users || 0,
+              totalFamilies: d.total_families || 0,
+              activeUsers: d.active_today || 0,
+              pendingDeletions: 0,
+            });
+          }
+          loadDashboard();
+        }
+      } catch {
+        setIsAdmin(false);
+      }
       setLoading(false);
     }
   }, [user]);
