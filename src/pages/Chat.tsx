@@ -181,6 +181,7 @@ const Chat = () => {
     isReady,
     sendMessage,
     sendMediaMessage,
+    retryMessage,
     togglePin,
     addReaction,
     profiles,

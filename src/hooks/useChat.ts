@@ -564,6 +564,7 @@ export function useChat() {
     isReady,
     sendMessage,
     sendMediaMessage,
+    retryMessage,
     togglePin,
     addReaction,
     profiles,
