@@ -340,6 +340,10 @@ export async function processQueue(): Promise<void> {
           `[SyncQueue] ❌ فشل ${item.operation} على ${item.table} (محاولة ${newRetries}/${MAX_RETRIES})`,
           err
         );
+
+        if (newStatus === "failed") {
+          _notifyFailed(item.table);
+        }
       }
     }
 
