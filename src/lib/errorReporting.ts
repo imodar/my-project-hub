@@ -1,14 +1,10 @@
 /**
  * Centralized error reporting service.
  *
- * Currently logs to console. To integrate Sentry (or any service):
- * 1. npm install @sentry/react
- * 2. Call Sentry.init({ dsn: "..." }) in main.tsx
- * 3. Replace the body of `reportError` with Sentry.captureException(error, { extra: context })
- *
- * All Error Boundaries and global handlers funnel through this module,
- * so a single change here enables production monitoring everywhere.
+ * Integrates with Sentry when VITE_SENTRY_DSN is set.
+ * Falls back to console.error otherwise.
  */
+import * as Sentry from "@sentry/react";
 
 interface ErrorContext {
   /** Component or route where the error occurred */
@@ -19,12 +15,45 @@ interface ErrorContext {
   [key: string]: unknown;
 }
 
-export function reportError(error: unknown, context?: ErrorContext): void {
-  // --- Sentry integration point ---
-  // import * as Sentry from "@sentry/react";
-  // Sentry.captureException(error, { extra: context });
+let sentryInitialized = false;
 
+/**
+ * Initialize Sentry. Call once in main.tsx.
+ * If VITE_SENTRY_DSN is not set, Sentry stays inactive and reportError falls back to console.
+ */
+export function initSentry(): void {
+  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  if (!dsn) {
+    console.info("[Sentry] VITE_SENTRY_DSN not set — using console.error fallback");
+    return;
+  }
+  Sentry.init({
+    dsn,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+    ],
+    tracesSampleRate: 0.2,
+    environment: import.meta.env.MODE || "production",
+    enabled: import.meta.env.PROD,
+  });
+  sentryInitialized = true;
+}
+
+export function reportError(error: unknown, context?: ErrorContext): void {
+  if (sentryInitialized) {
+    Sentry.captureException(error, { extra: context });
+  }
   console.error(`[ErrorReport] ${context?.source || "unknown"}:`, error, context);
+}
+
+/**
+ * Set the current user for Sentry context.
+ * Call with { id, email } on login, or null on logout.
+ */
+export function setSentryUser(user: { id: string; email?: string } | null): void {
+  if (sentryInitialized) {
+    Sentry.setUser(user);
+  }
 }
 
 /**

@@ -279,7 +279,7 @@ const Market = () => {
         use_categories: newListUseCategories,
       },
       {
-        onSuccess: (data) => {
+        onSuccess: (data: { id?: string } | null) => {
           if (data?.id) setActiveListId(data.id);
         },
       }

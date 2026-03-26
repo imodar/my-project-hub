@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode, useCa
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db";
+import { setSentryUser } from "@/lib/errorReporting";
 
 interface AuthContextType {
   session: Session | null;
@@ -63,8 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(newSession);
         setLoading(false);
         if (newSession?.user?.id) {
+          setSentryUser({ id: newSession.user.id, email: newSession.user.email });
           fetchProfile(newSession.user.id);
         } else {
+          setSentryUser(null);
           setProfileName("");
           setProfileReady(true);
         }
@@ -84,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     setProfileName("");
+    setSentryUser(null);
     try {
       await Promise.all([
         db.medications.clear(),

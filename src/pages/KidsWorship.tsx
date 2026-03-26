@@ -8,10 +8,10 @@ import { toast } from "@/hooks/use-toast";
 import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
 import {
   categories, allItems, TOTAL_ITEMS,
-  type ChildProfile,
-  getMonthLabel, loadChildren,
+  getMonthLabel,
 } from "@/components/kids-worship/worshipData";
 import { useKidsWorshipData } from "@/hooks/useKidsWorshipData";
+import { useWorshipChildren } from "@/hooks/useWorshipChildren";
 
 const KidsWorship = () => {
   const navigate = useNavigate();
@@ -19,8 +19,12 @@ const KidsWorship = () => {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   
-  const children = loadChildren();
-  const [activeChildId, setActiveChildId] = useState(children[0]?.id || "default");
+  const { children, isLoading: childrenLoading } = useWorshipChildren();
+  // Fallback to "default" if no children in DB yet
+  const childList = children.length > 0
+    ? children.map(c => ({ id: c.id, name: c.name }))
+    : [{ id: "default", name: "طفلي" }];
+  const [activeChildId, setActiveChildId] = useState(childList[0]?.id || "default");
   
   const { data, isLoading, saveDayData, resetDay } = useKidsWorshipData(activeChildId, selectedYear, selectedMonth);
   const [selectedDay, setSelectedDay] = useState(now.getDate());
@@ -91,7 +95,7 @@ const KidsWorship = () => {
     toast({ title: "تم إعادة تعيين اليوم" });
   };
 
-  const activeChild = children.find(c => c.id === activeChildId);
+  const activeChild = childList.find(c => c.id === activeChildId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 pb-28" dir="rtl">
@@ -140,10 +144,10 @@ const KidsWorship = () => {
       />
 
       {/* Child selector */}
-      {children.length > 1 && (
+      {childList.length > 1 && (
         <div className="px-4 -mt-1 mb-2">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
-            {children.map((child) => (
+            {childList.map((child) => (
               <button
                 key={child.id}
                 onClick={() => setActiveChildId(child.id)}
