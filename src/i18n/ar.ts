@@ -1,0 +1,380 @@
+const ar = {
+  // App name
+  appName: "عائلتنا",
+
+  // Common
+  back: "رجوع",
+  save: "حفظ",
+  cancel: "إلغاء",
+  delete: "حذف",
+  add: "إضافة",
+  edit: "تعديل",
+  close: "إغلاق",
+  confirm: "تأكيد",
+  loading: "جاري التحميل...",
+  noData: "لا توجد بيانات",
+  search: "بحث",
+  next: "التالي",
+  previous: "السابق",
+  yes: "نعم",
+  no: "لا",
+  ok: "موافق",
+  retry: "إعادة المحاولة",
+  send: "إرسال",
+  name: "الاسم",
+  phone: "رقم الهاتف",
+  notes: "ملاحظات",
+  today: "اليوم",
+  notAvailable: "غير متاح",
+  fromDatabase: "من قاعدة البيانات",
+
+  // Bottom Nav
+  nav: {
+    home: "الرئيسية",
+    map: "الخريطة",
+    emergency: "طوارئ",
+    chat: "المحادثة",
+    settings: "الإعدادات",
+  },
+
+  // Auth
+  auth: {
+    appTitle: "عائلتي",
+    appSubtitle: "نظّم حياة عائلتك في مكان واحد",
+    welcome: "أهلاً بك",
+    loginWithPhone: "سجّل دخولك برقم الجوال",
+    sendOtp: "إرسال رمز التحقق",
+    orLoginWith: "أو سجّل دخول بواسطة",
+    termsText: "بتسجيل دخولك تكون قد وافقت على",
+    termsLink: "الشروط والأحكام",
+    termsEnd: "الخاصة بالتطبيق",
+    otpTitle: "رمز التحقق",
+    otpSentTo: "أدخل الرمز المرسل إلى",
+    changeNumber: "تغيير الرقم",
+    resend: "إعادة الإرسال",
+    resendIn: "إعادة الإرسال",
+    enterValidPhone: "أدخل رقم جوال صحيح",
+    otpCode: "رمز التحقق",
+    otpDisappear: "سيختفي خلال ٣ ثوانٍ",
+    otpError: "خطأ في إرسال الرمز",
+    wrongOtp: "رمز التحقق غير صحيح",
+    loginFailed: "فشل تسجيل الدخول",
+    loginSuccess: "تم الدخول بنجاح ✓",
+    loginError: "خطأ في تسجيل الدخول",
+    family: "عائلة",
+  },
+
+  // GetStarted / Onboarding
+  onboarding: {
+    skip: "تخطي",
+    getStarted: "يلّا نبدأ 🚀",
+    slide1Title: "عائلتك، مكان واحد",
+    slide1Subtitle: "اجمعوا كل أفراد العائلة في تطبيق واحد يسهّل حياتكم اليومية",
+    slide2Title: "نظّموا حياتكم سوا",
+    slide2Subtitle: "مهام، تسوّق، مواعيد، وميزانية... كل شيء بمتناول يدكم",
+    slide3Title: "لحظاتكم محفوظة",
+    slide3Subtitle: "احفظوا ذكرياتكم وصوركم في ألبومات مشتركة للعائلة",
+    slide4Title: "ابدأوا رحلتكم",
+    slide4Subtitle: "سجّلوا الآن وابدأوا بتنظيم حياتكم العائلية بكل سهولة",
+  },
+
+  // Hero Section
+  hero: {
+    goodMorning: "صباح الخير",
+    goodEvening: "مساء الخير",
+    lastUpdate: "آخر تحديث",
+    yourLocation: "موقعك",
+    clear: "صافي",
+    clearNight: "صافي ليلاً",
+    partlyCloudy: "غائم جزئياً",
+    cloudy: "غائم",
+    foggy: "ضبابي",
+    rainy: "ممطر",
+    drizzle: "رذاذ",
+    snowy: "ثلوج",
+    night: "ليل",
+    day: "نهار",
+  },
+
+  // Feature Grid
+  features: {
+    familyTools: "أدوات العائلة",
+    tools: "الأدوات",
+    market: "السوق",
+    budget: "الميزانية",
+    calendar: "التقويم",
+    tasks: "المهام",
+    trips: "الرحلات",
+    documents: "الوثائق",
+    places: "الأماكن",
+    debts: "الديون",
+    albums: "الألبومات",
+    zakat: "الزكاة",
+    will: "الوصية",
+    vehicles: "المركبات",
+    kidsWorship: "عبادات الأطفال",
+    vaccinations: "اللقاحات",
+    medications: "الأدوية",
+  },
+
+  // Islamic Quick Actions
+  islamic: {
+    quran: "القرآن",
+    tasbih: "المسبحة",
+    athkar: "الأذكار",
+    reminders: "التنبيهات",
+    qibla: "القبلة",
+    prayerRemaining: "باقي لصلاة",
+    adhan: "الأذان",
+    minute: "دقيقة",
+    fajr: "الفجر",
+    sunrise: "الشروق",
+    dhuhr: "الظهر",
+    asr: "العصر",
+    maghrib: "المغرب",
+    isha: "العشاء",
+  },
+
+  // Daily Tasks
+  dailyTasks: {
+    title: "مهام اليوم",
+    noTasks: "لا توجد مهام حالياً",
+    addTask: "اضغط لإضافة مهمة جديدة",
+  },
+
+  // Upcoming Events
+  upcomingEvents: {
+    title: "المناسبات القادمة",
+    noEvents: "لا توجد مناسبات قادمة",
+    addEvent: "اضغط لإضافة مناسبة جديدة",
+    today: "اليوم",
+    inDays: "بعد {0} يوم",
+  },
+
+  // Settings
+  settings: {
+    title: "الإعدادات",
+    general: "عام",
+    notifications: "الإشعارات",
+    notificationsDesc: "إدارة التنبيهات والإشعارات",
+    appearance: "المظهر",
+    darkMode: "الوضع الداكن",
+    lightMode: "الوضع الفاتح",
+    darkEnabled: "تم تفعيل الوضع الداكن",
+    lightEnabled: "تم تفعيل الوضع الفاتح",
+    language: "اللغة",
+    arabic: "العربية",
+    english: "English",
+    aboutApp: "حول التطبيق",
+    about: "عن التطبيق",
+    version: "الإصدار 1.0.0",
+    privacy: "سياسة الخصوصية",
+    other: "أخرى",
+    trash: "سلة المحذوفات",
+    trashDesc: "استعادة أو حذف العناصر نهائياً",
+    clearData: "مسح البيانات",
+    clearDataDesc: "حذف جميع البيانات المحفوظة",
+    logout: "تسجيل الخروج",
+    logoutDesc: "الخروج من الحساب",
+    islamicMode: "الوضع الإسلامي",
+    islamicModeOnDesc: "يعرض القرآن والأذكار والمسبحة والصلاة والقبلة",
+    islamicModeOffDesc: "يعرض السوق والتقويم والديون",
+    familyRole: "الدور في العائلة",
+    roleUnset: "غير محدد",
+    roleSetByAdmin: "يتم تحديد الدور من قبل مشرف العائلة",
+    modeSection: "الوضع",
+    notifSettings: "إعدادات الإشعارات",
+    notifAutoMsg: "الإشعارات تعمل تلقائياً عبر المتصفح. تأكد من السماح بالإشعارات في إعدادات جهازك.",
+    selectLanguage: "اختر اللغة",
+    languageChanged: "تم تغيير اللغة",
+  },
+
+  // Emergency
+  emergency: {
+    settings: "إعدادات الطوارئ",
+    settingsTitle: "إعدادات نظام الطوارئ",
+    settingsDesc: "أرقام الطوارئ، التتبع، وإدارة صلاحيات الأفراد",
+    adminOnly: "متاح فقط للمشرفين (الأب والأم)",
+    externalContacts: "أرقام الطوارئ الخارجية",
+    externalContactsDesc: "أشخاص من خارج العائلة يتم إرسال SMS لهم عند تفعيل الطوارئ",
+    addContact: "+ إضافة رقم طوارئ",
+    addContactFailed: "فشل إضافة جهة الاتصال",
+    contactAdded: "تمت الإضافة",
+    alertSettings: "إعدادات التنبيه",
+    distinctSound: "صوت تنبيه مميز",
+    distinctSoundDesc: "صوت مختلف عن باقي الإشعارات",
+    liveTracking: "تتبع الموقع المباشر",
+    liveTrackingDesc: "تحديث الموقع كل 30 ثانية عند التفعيل",
+    sosPermissions: "صلاحيات زر الطوارئ",
+    sosPermissionsDesc: "تعطيل أو تفعيل زر الطوارئ لكل فرد",
+    sosEnabled: "زر الطوارئ مفعّل",
+    sosDisabled: "زر الطوارئ معطّل",
+    customize: "تخصيص نظام الطوارئ والتنبيهات",
+    sendingAlert: "جاري إرسال التنبيه...",
+    notifyAll: "سيتم إشعار جميع أفراد العائلة",
+    cancelAlert: "تم إلغاء التنبيه",
+    activeAlert: "تنبيه طوارئ نشط",
+    familyNotified: "تم إشعار جميع أفراد العائلة بموقعك",
+    cancelAlertBtn: "إلغاء التنبيه",
+    cancelAlertTitle: "إلغاء تنبيه الطوارئ",
+    cancelAlertDesc: "سيتم إبلاغ جميع أفراد العائلة بأنك بخير",
+    imFine: "بخير",
+    wasMistake: "كان خطأ",
+    otherReason: "أو اكتب سبباً آخر...",
+    confirmCancel: "تأكيد الإلغاء",
+    lastLocationUpdate: "آخر تحديث للموقع",
+    secondsAgo: "قبل {0} ثانية",
+    smsMessages: "رسائل SMS",
+    sentMessages: "تم إرسال {0} رسائل",
+    familyNotifications: "إشعارات العائلة",
+    membersNotified: "{0} أفراد تم إشعارهم",
+    howToActivate: "كيفية التفعيل",
+    holdInstructions: "الضغط المطوّل 3 ثوانٍ على زر SOS",
+    tripleTapInstructions: "أو الضغط 3 مرات متتالية سريعة",
+    countdownInstructions: "يظهر عداد تنازلي 3 ثوانٍ قبل الإرسال مع إمكانية الإلغاء",
+    externalContactsDesc2: "أشخاص خارج العائلة سيتلقون رسالة SMS عند التفعيل",
+    noExternalContacts: "لم تُضف أرقام طوارئ خارجية بعد",
+    familyMembersAuto: "أفراد العائلة (إشعار تلقائي)",
+    addEmergencyNumber: "إضافة رقم طوارئ",
+    relation: "القرابة (جد، عم، صديق...)",
+    contactDeleted: "تم حذف جهة الاتصال",
+    contactAddedSuccess: "تم إضافة جهة الاتصال",
+    alertActivated: "🚨 تم تفعيل تنبيه الطوارئ — تم إرسال إشعارات لجميع أفراد العائلة",
+    noName: "بدون اسم",
+  },
+
+  // Profile Sheet
+  profile: {
+    myProfile: "ملفي الشخصي",
+    profileDesc: "الاسم والصورة الشخصية",
+    familyManagement: "إدارة أفراد الأسرة",
+    familyManagementDesc: "إضافة أو إزالة أفراد العائلة",
+    settingsDesc: "الإشعارات والمظهر واللغة",
+    parent: "ولي الأمر",
+    familyMember: "فرد من الأسرة",
+  },
+
+  // Map
+  map: {
+    title: "خريطة العائلة",
+    updateEvery: "تحديث كل {0} دقائق",
+    myLocationOn: "موقعي مفعّل",
+    myLocationOff: "موقعي غير مفعّل",
+    updateInterval: "فترة تحديث الموقع",
+    minutes: "دقائق",
+    moreBattery: "1 دقيقة (بطارية أكثر)",
+    lessBattery: "30 دقيقة (بطارية أقل)",
+    hiddenWarning: "سيتم إعلام الوالدين أنك قمت بإطفاء مشاركة الموقع الخاص بك",
+    familyMembers: "أفراد العائلة",
+    memberLocations: "مواقع الأعضاء",
+    noLocations: "لا توجد مواقع مشاركة حالياً",
+    hidden: "مخفي",
+    locationHidden: "الموقع مخفي",
+    online: "متصل",
+    inactive: "غير نشط",
+    now: "الآن",
+    minutesAgo: "منذ {0} د",
+    hoursAgo: "منذ {0} س",
+    daysAgo: "منذ {0} يوم",
+    me: "أنا",
+  },
+
+  // Roles
+  roles: {
+    father: "أب",
+    mother: "أم",
+    son: "ابن",
+    daughter: "ابنة",
+    worker: "عامل",
+    maid: "خادمة",
+    driver: "سائق",
+  },
+
+  // 404
+  notFound: {
+    title: "404",
+    message: "الصفحة غير موجودة",
+    goHome: "العودة للرئيسية",
+  },
+
+  // Prayer names
+  prayerNames: {
+    Fajr: "الفجر",
+    Sunrise: "الشروق",
+    Dhuhr: "الظهر",
+    Asr: "العصر",
+    Maghrib: "المغرب",
+    Isha: "العشاء",
+  },
+
+  // Page Header
+  pageHeader: {
+    action: "إجراء",
+  },
+
+  // Chat
+  chat: {
+    encryptionInit: "جاري تهيئة التشفير...",
+    typeMessage: "اكتب رسالة...",
+  },
+
+  // Sync
+  sync: {
+    failedSync: "فشلت مزامنة {0}",
+    checkConnection: "تحقق من الاتصال وحاول مرة أخرى",
+    saveFailed: "فشل الحفظ",
+    unexpectedError: "حدث خطأ غير متوقع",
+    data: "البيانات",
+  },
+
+  // Notifications
+  notifications: {
+    title: "الإشعارات",
+  },
+
+  // Error boundary / Offline
+  offline: {
+    noConnection: "لا يوجد اتصال",
+  },
+
+  // Complete Profile / Join
+  completeProfile: {
+    title: "أكمل ملفك",
+  },
+  joinOrCreate: {
+    title: "انضم أو أنشئ عائلة",
+  },
+
+  // Miscellaneous page titles
+  pages: {
+    tasbih: "المسبحة",
+    athkar: "الأذكار",
+    market: "السوق",
+    budget: "الميزانية",
+    calendar: "التقويم",
+    tasks: "المهام",
+    trips: "الرحلات",
+    documents: "الوثائق",
+    places: "الأماكن",
+    debts: "الديون",
+    albums: "الألبومات",
+    zakat: "الزكاة",
+    will: "الوصية",
+    vehicles: "المركبات",
+    kidsWorship: "عبادات الأطفال",
+    vaccinations: "اللقاحات",
+    medications: "الأدوية",
+    familyManagement: "إدارة العائلة",
+    profile: "الملف الشخصي",
+    trash: "سلة المحذوفات",
+    islamicReminders: "التنبيهات الإسلامية",
+    parentDashboard: "لوحة الوالدين",
+    chat: "المحادثة",
+    map: "الخريطة",
+    settings: "الإعدادات",
+    addPlace: "إضافة مكان",
+  },
+};
+
+export default ar;
+export type Translations = typeof ar;
