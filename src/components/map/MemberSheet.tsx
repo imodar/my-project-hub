@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { ChevronUp, MapPin, EyeOff } from "lucide-react";
+import { ChevronUp, MapPin, EyeOff, Loader2 } from "lucide-react";
 import { motion, useMotionValue, animate, PanInfo } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -20,6 +20,7 @@ interface MemberSheetProps {
   onMemberSelect: (id: string) => void;
   isExpanded: boolean;
   setIsExpanded: (v: boolean) => void;
+  isTogglingSharing?: boolean;
 }
 
 const SHEET_PEEK = 264;
@@ -35,7 +36,7 @@ function timeSince(dateStr: string, t: any): string {
   return t.map.daysAgo.replace("{0}", String(Math.floor(hrs / 24)));
 }
 
-export default function MemberSheet({ locations, selectedMemberId, onMemberSelect, isExpanded, setIsExpanded }: MemberSheetProps) {
+export default function MemberSheet({ locations, selectedMemberId, onMemberSelect, isExpanded, setIsExpanded, isTogglingSharing }: MemberSheetProps) {
   const { t, isRTL } = useLanguage();
   const sheetY = useMotionValue(0);
   const maxDrag = -(SHEET_EXPANDED - SHEET_PEEK);
@@ -127,7 +128,11 @@ export default function MemberSheet({ locations, selectedMemberId, onMemberSelec
               </div>
 
               <div className="flex flex-col items-center gap-1 shrink-0">
-                {!loc.is_sharing ? (
+                {loc.isMe && isTogglingSharing ? (
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Loader2 size={16} className="animate-spin" />
+                  </div>
+                ) : !loc.is_sharing ? (
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <EyeOff size={16} />
                     <span className="text-[10px]">{t.map.hidden}</span>
