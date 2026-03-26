@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, ArrowRight, Loader2 } from "lucide-react";
+import { Phone, ArrowRight, Loader2, Globe } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Switch } from "@/components/ui/switch";
 import { motion, AnimatePresence } from "framer-motion";
 import authFamily from "@/assets/auth-family.png";
 
@@ -14,6 +16,7 @@ type Step = "phone" | "otp";
 
 const Auth = () => {
   const { session } = useAuth();
+  const { t, language, setLanguage, dir, isRTL } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -108,7 +111,7 @@ const Auth = () => {
   if (session) return null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir={dir}>
       {/* Top area - branding (1/3 of screen) */}
       <div className="h-[33vh] flex flex-col items-center justify-center px-6">
         <motion.div
@@ -117,12 +120,12 @@ const Auth = () => {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="text-center"
         >
-          <h1 className="text-4xl font-bold text-primary-foreground mb-2">عائلتي</h1>
-          <p className="text-primary-foreground/70 text-sm">نظّم حياة عائلتك في مكان واحد</p>
+          <h1 className="text-4xl font-bold text-primary-foreground mb-2">{t.auth.appTitle}</h1>
+          <p className="text-primary-foreground/70 text-sm">{t.auth.appSubtitle}</p>
         </motion.div>
         <motion.img
           src={authFamily}
-          alt="عائلة"
+          alt={isRTL ? "عائلة" : "Family"}
           className="h-28 mt-3 object-contain pointer-events-none"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1, y: [0, -5, 0] }}
@@ -155,8 +158,8 @@ const Auth = () => {
               className="space-y-5 flex-1 flex flex-col"
             >
               <div className="text-center mb-2">
-                <h2 className="text-xl font-bold text-foreground">أهلاً بك</h2>
-                <p className="text-sm text-muted-foreground mt-1">سجّل دخولك برقم الجوال</p>
+                <h2 className="text-xl font-bold text-foreground">{t.auth.welcome}</h2>
+                <p className="text-sm text-muted-foreground mt-1">{t.auth.loginWithPhone}</p>
               </div>
 
               {/* Phone input */}
@@ -187,7 +190,7 @@ const Auth = () => {
                 ) : (
                   <>
                     <Phone className="h-5 w-5" />
-                    إرسال رمز التحقق
+                    {t.auth.sendOtp}
                   </>
                 )}
               </Button>
@@ -198,7 +201,7 @@ const Auth = () => {
                   <span className="w-full border-t border-border/50" />
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="bg-background px-3 text-muted-foreground">أو سجّل دخول بواسطة</span>
+                  <span className="bg-background px-3 text-muted-foreground">{t.auth.orLoginWith}</span>
                 </div>
               </div>
 
@@ -219,12 +222,23 @@ const Auth = () => {
               </Button>
 
               <div className="flex-1" />
-              {/* Terms */}
-              <p className="text-[11px] text-muted-foreground/60 text-center leading-relaxed pt-2 pb-2">
-                بتسجيل دخولك تكون قد وافقت على{" "}
-                <span className="underline underline-offset-2 text-muted-foreground/80">الشروط والأحكام</span>{" "}
-                الخاصة بالتطبيق
-              </p>
+
+              {/* Language switch + Terms */}
+              <div className="flex flex-col items-center gap-3 pt-2 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium ${language === 'ar' ? 'text-foreground' : 'text-muted-foreground'}`}>عربي</span>
+                  <Switch
+                    checked={language === 'en'}
+                    onCheckedChange={(checked) => setLanguage(checked ? 'en' : 'ar')}
+                  />
+                  <span className={`text-xs font-medium ${language === 'en' ? 'text-foreground' : 'text-muted-foreground'}`}>EN</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground/60 text-center leading-relaxed">
+                  {t.auth.termsText}{" "}
+                  <span className="underline underline-offset-2 text-muted-foreground/80">{t.auth.termsLink}</span>{" "}
+                  {t.auth.termsEnd}
+                </p>
+              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -236,9 +250,9 @@ const Auth = () => {
               className="space-y-6"
             >
               <div className="text-center">
-                <h2 className="text-xl font-bold text-foreground">رمز التحقق</h2>
+                <h2 className="text-xl font-bold text-foreground">{t.auth.otpTitle}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  أدخل الرمز المرسل إلى{" "}
+                  {t.auth.otpSentTo}{" "}
                   <span dir="ltr" className="font-mono text-foreground">{fullPhone}</span>
                 </p>
               </div>
@@ -273,8 +287,8 @@ const Auth = () => {
                   }}
                   className="gap-1 text-muted-foreground"
                 >
-                  <ArrowRight className="h-3 w-3" />
-                  تغيير الرقم
+                  <ArrowRight className={`h-3 w-3 ${!isRTL ? 'rotate-180' : ''}`} />
+                  {t.auth.changeNumber}
                 </Button>
 
                 <Button
@@ -284,7 +298,7 @@ const Auth = () => {
                   disabled={countdown > 0 || loading}
                   className="text-muted-foreground"
                 >
-                  {countdown > 0 ? `إعادة الإرسال (${countdown})` : "إعادة الإرسال"}
+                  {countdown > 0 ? `${t.auth.resendIn} (${countdown})` : t.auth.resend}
                 </Button>
               </div>
             </motion.div>
