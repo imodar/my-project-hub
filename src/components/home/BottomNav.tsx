@@ -130,12 +130,7 @@ const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-around px-4 py-2 mx-4 mb-3 rounded-2xl" style={{
-          background: "hsla(0,0%,100%,0.92)",
-          backdropFilter: "blur(16px)",
-          boxShadow: "0 4px 30px hsla(0,0%,0%,0.1)",
-          border: "1px solid hsla(0,0%,0%,0.06)",
-        }}>
+        <div className="flex items-center justify-around px-4 py-2 mx-4 mb-3 rounded-2xl bg-background/92 backdrop-blur-xl border border-border shadow-lg">
           {navItems.map((item) => {
             if ((item as any).isSOS) {
               return <SOSNavButton key={item.label} />;
