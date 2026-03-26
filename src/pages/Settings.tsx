@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
@@ -9,34 +9,81 @@ import { useUserRole, ROLE_LABELS } from "@/contexts/UserRoleContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-
-
-const emergencyContacts: { id: string; name: string; phone: string }[] = [];
-
-const familyMembers: { id: string; name: string; sosEnabled: boolean }[] = [];
+import { supabase } from "@/integrations/supabase/client";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { toast } from "sonner";
 
 const Settings = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { islamicMode, setIslamicMode } = useIslamicMode();
   const { dbRole, isAdmin: isDbAdmin, isLoading: roleLoading } = useUserRole();
+  const { familyId } = useFamilyId();
   const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
-  const [contacts, setContacts] = useState(emergencyContacts);
-  const [members, setMembers] = useState(familyMembers);
+  const [contacts, setContacts] = useState<{ id: string; name: string; phone: string }[]>([]);
+  const [members, setMembers] = useState<{ id: string; name: string; sosEnabled: boolean }[]>([]);
   const [emergencySound, setEmergencySound] = useState(true);
   const [liveTracking, setLiveTracking] = useState(true);
   const [addContactOpen, setAddContactOpen] = useState(false);
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
+  const [notifSheet, setNotifSheet] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
 
   const isAdmin = isDbAdmin;
+
+  // Load emergency contacts from DB
+  useEffect(() => {
+    if (!familyId) return;
+    supabase
+      .from("emergency_contacts")
+      .select("id, name, phone")
+      .eq("family_id", familyId)
+      .then(({ data }) => {
+        if (data) setContacts(data);
+      });
+  }, [familyId]);
+
+  // Load family members for SOS permissions
+  useEffect(() => {
+    if (!familyId || !user) return;
+    supabase
+      .from("family_members")
+      .select("user_id, role")
+      .eq("family_id", familyId)
+      .eq("status", "active")
+      .neq("user_id", user.id)
+      .then(async ({ data }) => {
+        if (!data) return;
+        const ids = data.map((m) => m.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, name")
+          .in("id", ids);
+        setMembers(
+          (profiles || []).map((p) => ({
+            id: p.id,
+            name: p.name || "بدون اسم",
+            sosEnabled: true,
+          }))
+        );
+      });
+  }, [familyId, user]);
+
+  const toggleDark = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+    toast.success(next ? "تم تفعيل الوضع الداكن" : "تم تفعيل الوضع الفاتح");
+  };
 
   const settingsGroups = [
     {
       title: "عام",
       items: [
-        { icon: Bell, label: "الإشعارات", desc: "إدارة التنبيهات والإشعارات" },
-        { icon: Moon, label: "المظهر", desc: "الوضع الداكن والمظهر العام" },
+        { icon: Bell, label: "الإشعارات", desc: "إدارة التنبيهات والإشعارات", onClick: () => setNotifSheet(true) },
+        { icon: Moon, label: "المظهر", desc: darkMode ? "الوضع الداكن" : "الوضع الفاتح", onClick: toggleDark },
         { icon: Globe, label: "اللغة", desc: "العربية" },
       ],
     },
@@ -57,17 +104,29 @@ const Settings = () => {
     },
   ];
 
-  const handleAddContact = () => {
-    if (newContactName.trim() && newContactPhone.trim()) {
-      setContacts(prev => [...prev, { id: Date.now().toString(), name: newContactName, phone: newContactPhone }]);
+  const handleAddContact = async () => {
+    if (!newContactName.trim() || !newContactPhone.trim() || !familyId || !user) return;
+    const { data, error } = await supabase
+      .from("emergency_contacts")
+      .insert({ name: newContactName.trim(), phone: newContactPhone.trim(), family_id: familyId, created_by: user.id })
+      .select()
+      .single();
+    if (error) {
+      toast.error("فشل إضافة جهة الاتصال");
+    } else if (data) {
+      setContacts(prev => [...prev, { id: data.id, name: data.name, phone: data.phone }]);
       setNewContactName("");
       setNewContactPhone("");
       setAddContactOpen(false);
+      toast.success("تمت الإضافة");
     }
   };
 
-  const handleRemoveContact = (id: string) => {
-    setContacts(prev => prev.filter(c => c.id !== id));
+  const handleRemoveContact = async (id: string) => {
+    const { error } = await supabase.from("emergency_contacts").delete().eq("id", id);
+    if (!error) {
+      setContacts(prev => prev.filter(c => c.id !== id));
+    }
   };
 
   const toggleMemberSOS = (id: string) => {
@@ -446,6 +505,22 @@ const Settings = () => {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Notifications Sheet */}
+      <Sheet open={notifSheet} onOpenChange={setNotifSheet}>
+        <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl p-0 border-none" style={{ direction: "rtl" }}>
+          <div className="h-full flex flex-col">
+            <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+              <SheetTitle className="text-foreground text-lg font-bold text-right">إعدادات الإشعارات</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+              <p className="text-sm text-muted-foreground text-center py-8">
+                الإشعارات تعمل تلقائياً عبر المتصفح. تأكد من السماح بالإشعارات في إعدادات جهازك.
+              </p>
             </div>
           </div>
         </SheetContent>
