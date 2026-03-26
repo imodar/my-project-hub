@@ -14,20 +14,61 @@ import { useFamilyId } from "@/hooks/useFamilyId";
 import { toast } from "sonner";
 
 const Settings = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { islamicMode, setIslamicMode } = useIslamicMode();
   const { dbRole, isAdmin: isDbAdmin, isLoading: roleLoading } = useUserRole();
+  const familyId = useFamilyId();
   const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
-  const [contacts, setContacts] = useState(emergencyContacts);
-  const [members, setMembers] = useState(familyMembers);
+  const [contacts, setContacts] = useState<{ id: string; name: string; phone: string }[]>([]);
+  const [members, setMembers] = useState<{ id: string; name: string; sosEnabled: boolean }[]>([]);
   const [emergencySound, setEmergencySound] = useState(true);
   const [liveTracking, setLiveTracking] = useState(true);
   const [addContactOpen, setAddContactOpen] = useState(false);
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
+  const [notifSheet, setNotifSheet] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
 
   const isAdmin = isDbAdmin;
+
+  // Load emergency contacts from DB
+  useEffect(() => {
+    if (!familyId) return;
+    supabase
+      .from("emergency_contacts")
+      .select("id, name, phone")
+      .eq("family_id", familyId)
+      .then(({ data }) => {
+        if (data) setContacts(data);
+      });
+  }, [familyId]);
+
+  // Load family members for SOS permissions
+  useEffect(() => {
+    if (!familyId || !user) return;
+    supabase
+      .from("family_members")
+      .select("user_id, role")
+      .eq("family_id", familyId)
+      .eq("status", "active")
+      .neq("user_id", user.id)
+      .then(async ({ data }) => {
+        if (!data) return;
+        const ids = data.map((m) => m.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, name")
+          .in("id", ids);
+        setMembers(
+          (profiles || []).map((p) => ({
+            id: p.id,
+            name: p.name || "بدون اسم",
+            sosEnabled: true,
+          }))
+        );
+      });
+  }, [familyId, user]);
 
   const settingsGroups = [
     {
