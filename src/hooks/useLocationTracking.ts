@@ -88,6 +88,49 @@ export function useLocationTracking(intervalMinutes = 5) {
     },
   });
 
+  // Toggle sharing and immediately notify server
+  const setIsSharing = useCallback(async (newVal: boolean) => {
+    setIsSharingState(newVal);
+    if (!familyId) return;
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      if (!token) return;
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+
+      // Get last known position or use 0,0 as fallback
+      let lat = 0, lng = 0;
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: false, timeout: 5000, maximumAge: 300000,
+          });
+        });
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      } catch { /* use last known from locations */ 
+        const me = locations.find(l => l.isMe);
+        if (me) { lat = me.lat; lng = me.lng; }
+      }
+
+      await fetch(
+        `https://${projectId}.supabase.co/functions/v1/location-api?action=update`,
+        {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ lat, lng, familyId, isSharing: newVal }),
+        }
+      );
+      queryClient.invalidateQueries({ queryKey: ["family-locations"] });
+    } catch (err) {
+      console.warn("[LocationTracking] Toggle sharing failed:", err);
+    }
+  }, [familyId, locations, queryClient]);
+
   // Get current position and send
   const sendMyLocation = useCallback(async () => {
     if (!isSharing || !familyId) return;
