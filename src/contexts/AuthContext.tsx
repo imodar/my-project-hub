@@ -87,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     setProfileName("");
+    setSentryUser(null);
     try {
       await Promise.all([
         db.medications.clear(),
