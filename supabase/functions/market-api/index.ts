@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       const { family_id } = body;
       const { data, error } = await supabase
         .from("market_lists")
-        .select("*, market_items(count)")
+        .select("*, market_items(*)")
         .eq("family_id", family_id)
         .order("updated_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
