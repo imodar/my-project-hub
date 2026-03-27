@@ -37,6 +37,8 @@ const Settings = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTs, setLastSyncTs] = useState(() => localStorage.getItem("last_sync_ts"));
   const qc = useQueryClient();
+  const [privacySheet, setPrivacySheet] = useState(false);
+  const [termsSheet, setTermsSheet] = useState(false);
 
   const isAdmin = isDbAdmin;
 
