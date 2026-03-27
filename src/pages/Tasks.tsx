@@ -149,7 +149,6 @@ const Tasks = () => {
 
   // New list form
   const [newListName, setNewListName] = useState("");
-  const [newListType, setNewListType] = useState<"family" | "personal">(featureAccess.isStaff ? "personal" : "family");
   const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
 
   // Share form
@@ -301,11 +300,12 @@ const Tasks = () => {
     const newId = crypto.randomUUID();
     pendingActiveListIdRef.current = newId;
     setActiveListId(newId);
+    const autoType = newListShareMembers.length > 0 ? "family" : "personal";
     createListMutation.mutate(
       {
         name: newListName.trim(),
-        type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-        shared_with: newListType === "family" ? newListShareMembers : [],
+        type: autoType,
+        shared_with: newListShareMembers,
         id: newId,
       },
       {
@@ -320,7 +320,7 @@ const Tasks = () => {
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, createListMutation]);
+  }, [newListName, newListShareMembers, createListMutation]);
 
 
   const deleteList = useCallback((listId: string) => {
@@ -725,57 +725,33 @@ const Tasks = () => {
           <DrawerContent dir="rtl">
             <DrawerHeader className="text-right">
               <DrawerTitle>إنشاء قائمة مهام جديدة</DrawerTitle>
-              <DrawerDescription>أنشئ قائمة مهام عائلية أو شخصية</DrawerDescription>
+              <DrawerDescription>أنشئ قائمة مهام جديدة</DrawerDescription>
             </DrawerHeader>
             <div className="space-y-3 px-4">
               <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
-              {!featureAccess.isStaff && (
               <div>
-                <p className="text-xs text-muted-foreground mb-2">نوع القائمة</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setNewListType("family")}
-                    className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
-                      newListType === "family" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
-                    }`}
-                  >
-                    <Users size={16} /> عائلية
-                  </button>
-                  <button
-                    onClick={() => setNewListType("personal")}
-                    className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
-                      newListType === "personal" ? "border-accent bg-accent/10 text-accent" : "border-border bg-card text-muted-foreground"
-                    }`}
-                  >
-                    <Lock size={16} /> شخصية
-                  </button>
+                <p className="text-xs text-muted-foreground mb-2">مشاركة مع (اختياري)</p>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {FAMILY_MEMBERS.map((member) => (
+                    <button
+                      key={member.id}
+                      onClick={() =>
+                        setNewListShareMembers((prev) =>
+                          prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
+                        )
+                      }
+                      className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
+                        newListShareMembers.includes(member.name)
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-card"
+                      }`}
+                    >
+                      <span className="font-medium text-foreground">{member.name}</span>
+                      {newListShareMembers.includes(member.name) && <Check size={14} className="text-primary" />}
+                    </button>
+                  ))}
                 </div>
               </div>
-              )}
-              {newListType === "family" && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">مشاركة مع</p>
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                    {FAMILY_MEMBERS.map((member) => (
-                      <button
-                        key={member.id}                        onClick={() =>
-                          setNewListShareMembers((prev) =>
-                            prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
-                          )
-                        }
-                        className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                          newListShareMembers.includes(member.name)
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-card"
-                        }`}
-                      >
-                        <span className="font-medium text-foreground">{member.name}</span>
-                        {newListShareMembers.includes(member.name) && <Check size={14} className="text-primary" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
             <DrawerFooter className="flex-row gap-2">
               <Button onClick={addList} className="flex-1 rounded-xl">إنشاء</Button>
