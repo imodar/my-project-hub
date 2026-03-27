@@ -266,7 +266,7 @@ const Market = () => {
     }
 
     haptic.medium();
-    addItemMutation.mutate({ list_id: activeList.id, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || "1" });
+    addItemMutation.mutate({ list_id: activeList.id, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || undefined });
     setNewItemName("");
     setNewItemQuantity("");
     setNewItemCategory("أخرى");

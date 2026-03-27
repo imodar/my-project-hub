@@ -64,8 +64,25 @@ export function useMarketLists() {
 
   const addItem = useOfflineMutation<any, any>({
     table: "market_items", operation: "INSERT",
-    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-item", { list_id: rest.list_id, name: rest.name, category: rest.category || "أخرى", quantity: rest.quantity || "1" }); },
+    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-item", { list_id: rest.list_id, name: rest.name, category: rest.category || "أخرى", quantity: rest.quantity || null }); },
     onSuccess: () => refetch(),
+    onMutate: async (newItem: any) => {
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData(key);
+      qc.setQueryData(key, (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map((list: any) => {
+          if (list.id === newItem.list_id) {
+            return { ...list, market_items: [...(list.market_items || []), newItem] };
+          }
+          return list;
+        });
+      });
+      return { prev };
+    },
+    onError: (_err: any, _vars: any, context: any) => {
+      if (context?.prev) qc.setQueryData(key, context.prev);
+    },
   });
 
   const updateItem = useOfflineMutation<any, any>({
