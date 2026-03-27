@@ -250,7 +250,7 @@ const Market = () => {
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
     haptic.medium();
-    updateItemMutation.mutate({ id: editTarget.id, name: editName.trim(), quantity: editQuantity.trim() || "1", category: editCategory });
+    updateItemMutation.mutate({ id: editTarget.id, name: editName.trim(), quantity: editQuantity.trim() || undefined, category: editCategory });
     setEditTarget(null);
   }, [editTarget, editName, editQuantity, editCategory, updateItemMutation]);
 
