@@ -359,7 +359,7 @@ function ChildCard({
       </div>
 
       {/* Weekly summary */}
-      <div className="bg-gradient-to-l from-purple-50 to-pink-50 rounded-xl p-3 mb-3">
+      <div className="bg-gradient-to-l from-purple-50 to-pink-50 dark:from-muted dark:to-muted rounded-xl p-3 mb-3">
         <div className="flex items-center gap-1.5 mb-2">
           <TrendingUp size={14} style={{ color: "hsl(270 55% 50%)" }} />
           <span className="text-[11px] font-bold" style={{ color: "hsl(270 55% 50%)" }}>
