@@ -24,7 +24,7 @@ const Settings = () => {
   const { familyId } = useFamilyId();
   const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
   const [contacts, setContacts] = useState<{ id: string; name: string; phone: string }[]>([]);
-  const [members, setMembers] = useState<{ id: string; name: string; sosEnabled: boolean }[]>([]);
+  const [members, setMembers] = useState<{ id: string; name: string }[]>([]);
   const [emergencySound, setEmergencySound] = useState(true);
   const [liveTracking, setLiveTracking] = useState(true);
   const [addContactOpen, setAddContactOpen] = useState(false);
