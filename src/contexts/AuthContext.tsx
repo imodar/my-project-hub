@@ -83,14 +83,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         if (newSession?.user?.id) {
           setSentryUser({ id: newSession.user.id, email: newSession.user.email });
-          // Only fetch on SIGNED_IN if not already done (avoid race with getSession)
-          if (event === "SIGNED_IN" && !initialFetchDoneRef.current) {
+          if (event === "SIGNED_IN") {
+            // Reset profile state for new session to prevent stale profileReady=true
+            setProfileReady(false);
+            initialFetchDoneRef.current = false;
+            fetchingRef.current = false;
             fetchProfile(newSession.user.id);
           }
         } else {
           setSentryUser(null);
           setProfileName("");
-          setProfileReady(true);
+          setProfileReady(false);
           initialFetchDoneRef.current = false;
         }
       }
@@ -100,6 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(existingSession);
       setLoading(false);
       if (existingSession?.user?.id) {
+        setProfileReady(false);
         fetchProfile(existingSession.user.id);
       } else {
         setProfileReady(true);

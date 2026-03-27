@@ -86,8 +86,10 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Profile completion check — use DB-backed profileName
-  if (!profileName) {
+  // Profile completion check — use DB-backed profileName with localStorage fallback
+  const effectiveProfileName =
+    profileName || (session?.user?.id ? localStorage.getItem(`profile_name_${session.user.id}`) ?? "" : "");
+  if (!effectiveProfileName) {
     return <Navigate to="/complete-profile" replace />;
   }
 
