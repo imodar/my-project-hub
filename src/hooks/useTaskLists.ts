@@ -17,6 +17,10 @@ export function useTaskLists() {
   const addPending = useCallback((id: string) => setPendingItemIds(p => [...p, id]), []);
   const removePending = useCallback((id: string) => setPendingItemIds(p => p.filter(x => x !== id)), []);
 
+  function sortListsAsc(items: any[]) {
+    return [...items].sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+  }
+
   const apiFn = useCallback(async () => {
     if (!familyId) return { data: [], error: null };
     const { data: response, error } = await supabase.functions.invoke("tasks-api", {
@@ -24,7 +28,7 @@ export function useTaskLists() {
     });
     if (error) return { data: [], error: error.message };
     if (response?.error) return { data: [], error: response.error };
-    return { data: response?.data || [], error: null };
+    return { data: sortListsAsc(response?.data || []), error: null };
   }, [familyId]);
 
   const { data: lists, isLoading, refetch } = useOfflineFirst<any>({
@@ -32,6 +36,7 @@ export function useTaskLists() {
     queryKey: key,
     apiFn,
     enabled: !!familyId,
+    filterFn: useCallback((items: any[]) => sortListsAsc(items), []),
   });
 
   // Realtime handled by useFamilyRealtime — no duplicate channel needed
