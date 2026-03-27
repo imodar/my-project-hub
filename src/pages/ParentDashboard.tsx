@@ -274,7 +274,7 @@ const ParentDashboard = () => {
         ) : (
           <button
             onClick={() => setShowAddChild(true)}
-            className="w-full bg-white/60 rounded-2xl p-4 border-2 border-dashed border-purple-200 flex items-center justify-center gap-2 text-sm font-bold active:scale-[0.98] transition-transform"
+            className="w-full bg-card/60 rounded-2xl p-4 border-2 border-dashed border-purple-200 dark:border-border flex items-center justify-center gap-2 text-sm font-bold active:scale-[0.98] transition-transform"
             style={{ color: "hsl(270 55% 50%)" }}
           >
             <Plus size={18} />
