@@ -109,8 +109,16 @@ const Tasks = () => {
   }, [familyId, featureAccess.isStaff, isLoading, dbLists, createListMutation]);
 
   const [activeListId, setActiveListId] = useState("");
+  const pendingActiveListIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (pendingActiveListIdRef.current) {
+      if (lists.some((l) => l.id === pendingActiveListIdRef.current)) {
+        setActiveListId(pendingActiveListIdRef.current);
+      }
+      return;
+    }
+
     if (lists.length > 0 && (!activeListId || !lists.find(l => l.id === activeListId))) {
       setActiveListId(lists[0].id);
     }
@@ -291,6 +299,8 @@ const Tasks = () => {
     if (!newListName.trim()) return;
     haptic.medium();
     const newId = crypto.randomUUID();
+    pendingActiveListIdRef.current = newId;
+    setActiveListId(newId);
     createListMutation.mutate(
       {
         name: newListName.trim(),
@@ -298,9 +308,15 @@ const Tasks = () => {
         shared_with: newListType === "family" ? newListShareMembers : [],
         id: newId,
       },
+      {
+        onSuccess: () => {
+          pendingActiveListIdRef.current = null;
+        },
+        onError: () => {
+          pendingActiveListIdRef.current = null;
+        },
+      }
     );
-    // Switch to new list immediately using the known id
-    setActiveListId(newId);
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
