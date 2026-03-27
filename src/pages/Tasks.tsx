@@ -300,11 +300,12 @@ const Tasks = () => {
     const newId = crypto.randomUUID();
     pendingActiveListIdRef.current = newId;
     setActiveListId(newId);
+    const autoType = newListShareMembers.length > 0 ? "family" : "personal";
     createListMutation.mutate(
       {
         name: newListName.trim(),
-        type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-        shared_with: newListType === "family" ? newListShareMembers : [],
+        type: autoType,
+        shared_with: newListShareMembers,
         id: newId,
       },
       {
