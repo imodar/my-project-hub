@@ -62,8 +62,8 @@ export function useMarketLists() {
 
   const createList = useOfflineMutation<any, any>({
     table: "market_lists", operation: "INSERT",
-    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family", use_categories: rest.use_categories ?? true }); },
-    onSuccess: () => { refetch(); },
+    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family", use_categories: rest.use_categories ?? true, id: input.id }); },
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const deleteList = useOfflineMutation<any, any>({
@@ -96,18 +96,18 @@ export function useMarketLists() {
     createList: {
       ...createList,
       mutate: (input: any, options?: any) => {
-        const payload = { id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, market_items: [], ...input };
+        const id = input.id || crypto.randomUUID();
+        const payload = { created_at: new Date().toISOString(), family_id: familyId, market_items: [], ...input, id };
         if (options?.onSuccess || options?.onError) {
-          createList.mutateAsync(payload).then(async (result) => {
-            // انتظر حتى تُحدّث البيانات في الكاش قبل اختيار القائمة الجديدة
-            await qc.invalidateQueries({ queryKey: key });
-            options?.onSuccess?.(result?.data);
-          }).catch((err: any) => options?.onError?.(err));
+          createList.mutateAsync(payload).then((result) => options?.onSuccess?.(result?.data)).catch((err: any) => options?.onError?.(err));
         } else {
           createList.mutate(payload);
         }
       },
-      mutateAsync: async (input: any) => createList.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, market_items: [], ...input }),
+      mutateAsync: async (input: any) => {
+        const id = input.id || crypto.randomUUID();
+        return createList.mutateAsync({ created_at: new Date().toISOString(), family_id: familyId, market_items: [], ...input, id });
+      },
     },
     deleteList: {
       ...deleteList,

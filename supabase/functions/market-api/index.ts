@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "create-list") {
-      const { family_id, name, type, use_categories } = body;
+      const { family_id, name, type, use_categories, id: clientId } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب (حد أقصى 100)" }, 400);
       const listType = type || "family";
@@ -81,7 +81,9 @@ Deno.serve(async (req) => {
         if (!existing) isDefault = true;
       }
       const useCategories = typeof use_categories === "boolean" ? use_categories : true;
-      const { data, error } = await supabase.from("market_lists").insert({ family_id, name: sanitize(name, MAX_NAME), type: listType, created_by: userId, is_default: isDefault, use_categories: useCategories }).select().single();
+      const insertData: Record<string, unknown> = { family_id, name: sanitize(name, MAX_NAME), type: listType, created_by: userId, is_default: isDefault, use_categories: useCategories };
+      if (validUuid(clientId)) insertData.id = clientId;
+      const { data, error } = await supabase.from("market_lists").insert(insertData).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }

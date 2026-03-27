@@ -272,24 +272,23 @@ const Market = () => {
       return;
     }
     haptic.medium();
+    const newId = crypto.randomUUID();
     createListMutation.mutate(
       {
         name: newListName.trim(),
         type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
         shared_with: newListType === "family" ? newListShareMembers : [],
         use_categories: newListUseCategories,
+        id: newId,
       },
-      {
-        onSuccess: (data: { id?: string } | null) => {
-          if (data?.id) setActiveListId(data.id);
-        },
-      }
     );
+    // Switch to new list immediately using the known id
+    setActiveListId(newId);
     setNewListName("");
     setNewListShareMembers([]);
     setNewListUseCategories(false);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, createListMutation, familyId, toast]);
+  }, [newListName, newListType, newListShareMembers, newListUseCategories, createListMutation, familyId, toast]);
 
   const deleteList = useCallback((listId: string) => {
     setDeleteListTarget(listId);

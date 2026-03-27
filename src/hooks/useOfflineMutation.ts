@@ -133,12 +133,6 @@ export function useOfflineMutation<
           return { data: null, queued: true };
         }
 
-        // ── 5. بعد نجاح INSERT أونلاين: حذف النسخة المتفائلة من IndexedDB ──
-        // لأن الـ refetch سيجلب النسخة الحقيقية بالمعرف الصحيح من السيرفر
-        if (operation === "INSERT" && table && variables.id) {
-          try { await table.delete(variables.id as string); } catch {}
-        }
-
         return { data, queued: false };
       } catch {
         await addToQueue(tableName, operation, variables as Record<string, unknown>);
