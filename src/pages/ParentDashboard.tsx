@@ -141,7 +141,7 @@ const ParentDashboard = () => {
           {categories.map((cat) => (
             <div
               key={cat.id}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm border"
+              className="bg-card rounded-2xl overflow-hidden shadow-sm border"
               style={{ borderColor: `${cat.color}22` }}
             >
               <div className="px-4 py-2 flex items-center gap-2" style={{ background: cat.bg }}>
