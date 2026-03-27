@@ -301,6 +301,57 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* Data & Backup */}
+        <div>
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">
+            {t.sync.backupTitle}
+          </h2>
+          <div className="rounded-2xl overflow-hidden bg-card shadow-sm p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "hsl(var(--primary) / 0.1)" }}
+                >
+                  <Database size={18} className="text-primary" />
+                </div>
+                <div className={isRTL ? "text-right" : "text-left"}>
+                  <p className="text-sm font-semibold text-foreground">{t.sync.lastBackup}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {getTimeSince(lastSyncTs)}
+                  </p>
+                </div>
+              </div>
+              {lastSyncTs ? (
+                isRecent ? (
+                  <CheckCircle size={20} className="text-green-500 shrink-0" />
+                ) : (
+                  <AlertTriangle size={20} className="text-yellow-500 shrink-0" />
+                )
+              ) : null}
+            </div>
+
+            <button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-50"
+              style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}
+            >
+              {isSyncing ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  {t.sync.syncing}
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={16} />
+                  {t.sync.syncNow}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Other Settings Groups */}
         {settingsGroups.map((group) => (
           <div key={group.title}>
