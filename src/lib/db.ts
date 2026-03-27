@@ -59,6 +59,7 @@ class AppDatabase extends Dexie {
   trip_expenses!: Table;
   trip_packing!: Table;
   trip_documents!: Table;
+  trip_suggestions!: Table;
   document_lists!: Table;
   document_items!: Table;
   document_files!: Table;
