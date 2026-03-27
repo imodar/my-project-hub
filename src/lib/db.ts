@@ -118,6 +118,7 @@ class AppDatabase extends Dexie {
       trip_expenses: "id, trip_id",
       trip_packing: "id, trip_id",
       trip_documents: "id, trip_id",
+      trip_suggestions: "id, trip_id, suggested_by, status",
 
       // ── المستندات ──
       document_lists: "id, family_id, created_by",

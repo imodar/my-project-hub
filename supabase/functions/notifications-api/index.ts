@@ -24,6 +24,53 @@ async function checkRateLimit(ac: any, userId: string, endpoint: string, maxPerM
   return true;
 }
 
+async function handleSosAlert(adminClient: any, userId: string, familyId: string, type: "send" | "cancel") {
+  // Verify membership
+  const { data: membership } = await adminClient.from("family_members")
+    .select("id").eq("user_id", userId).eq("family_id", familyId).eq("status", "active").maybeSingle();
+  if (!membership) return json({ error: "غير مصرح" }, 403);
+
+  // Get sender name
+  const { data: profile } = await adminClient.from("profiles").select("name").eq("id", userId).single();
+  const senderName = profile?.name || "أحد أفراد العائلة";
+
+  // Get other active members
+  const { data: members } = await adminClient.from("family_members")
+    .select("user_id").eq("family_id", familyId).eq("status", "active").neq("user_id", userId);
+  const memberIds = (members || []).map((m: any) => m.user_id);
+  if (memberIds.length === 0) return json({ data: { notified: 0 } });
+
+  if (type === "send") {
+    await adminClient.from("user_notifications").insert(
+      memberIds.map((uid: string) => ({
+        user_id: uid,
+        family_id: familyId,
+        type: "sos_alert",
+        title: "🚨 تنبيه طوارئ",
+        body: `${senderName} يحتاج مساعدة`,
+        source_type: "sos",
+        source_id: userId,
+        is_read: false,
+      }))
+    );
+  } else {
+    await adminClient.from("user_notifications").insert(
+      memberIds.map((uid: string) => ({
+        user_id: uid,
+        family_id: familyId,
+        type: "sos_cancelled",
+        title: "✅ إلغاء تنبيه الطوارئ",
+        body: `${senderName} بخير — تم إلغاء التنبيه`,
+        source_type: "sos",
+        source_id: userId,
+        is_read: false,
+      }))
+    );
+  }
+
+  return json({ data: { notified: memberIds.length } });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -79,6 +126,18 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from("user_notifications").delete().eq("id", id).eq("user_id", userId);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
+    }
+
+    if (action === "send-sos-alert") {
+      const { family_id } = body;
+      if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      return handleSosAlert(adminClient, userId, family_id, "send");
+    }
+
+    if (action === "cancel-sos-alert") {
+      const { family_id } = body;
+      if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      return handleSosAlert(adminClient, userId, family_id, "cancel");
     }
 
     return json({ error: "Invalid action" }, 400);

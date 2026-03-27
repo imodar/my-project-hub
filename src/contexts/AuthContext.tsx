@@ -107,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         db.trip_expenses.clear(),
         db.trip_packing.clear(),
         db.trip_documents.clear(),
+        db.trip_suggestions.clear(),
         db.chat_messages.clear(),
         db.vehicles.clear(),
         db.albums.clear(),
