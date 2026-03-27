@@ -675,7 +675,14 @@ const Market = () => {
       </Drawer>
 
       {/* Add Item Drawer */}
-      <Drawer open={showAddItem} onOpenChange={setShowAddItem}>
+      <Drawer open={showAddItem} onOpenChange={(open) => {
+        setShowAddItem(open);
+        if (!open) {
+          setNewItemName("");
+          setNewItemQuantity("");
+          setNewItemCategory("أخرى");
+        }
+      }}>
         <DrawerContent dir="rtl">
           <DrawerHeader className="text-right">
             <DrawerTitle>إضافة منتج جديد</DrawerTitle>
