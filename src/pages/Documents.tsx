@@ -203,30 +203,52 @@ const Documents = () => {
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, target: "new" | "existing") => {
     const files = e.target.files;
     if (!files) return;
-    Array.from(files).forEach((file) => {
+    Array.from(files).forEach(async (file) => {
       const isImage = file.type.startsWith("image/");
       const isPdf = file.type === "application/pdf";
       if (!isImage && !isPdf) return;
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const docFile: DocFile = {
-          id: crypto.randomUUID(),
-          name: file.name,
-          type: isImage ? "image" : "pdf",
-          url: reader.result as string,
-          size: file.size < 1024 * 1024
-            ? `${(file.size / 1024).toFixed(0)} KB`
-            : `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-          addedAt: new Date().toISOString(),
-        };
-        if (target === "new") {
-          setNewFiles((prev) => [...prev, docFile]);
-        } else if (editTarget) {
-          // File upload for existing items - skip for now (needs storage integration)
-        }
+      const sizeLabel = file.size < 1024 * 1024
+        ? `${(file.size / 1024).toFixed(0)} KB`
+        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+
+      // Upload to Supabase Storage
+      const fileId = crypto.randomUUID();
+      const ext = file.name.split(".").pop() || "bin";
+      const storagePath = `${fileId}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(storagePath, file, { contentType: file.type, upsert: false });
+
+      let url: string;
+      if (uploadError) {
+        // Fallback to base64 if storage upload fails
+        const reader = new FileReader();
+        const base64Url = await new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        url = base64Url;
+      } else {
+        // Get public URL (documents bucket is private, use signed URL)
+        const { data: signedData } = await supabase.storage
+          .from("documents")
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 365); // 1 year
+        url = signedData?.signedUrl || storagePath;
+      }
+
+      const docFile: DocFile = {
+        id: fileId,
+        name: file.name,
+        type: isImage ? "image" : "pdf",
+        url,
+        size: sizeLabel,
+        addedAt: new Date().toISOString(),
       };
-      reader.readAsDataURL(file);
+      if (target === "new") {
+        setNewFiles((prev) => [...prev, docFile]);
+      }
     });
     e.target.value = "";
   }, [editTarget, activeListId]);
