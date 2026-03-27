@@ -12,6 +12,7 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { ROLE_LABELS, isParentRole, isStaffRole } from "@/contexts/UserRoleContext";
 
 type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife" | "worker" | "maid" | "driver";
+type JoinRole = "father" | "mother" | "son" | "daughter";
 type InviteStatus = "active" | "pending";
 
 interface FamilyMember {
