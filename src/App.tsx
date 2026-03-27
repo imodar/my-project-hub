@@ -70,6 +70,7 @@ const AdminSubscriptions = React.lazy(() => import("./pages/admin/AdminSubscript
 const AdminSystem = React.lazy(() => import("./pages/admin/AdminSystem"));
 const AdminAudit = React.lazy(() => import("./pages/admin/AdminAudit"));
 const AdminSecurity = React.lazy(() => import("./pages/admin/AdminSecurity"));
+const AdminLegalPages = React.lazy(() => import("./pages/admin/AdminLegalPages"));
 
 const queryClient = new QueryClient({
   mutationCache: new MutationCache({
