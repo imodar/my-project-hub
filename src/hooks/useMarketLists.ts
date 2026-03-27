@@ -121,7 +121,22 @@ export function useMarketLists() {
       },
       mutateAsync: async (input: any) => addItem.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), checked: false, ...input }),
     },
-    updateItem,
+    updateItem: {
+      ...updateItem,
+      mutate: (input: any) => {
+        // Optimistic: update item in the list's market_items immediately
+        qc.setQueryData(key, (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map((list: any) => ({
+            ...list,
+            market_items: (list.market_items || []).map((item: any) =>
+              item.id === input.id ? { ...item, ...input } : item
+            ),
+          }));
+        });
+        updateItem.mutate(input);
+      },
+    },
     deleteItem: {
       ...deleteItem,
       mutate: (itemId: string) => deleteItem.mutate({ id: itemId }),
