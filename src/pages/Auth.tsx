@@ -11,6 +11,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import authFamily from "@/assets/auth-family.png";
 import LanguageSheet from "@/components/LanguageSheet";
+import LegalPageSheet from "@/components/LegalPageSheet";
 
 type Step = "phone" | "otp";
 
