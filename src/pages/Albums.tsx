@@ -314,7 +314,6 @@ const Albums = () => {
         <CardPageSkeleton />
       ) : (
         <PullToRefresh onRefresh={async () => {
-          const albumsQc = useQueryClient();
           await albumsQc.invalidateQueries({ queryKey: ["albums"] });
         }}>
 
