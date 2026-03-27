@@ -50,6 +50,8 @@ const en: Translations = {
     termsText: "By signing in, you agree to the",
     termsLink: "Terms & Conditions",
     termsEnd: "of the application",
+    andPrivacy: "and",
+    privacyLink: "Privacy Policy",
     otpTitle: "Verification Code",
     otpSentTo: "Enter the code sent to",
     changeNumber: "Change number",
