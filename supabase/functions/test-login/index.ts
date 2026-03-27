@@ -62,6 +62,8 @@ const findAuthUserByPhoneOrEmail = async (
 };
 
 Deno.serve(async (req) => {
+  corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
