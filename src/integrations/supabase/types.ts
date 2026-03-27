@@ -2655,6 +2655,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: { _endpoint: string; _max_per_minute?: number; _user_id: string }
+        Returns: boolean
+      }
       get_family_last_updated: { Args: { _family_id: string }; Returns: string }
       get_user_family_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
