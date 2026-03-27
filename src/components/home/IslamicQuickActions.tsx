@@ -1,6 +1,6 @@
 import React from "react";
 import { BookOpen, Heart, Bell } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useAppNavigate } from "@/hooks/useAppNavigate";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import islamicPattern from "@/assets/islamic-pattern.webp";
