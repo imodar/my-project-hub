@@ -313,8 +313,8 @@ const Albums = () => {
         <CardPageSkeleton />
       ) : (
         <PullToRefresh onRefresh={async () => {
-          await new Promise((r) => setTimeout(r, 600));
-          toast.success("تم تحديث الألبومات");
+          const albumsQc = useQueryClient();
+          await albumsQc.invalidateQueries({ queryKey: ["albums"] });
         }}>
 
         <div className="px-5 mt-6">
