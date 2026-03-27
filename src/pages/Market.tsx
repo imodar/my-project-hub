@@ -744,7 +744,6 @@ const Market = () => {
           </DrawerHeader>
           <div className="space-y-3 px-4">
             <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
-            {!featureAccess.isStaff && (
             <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">إظهار فئات التسوق الافتراضية</p>
