@@ -72,6 +72,7 @@ async function generateUniqueInviteCode(client: any): Promise<string> {
 }
 
 Deno.serve(async (req) => {
+  corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
