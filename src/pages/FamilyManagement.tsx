@@ -341,11 +341,17 @@ const FamilyManagement = () => {
     }
   }, []);
 
-  const handleJoinByCode = async (codeValue: string) => {
+  const initiateJoin = (codeValue: string) => {
     if (!codeValue.trim()) return;
+    setPendingJoinCode(codeValue.trim());
+    setShowJoinRoleGrid(true);
+  };
+
+  const handleJoinByCode = async () => {
+    if (!pendingJoinCode || !joinRole) return;
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "join", invite_code: codeValue.trim(), role: "son" },
+        body: { action: "join", invite_code: pendingJoinCode, role: joinRole },
       });
       if (error || data?.error) {
         toast({ title: data?.error || "فشل الانضمام", variant: "destructive" });
@@ -357,12 +363,16 @@ const FamilyManagement = () => {
       }
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
+    } finally {
+      setShowJoinRoleGrid(false);
+      setJoinRole(null);
+      setPendingJoinCode("");
     }
   };
 
   const handleManualJoin = () => {
     if (!joinCode.trim()) return;
-    handleJoinByCode(joinCode);
+    initiateJoin(joinCode);
     setShowScanner(false);
     setJoinCode("");
   };
