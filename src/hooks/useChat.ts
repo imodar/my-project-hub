@@ -171,7 +171,7 @@ export function useChat() {
     }
   }, [familyId]);
 
-  // ─── 3. Load messages via chat-api ───
+  // ─── 3. Load messages via chat-api & cache locally ───
   useEffect(() => {
     if (!familyId || !isReady || !user) return;
     loadMessages();
@@ -189,6 +189,18 @@ export function useChat() {
           if (msg) decrypted.push(msg);
         }
         setMessages(decrypted);
+
+        // Cache to IndexedDB for instant load next time
+        try {
+          const toCache = msgData.map((m: any, i: number) => ({
+            ...m,
+            plain_text_cache: decrypted[i]?.text || "",
+            sender_name_cache: decrypted[i]?.senderName || "",
+          }));
+          await db.chat_messages.bulkPut(toCache);
+        } catch (e) {
+          console.warn("[Chat] Cache write failed:", e);
+        }
       } catch (err) {
         console.error("Load messages exception:", err);
       }
