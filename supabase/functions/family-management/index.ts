@@ -1,14 +1,24 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
-  .split(",").map(s => s.trim()).filter(Boolean);
+const PROJECT_ORIGIN_FALLBACKS = [
+  "https://7571dddb-1161-4f53-9036-32778235da46.lovableproject.com",
+  "https://id-preview--7571dddb-1161-4f53-9036-32778235da46.lovable.app",
+  "https://ailti.lovable.app",
+  "https://d0479375-ab8c-4895-86c0-45a5df6d51d8.lovableproject.com",
+];
+
+const ALLOWED_ORIGINS = Array.from(new Set([
+  ...(Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+  ...PROJECT_ORIGIN_FALLBACKS,
+]));
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") ?? "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0] ?? "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : "";
   return {
     "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin",
   };
 }
@@ -62,6 +72,7 @@ async function generateUniqueInviteCode(client: any): Promise<string> {
 }
 
 Deno.serve(async (req) => {
+  corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
