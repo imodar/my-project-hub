@@ -83,7 +83,14 @@ Deno.serve(async (req) => {
       if (type && !ALLOWED_TYPES.includes(type)) return json({ error: "نوع غير صالح" }, 400);
       if (clientId && !validUuid(clientId)) return json({ error: "id غير صالح" }, 400);
       if (!await verifyFamilyMember(family_id)) return json({ error: "Unauthorized" }, 403);
-      const insertData: Record<string, unknown> = { family_id, name: sanitize(name, MAX_NAME), type: type || "family", created_by: userId };
+      // Check if a default family list already exists for this family
+      let isDefault = false;
+      const listType = type || "family";
+      if (listType === "family") {
+        const { data: existing } = await adminClient.from("task_lists").select("id").eq("family_id", family_id).eq("type", "family").eq("is_default", true).limit(1).maybeSingle();
+        if (!existing) isDefault = true;
+      }
+      const insertData: Record<string, unknown> = { family_id, name: sanitize(name, MAX_NAME), type: listType, created_by: userId, is_default: isDefault };
       if (clientId) insertData.id = clientId;
       const { data, error } = await adminClient.from("task_lists").insert(insertData).select().single();
       if (error) return json({ error: error.message }, 400);
@@ -93,6 +100,9 @@ Deno.serve(async (req) => {
     if (action === "delete-list") {
       const { id } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      // Prevent deleting default lists
+      const { data: listToDelete } = await adminClient.from("task_lists").select("is_default").eq("id", id).single();
+      if (listToDelete?.is_default) return json({ error: "لا يمكن حذف القائمة الافتراضية" }, 403);
       const { error } = await supabase.from("task_lists").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });

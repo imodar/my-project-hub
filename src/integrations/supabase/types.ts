@@ -726,6 +726,7 @@ export type Database = {
           created_by: string
           family_id: string
           id: string
+          is_default: boolean
           name: string
           shared_with: string[] | null
           type: string
@@ -735,6 +736,7 @@ export type Database = {
           created_by: string
           family_id: string
           id?: string
+          is_default?: boolean
           name: string
           shared_with?: string[] | null
           type?: string
@@ -744,6 +746,7 @@ export type Database = {
           created_by?: string
           family_id?: string
           id?: string
+          is_default?: boolean
           name?: string
           shared_with?: string[] | null
           type?: string
@@ -1131,6 +1134,7 @@ export type Database = {
           created_by: string
           family_id: string
           id: string
+          is_default: boolean
           name: string
           shared_with: string[] | null
           type: string
@@ -1142,6 +1146,7 @@ export type Database = {
           created_by: string
           family_id: string
           id?: string
+          is_default?: boolean
           name: string
           shared_with?: string[] | null
           type?: string
@@ -1153,6 +1158,7 @@ export type Database = {
           created_by?: string
           family_id?: string
           id?: string
+          is_default?: boolean
           name?: string
           shared_with?: string[] | null
           type?: string
@@ -1447,6 +1453,7 @@ export type Database = {
           created_by: string
           family_id: string
           id: string
+          is_default: boolean
           name: string
           shared_with: string[] | null
           type: string
@@ -1456,6 +1463,7 @@ export type Database = {
           created_by: string
           family_id: string
           id?: string
+          is_default?: boolean
           name: string
           shared_with?: string[] | null
           type?: string
@@ -1465,6 +1473,7 @@ export type Database = {
           created_by?: string
           family_id?: string
           id?: string
+          is_default?: boolean
           name?: string
           shared_with?: string[] | null
           type?: string
@@ -1810,6 +1819,7 @@ export type Database = {
           created_by: string
           family_id: string
           id: string
+          is_default: boolean
           name: string
           shared_with: string[] | null
           type: string
@@ -1819,6 +1829,7 @@ export type Database = {
           created_by: string
           family_id: string
           id?: string
+          is_default?: boolean
           name: string
           shared_with?: string[] | null
           type?: string
@@ -1828,6 +1839,7 @@ export type Database = {
           created_by?: string
           family_id?: string
           id?: string
+          is_default?: boolean
           name?: string
           shared_with?: string[] | null
           type?: string

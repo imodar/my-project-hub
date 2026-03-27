@@ -90,6 +90,7 @@ const Documents = () => {
       id: l.id,
       name: l.name,
       type: l.type || "family",
+      isDefault: !!l.is_default,
       sharedWith: l.shared_with || [],
       lastUpdatedBy: "",
       lastUpdatedAt: "",

@@ -75,7 +75,13 @@ Deno.serve(async (req) => {
       if (!ALLOWED_TYPES.includes(listType)) return json({ error: "نوع غير صالح" }, 400);
 
 
-      const { data, error } = await supabase.from("market_lists").insert({ family_id, name: sanitize(name, MAX_NAME), type: listType, created_by: userId }).select().single();
+      // Check if a default family list already exists for this family
+      let isDefault = false;
+      if (listType === "family") {
+        const { data: existing } = await supabase.from("market_lists").select("id").eq("family_id", family_id).eq("type", "family").eq("is_default", true).limit(1).maybeSingle();
+        if (!existing) isDefault = true;
+      }
+      const { data, error } = await supabase.from("market_lists").insert({ family_id, name: sanitize(name, MAX_NAME), type: listType, created_by: userId, is_default: isDefault }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
@@ -96,6 +102,9 @@ Deno.serve(async (req) => {
     if (action === "delete-list") {
       const { id } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      // Prevent deleting default lists
+      const { data: listToDelete } = await supabase.from("market_lists").select("is_default").eq("id", id).single();
+      if (listToDelete?.is_default) return json({ error: "لا يمكن حذف القائمة الافتراضية" }, 403);
       const { error } = await supabase.from("market_lists").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
