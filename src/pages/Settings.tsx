@@ -121,9 +121,6 @@ const Settings = () => {
     }
   };
 
-  const toggleMemberSOS = (id: string) => {
-    setMembers(prev => prev.map(m => m.id === id ? { ...m, sosEnabled: !m.sosEnabled } : m));
-  };
 
 
 
