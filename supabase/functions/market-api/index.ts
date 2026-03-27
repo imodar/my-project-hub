@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
       if (checked !== undefined) { updates.checked = checked; updates.checked_by = checked ? userId : null; }
       const { data, error } = await supabase.from("market_items").update(updates).eq("id", id).select().maybeSingle();
       if (error) return json({ error: error.message }, 400);
-      if (!data) return json({ error: "العنصر غير موجود" }, 404);
+      if (!data) return json({ data: null });
       if (data.list_id) await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", data.list_id);
       return json({ data });
     }
