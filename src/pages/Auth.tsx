@@ -241,9 +241,11 @@ const Auth = () => {
                     </span>
                   </button>
                   {" — "}
-                  {t.auth.termsText}{" "}
-                  <span className="underline underline-offset-2 text-muted-foreground/80">{t.auth.termsLink}</span>{" "}
-                  {t.auth.termsEnd}
+                   {t.auth.termsText}{" "}
+                   <button type="button" onClick={() => setTermsSheet(true)} className="underline underline-offset-2 text-muted-foreground/80 hover:text-foreground transition-colors">{t.auth.termsLink}</button>{" "}
+                   {t.auth.andPrivacy}{" "}
+                   <button type="button" onClick={() => setPrivacySheet(true)} className="underline underline-offset-2 text-muted-foreground/80 hover:text-foreground transition-colors">{t.auth.privacyLink}</button>{" "}
+                   {t.auth.termsEnd}
                 </p>
               </div>
             </motion.div>
