@@ -74,11 +74,6 @@ Deno.serve(async (req) => {
       const listType = type || "family";
       if (!ALLOWED_TYPES.includes(listType)) return json({ error: "نوع غير صالح" }, 400);
 
-      if (listType === "family") {
-        const { data: existingList, error: existingError } = await supabase.from("market_lists").select("*").eq("family_id", family_id).eq("type", "family").order("created_at", { ascending: true }).limit(1).maybeSingle();
-        if (existingError) return json({ error: existingError.message }, 400);
-        if (existingList) return json({ data: existingList });
-      }
 
       const { data, error } = await supabase.from("market_lists").insert({ family_id, name: sanitize(name, MAX_NAME), type: listType, created_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
