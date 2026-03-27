@@ -290,18 +290,17 @@ const Tasks = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
+    const newId = crypto.randomUUID();
     createListMutation.mutate(
       {
         name: newListName.trim(),
         type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
         shared_with: newListType === "family" ? newListShareMembers : [],
+        id: newId,
       },
-      {
-        onSuccess: (data: { id?: string } | null) => {
-          if (data?.id) setActiveListId(data.id);
-        },
-      }
     );
+    // Switch to new list immediately using the known id
+    setActiveListId(newId);
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
