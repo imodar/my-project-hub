@@ -105,7 +105,6 @@ Deno.serve(async (req) => {
     if (action === "request-reset-otp") {
       // Rate limit: max 3 reset requests per minute
       { const { data: _rlOk } = await adminClient.rpc("check_rate_limit", { _user_id: userId, _endpoint: "will-reset-otp", _max_per_minute: 3 }); if (!_rlOk) return json({ error: "طلبات كثيرة. انتظر دقيقة." }, 429); }
-      }
 
       // Get user phone from profile
       const { data: profile } = await adminClient.from("profiles").select("phone").eq("id", userId).maybeSingle();
