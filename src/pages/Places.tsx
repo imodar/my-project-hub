@@ -247,12 +247,12 @@ const Places = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    const type = newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType;
-    createListMut.mutate({ name: newListName.trim(), type, shared_with: newListShareMembers });
+    const autoType = newListShareMembers.length > 0 ? "family" : "personal";
+    createListMut.mutate({ name: newListName.trim(), type: autoType, shared_with: newListShareMembers });
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, createListMut]);
+  }, [newListName, newListShareMembers, createListMut]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
