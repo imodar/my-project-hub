@@ -68,12 +68,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === "create-list") {
-      const { family_id, name, type } = body;
+      const { family_id, name, type, use_categories } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب (حد أقصى 100)" }, 400);
       const listType = type || "family";
       if (!ALLOWED_TYPES.includes(listType)) return json({ error: "نوع غير صالح" }, 400);
-
 
       // Check if a default family list already exists for this family
       let isDefault = false;
@@ -81,7 +80,8 @@ Deno.serve(async (req) => {
         const { data: existing } = await supabase.from("market_lists").select("id").eq("family_id", family_id).eq("type", "family").eq("is_default", true).limit(1).maybeSingle();
         if (!existing) isDefault = true;
       }
-      const { data, error } = await supabase.from("market_lists").insert({ family_id, name: sanitize(name, MAX_NAME), type: listType, created_by: userId, is_default: isDefault }).select().single();
+      const useCategories = typeof use_categories === "boolean" ? use_categories : true;
+      const { data, error } = await supabase.from("market_lists").insert({ family_id, name: sanitize(name, MAX_NAME), type: listType, created_by: userId, is_default: isDefault, use_categories: useCategories }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
