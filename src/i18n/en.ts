@@ -171,6 +171,7 @@ const en: Translations = {
     about: "About",
     version: "Version 1.0.0",
     privacy: "Privacy Policy",
+    terms: "Terms of Service",
     other: "Other",
     trash: "Trash",
     trashDesc: "Restore or permanently delete items",
