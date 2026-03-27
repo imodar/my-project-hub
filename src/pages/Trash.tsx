@@ -55,8 +55,7 @@ const Trash = () => {
   }, {} as Record<string, TrashItem[]>);
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col" dir="rtl"
-      style={{ background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)" }}>
+    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
 
       {/* Header */}
       <div className="flex items-center justify-between p-4">
@@ -65,8 +64,7 @@ const Trash = () => {
           <h1 className="text-lg font-bold text-foreground">سلة المحذوفات</h1>
         </div>
         <button onClick={() => navigate("/settings")}
-          className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground"
-          style={{ background: "hsla(0,0%,0%,0.05)" }}>
+          className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted">
           رجوع
           <ChevronRight size={18} className="rotate-180" />
         </button>
