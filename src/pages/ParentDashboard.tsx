@@ -368,7 +368,7 @@ function ChildCard({
         </div>
         <div className="flex items-center gap-3">
           <div className="flex-1">
-            <div className="h-2 rounded-full bg-purple-100 overflow-hidden">
+            <div className="h-2 rounded-full bg-purple-100 dark:bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
