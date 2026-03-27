@@ -64,12 +64,15 @@ export const CalendarPageSkeleton = () => (
         <Skeleton key={i} className="h-14 rounded-xl" />
       ))}
     </div>
+    </div>
   </div>
 );
 
 /** Skeleton loader for detail/card pages (Debts, Trips, etc.) */
 export const CardPageSkeleton = () => (
-  <div className="px-4 py-4 space-y-3" dir="rtl">
+  <div dir="rtl">
+    <HeaderShell />
+    <div className="px-4 py-4 space-y-3">
     {/* Summary cards skeleton */}
     <div className="flex gap-3">
       <Skeleton className="h-20 flex-1 rounded-2xl" />
