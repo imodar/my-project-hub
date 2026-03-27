@@ -20,8 +20,8 @@ export interface UseOfflineFirstOptions<T> {
   table: string;
   /** مفتاح React Query */
   queryKey: QueryKey;
-  /** دالة جلب البيانات من API */
-  apiFn: () => Promise<{ data: T[] | null; error: string | null }>;
+  /** دالة جلب البيانات من API — تستقبل اختيارياً lastSyncedAt لدعم Delta Sync */
+  apiFn: (since?: string | null) => Promise<{ data: T[] | null; error: string | null }>;
   /** مدة صلاحية الكاش — افتراضي: 10 دقائق */
   staleTime?: number;
   /** فلترة إضافية على البيانات المحلية */
