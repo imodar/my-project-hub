@@ -41,4 +41,5 @@ export async function warmCache(qc: QueryClient, familyId: string | null): Promi
   });
 
   await Promise.all(warmPromises);
+  localStorage.setItem("last_sync_ts", new Date().toISOString());
 }

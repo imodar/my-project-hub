@@ -1,90 +1,28 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { db } from "@/lib/db";
-import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
-
-const CORE_TABLES = [
-  "task_lists",
-  "market_lists",
-  "calendar_events",
-  "budgets",
-  "debts",
-  "medications",
-  "trips",
-  "chat_messages",
-  "vehicles",
-  "document_lists",
-  "albums",
-  "place_lists",
-] as const;
-
-const TOTAL = CORE_TABLES.length;
-const MAX_WAIT_MS = 8000;
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useInitialSync } from "@/hooks/useInitialSync";
+import { Loader2 } from "lucide-react";
 
 const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
   const { user } = useAuth();
-  const [visible, setVisible] = useState(false);
-  const [syncedCount, setSyncedCount] = useState(0);
-  const checkedRef = useRef(false);
+  const { t } = useLanguage();
+  const { state, run } = useInitialSync();
+  const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!user || checkedRef.current) return;
-    checkedRef.current = true;
-
+    if (!user || startedRef.current) return;
     if (localStorage.getItem("first_sync_done") === "true") return;
+    startedRef.current = true;
+    run(user.id);
+  }, [user, run]);
 
-    const accountCreatedAt = user?.created_at
-      ? new Date(user.created_at).getTime()
-      : Date.now();
-    const isNewAccount = Date.now() - accountCreatedAt < 2 * 60 * 1000;
+  const visible = state === "new_user" || state === "syncing";
 
-    if (isNewAccount) {
-      localStorage.setItem("first_sync_done", "true");
-      return;
-    }
-
-    (async () => {
-      try {
-        const count = await db.task_lists.count();
-        if (count > 0) {
-          localStorage.setItem("first_sync_done", "true");
-          return;
-        }
-      } catch {
-        return;
-      }
-
-      setVisible(true);
-
-      const timeout = setTimeout(() => {
-        localStorage.setItem("first_sync_done", "true");
-        setVisible(false);
-      }, MAX_WAIT_MS);
-
-      const poll = setInterval(async () => {
-        let loaded = 0;
-        for (const t of CORE_TABLES) {
-          try {
-            const c = await (db as any)[t].count();
-            if (c > 0) loaded++;
-          } catch { /* skip */ }
-        }
-        setSyncedCount(loaded);
-        if (loaded >= TOTAL) {
-          clearInterval(poll);
-          clearTimeout(timeout);
-          localStorage.setItem("first_sync_done", "true");
-          setTimeout(() => setVisible(false), 600);
-        }
-      }, 800);
-
-      return () => {
-        clearInterval(poll);
-        clearTimeout(timeout);
-      };
-    })();
-  }, [user]);
+  const message = state === "new_user"
+    ? t.sync.preparingDevice
+    : t.sync.syncingData;
 
   return (
     <div ref={fwdRef}>
@@ -100,17 +38,14 @@ const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
             <div className="flex flex-col items-center gap-6 px-8 max-w-sm text-center">
               <span className="text-5xl">🏠</span>
               <h2 className="text-xl font-bold text-foreground">
-                أهلاً بك في عائلتي
+                {t.sync.welcomeFamily}
               </h2>
-              <p className="text-sm text-muted-foreground">
-                جاري جلب بيانات عائلتك لأول مرة...
-              </p>
-              <div className="w-full">
-                <Progress value={(syncedCount / TOTAL) * 100} className="h-2" />
+              <div className="flex items-center gap-2">
+                <Loader2 size={18} className="animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">
+                  {message}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground" dir="ltr">
-                {syncedCount} من {TOTAL} قسم
-              </p>
             </div>
           </motion.div>
         )}
