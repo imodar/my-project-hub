@@ -94,7 +94,7 @@ const Market = () => {
           id: i.id,
           name: i.name,
           category: i.category || "أخرى",
-          quantity: i.quantity || "1",
+          quantity: i.quantity || "",
           addedBy: "",
           checked: i.checked,
         })),
@@ -250,7 +250,7 @@ const Market = () => {
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
     haptic.medium();
-    updateItemMutation.mutate({ id: editTarget.id, name: editName.trim(), quantity: editQuantity.trim() || "1", category: editCategory });
+    updateItemMutation.mutate({ id: editTarget.id, name: editName.trim(), quantity: editQuantity.trim() || undefined, category: editCategory });
     setEditTarget(null);
   }, [editTarget, editName, editQuantity, editCategory, updateItemMutation]);
 
@@ -266,7 +266,7 @@ const Market = () => {
     }
 
     haptic.medium();
-    addItemMutation.mutate({ list_id: activeList.id, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || "1" });
+    addItemMutation.mutate({ list_id: activeList.id, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || undefined });
     setNewItemName("");
     setNewItemQuantity("");
     setNewItemCategory("أخرى");
@@ -395,7 +395,7 @@ const Market = () => {
               {item.name}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              {isChecked ? item.quantity : `الكمية: ${item.quantity}`}
+              {item.quantity ? (isChecked ? item.quantity : `الكمية: ${item.quantity}`) : null}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">

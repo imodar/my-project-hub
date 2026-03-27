@@ -64,7 +64,7 @@ export function useMarketLists() {
 
   const addItem = useOfflineMutation<any, any>({
     table: "market_items", operation: "INSERT",
-    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-item", { list_id: rest.list_id, name: rest.name, category: rest.category || "أخرى", quantity: rest.quantity || "1" }); },
+    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-item", { list_id: rest.list_id, name: rest.name, category: rest.category || "أخرى", quantity: rest.quantity || null }); },
     onSuccess: () => refetch(),
   });
 
@@ -106,7 +106,19 @@ export function useMarketLists() {
     },
     addItem: {
       ...addItem,
-      mutate: (input: any) => addItem.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), checked: false, ...input }),
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), checked: false, ...input };
+        // Optimistic: inject item into the list's market_items immediately
+        qc.setQueryData(key, (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map((list: any) =>
+            list.id === item.list_id
+              ? { ...list, market_items: [...(list.market_items || []), item] }
+              : list
+          );
+        });
+        addItem.mutate(item);
+      },
       mutateAsync: async (input: any) => addItem.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), checked: false, ...input }),
     },
     updateItem,
