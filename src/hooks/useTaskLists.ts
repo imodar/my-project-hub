@@ -91,14 +91,18 @@ export function useTaskLists() {
     createList: {
       ...createList,
       mutate: (input: any, options?: any) => {
-        const payload = { id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input };
+        const id = input.id || crypto.randomUUID();
+        const payload = { id, created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input, id };
         if (options?.onSuccess || options?.onError) {
           createList.mutateAsync(payload).then((result) => options?.onSuccess?.(result?.data)).catch((err: any) => options?.onError?.(err));
         } else {
           createList.mutate(payload);
         }
       },
-      mutateAsync: async (input: any) => createList.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input }),
+      mutateAsync: async (input: any) => {
+        const id = input.id || crypto.randomUUID();
+        return createList.mutateAsync({ id, created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input, id });
+      },
     },
     deleteList: {
       ...deleteList,
