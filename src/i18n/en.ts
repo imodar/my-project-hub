@@ -327,6 +327,15 @@ const en: Translations = {
     saveFailed: "Save failed",
     unexpectedError: "An unexpected error occurred",
     data: "data",
+    preparingDevice: "Setting up your device...",
+    syncingData: "Syncing your data...",
+    lastBackup: "Last backup",
+    syncNow: "Sync now",
+    syncing: "Syncing...",
+    syncSuccess: "Sync completed ✓",
+    noSyncYet: "No sync yet",
+    backupTitle: "Data & Backup",
+    welcomeFamily: "Welcome to My Family",
   },
 
   // Notifications

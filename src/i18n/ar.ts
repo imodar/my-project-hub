@@ -325,6 +325,15 @@ const ar = {
     saveFailed: "فشل الحفظ",
     unexpectedError: "حدث خطأ غير متوقع",
     data: "البيانات",
+    preparingDevice: "تجهيز جهازك والمحتوى العائلي...",
+    syncingData: "مزامنة بياناتك...",
+    lastBackup: "آخر نسخة احتياطية",
+    syncNow: "مزامنة الآن",
+    syncing: "جاري المزامنة...",
+    syncSuccess: "تمت المزامنة بنجاح ✓",
+    noSyncYet: "لم تتم المزامنة بعد",
+    backupTitle: "البيانات والنسخ الاحتياطي",
+    welcomeFamily: "أهلاً بك في عائلتي",
   },
 
   // Notifications
