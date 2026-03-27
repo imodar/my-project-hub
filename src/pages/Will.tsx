@@ -117,8 +117,9 @@ const Will = () => {
     }
   }, [will]);
 
+  const willQueryClient = useQueryClient();
   const handleRefresh = async () => {
-    await new Promise((r) => setTimeout(r, 800));
+    await willQueryClient.invalidateQueries({ queryKey: ["will"] });
   };
 
   // ── Client-side SHA-256 unlock ──

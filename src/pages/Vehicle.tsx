@@ -459,9 +459,10 @@ const Vehicle = () => {
 
   const currentYears = Array.from({ length: 35 }, (_, i) => (new Date().getFullYear() - i).toString());
 
+  const vehicleQueryClient = useQueryClient();
   const handleRefresh = async () => {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    // React Query will auto-refetch
+    await vehicleQueryClient.invalidateQueries({ queryKey: ["vehicles"] });
+  };
   };
 
   // ─── Car Detail View ───

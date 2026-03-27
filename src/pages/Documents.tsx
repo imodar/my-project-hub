@@ -326,8 +326,9 @@ const Documents = () => {
     );
   };
 
+  const docsQueryClient = useQueryClient();
   const handleRefresh = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await docsQueryClient.invalidateQueries({ queryKey: ["document-lists"] });
   };
 
   const renderCategoryForm = (

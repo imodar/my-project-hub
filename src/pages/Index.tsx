@@ -5,10 +5,13 @@ import UpcomingEvents from "@/components/home/UpcomingEvents";
 import DailyTasks from "@/components/home/DailyTasks";
 import PullToRefresh from "@/components/PullToRefresh";
 import SOSButton from "@/components/home/SOSButton";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Index = () => {
+  const queryClient = useQueryClient();
+
   const handleRefresh = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await queryClient.invalidateQueries();
   };
 
   return (

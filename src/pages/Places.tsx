@@ -400,8 +400,9 @@ const Places = () => {
     );
   };
 
+  const placesQueryClient = useQueryClient();
   const handleRefresh = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await placesQueryClient.invalidateQueries({ queryKey: ["place-lists"] });
   };
 
   return (

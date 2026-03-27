@@ -392,8 +392,9 @@ const Market = () => {
     );
   };
 
+    const marketQueryClient = useQueryClient();
     const handleRefresh = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await marketQueryClient.invalidateQueries({ queryKey: ["market-lists"] });
     };
 
     return (
