@@ -1,6 +1,6 @@
 import React from "react";
 import { Check, Plus, ClipboardList } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useAppNavigate } from "@/hooks/useAppNavigate";
 import { useTaskLists } from "@/hooks/useTaskLists";
 import { useLanguage } from "@/contexts/LanguageContext";
 
