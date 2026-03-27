@@ -88,6 +88,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setProfileReady(false);
             initialFetchDoneRef.current = false;
             fetchingRef.current = false;
+            // Clear sync_meta so all tables do a full sync instead of delta
+            db.sync_meta.clear().catch(() => {});
             fetchProfile(newSession.user.id);
           }
         } else {
