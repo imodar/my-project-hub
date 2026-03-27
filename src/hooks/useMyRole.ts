@@ -23,8 +23,9 @@ export function useMyRole(): MyRoleResult {
       return data?.data || null;
     },
     enabled: !!user?.id,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   return {

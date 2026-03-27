@@ -78,12 +78,14 @@ Deno.serve(async (req) => {
     }
 
     if (action === "get-messages") {
-      const { family_id, limit: msgLimit, before } = body;
+      const { family_id, limit: msgLimit, before, since } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
       if (before && typeof before !== "string") return json({ error: "before غير صالح" }, 400);
-      const safeLimit = Math.min(Math.max(Number(msgLimit) || 50, 1), 100);
+      if (since && typeof since !== "string") return json({ error: "since غير صالح" }, 400);
+      const safeLimit = Math.min(Math.max(Number(msgLimit) || 50, 1), 200);
       let query = supabase.from("chat_messages").select("*").eq("family_id", family_id).order("created_at", { ascending: false }).limit(safeLimit);
       if (before) query = query.lt("created_at", before);
+      if (since) query = query.gt("created_at", since);
       const { data: messages, error } = await query;
       if (error) return json({ error: error.message }, 400);
       const reversed = messages?.reverse() || [];

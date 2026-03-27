@@ -101,7 +101,7 @@ const ParentDashboard = () => {
     const doneCount = Object.values(dayData).filter(Boolean).length;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 pb-28" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 dark:from-background dark:via-background dark:to-background pb-28" dir="rtl">
         <PageHeader
           title={`تعديل عبادات ${child?.name}`}
           subtitle="وضع الأهل - يمكنك تعديل أي يوم"
@@ -359,7 +359,7 @@ function ChildCard({
       </div>
 
       {/* Weekly summary */}
-      <div className="bg-gradient-to-l from-purple-50 to-pink-50 rounded-xl p-3 mb-3">
+      <div className="bg-gradient-to-l from-purple-50 to-pink-50 dark:from-muted dark:to-muted rounded-xl p-3 mb-3">
         <div className="flex items-center gap-1.5 mb-2">
           <TrendingUp size={14} style={{ color: "hsl(270 55% 50%)" }} />
           <span className="text-[11px] font-bold" style={{ color: "hsl(270 55% 50%)" }}>
@@ -368,7 +368,7 @@ function ChildCard({
         </div>
         <div className="flex items-center gap-3">
           <div className="flex-1">
-            <div className="h-2 rounded-full bg-purple-100 overflow-hidden">
+            <div className="h-2 rounded-full bg-purple-100 dark:bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
@@ -417,7 +417,7 @@ function ChildCard({
         onClick={() => onFillAll(child.id)}
         variant="outline"
         size="sm"
-        className="w-full h-8 rounded-xl text-xs mt-2 border-amber-300 text-amber-700 bg-amber-50"
+        className="w-full h-8 rounded-xl text-xs mt-2 border-amber-300 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950"
       >
         🧪 تعبئة كل الشهر (للاختبار)
       </Button>
