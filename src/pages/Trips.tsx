@@ -23,6 +23,7 @@ import { ar } from "date-fns/locale";
 import { toast } from "sonner";
 // tripBudgetSync removed — trips & budgets are synced via Supabase hooks
 import { useTrips as useTripsHook } from "@/hooks/useTrips";
+import { useAlbums } from "@/hooks/useAlbums";
 
 // Types
 interface Activity {
