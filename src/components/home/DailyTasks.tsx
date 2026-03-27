@@ -87,7 +87,7 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
               }`}
             >
               <div
-                className={`w-6 h-6 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center ${
+                className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center ${
                   task.done ? "bg-primary" : "border-2 border-primary"
                 }`}
               >
