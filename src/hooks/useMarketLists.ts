@@ -8,19 +8,9 @@ import { useOfflineMutation } from "./useOfflineMutation";
 
 function normalizeMarketLists(items: any[], familyId: string | null) {
   if (!familyId) return [];
-  const familyScoped = items.filter((item) => item.family_id === familyId);
-  const familyLists = familyScoped.filter((item) => (item.type || "family") === "family");
-  if (familyLists.length <= 1) return familyScoped;
-  const canonicalFamilyList = familyLists.slice().sort((a, b) => {
-    const aItems = Array.isArray(a.market_items) ? a.market_items.length : 0;
-    const bItems = Array.isArray(b.market_items) ? b.market_items.length : 0;
-    if (bItems !== aItems) return bItems - aItems;
-    return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
-  })[0];
-  const nonFamilyLists = familyScoped.filter((item) => (item.type || "family") !== "family");
-  return [...nonFamilyLists, canonicalFamilyList].sort(
-    (a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
-  );
+  return items
+    .filter((item) => item.family_id === familyId)
+    .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
 }
 
 export function useMarketLists() {
