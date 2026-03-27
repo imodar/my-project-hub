@@ -1,45 +1,39 @@
 
 
-# خطة التنفيذ: إصلاح 401 Unauthorized + Market List Bugs
+# إصلاح Race Condition في AuthContext.tsx
 
 ## المشكلة
-كل الـ Edge Functions ترجع 401 لأن Supabase gateway يتحقق من JWT بـ HS256 بينما التوكن موقّع بـ ES256. والحل: `verify_jwt = false` مع الاعتماد على التحقق اليدوي داخل الكود.
+عند تسجيل الدخول، `fetchProfile` يُستدعى مرتين بالتوازي (من `onAuthStateChange` + `getSession`). الاستدعاء الأول يفشل لأن التوكن غير جاهز بعد، فيبقى `profileName = ""` ويُحوَّل المستخدم إلى `/complete-profile` رغم وجود اسمه في قاعدة البيانات.
 
-## الخطوة 1: تحديث `supabase/config.toml`
-إضافة `verify_jwt = false` لكل الـ 29 Edge Function. الأمان محفوظ لأن:
-- Functions المستخدم: تتحقق عبر `supabase.auth.getUser()`
-- Cron jobs (trash-cleanup, account-cleanup, notification-scheduler): تتحقق من `serviceKey`
+## التعديل: `src/contexts/AuthContext.tsx`
 
-## الخطوة 2: إصلاح `src/hooks/useMarketLists.ts`
-حذف `queryKey: key` من `addItem`, `updateItem`, `deleteItem` لأن `key` = `["market-lists", familyId]` خاص بالقوائم وليس العناصر. الـ optimistic update يضيف العنصر في cache القوائم فيظهر كقائمة جديدة.
-
-التعديل:
+### 1. منع الاستدعاء المزدوج
+إضافة `useRef<boolean>` لمنع تشغيل `fetchProfile` مرتين بالتوازي:
 ```ts
-// addItem: حذف queryKey، إبقاء onSuccess
-const addItem = useOfflineMutation<any, any>({
-    table: "market_items", operation: "INSERT",
-    apiFn: ...,
-    onSuccess: () => refetch(),  // بدون queryKey
-});
-
-// updateItem: حذف queryKey، إضافة onSuccess
-const updateItem = useOfflineMutation<any, any>({
-    table: "market_items", operation: "UPDATE",
-    apiFn: ...,
-    onSuccess: () => refetch(),
-});
-
-// deleteItem: حذف queryKey، إضافة onSuccess
-const deleteItem = useOfflineMutation<any, any>({
-    table: "market_items", operation: "DELETE",
-    apiFn: ...,
-    onSuccess: () => refetch(),
-});
+const fetchingRef = useRef(false);
+// في بداية fetchProfile:
+if (fetchingRef.current) return;
+fetchingRef.current = true;
+// في نهاية fetchProfile:
+fetchingRef.current = false;
 ```
 
-## الملفات المتأثرة
+### 2. إعادة محاولة مرة واحدة إذا فشل ولا يوجد cache
+```ts
+let success = await Promise.race([networkFetch(), timeout]);
+if (!success && !cached) {
+  await new Promise(r => setTimeout(r, 1200));
+  await Promise.race([networkFetch(), timeout2]);
+}
+```
+
+### 3. إصلاح السباق بين onAuthStateChange و getSession
+- `onAuthStateChange`: يضبط `session` و `loading` فقط، **لا يستدعي `fetchProfile`** إلا عند event `SIGNED_IN` وبشرط عدم وجود fetch جارٍ.
+- `getSession().then()`: يستدعي `fetchProfile` للجلسة الموجودة مسبقاً.
+- عند logout (`!newSession`): يمسح `profileName` ويضبط `profileReady = true`.
+
+### الملف الوحيد المتأثر
 | الملف | التغيير |
 |---|---|
-| `supabase/config.toml` | إضافة 29 section بـ verify_jwt = false |
-| `src/hooks/useMarketLists.ts` | حذف queryKey من 3 mutations |
+| `src/contexts/AuthContext.tsx` | منع استدعاء مزدوج + retry + إصلاح race condition |
 
