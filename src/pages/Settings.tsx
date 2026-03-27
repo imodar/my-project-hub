@@ -278,11 +278,7 @@ const Settings = () => {
               {group.title}
             </h2>
             <div
-              className="rounded-2xl overflow-hidden divide-y divide-border"
-              style={{
-                background: "hsla(0,0%,100%,0.9)",
-                boxShadow: "0 2px 12px hsla(0,0%,0%,0.05)",
-              }}
+              className="rounded-2xl overflow-hidden divide-y divide-border bg-card shadow-sm"
             >
               {group.items.map((item) => (
                 <button
