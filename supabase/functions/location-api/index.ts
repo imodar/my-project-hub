@@ -1,10 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+  .split(",").map(s => s.trim()).filter(Boolean);
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0] ?? "";
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
+}
+
+let corsHeaders: Record<string, string> = {};
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -15,18 +24,8 @@ function validUuid(v: unknown): v is string { return typeof v === "string" && UU
 function validLat(v: unknown): boolean { return typeof v === "number" && v >= -90 && v <= 90 && isFinite(v); }
 function validLng(v: unknown): boolean { return typeof v === "number" && v >= -180 && v <= 180 && isFinite(v); }
 
-async function checkRateLimit(ac: any, userId: string, endpoint: string, maxPerMinute = 60): Promise<boolean> {
-  const now = new Date();
-  const windowStart = new Date(now.getTime() - 60000).toISOString();
-  const { data } = await ac.from("rate_limit_counters").select("id, count, window_start").eq("user_id", userId).eq("endpoint", endpoint).maybeSingle();
-  if (data) {
-    if (data.window_start > windowStart) { if (data.count >= maxPerMinute) return false; await ac.from("rate_limit_counters").update({ count: data.count + 1 }).eq("id", data.id); }
-    else { await ac.from("rate_limit_counters").update({ count: 1, window_start: now.toISOString() }).eq("id", data.id); }
-  } else { await ac.from("rate_limit_counters").insert({ user_id: userId, endpoint, count: 1, window_start: now.toISOString() }); }
-  return true;
-}
-
 Deno.serve(async (req) => {
+  corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -40,7 +39,7 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authErr } = await adminClient.auth.getUser(token);
   if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
-  if (!await checkRateLimit(adminClient, user.id, "location-api", 120)) return json({ error: "Too many requests" }, 429);
+  { const { data: _rlOk } = await adminClient.rpc("check_rate_limit", { _user_id: user.id, _endpoint: "location-api", _max_per_minute: 120 }); if (!_rlOk) return json({ error: "Too many requests" }, 429); }
 
   const url = new URL(req.url);
   const action = url.searchParams.get("action");
