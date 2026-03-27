@@ -128,9 +128,11 @@ const Market = () => {
   }, [dbLists, featureAccess.isStaff]);
   const [activeListId, setActiveListId] = useState("");
   const [activeCategory, setActiveCategory] = useState("الكل");
+  const pendingActiveListIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     createdDefaultListRef.current = null;
+    pendingActiveListIdRef.current = null;
   }, [familyId]);
 
   useEffect(() => {
@@ -162,8 +164,15 @@ const Market = () => {
     );
   }, [familyId, featureAccess.isStaff, isLoading, dbLists, createListMutation]);
 
-  // Auto-select first list when data loads
+  // Auto-select first list when data loads, but don't override a just-created optimistic list
   useEffect(() => {
+    if (pendingActiveListIdRef.current) {
+      if (lists.some((l) => l.id === pendingActiveListIdRef.current)) {
+        setActiveListId(pendingActiveListIdRef.current);
+      }
+      return;
+    }
+
     if (lists.length > 0 && (!activeListId || !lists.find(l => l.id === activeListId))) {
       setActiveListId(lists[0].id);
     }

@@ -109,8 +109,16 @@ const Tasks = () => {
   }, [familyId, featureAccess.isStaff, isLoading, dbLists, createListMutation]);
 
   const [activeListId, setActiveListId] = useState("");
+  const pendingActiveListIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (pendingActiveListIdRef.current) {
+      if (lists.some((l) => l.id === pendingActiveListIdRef.current)) {
+        setActiveListId(pendingActiveListIdRef.current);
+      }
+      return;
+    }
+
     if (lists.length > 0 && (!activeListId || !lists.find(l => l.id === activeListId))) {
       setActiveListId(lists[0].id);
     }
