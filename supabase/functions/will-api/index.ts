@@ -27,6 +27,14 @@ async function checkRateLimit(ac: any, userId: string, endpoint: string, maxPerM
   return true;
 }
 
+// SHA-256 hash helper
+async function sha256(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -82,6 +90,80 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from("wills" as any).delete().eq("id", existing.id);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
+    }
+
+    // ── Request reset OTP: generate 6-digit code, store hash, return code (for now) ──
+    if (action === "request-reset-otp") {
+      // Rate limit: max 3 reset requests per minute
+      if (!await checkRateLimit(adminClient, userId, "will-reset-otp", 3)) {
+        return json({ error: "طلبات كثيرة. انتظر دقيقة." }, 429);
+      }
+
+      // Get user phone from profile
+      const { data: profile } = await adminClient.from("profiles").select("phone").eq("id", userId).maybeSingle();
+      if (!profile?.phone) return json({ error: "لا يوجد رقم جوال مسجل في حسابك" }, 400);
+
+      // Generate 6-digit code
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      const codeHash = await sha256(code);
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
+
+      // Store in otp_codes
+      await adminClient.from("otp_codes").insert({
+        phone: profile.phone,
+        code_hash: codeHash,
+        expires_at: expiresAt,
+        verified: false,
+        attempts: 0,
+      });
+
+      // TODO: Send SMS via Twilio when connected
+      // For now, return code for testing
+      return json({ success: true, code, phone: profile.phone.replace(/.(?=.{4})/g, "*") });
+    }
+
+    // ── Verify reset OTP ──
+    if (action === "verify-reset-otp") {
+      const { code } = body;
+      if (!code || typeof code !== "string" || code.length !== 6) {
+        return json({ error: "الرمز غير صالح" }, 400);
+      }
+
+      // Get user phone
+      const { data: profile } = await adminClient.from("profiles").select("phone").eq("id", userId).maybeSingle();
+      if (!profile?.phone) return json({ error: "لا يوجد رقم جوال" }, 400);
+
+      // Find latest unexpired, unverified OTP for this phone
+      const { data: otpRecord } = await adminClient
+        .from("otp_codes")
+        .select("*")
+        .eq("phone", profile.phone)
+        .eq("verified", false)
+        .gte("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!otpRecord) return json({ error: "الرمز منتهي الصلاحية. أعد الطلب." }, 400);
+
+      // Check attempts
+      if (otpRecord.attempts >= 5) {
+        return json({ error: "تم تجاوز عدد المحاولات. أعد الطلب." }, 400);
+      }
+
+      // Increment attempts
+      await adminClient.from("otp_codes").update({ attempts: otpRecord.attempts + 1 }).eq("id", otpRecord.id);
+
+      // Verify hash
+      const inputHash = await sha256(code);
+      if (inputHash !== otpRecord.code_hash) {
+        return json({ error: "الرمز غير صحيح" }, 400);
+      }
+
+      // Mark as verified
+      await adminClient.from("otp_codes").update({ verified: true }).eq("id", otpRecord.id);
+
+      return json({ success: true, verified: true });
     }
 
     return json({ error: "Invalid action" }, 400);
