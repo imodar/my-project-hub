@@ -289,11 +289,18 @@ const Tasks = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    createListMutation.mutate({
-      name: newListName.trim(),
-      type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
-      shared_with: newListType === "family" ? newListShareMembers : [],
-    });
+    createListMutation.mutate(
+      {
+        name: newListName.trim(),
+        type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
+        shared_with: newListType === "family" ? newListShareMembers : [],
+      },
+      {
+        onSuccess: (data: { id?: string } | null) => {
+          if (data?.id) setActiveListId(data.id);
+        },
+      }
+    );
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
