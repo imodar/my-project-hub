@@ -463,7 +463,6 @@ const Vehicle = () => {
   const handleRefresh = async () => {
     await vehicleQueryClient.invalidateQueries({ queryKey: ["vehicles"] });
   };
-  };
 
   // ─── Car Detail View ───
   if (selectedCar) {
