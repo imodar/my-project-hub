@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, Home, Bell, Shield, Settings,
   FileText, CreditCard, Menu, X, ChevronLeft, Activity,
-  BarChart3
+  BarChart3, ScrollText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
