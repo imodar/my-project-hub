@@ -64,7 +64,6 @@ export function useTaskLists() {
       const { created_at, ...rest } = input;
       return invoke("add-item", { list_id: rest.list_id, name: rest.name, note: rest.note || "", priority: rest.priority || "none", assigned_to: rest.assigned_to || null, repeat_enabled: rest.repeat_enabled || false, repeat_days: rest.repeat_days || [], id: rest.id });
     },
-    onSuccess: () => refetch(),
   });
 
   const toggleItem = useOfflineMutation<any, any>({
