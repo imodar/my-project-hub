@@ -128,7 +128,7 @@ const ParentDashboard = () => {
         </div>
 
         <div className="px-4 mt-3">
-          <div className="bg-white/80 rounded-xl px-3 py-2 flex items-center justify-between">
+          <div className="bg-card/80 rounded-xl px-3 py-2 flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground">الإنجاز</span>
             <span className="text-sm font-bold" style={{ color: "hsl(270 55% 50%)" }}>
               {doneCount}/{TOTAL_ITEMS}
