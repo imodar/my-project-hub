@@ -94,7 +94,7 @@ const Market = () => {
           id: i.id,
           name: i.name,
           category: i.category || "أخرى",
-          quantity: i.quantity || "1",
+          quantity: i.quantity || "",
           addedBy: "",
           checked: i.checked,
         })),
