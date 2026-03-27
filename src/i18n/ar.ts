@@ -48,6 +48,8 @@ const ar = {
     termsText: "بتسجيل دخولك تكون قد وافقت على",
     termsLink: "الشروط والأحكام",
     termsEnd: "الخاصة بالتطبيق",
+    andPrivacy: "و",
+    privacyLink: "سياسة الخصوصية",
     otpTitle: "رمز التحقق",
     otpSentTo: "أدخل الرمز المرسل إلى",
     changeNumber: "تغيير الرقم",
