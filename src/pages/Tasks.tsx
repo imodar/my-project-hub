@@ -397,7 +397,7 @@ const Tasks = () => {
               </button>
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`font-semibold text-sm text-foreground ${isDone ? "line-through" : ""}`}>
+              <p className={`font-semibold text-sm text-foreground break-words overflow-hidden ${isDone ? "line-through" : ""}`} style={{ overflowWrap: "anywhere" }}>
                 {item.name}
               </p>
               {item.note && (
