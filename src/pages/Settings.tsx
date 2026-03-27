@@ -88,7 +88,8 @@ const Settings = () => {
       title: t.settings.aboutApp,
       items: [
         { icon: Info, label: t.settings.about, desc: t.settings.version },
-        { icon: Shield, label: t.settings.privacy, desc: "" },
+        { icon: Shield, label: t.settings.privacy, desc: "", onClick: () => setPrivacySheet(true) },
+        { icon: Shield, label: t.settings.terms, desc: "", onClick: () => setTermsSheet(true) },
       ],
     },
     {
