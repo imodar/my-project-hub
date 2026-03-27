@@ -444,7 +444,7 @@ const Tasks = () => {
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                   activeListId === list.id
-                    ? "bg-white text-foreground shadow-md"
+                    ? "bg-white dark:bg-white/20 text-foreground dark:text-white shadow-md"
                     : "bg-white/15 text-white/80 hover:bg-white/25"
                 }`}
               >
