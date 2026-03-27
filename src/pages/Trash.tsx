@@ -55,8 +55,7 @@ const Trash = () => {
   }, {} as Record<string, TrashItem[]>);
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col" dir="rtl"
-      style={{ background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)" }}>
+    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
 
       {/* Header */}
       <div className="flex items-center justify-between p-4">
