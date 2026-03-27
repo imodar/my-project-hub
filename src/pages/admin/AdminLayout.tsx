@@ -18,6 +18,7 @@ const navItems = [
   { to: "/admin-panel/system", icon: Settings, label: "النظام والإصدارات" },
   { to: "/admin-panel/audit", icon: FileText, label: "سجل التدقيق" },
   { to: "/admin-panel/security", icon: Shield, label: "الأمان" },
+  { to: "/admin-panel/legal", icon: ScrollText, label: "الصفحات القانونية" },
 ];
 
 export default function AdminLayout() {
