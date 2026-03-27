@@ -21,10 +21,10 @@ export function useTaskLists() {
     return [...items].sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
   }
 
-  const apiFn = useCallback(async () => {
+  const apiFn = useCallback(async (since?: string | null) => {
     if (!familyId) return { data: [], error: null };
     const { data: response, error } = await supabase.functions.invoke("tasks-api", {
-      body: { action: "get-lists", family_id: familyId },
+      body: { action: "get-lists", family_id: familyId, ...(since ? { since } : {}) },
     });
     if (error) return { data: [], error: error.message };
     if (response?.error) return { data: [], error: response.error };
