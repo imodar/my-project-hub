@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Check } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Check, RefreshCw, CheckCircle, AlertTriangle, Loader2, Database } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -33,6 +34,9 @@ const Settings = () => {
   const [notifSheet, setNotifSheet] = useState(false);
   const [langSheet, setLangSheet] = useState(false);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTs, setLastSyncTs] = useState(() => localStorage.getItem("last_sync_ts"));
+  const qc = useQueryClient();
 
   const isAdmin = isDbAdmin;
 
@@ -94,6 +98,36 @@ const Settings = () => {
       ],
     },
   ];
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      qc.invalidateQueries();
+      await qc.refetchQueries({ type: "active" });
+      const now = new Date().toISOString();
+      localStorage.setItem("last_sync_ts", now);
+      setLastSyncTs(now);
+      toast.success(t.sync.syncSuccess);
+    } catch {
+      toast.error(t.sync.unexpectedError);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const getTimeSince = (ts: string | null) => {
+    if (!ts) return t.sync.noSyncYet;
+    const diff = Date.now() - new Date(ts).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return language === "ar" ? "الآن" : "Just now";
+    if (mins < 60) return language === "ar" ? `منذ ${mins} دقيقة` : `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return language === "ar" ? `منذ ${hours} ساعة` : `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return language === "ar" ? `منذ ${days} يوم` : `${days}d ago`;
+  };
+
+  const isRecent = lastSyncTs ? (Date.now() - new Date(lastSyncTs).getTime()) < 24 * 60 * 60 * 1000 : false;
 
   const handleAddContact = async () => {
     if (!newContactName.trim() || !newContactPhone.trim() || !familyId || !user) return;
@@ -264,6 +298,57 @@ const Settings = () => {
                 </span>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Data & Backup */}
+        <div>
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">
+            {t.sync.backupTitle}
+          </h2>
+          <div className="rounded-2xl overflow-hidden bg-card shadow-sm p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "hsl(var(--primary) / 0.1)" }}
+                >
+                  <Database size={18} className="text-primary" />
+                </div>
+                <div className={isRTL ? "text-right" : "text-left"}>
+                  <p className="text-sm font-semibold text-foreground">{t.sync.lastBackup}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {getTimeSince(lastSyncTs)}
+                  </p>
+                </div>
+              </div>
+              {lastSyncTs ? (
+                isRecent ? (
+                  <CheckCircle size={20} className="text-green-500 shrink-0" />
+                ) : (
+                  <AlertTriangle size={20} className="text-yellow-500 shrink-0" />
+                )
+              ) : null}
+            </div>
+
+            <button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-50"
+              style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}
+            >
+              {isSyncing ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  {t.sync.syncing}
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={16} />
+                  {t.sync.syncNow}
+                </>
+              )}
+            </button>
           </div>
         </div>
 

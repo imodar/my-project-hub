@@ -76,6 +76,14 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    if (action === "get-last-updated") {
+      const { data: member } = await supabase.from("family_members").select("family_id").eq("user_id", userId).eq("status", "active").maybeSingle();
+      if (!member?.family_id) return json({ last_updated_at: null });
+      const { data, error } = await adminClient.rpc("get_family_last_updated", { _family_id: member.family_id });
+      if (error) return json({ error: error.message }, 400);
+      return json({ last_updated_at: data });
+    }
+
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
     return json({ error: err.message }, 500);
