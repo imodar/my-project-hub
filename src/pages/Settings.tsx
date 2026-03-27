@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { toast } from "sonner";
 import LanguageSheet from "@/components/LanguageSheet";
+import LegalPageSheet from "@/components/LegalPageSheet";
 
 const Settings = () => {
   const { signOut, user } = useAuth();
