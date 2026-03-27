@@ -299,6 +299,8 @@ const Tasks = () => {
     if (!newListName.trim()) return;
     haptic.medium();
     const newId = crypto.randomUUID();
+    pendingActiveListIdRef.current = newId;
+    setActiveListId(newId);
     createListMutation.mutate(
       {
         name: newListName.trim(),
@@ -306,9 +308,15 @@ const Tasks = () => {
         shared_with: newListType === "family" ? newListShareMembers : [],
         id: newId,
       },
+      {
+        onSuccess: () => {
+          pendingActiveListIdRef.current = null;
+        },
+        onError: () => {
+          pendingActiveListIdRef.current = null;
+        },
+      }
     );
-    // Switch to new list immediately using the known id
-    setActiveListId(newId);
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);

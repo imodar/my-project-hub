@@ -282,6 +282,8 @@ const Market = () => {
     }
     haptic.medium();
     const newId = crypto.randomUUID();
+    pendingActiveListIdRef.current = newId;
+    setActiveListId(newId);
     createListMutation.mutate(
       {
         name: newListName.trim(),
@@ -290,9 +292,15 @@ const Market = () => {
         use_categories: newListUseCategories,
         id: newId,
       },
+      {
+        onSuccess: () => {
+          pendingActiveListIdRef.current = null;
+        },
+        onError: () => {
+          pendingActiveListIdRef.current = null;
+        },
+      }
     );
-    // Switch to new list immediately using the known id
-    setActiveListId(newId);
     setNewListName("");
     setNewListShareMembers([]);
     setNewListUseCategories(false);
