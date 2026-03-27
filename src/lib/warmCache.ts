@@ -20,6 +20,7 @@ const TABLES_TO_WARM = [
   { table: "albums", queryKeyPrefix: "albums" },
   { table: "album_photos", queryKeyPrefix: "albums" },
   { table: "family_members", queryKeyPrefix: "family-members-list" },
+  { table: "trip_suggestions", queryKeyPrefix: "trips" },
 ] as const;
 
 export async function warmCache(qc: QueryClient, familyId: string | null): Promise<void> {

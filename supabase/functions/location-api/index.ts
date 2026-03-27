@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authErr } = await adminClient.auth.getUser(token);
   if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
-  { const { data: _rlOk } = await adminClient.rpc("check_rate_limit", { _user_id: user.id, _endpoint: "location-api", _max_per_minute: 120 }); if (!_rlOk) return json({ error: "Too many requests" }, 429); }
+  { const { data: _rlOk } = await adminClient.rpc("check_rate_limit", { _user_id: user.id, _endpoint: "location-api", _max_per_minute: 10 }); if (!_rlOk) return json({ error: "Too many requests" }, 429); }
 
   const url = new URL(req.url);
   const action = url.searchParams.get("action");

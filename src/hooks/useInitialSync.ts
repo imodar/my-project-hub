@@ -15,6 +15,8 @@ export function useInitialSync() {
     ranRef.current = true;
 
     try {
+      const firstSyncDone = localStorage.getItem("first_sync_done");
+
       // Check if local IndexedDB has data
       let localCount = 0;
       try {
@@ -23,28 +25,31 @@ export function useInitialSync() {
         // IndexedDB may not be ready
       }
 
-      if (localCount === 0) {
-        // New device or new user — check if account is brand new
-        const { data: { user } } = await supabase.auth.getUser();
-        const createdAt = user?.created_at ? new Date(user.created_at).getTime() : Date.now();
-        const isNewAccount = Date.now() - createdAt < 2 * 60 * 1000;
+      if (localCount === 0 && !firstSyncDone) {
+        // No local data and never synced — check cloud to determine if new account or new device
+        try {
+          const { data, error } = await supabase.functions.invoke("account-api", {
+            body: { action: "get-last-updated" },
+          });
 
-        if (isNewAccount) {
-          // Brand new account — no data to sync
-          localStorage.setItem("first_sync_done", "true");
-          localStorage.setItem("last_sync_ts", new Date().toISOString());
-          setState("done");
-          return;
+          if (!error && data?.last_updated_at) {
+            // Cloud has data — existing account on new device
+            setState("new_user");
+            await qc.invalidateQueries();
+            await qc.refetchQueries({ type: "active" });
+            localStorage.setItem("last_sync_ts", new Date().toISOString());
+            localStorage.setItem("first_sync_done", "1");
+            await new Promise(r => setTimeout(r, 800));
+            setState("done");
+            return;
+          }
+        } catch {
+          // Network error — assume new account
         }
 
-        // Existing account on new device
-        setState("new_user");
-        await qc.invalidateQueries();
-        await qc.refetchQueries({ type: "active" });
+        // Cloud returned null or error — brand new account
+        localStorage.setItem("first_sync_done", "1");
         localStorage.setItem("last_sync_ts", new Date().toISOString());
-        localStorage.setItem("first_sync_done", "true");
-        // Small delay for UX
-        await new Promise(r => setTimeout(r, 800));
         setState("done");
         return;
       }
