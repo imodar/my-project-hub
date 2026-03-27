@@ -791,31 +791,9 @@ const Trips = () => {
 
         {/* Album view */}
         {tripView === "album" && (() => {
-          // Get album photos for this trip
-          let albumPhotos: { id: string; url: string; date: string; caption?: string }[] = [];
-          let albumName = "";
-          try {
-            const storedAlbums = localStorage.getItem("family-albums");
-            if (storedAlbums) {
-              const albums = JSON.parse(storedAlbums);
-              const linked = albums.find((a: any) => a.linkedTripId === selectedTrip.id);
-              if (linked) {
-                albumPhotos = linked.photos || [];
-                albumName = linked.name;
-              }
-            }
-          } catch {}
-          // Fallback for demo
-          if (albumPhotos.length === 0 && selectedTrip.id === "1") {
-            albumPhotos = [
-              { id: "tp1", url: "", date: "2026-04-15", caption: "وصول إسطنبول" },
-              { id: "tp2", url: "", date: "2026-04-15", caption: "آيا صوفيا" },
-              { id: "tp3", url: "", date: "2026-04-16", caption: "برج غلطة" },
-              { id: "tp4", url: "", date: "2026-04-16", caption: "شارع الاستقلال" },
-              { id: "tp5", url: "", date: "2026-04-17", caption: "البازار الكبير" },
-            ];
-            albumName = "رحلة إسطنبول";
-          }
+          const linkedAlbum = (tripAlbums ?? []).find((a: any) => a.linked_trip_id === selectedTrip.id);
+          const albumPhotos: { id: string; url: string; date: string; caption?: string }[] = linkedAlbum?.photos || [];
+          const albumName: string = linkedAlbum?.name || "";
 
           return (
             <div className="px-5 mt-5 space-y-4">
