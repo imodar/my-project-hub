@@ -149,6 +149,7 @@ const AnimatedRoutes = () => {
           <Route path="system" element={<R route="admin-system"><AdminSystem /></R>} />
           <Route path="audit" element={<R route="admin-audit"><AdminAudit /></R>} />
           <Route path="security" element={<R route="admin-security"><AdminSecurity /></R>} />
+          <Route path="legal" element={<R route="admin-legal"><AdminLegalPages /></R>} />
         </Route>
       </Routes>
     );
