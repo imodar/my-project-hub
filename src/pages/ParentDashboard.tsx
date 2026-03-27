@@ -196,7 +196,7 @@ const ParentDashboard = () => {
 
       {/* Month selector */}
       <div className="px-4 mt-2">
-        <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-border/40 flex items-center justify-between">
+        <div className="bg-card rounded-2xl px-4 py-3 shadow-sm border border-border/40 flex items-center justify-between">
           <div>
             <p className="text-sm font-bold text-foreground">
               {getMonthLabel(selectedYear, selectedMonth)}
