@@ -82,12 +82,12 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
           return (
             <div
               key={task.id}
-              className={`bg-card rounded-2xl p-4 shadow-sm flex items-start gap-4 transition-transform active:scale-[0.98] ${
+              className={`bg-card rounded-2xl p-4 shadow-sm flex items-center gap-4 transition-transform active:scale-[0.98] ${
                 task.done ? "opacity-60" : ""
               }`}
             >
               <div
-                className={`w-6 h-6 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center ${
+                className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center ${
                   task.done ? "bg-primary" : "border-2 border-primary"
                 }`}
               >
