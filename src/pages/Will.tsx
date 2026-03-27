@@ -164,6 +164,7 @@ const Will = () => {
 
   const handleRequestOpen = () => {
     haptic.heavy();
+    createOpenRequest.mutate({ reason: "طلب فتح الوصية بعد الوفاة" });
     setRequestSent(true);
     toast({
       title: "تم إرسال الطلب",

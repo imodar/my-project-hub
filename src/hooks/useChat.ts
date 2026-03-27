@@ -75,7 +75,8 @@ export function useChat() {
           const pair = await generateKeyPair();
           privateKey = pair.privateKey;
           await savePrivateKeyLocally(user!.id, privateKey);
-          const pubKey = await exportPublicKey(pair.publicKey);
+          // Public key exported for potential future use (key exchange)
+          await exportPublicKey(pair.publicKey);
         }
 
         // Get existing key via chat-api

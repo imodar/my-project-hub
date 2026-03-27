@@ -142,7 +142,8 @@ export function useOfflineMutation<
     },
 
     onSuccess: (result, variables) => {
-      // فقط عند نجاح API الفعلي — ليس عند الإضافة للطابور
+      // عند نجاح API: invalidate لتحل البيانات الحقيقية محل الـ optimistic
+      // هذا يحل مشكلة العنصر المكرر عند INSERT (optimistic id ≠ server id)
       if (!result.queued && queryKey) {
         qc.invalidateQueries({ queryKey });
       }
