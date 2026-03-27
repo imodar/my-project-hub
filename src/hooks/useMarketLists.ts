@@ -63,7 +63,7 @@ export function useMarketLists() {
   const createList = useOfflineMutation<any, any>({
     table: "market_lists", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family", use_categories: rest.use_categories ?? true }); },
-    onSuccess: () => refetch(),
+    onSuccess: () => { refetch(); },
   });
 
   const deleteList = useOfflineMutation<any, any>({
@@ -98,7 +98,11 @@ export function useMarketLists() {
       mutate: (input: any, options?: any) => {
         const payload = { id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, market_items: [], ...input };
         if (options?.onSuccess || options?.onError) {
-          createList.mutateAsync(payload).then((result) => options?.onSuccess?.(result?.data)).catch((err: any) => options?.onError?.(err));
+          createList.mutateAsync(payload).then(async (result) => {
+            // انتظر حتى تُحدّث البيانات في الكاش قبل اختيار القائمة الجديدة
+            await qc.invalidateQueries({ queryKey: key });
+            options?.onSuccess?.(result?.data);
+          }).catch((err: any) => options?.onError?.(err));
         } else {
           createList.mutate(payload);
         }
