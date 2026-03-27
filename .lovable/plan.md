@@ -1,64 +1,40 @@
 
 
-# تحليل: كيف يتم تحديد `isDefault` حاليًا ومشاكله
+# Fix: Market list creation duplicates and missing properties
 
-## الوضع الحالي
+## Root Causes
 
-**لا يوجد عمود `is_default` في قاعدة البيانات.** التحديد يتم بالكامل في الواجهة الأمامية عبر **مقارنة الاسم**:
+### 1. Duplicate lists in header
+`createList` mutation passes `queryKey: key` which triggers **optimistic INSERT** (adds entry with client-generated UUID to cache). Then `onSuccess: () => refetch()` fetches from server which returns the **real** entry with a different server-generated UUID. Result: two entries with different IDs but same name.
 
-- **المهام**: `isDefault = type === "family" && name === "مهام العائلة"`
-- **السوق**: `isDefault = type === "family" && name === "قائمة العائلة"`
+### 2. `use_categories` not sent to server
+- `useMarketLists.ts` line 65: `apiFn` only sends `name` and `type` — missing `use_categories`
+- `market-api/index.ts` `create-list`: doesn't read or insert `use_categories`
+- So server always defaults to `use_categories: true`, ignoring user's choice
 
-### مشاكل هذا الأسلوب
-1. إذا غيّر المستخدم اسم القائمة → تفقد صفة `isDefault` ويظهر لها زر حذف
-2. إذا أنشأ قائمة عائلية بنفس الاسم → تُعتبر خطأً كـ `isDefault`
-3. لا توجد حماية حقيقية — الحماية مبنية على نص هش
+### 3. Wrong list survives after refresh
+Optimistic entry has `use_categories` from user input (e.g., `false`). Server entry has `use_categories: true` (DB default). After refresh, only server data remains — so the correct settings are lost.
 
-## الحل المطلوب
+### 4. New list doesn't auto-select
+The `onSuccess` callback path works but the optimistic entry arrives first and auto-select picks the first list, not the new one.
 
-### 1. إضافة عمود `is_default` في قاعدة البيانات
-```sql
-ALTER TABLE task_lists ADD COLUMN is_default boolean NOT NULL DEFAULT false;
-ALTER TABLE market_lists ADD COLUMN is_default boolean NOT NULL DEFAULT false;
-```
+## Changes
 
-### 2. تحديث القوائم الافتراضية الموجودة
-```sql
--- تعيين أقدم قائمة عائلية في كل عائلة كافتراضية
-UPDATE task_lists SET is_default = true 
-WHERE id IN (
-  SELECT DISTINCT ON (family_id) id FROM task_lists 
-  WHERE type = 'family' ORDER BY family_id, created_at ASC
-);
+### File 1: `src/hooks/useMarketLists.ts`
+- **Remove `queryKey: key`** from `createList` mutation — this prevents optimistic INSERT, eliminating the duplicate. The `onSuccess: () => refetch()` already handles adding the real data.
+- **Pass `use_categories`** in the `apiFn` to the server
 
-UPDATE market_lists SET is_default = true 
-WHERE id IN (
-  SELECT DISTINCT ON (family_id) id FROM market_lists 
-  WHERE type = 'family' ORDER BY family_id, created_at ASC
-);
-```
+### File 2: `supabase/functions/market-api/index.ts`
+- In `create-list` action: read `use_categories` from body and include it in the INSERT
 
-### 3. تحديث IndexedDB (Dexie)
-إضافة `is_default` ضمن البيانات المخزنة محليًا (لا يحتاج تغيير في schema لأن Dexie مرن).
+### File 3: `src/pages/Market.tsx`
+- No changes needed — the `onSuccess` callback already handles `setActiveListId(data.id)`, which will work once the duplicate issue is fixed
 
-### 4. تحديث Edge Functions
-- **tasks-api**: عند `create-list`، إذا كان `type === "family"` ولا توجد قائمة عائلية → `is_default = true`، وإلا → `is_default = false`
-- **market-api**: نفس المنطق
-- **كلاهما**: منع حذف قائمة `is_default = true`
-
-### 5. تحديث الواجهة الأمامية
-- `Tasks.tsx`: استبدال `l.name === DEFAULT_FAMILY_LIST_NAME` بـ `l.is_default === true`
-- `Market.tsx`: نفس الشيء
-- `Documents.tsx` و `Places.tsx`: نفس المنطق إذا كانوا يستخدمون نمطًا مشابهًا
-
-### الملفات المتأثرة
-| الملف | التغيير |
+## Summary
+| Problem | Fix |
 |---|---|
-| Migration SQL | إضافة عمود `is_default` + تحديث القوائم الموجودة |
-| `supabase/functions/tasks-api/index.ts` | تعيين `is_default` عند الإنشاء + منع حذف الافتراضية |
-| `supabase/functions/market-api/index.ts` | نفس الشيء |
-| `src/pages/Tasks.tsx` | استبدال مقارنة الاسم بـ `is_default` |
-| `src/pages/Market.tsx` | نفس الشيء |
-| `src/pages/Documents.tsx` | نفس الشيء إن وُجد |
-| `src/pages/Places.tsx` | نفس الشيء إن وُجد |
+| Two lists appear | Remove `queryKey` from createList mutation |
+| `use_categories` ignored | Pass it through hook → API → DB |
+| Wrong list after refresh | Fixed by sending `use_categories` to server |
+| List doesn't auto-open | Fixed by removing optimistic duplicate race |
 
