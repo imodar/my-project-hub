@@ -43,16 +43,25 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
     return projectPendingChanges(tableName, localData as T[]);
   }
 
-  // Full replace: remove stale local records not in API response, then upsert
-  const apiIds = new Set(data.map((item) => item.id));
-  const localItems: T[] = await table.toArray();
-  const staleIds = localItems
-    .filter((item) => !apiIds.has(item.id))
-    .map((item) => item.id);
-  if (staleIds.length > 0) {
-    await table.bulkDelete(staleIds);
+  // Delta sync (since was provided): only upsert new/updated records, don't delete old ones
+  // Full sync (no since): replace all — remove stale local records not in API response
+  if (lastSyncedAt && data.length >= 0) {
+    // Delta: just upsert returned records
+    if (data.length > 0) {
+      await table.bulkPut(data);
+    }
+  } else {
+    // Full sync: remove stale records then upsert
+    const apiIds = new Set(data.map((item) => item.id));
+    const localItems: T[] = await table.toArray();
+    const staleIds = localItems
+      .filter((item) => !apiIds.has(item.id))
+      .map((item) => item.id);
+    if (staleIds.length > 0) {
+      await table.bulkDelete(staleIds);
+    }
+    await table.bulkPut(data);
   }
-  await table.bulkPut(data);
 
   // تحديث وقت المزامنة
   await db.sync_meta.put({
@@ -60,9 +69,11 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
     last_synced_at: new Date().toISOString(),
   });
 
-  const projectedData = await projectPendingChanges(tableName, data);
+  // After delta sync, return ALL local data (not just API response)
+  const allLocal: T[] = await table.toArray();
+  const projectedData = await projectPendingChanges(tableName, allLocal);
   console.info(
-    `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، حُذف ${staleIds.length} سجل قديم`
+    `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، محلي: ${allLocal.length}${lastSyncedAt ? " (delta)" : " (full)"}`
   );
   return projectedData;
 }
