@@ -316,6 +316,8 @@ const Auth = () => {
       </motion.div>
 
       <LanguageSheet open={langSheetOpen} onOpenChange={setLangSheetOpen} />
+      <LegalPageSheet open={termsSheet} onOpenChange={setTermsSheet} slug="terms-of-service" />
+      <LegalPageSheet open={privacySheet} onOpenChange={setPrivacySheet} slug="privacy-policy" />
     </div>
   );
 };
