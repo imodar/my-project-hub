@@ -83,11 +83,20 @@ Deno.serve(async (req) => {
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
       if (before && typeof before !== "string") return json({ error: "before غير صالح" }, 400);
       const safeLimit = Math.min(Math.max(Number(msgLimit) || 50, 1), 100);
-      let query = supabase.from("chat_messages").select("*, profiles:sender_id(name, avatar_url)").eq("family_id", family_id).order("created_at", { ascending: false }).limit(safeLimit);
+      let query = supabase.from("chat_messages").select("*").eq("family_id", family_id).order("created_at", { ascending: false }).limit(safeLimit);
       if (before) query = query.lt("created_at", before);
-      const { data, error } = await query;
+      const { data: messages, error } = await query;
       if (error) return json({ error: error.message }, 400);
-      return json({ data: data?.reverse(), hasMore: (data?.length ?? 0) === safeLimit });
+      const reversed = messages?.reverse() || [];
+      // Attach sender profiles
+      const senderIds = [...new Set(reversed.map((m: any) => m.sender_id).filter(Boolean))];
+      let profilesMap: Record<string, any> = {};
+      if (senderIds.length) {
+        const { data: profs } = await adminClient.from("profiles").select("id, name, avatar_url").in("id", senderIds);
+        for (const p of profs || []) profilesMap[p.id] = { name: p.name, avatar_url: p.avatar_url };
+      }
+      const enriched = reversed.map((m: any) => ({ ...m, profiles: profilesMap[m.sender_id] || null }));
+      return json({ data: enriched, hasMore: (messages?.length ?? 0) === safeLimit });
     }
 
     if (action === "send-message") {
