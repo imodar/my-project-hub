@@ -165,8 +165,10 @@ Deno.serve(async (req) => {
     if (action === "delete-item") {
       const { id } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      const { data: itemToDelete } = await supabase.from("market_items").select("list_id").eq("id", id).maybeSingle();
       const { error } = await supabase.from("market_items").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
+      if (itemToDelete?.list_id) await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", itemToDelete.list_id);
       return json({ success: true });
     }
 
