@@ -126,18 +126,14 @@ const Settings = () => {
 
   return (
     <div
-      className="min-h-screen max-w-2xl mx-auto flex flex-col pb-28"
+      className="min-h-screen max-w-2xl mx-auto flex flex-col pb-28 bg-background"
       dir={dir}
-      style={{
-        background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)",
-      }}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground"
-          style={{ background: "hsla(0,0%,0%,0.05)" }}
+          className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted"
         >
           {t.back}
           <ChevronRight size={18} className={isRTL ? "" : "rotate-180"} />
