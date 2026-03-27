@@ -59,6 +59,7 @@ class AppDatabase extends Dexie {
   trip_expenses!: Table;
   trip_packing!: Table;
   trip_documents!: Table;
+  trip_suggestions!: Table;
   document_lists!: Table;
   document_items!: Table;
   document_files!: Table;
@@ -86,7 +87,7 @@ class AppDatabase extends Dexie {
   constructor() {
     super("ailti_offline_db");
 
-    this.version(1).stores({
+    this.version(2).stores({
       // ── الأدوية ──
       medications: "id, family_id, member_id, created_at",
       medication_logs: "id, medication_id, taken_at",
@@ -117,6 +118,7 @@ class AppDatabase extends Dexie {
       trip_expenses: "id, trip_id",
       trip_packing: "id, trip_id",
       trip_documents: "id, trip_id",
+      trip_suggestions: "id, trip_id, suggested_by, status",
 
       // ── المستندات ──
       document_lists: "id, family_id, created_by",

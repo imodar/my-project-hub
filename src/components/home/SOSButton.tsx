@@ -18,11 +18,8 @@ interface EmergencyContact {
   id: string;
   name: string;
   phone: string;
-  relation: string;
+  relation?: string;
 }
-
-const STORAGE_KEY = "sos_emergency_contacts";
-const SOS_DISABLED_KEY = "sos_disabled_members";
 
 type SOSPhase = "idle" | "holding" | "countdown" | "active";
 
@@ -38,36 +35,38 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const [cancelDrawer, setCancelDrawer] = useState(false);
   const [addContactDrawer, setAddContactDrawer] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [notifiedCount, setNotifiedCount] = useState(0);
 
-  // Fetch family members from DB
+  // Fetch family members via Edge Function
   useEffect(() => {
     if (!familyId) return;
-    supabase
-      .from("family_members")
-      .select("user_id")
-      .eq("family_id", familyId)
-      .eq("status", "active")
-      .then(async ({ data }) => {
-        if (!data) return;
-        const memberIds = data.map((m) => m.user_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, name")
-          .in("id", memberIds);
-        if (profiles) {
-          setFamilyMembers(profiles.map((p) => ({ id: p.id, name: p.name || "بدون اسم" })));
-        }
-      });
+    supabase.functions.invoke("family-management", {
+      body: { action: "get-members", family_id: familyId },
+    }).then(({ data, error }) => {
+      if (!error && data?.data) {
+        setFamilyMembers(
+          data.data.map((m: any) => ({ id: m.user_id, name: m.name || "بدون اسم" }))
+        );
+      }
+    });
   }, [familyId]);
 
-  const [contacts, setContacts] = useState<EmergencyContact[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  // Emergency contacts from DB via settings-api
+  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newRelation, setNewRelation] = useState("");
+
+  useEffect(() => {
+    if (!familyId) return;
+    supabase.functions.invoke("settings-api", {
+      body: { action: "get-emergency-contacts", family_id: familyId },
+    }).then(({ data, error }) => {
+      if (!error && data?.data) {
+        setContacts(data.data);
+      }
+    });
+  }, [familyId]);
 
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -75,19 +74,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
-  }, [contacts]);
-
   // Cleanup timers
-  useEffect(() => {
-    return () => {
-      if (holdTimer.current) clearInterval(holdTimer.current);
-      if (countdownTimer.current) clearInterval(countdownTimer.current);
-      if (activeTimer.current) clearInterval(activeTimer.current);
-      if (tapTimer.current) clearTimeout(tapTimer.current);
-    };
-  }, []);
   useEffect(() => {
     return () => {
       if (holdTimer.current) clearInterval(holdTimer.current);
@@ -104,7 +91,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
     setHoldProgress(0);
     let progress = 0;
     holdTimer.current = setInterval(() => {
-      progress += 100 / 30; // 30 ticks over 3 seconds
+      progress += 100 / 30;
       setHoldProgress(Math.min(progress, 100));
       if (progress >= 100) {
         if (holdTimer.current) clearInterval(holdTimer.current);
@@ -178,12 +165,12 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
     toast("تم إلغاء التنبيه", { icon: "✓" });
   }, []);
 
-  // Active SOS
-  const activateSOS = useCallback(() => {
+  // Active SOS — sends real notification to family
+  const activateSOS = useCallback(async () => {
     setPhase("active");
     setActiveSeconds(0);
 
-    // Simulate alert sound
+    // Alert sound
     try {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const playBeep = (freq: number, start: number) => {
@@ -199,43 +186,81 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
       playBeep(880, 0);
       playBeep(1100, 0.3);
       playBeep(880, 0.6);
-    } catch (e) {}
+    } catch {}
 
-    toast.error("🚨 تم تفعيل تنبيه الطوارئ — تم إرسال إشعارات لجميع أفراد العائلة", { duration: 5000 });
+    // Send real SOS alert via notifications-api
+    if (familyId) {
+      try {
+        const { data, error } = await supabase.functions.invoke("notifications-api", {
+          body: { action: "send-sos-alert", family_id: familyId },
+        });
+        if (!error && data?.data?.notified) {
+          setNotifiedCount(data.data.notified);
+          toast.error(`🚨 تم تفعيل تنبيه الطوارئ — تم إشعار ${data.data.notified} من أفراد العائلة`, { duration: 5000 });
+        } else {
+          toast.error("🚨 تم تفعيل تنبيه الطوارئ", { duration: 5000 });
+        }
+      } catch {
+        toast.error("🚨 تم تفعيل التنبيه — لكن فشل إرسال الإشعارات", { duration: 5000 });
+      }
+    }
 
-    // Simulate location updates every 30 seconds
     activeTimer.current = setInterval(() => {
       setActiveSeconds((s) => s + 1);
     }, 1000);
-  }, []);
+  }, [familyId]);
 
-  const handleCancelSOS = useCallback(() => {
+  const handleCancelSOS = useCallback(async () => {
     if (activeTimer.current) clearInterval(activeTimer.current);
     setPhase("idle");
     setActiveSeconds(0);
     setHoldProgress(0);
     setCancelDrawer(false);
     const reason = cancelReason.trim() || "بخير";
+
+    // Send cancel notification
+    if (familyId) {
+      try {
+        await supabase.functions.invoke("notifications-api", {
+          body: { action: "cancel-sos-alert", family_id: familyId },
+        });
+      } catch {}
+    }
+
     toast.success(`تم إلغاء التنبيه — "${reason}"`, { duration: 3000 });
     setCancelReason("");
-  }, [cancelReason]);
+  }, [cancelReason, familyId]);
 
-  const handleAddContact = () => {
-    if (!newName.trim() || !newPhone.trim()) return;
-    setContacts((prev) => [
-      ...prev,
-      { id: Date.now().toString(), name: newName, phone: newPhone, relation: newRelation },
-    ]);
-    setNewName("");
-    setNewPhone("");
-    setNewRelation("");
-    setAddContactDrawer(false);
-    toast.success("تم إضافة جهة الاتصال");
+  const handleAddContact = async () => {
+    if (!newName.trim() || !newPhone.trim() || !familyId) return;
+    const { error } = await supabase.functions.invoke("settings-api", {
+      body: { action: "add-emergency-contact", family_id: familyId, name: newName.trim(), phone: newPhone.trim() },
+    });
+    if (!error) {
+      // Refresh contacts from DB
+      const { data } = await supabase.functions.invoke("settings-api", {
+        body: { action: "get-emergency-contacts", family_id: familyId },
+      });
+      if (data?.data) setContacts(data.data);
+      setNewName("");
+      setNewPhone("");
+      setNewRelation("");
+      setAddContactDrawer(false);
+      toast.success("تم إضافة جهة الاتصال");
+    } else {
+      toast.error("فشل إضافة جهة الاتصال");
+    }
   };
 
-  const removeContact = (id: string) => {
-    setContacts((prev) => prev.filter((c) => c.id !== id));
-    toast.success("تم حذف جهة الاتصال");
+  const removeContact = async (id: string) => {
+    if (!familyId) return;
+    const { error } = await supabase.functions.invoke("settings-api", {
+      body: { action: "delete-emergency-contact", id },
+    });
+    if (!error) {
+      setContacts((prev) => prev.filter((c) => c.id !== id));
+      toast.success("تم حذف جهة الاتصال");
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -298,8 +323,8 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
                   <MessageSquare size={16} className="text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-white/60">رسائل SMS</p>
-                  <p className="text-sm text-white font-bold">تم إرسال {contacts.length} رسائل</p>
+                  <p className="text-xs text-white/60">جهات طوارئ خارجية</p>
+                  <p className="text-sm text-white font-bold">{contacts.length} جهة مسجلة</p>
                 </div>
                 <Check size={16} className="text-green-400" />
               </div>
@@ -309,7 +334,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs text-white/60">إشعارات العائلة</p>
-                  <p className="text-sm text-white font-bold">{familyMembers.length} أفراد تم إشعارهم</p>
+                  <p className="text-sm text-white font-bold">{notifiedCount || familyMembers.length} أفراد تم إشعارهم</p>
                 </div>
                 <Check size={16} className="text-green-400" />
               </div>

@@ -98,13 +98,13 @@ export function useTrips() {
   });
 
   const addSuggestion = useOfflineMutation<any, any>({
-    table: "trip_packing", operation: "INSERT",
+    table: "trip_suggestions", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-suggestion", { trip_id: rest.trip_id, place_name: rest.place_name, type: rest.type, reason: rest.reason, location: rest.location }); },
     queryKey: key, onSuccess: () => refetch(),
   });
 
   const updateSuggestion = useOfflineMutation<any, any>({
-    table: "trip_packing", operation: "UPDATE",
+    table: "trip_suggestions", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-suggestion-status", { id, ...updates }); },
     queryKey: key,
   });
