@@ -64,8 +64,7 @@ const Trash = () => {
           <h1 className="text-lg font-bold text-foreground">سلة المحذوفات</h1>
         </div>
         <button onClick={() => navigate("/settings")}
-          className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground"
-          style={{ background: "hsla(0,0%,0%,0.05)" }}>
+          className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted">
           رجوع
           <ChevronRight size={18} className="rotate-180" />
         </button>
