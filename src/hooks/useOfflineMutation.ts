@@ -69,7 +69,7 @@ export function useOfflineMutation<
         const items = old ?? [];
         switch (operation) {
           case "INSERT":
-            return [variables as Record<string, unknown>, ...items];
+            return [...items, variables as Record<string, unknown>];
           case "UPDATE":
             return items.map((item) =>
               item?.id === variables.id ? { ...item, ...variables } : item
