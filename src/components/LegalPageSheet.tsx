@@ -29,7 +29,7 @@ export default function LegalPageSheet({ open, onOpenChange, slug }: LegalPageSh
         setPage(data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .then(undefined, () => setLoading(false));
   }, [open, slug]);
 
   const title = page
