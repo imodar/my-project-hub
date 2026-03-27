@@ -24,7 +24,7 @@ const Settings = () => {
   const { familyId } = useFamilyId();
   const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
   const [contacts, setContacts] = useState<{ id: string; name: string; phone: string }[]>([]);
-  const [members, setMembers] = useState<{ id: string; name: string; sosEnabled: boolean }[]>([]);
+  const [members, setMembers] = useState<{ id: string; name: string }[]>([]);
   const [emergencySound, setEmergencySound] = useState(true);
   const [liveTracking, setLiveTracking] = useState(true);
   const [addContactOpen, setAddContactOpen] = useState(false);
@@ -56,7 +56,6 @@ const Settings = () => {
         .map((m: any) => ({
           id: m.user_id,
           name: m.profiles?.name || t.emergency.noName,
-          sosEnabled: true,
         }));
       setMembers(membersList);
     });
@@ -121,9 +120,6 @@ const Settings = () => {
     }
   };
 
-  const toggleMemberSOS = (id: string) => {
-    setMembers(prev => prev.map(m => m.id === id ? { ...m, sosEnabled: !m.sosEnabled } : m));
-  };
 
 
 
@@ -484,15 +480,8 @@ const Settings = () => {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-foreground">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {member.sosEnabled ? t.emergency.sosEnabled : t.emergency.sosDisabled}
-                          </p>
                         </div>
                       </div>
-                      <Switch
-                        checked={member.sosEnabled}
-                        onCheckedChange={() => toggleMemberSOS(member.id)}
-                      />
                     </div>
                   ))}
                 </div>

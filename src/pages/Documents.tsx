@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDocumentLists } from "@/hooks/useDocumentLists";
@@ -326,8 +327,9 @@ const Documents = () => {
     );
   };
 
+  const docsQueryClient = useQueryClient();
   const handleRefresh = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await docsQueryClient.invalidateQueries({ queryKey: ["document-lists"] });
   };
 
   const renderCategoryForm = (

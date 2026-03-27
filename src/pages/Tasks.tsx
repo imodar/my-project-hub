@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useTaskLists } from "@/hooks/useTaskLists";
 import { useTrash } from "@/contexts/TrashContext";
@@ -410,8 +411,9 @@ const Tasks = () => {
     );
   };
 
+  const tasksQueryClient = useQueryClient();
   const handleRefresh = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await tasksQueryClient.invalidateQueries({ queryKey: ["task-lists"] });
   };
 
   return (

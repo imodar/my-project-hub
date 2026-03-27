@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useTrash } from "@/contexts/TrashContext";
 import { useMarketLists } from "@/hooks/useMarketLists";
@@ -392,8 +393,9 @@ const Market = () => {
     );
   };
 
+    const marketQueryClient = useQueryClient();
     const handleRefresh = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await marketQueryClient.invalidateQueries({ queryKey: ["market-lists"] });
     };
 
     return (

@@ -23,6 +23,7 @@ import { ar } from "date-fns/locale";
 import { toast } from "sonner";
 // tripBudgetSync removed — trips & budgets are synced via Supabase hooks
 import { useTrips as useTripsHook } from "@/hooks/useTrips";
+import { useAlbums } from "@/hooks/useAlbums";
 
 // Types
 interface Activity {
@@ -123,6 +124,7 @@ const Trips = () => {
     addSuggestion, updateSuggestion,
     addDocument, deleteDocument,
   } = useTripsHook();
+  const { albums: tripAlbums } = useAlbums();
 
   // Map DB trips to UI format
   const trips: Trip[] = useMemo(() => {
@@ -485,21 +487,9 @@ const Trips = () => {
               { key: "documents", label: "المستندات", icon: FileText },
               { key: "packing", label: "التجهيزات", icon: PackageCheck },
               { key: "calculator", label: "التكاليف", icon: Calculator },
-              ...((() => {
-                // Check if there's an album linked to this trip
-                try {
-                  const storedAlbums = localStorage.getItem("family-albums");
-                  if (storedAlbums) {
-                    const albums = JSON.parse(storedAlbums);
-                    if (albums.some((a: any) => a.linkedTripId === selectedTrip.id)) {
-                      return [{ key: "album", label: "ألبوم الرحلة", icon: Camera }];
-                    }
-                  }
-                } catch {}
-                // Also check default data
-                if (selectedTrip.id === "1") return [{ key: "album", label: "ألبوم الرحلة", icon: Camera }];
-                return [];
-              })()),
+              ...((tripAlbums ?? []).some((a: any) => a.linked_trip_id === selectedTrip.id)
+                ? [{ key: "album", label: "ألبوم الرحلة", icon: Camera }]
+                : []),
             ].map((tab) => {
               const isActive = tripView === tab.key;
               const activeColors: Record<string, string> = {
@@ -802,31 +792,9 @@ const Trips = () => {
 
         {/* Album view */}
         {tripView === "album" && (() => {
-          // Get album photos for this trip
-          let albumPhotos: { id: string; url: string; date: string; caption?: string }[] = [];
-          let albumName = "";
-          try {
-            const storedAlbums = localStorage.getItem("family-albums");
-            if (storedAlbums) {
-              const albums = JSON.parse(storedAlbums);
-              const linked = albums.find((a: any) => a.linkedTripId === selectedTrip.id);
-              if (linked) {
-                albumPhotos = linked.photos || [];
-                albumName = linked.name;
-              }
-            }
-          } catch {}
-          // Fallback for demo
-          if (albumPhotos.length === 0 && selectedTrip.id === "1") {
-            albumPhotos = [
-              { id: "tp1", url: "", date: "2026-04-15", caption: "وصول إسطنبول" },
-              { id: "tp2", url: "", date: "2026-04-15", caption: "آيا صوفيا" },
-              { id: "tp3", url: "", date: "2026-04-16", caption: "برج غلطة" },
-              { id: "tp4", url: "", date: "2026-04-16", caption: "شارع الاستقلال" },
-              { id: "tp5", url: "", date: "2026-04-17", caption: "البازار الكبير" },
-            ];
-            albumName = "رحلة إسطنبول";
-          }
+          const linkedAlbum = (tripAlbums ?? []).find((a: any) => a.linked_trip_id === selectedTrip.id);
+          const albumPhotos: { id: string; url: string; date: string; caption?: string }[] = linkedAlbum?.photos || [];
+          const albumName: string = linkedAlbum?.name || "";
 
           return (
             <div className="px-5 mt-5 space-y-4">

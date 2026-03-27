@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
@@ -117,8 +118,9 @@ const Will = () => {
     }
   }, [will]);
 
+  const willQueryClient = useQueryClient();
   const handleRefresh = async () => {
-    await new Promise((r) => setTimeout(r, 800));
+    await willQueryClient.invalidateQueries({ queryKey: ["will"] });
   };
 
   // ── Client-side SHA-256 unlock ──

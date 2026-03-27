@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { CardPageSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useVehicles } from "@/hooks/useVehicles";
@@ -459,9 +460,9 @@ const Vehicle = () => {
 
   const currentYears = Array.from({ length: 35 }, (_, i) => (new Date().getFullYear() - i).toString());
 
+  const vehicleQueryClient = useQueryClient();
   const handleRefresh = async () => {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    // React Query will auto-refetch
+    await vehicleQueryClient.invalidateQueries({ queryKey: ["vehicles"] });
   };
 
   // ─── Car Detail View ───
