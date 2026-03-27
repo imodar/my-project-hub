@@ -98,7 +98,11 @@ export function useMarketLists() {
       mutate: (input: any, options?: any) => {
         const payload = { id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, market_items: [], ...input };
         if (options?.onSuccess || options?.onError) {
-          createList.mutateAsync(payload).then((result) => options?.onSuccess?.(result?.data)).catch((err: any) => options?.onError?.(err));
+          createList.mutateAsync(payload).then(async (result) => {
+            // انتظر حتى تُحدّث البيانات في الكاش قبل اختيار القائمة الجديدة
+            await qc.invalidateQueries({ queryKey: key });
+            options?.onSuccess?.(result?.data);
+          }).catch((err: any) => options?.onError?.(err));
         } else {
           createList.mutate(payload);
         }
