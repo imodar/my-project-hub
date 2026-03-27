@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Home, Map, MessageCircle, Settings, ShieldAlert } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useAppNavigate } from "@/hooks/useAppNavigate";
 import { haptic } from "@/lib/haptics";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -101,7 +102,7 @@ const SOSNavButton = React.forwardRef<HTMLButtonElement, { label: string }>(({ l
 SOSNavButton.displayName = "SOSNavButton";
 
 const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
   const { t } = useLanguage();
 
@@ -131,7 +132,7 @@ const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
                 key={item.label}
                 onClick={() => {
                   haptic.light();
-                  navigate(item.path);
+                  navigate(item.path, { direction: "tab" });
                 }}
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}

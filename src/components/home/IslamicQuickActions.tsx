@@ -1,6 +1,6 @@
 import React from "react";
 import { BookOpen, Heart, Bell } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useAppNavigate } from "@/hooks/useAppNavigate";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import islamicPattern from "@/assets/islamic-pattern.webp";
@@ -22,7 +22,7 @@ const TasbihIcon = React.forwardRef<SVGSVGElement, { size?: number; className?: 
 TasbihIcon.displayName = "TasbihIcon";
 
 const IslamicQuickActions = React.forwardRef<HTMLDivElement>((_props, ref) => {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { islamicMode } = useIslamicMode();
   const { t } = useLanguage();
 

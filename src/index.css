@@ -104,3 +104,36 @@
   }
 
 }
+
+/* === View Transitions === */
+
+/* Tab = fade فقط (BottomNav) */
+[data-nav-direction="tab"] ::view-transition-new(root) {
+  animation: 150ms ease-out both vt-fade-in;
+}
+[data-nav-direction="tab"] ::view-transition-old(root) {
+  animation: 150ms ease-out both vt-fade-out;
+}
+
+/* Forward = صفحة جديدة تدخل من اليسار (RTL) */
+[data-nav-direction="forward"] ::view-transition-new(root) {
+  animation: 200ms ease-out both vt-fade-in, 200ms ease-out both vt-slide-in-rtl;
+}
+[data-nav-direction="forward"] ::view-transition-old(root) {
+  animation: 200ms ease-out both vt-fade-out, 200ms ease-out both vt-slide-out-rtl;
+}
+
+/* Back = صفحة ترجع من اليمين */
+[data-nav-direction="back"] ::view-transition-new(root) {
+  animation: 200ms ease-out both vt-fade-in, 200ms ease-out both vt-slide-in-ltr;
+}
+[data-nav-direction="back"] ::view-transition-old(root) {
+  animation: 200ms ease-out both vt-fade-out, 200ms ease-out both vt-slide-out-ltr;
+}
+
+@keyframes vt-fade-in  { from { opacity: 0; } }
+@keyframes vt-fade-out { to   { opacity: 0; } }
+@keyframes vt-slide-in-rtl  { from { transform: translateX(-20px); } }
+@keyframes vt-slide-out-rtl { to   { transform: translateX(20px); } }
+@keyframes vt-slide-in-ltr  { from { transform: translateX(20px); } }
+@keyframes vt-slide-out-ltr { to   { transform: translateX(-20px); } }
