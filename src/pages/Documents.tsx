@@ -269,10 +269,10 @@ const Documents = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
-    const type = newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType;
-    createDocListMut.mutate({ name: newListName.trim(), type, shared_with: newListShareMembers });
+    const autoType = newListShareMembers.length > 0 ? "family" : "personal";
+    createDocListMut.mutate({ name: newListName.trim(), type: autoType, shared_with: newListShareMembers });
     setNewListName(""); setNewListShareMembers([]); setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, createDocListMut]);
+  }, [newListName, newListShareMembers, createDocListMut]);
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
