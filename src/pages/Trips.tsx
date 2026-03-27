@@ -124,6 +124,7 @@ const Trips = () => {
     addSuggestion, updateSuggestion,
     addDocument, deleteDocument,
   } = useTripsHook();
+  const { albums: tripAlbums } = useAlbums();
 
   // Map DB trips to UI format
   const trips: Trip[] = useMemo(() => {
