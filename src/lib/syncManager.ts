@@ -69,9 +69,11 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
     last_synced_at: new Date().toISOString(),
   });
 
-  const projectedData = await projectPendingChanges(tableName, data);
+  // After delta sync, return ALL local data (not just API response)
+  const allLocal: T[] = await table.toArray();
+  const projectedData = await projectPendingChanges(tableName, allLocal);
   console.info(
-    `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، حُذف ${staleIds.length} سجل قديم`
+    `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، محلي: ${allLocal.length}${lastSyncedAt ? " (delta)" : " (full)"}`
   );
   return projectedData;
 }
