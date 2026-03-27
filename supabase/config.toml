@@ -2,3 +2,87 @@ project_id = "ptmhrfovbyvpewfdpejf"
 
 [functions.location-api]
 verify_jwt = false
+
+[functions.auth-management]
+verify_jwt = false
+
+[functions.family-management]
+verify_jwt = false
+
+[functions.test-login]
+verify_jwt = false
+
+[functions.account-api]
+verify_jwt = false
+
+[functions.account-cleanup]
+verify_jwt = false
+
+[functions.admin-api]
+verify_jwt = false
+
+[functions.admin-succession]
+verify_jwt = false
+
+[functions.albums-api]
+verify_jwt = false
+
+[functions.budget-api]
+verify_jwt = false
+
+[functions.calendar-api]
+verify_jwt = false
+
+[functions.chat-api]
+verify_jwt = false
+
+[functions.debts-api]
+verify_jwt = false
+
+[functions.documents-api]
+verify_jwt = false
+
+[functions.health-api]
+verify_jwt = false
+
+[functions.market-api]
+verify_jwt = false
+
+[functions.notification-scheduler]
+verify_jwt = false
+
+[functions.notifications-api]
+verify_jwt = false
+
+[functions.notifications-generator]
+verify_jwt = false
+
+[functions.places-api]
+verify_jwt = false
+
+[functions.settings-api]
+verify_jwt = false
+
+[functions.tasks-api]
+verify_jwt = false
+
+[functions.trash-api]
+verify_jwt = false
+
+[functions.trash-cleanup]
+verify_jwt = false
+
+[functions.trips-api]
+verify_jwt = false
+
+[functions.vehicles-api]
+verify_jwt = false
+
+[functions.will-api]
+verify_jwt = false
+
+[functions.worship-api]
+verify_jwt = false
+
+[functions.zakat-api]
+verify_jwt = false
