@@ -34,6 +34,9 @@ const Settings = () => {
   const [notifSheet, setNotifSheet] = useState(false);
   const [langSheet, setLangSheet] = useState(false);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTs, setLastSyncTs] = useState(() => localStorage.getItem("last_sync_ts"));
+  const qc = useQueryClient();
 
   const isAdmin = isDbAdmin;
 
