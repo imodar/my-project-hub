@@ -13,6 +13,10 @@ const CORE_TABLES = [
   "medications",
   "trips",
   "chat_messages",
+  "vehicles",
+  "document_lists",
+  "albums",
+  "place_lists",
 ] as const;
 
 const TOTAL = CORE_TABLES.length;

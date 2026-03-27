@@ -50,10 +50,8 @@ export function useMarketLists() {
     ),
   });
 
-  const normalizedLists = useMemo(
-    () => normalizeMarketLists(lists || [], familyId),
-    [lists, familyId]
-  );
+  // normalizeMarketLists already applied in apiFn and filterFn — no need to re-apply
+  const normalizedLists = lists || [];
 
   // Realtime handled by useFamilyRealtime — no duplicate channel needed
 

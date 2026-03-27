@@ -1082,6 +1082,48 @@ const FamilyManagement = () => {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Join Role Selection Drawer */}
+      <Drawer open={showJoinRoleGrid} onOpenChange={(open) => { if (!open) { setShowJoinRoleGrid(false); setJoinRole(null); } }}>
+        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">اختر دورك في الأسرة</DrawerTitle>
+          </DrawerHeader>
+          <div className="space-y-4 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              {(["father", "mother", "son", "daughter"] as JoinRole[]).map((role) => {
+                const icons: Record<string, typeof User> = { father: User, mother: Heart, son: Baby, daughter: Baby };
+                const labels: Record<string, string> = { father: "أب", mother: "أم", son: "ابن", daughter: "ابنة" };
+                const colors: Record<string, string> = { father: "text-primary", mother: "text-primary", son: "text-blue-500", daughter: "text-pink-500" };
+                const bgs: Record<string, string> = { father: "hsl(var(--primary) / 0.15)", mother: "hsl(var(--primary) / 0.15)", son: "hsl(200, 60%, 92%)", daughter: "hsl(340, 60%, 92%)" };
+                const Icon = icons[role];
+                const selected = joinRole === role;
+                return (
+                  <button
+                    key={role}
+                    onClick={() => setJoinRole(role)}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                      selected ? "border-primary bg-primary/10" : "border-border bg-card"
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: bgs[role] }}>
+                      <Icon size={22} className={colors[role]} />
+                    </div>
+                    <span className="text-sm font-bold text-foreground">{labels[role]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={handleJoinByCode}
+              disabled={!joinRole}
+              className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              انضمام
+            </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
