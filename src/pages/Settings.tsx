@@ -201,11 +201,7 @@ const Settings = () => {
         <div>
           <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">{t.settings.modeSection}</h2>
           <div
-            className="rounded-2xl overflow-hidden"
-            style={{
-              background: "hsla(0,0%,100%,0.9)",
-              boxShadow: "0 2px 12px hsla(0,0%,0%,0.05)",
-            }}
+            className="rounded-2xl overflow-hidden bg-card shadow-sm"
           >
             <button
               type="button"
