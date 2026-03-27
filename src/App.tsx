@@ -13,7 +13,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/AuthGuard";
 import ScrollToTop from "@/components/ScrollToTop";
 import OfflineBanner from "@/components/OfflineBanner";
-import StaleBanner from "@/components/StaleBanner";
+
 import FirstSyncOverlay from "@/components/FirstSyncOverlay";
 import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -213,7 +213,6 @@ const App = () => (
                   <Sonner />
                   <BrowserRouter>
                     <OfflineBanner />
-                    <StaleBanner />
                     <FirstSyncOverlay />
                     <ScrollToTop />
                     <WarmCacheProvider>
