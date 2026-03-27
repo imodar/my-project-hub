@@ -581,6 +581,8 @@ const Settings = () => {
       </Sheet>
 
       <LanguageSheet open={langSheet} onOpenChange={setLangSheet} />
+      <LegalPageSheet open={privacySheet} onOpenChange={setPrivacySheet} slug="privacy-policy" />
+      <LegalPageSheet open={termsSheet} onOpenChange={setTermsSheet} slug="terms-of-service" />
     </div>
   );
 };
