@@ -18,7 +18,7 @@ export function useTaskLists() {
   const removePending = useCallback((id: string) => setPendingItemIds(p => p.filter(x => x !== id)), []);
 
   function sortListsAsc(items: any[]) {
-    return [...items].sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+    return [...items].sort((a, b) => new Date(a.updated_at || 0).getTime() - new Date(b.updated_at || 0).getTime());
   }
 
   const apiFn = useCallback(async (since?: string | null) => {
