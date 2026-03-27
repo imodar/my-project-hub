@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       const { id } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       // Prevent deleting default lists
-      const { data: listToDelete } = await supabase.from("market_lists").select("is_default").eq("id", id).single();
+      const { data: listToDelete } = await supabase.from("market_lists").select("is_default").eq("id", id).maybeSingle();
       if (listToDelete?.is_default) return json({ error: "لا يمكن حذف القائمة الافتراضية" }, 403);
       const { error } = await supabase.from("market_lists").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
@@ -139,8 +139,9 @@ Deno.serve(async (req) => {
       const { id, checked } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       if (typeof checked !== "boolean") return json({ error: "checked يجب أن يكون true أو false" }, 400);
-      const { data, error } = await supabase.from("market_items").update({ checked, checked_by: checked ? userId : null }).eq("id", id).select().single();
+      const { data, error } = await supabase.from("market_items").update({ checked, checked_by: checked ? userId : null }).eq("id", id).select().maybeSingle();
       if (error) return json({ error: error.message }, 400);
+      if (!data) return json({ error: "العنصر غير موجود" }, 404);
       if (data?.list_id) await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", data.list_id);
       return json({ data });
     }
@@ -156,9 +157,10 @@ Deno.serve(async (req) => {
       if (category !== undefined) updates.category = category;
       if (quantity !== undefined) updates.quantity = quantity;
       if (checked !== undefined) { updates.checked = checked; updates.checked_by = checked ? userId : null; }
-      const { data, error } = await supabase.from("market_items").update(updates).eq("id", id).select().single();
+      const { data, error } = await supabase.from("market_items").update(updates).eq("id", id).select().maybeSingle();
       if (error) return json({ error: error.message }, 400);
-      if (data?.list_id) await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", data.list_id);
+      if (!data) return json({ error: "العنصر غير موجود" }, 404);
+      if (data.list_id) await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", data.list_id);
       return json({ data });
     }
 
