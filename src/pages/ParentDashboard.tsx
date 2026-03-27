@@ -334,7 +334,7 @@ function ChildCard({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl p-4 shadow-sm border border-purple-100/40"
+      className="bg-card rounded-2xl p-4 shadow-sm border border-purple-100/40 dark:border-border"
     >
       {/* Child header */}
       <div className="flex items-center justify-between mb-3">
