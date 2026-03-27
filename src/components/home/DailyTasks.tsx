@@ -95,7 +95,7 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
-                  <h3 className={`font-bold text-sm ${task.done ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <h3 className={`font-bold text-sm break-words overflow-hidden ${task.done ? "line-through text-muted-foreground" : "text-foreground"}`} style={{ overflowWrap: "anywhere" }}>
                     {task.name}
                   </h3>
                   <span
