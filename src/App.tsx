@@ -215,7 +215,7 @@ const App = () => (
                     <FirstSyncOverlay />
                     <ScrollToTop />
                     <WarmCacheProvider>
-                      <Suspense fallback={<ListPageSkeleton />}>
+                      <Suspense fallback={null}>
                         <AnimatedRoutes />
                       </Suspense>
                     </WarmCacheProvider>
