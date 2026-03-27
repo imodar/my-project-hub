@@ -20,8 +20,8 @@ export interface UseOfflineFirstOptions<T> {
   table: string;
   /** مفتاح React Query */
   queryKey: QueryKey;
-  /** دالة جلب البيانات من API */
-  apiFn: () => Promise<{ data: T[] | null; error: string | null }>;
+  /** دالة جلب البيانات من API — تستقبل اختيارياً lastSyncedAt لدعم Delta Sync */
+  apiFn: (since?: string | null) => Promise<{ data: T[] | null; error: string | null }>;
   /** مدة صلاحية الكاش — افتراضي: 10 دقائق */
   staleTime?: number;
   /** فلترة إضافية على البيانات المحلية */
@@ -94,7 +94,7 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
 
   // ── 2. جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
-    const result = await syncTable<T>(tableName, () => apiFn());
+    const result = await syncTable<T>(tableName, (lastSyncedAt) => apiFn(lastSyncedAt));
     return applyFilter(result);
   }, [tableName, apiFn, applyFilter]);
 

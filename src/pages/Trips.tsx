@@ -793,7 +793,7 @@ const Trips = () => {
         {/* Album view */}
         {tripView === "album" && (() => {
           const linkedAlbum = (tripAlbums ?? []).find((a: any) => a.linked_trip_id === selectedTrip.id);
-          const albumPhotos: { id: string; url: string; date: string; caption?: string }[] = linkedAlbum?.photos || [];
+          const albumPhotos = (linkedAlbum?.album_photos || []).map((p: any) => ({ id: p.id, url: p.url, date: p.date || "", caption: p.caption }));
           const albumName: string = linkedAlbum?.name || "";
 
           return (

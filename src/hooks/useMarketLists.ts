@@ -29,10 +29,10 @@ export function useMarketLists() {
   const qc = useQueryClient();
   const key = ["market-lists", familyId];
 
-  const apiFn = useCallback(async () => {
+  const apiFn = useCallback(async (since?: string | null) => {
     if (!familyId) return { data: [], error: null };
     const { data: response, error } = await supabase.functions.invoke("market-api", {
-      body: { action: "get-lists", family_id: familyId },
+      body: { action: "get-lists", family_id: familyId, ...(since ? { since } : {}) },
     });
     if (error) return { data: [], error: error.message };
     if (response?.error) return { data: [], error: response.error };

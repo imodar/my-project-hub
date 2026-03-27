@@ -56,9 +56,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === "get-lists") {
-      const { family_id } = body;
+      const { family_id, since } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
-      const { data, error } = await supabase.from("task_lists").select("*, task_items(*)").eq("family_id", family_id).order("updated_at", { ascending: false }).order("created_at", { ascending: false, referencedTable: "task_items" });
+      if (since && typeof since !== "string") return json({ error: "since غير صالح" }, 400);
+      let query = supabase.from("task_lists").select("*, task_items(*)").eq("family_id", family_id).order("updated_at", { ascending: false }).order("created_at", { ascending: false, referencedTable: "task_items" });
+      if (since) query = query.gt("updated_at", since);
+      const { data, error } = await query;
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
