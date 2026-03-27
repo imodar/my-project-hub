@@ -417,7 +417,7 @@ function ChildCard({
         onClick={() => onFillAll(child.id)}
         variant="outline"
         size="sm"
-        className="w-full h-8 rounded-xl text-xs mt-2 border-amber-300 text-amber-700 bg-amber-50"
+        className="w-full h-8 rounded-xl text-xs mt-2 border-amber-300 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950"
       >
         🧪 تعبئة كل الشهر (للاختبار)
       </Button>
