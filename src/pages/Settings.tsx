@@ -56,7 +56,6 @@ const Settings = () => {
         .map((m: any) => ({
           id: m.user_id,
           name: m.profiles?.name || t.emergency.noName,
-          sosEnabled: true,
         }));
       setMembers(membersList);
     });
