@@ -101,7 +101,7 @@ const SOSNavButton = React.forwardRef<HTMLButtonElement, { label: string }>(({ l
 SOSNavButton.displayName = "SOSNavButton";
 
 const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
-  const navigate = useAppNavigate();
+  const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
 
