@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db";
@@ -21,38 +21,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [profileReady, setProfileReady] = useState(false);
   const [profileName, setProfileName] = useState("");
+  const fetchingRef = useRef(false);
+  const initialFetchDoneRef = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    // Try localStorage first (instant, works offline)
-    const cached = localStorage.getItem(`profile_name_${userId}`);
-    if (cached) {
-      setProfileName(cached);
-      localStorage.setItem("profile_complete", "true");
-    }
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
 
-    // Race network fetch against a 5s timeout so offline users aren't stuck
-    const networkFetch = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("auth-management", {
-          body: { action: "get-profile" },
-        });
-        if (!error && data?.data?.name) {
-          setProfileName(data.data.name);
-          localStorage.setItem(`profile_name_${userId}`, data.data.name);
-          localStorage.setItem("profile_complete", "true");
-        }
-      } catch {
-        // offline — use cached value already set above
+    try {
+      const cached = localStorage.getItem(`profile_name_${userId}`);
+      if (cached) {
+        setProfileName(cached);
+        localStorage.setItem("profile_complete", "true");
       }
-    };
 
-    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 5000));
+      const networkFetch = async (): Promise<boolean> => {
+        try {
+          const { data, error } = await supabase.functions.invoke("auth-management", {
+            body: { action: "get-profile" },
+          });
+          if (!error && data?.data?.name) {
+            setProfileName(data.data.name);
+            localStorage.setItem(`profile_name_${userId}`, data.data.name);
+            localStorage.setItem("profile_complete", "true");
+            return true;
+          }
+        } catch {
+          // offline — use cached value
+        }
+        return false;
+      };
 
-    await Promise.race([networkFetch(), timeout]);
-    setProfileReady(true);
+      const timeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5000));
+      let success = await Promise.race([networkFetch(), timeout]);
+
+      // Retry once if failed and no cache (token may not have been ready)
+      if (!success && !cached) {
+        await new Promise((r) => setTimeout(r, 1200));
+        const timeout2 = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5000));
+        await Promise.race([networkFetch(), timeout2]);
+      }
+
+      setProfileReady(true);
+      initialFetchDoneRef.current = true;
+    } finally {
+      fetchingRef.current = false;
+    }
   }, []);
 
   const refreshProfile = useCallback(async () => {
+    fetchingRef.current = false; // allow re-fetch
     if (session?.user?.id) {
       await fetchProfile(session.user.id);
     }
@@ -60,16 +78,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
+      (event, newSession) => {
         setSession(newSession);
         setLoading(false);
         if (newSession?.user?.id) {
           setSentryUser({ id: newSession.user.id, email: newSession.user.email });
-          fetchProfile(newSession.user.id);
+          // Only fetch on SIGNED_IN if not already done (avoid race with getSession)
+          if (event === "SIGNED_IN" && !initialFetchDoneRef.current) {
+            fetchProfile(newSession.user.id);
+          }
         } else {
           setSentryUser(null);
           setProfileName("");
           setProfileReady(true);
+          initialFetchDoneRef.current = false;
         }
       }
     );
@@ -79,6 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       if (existingSession?.user?.id) {
         fetchProfile(existingSession.user.id);
+      } else {
+        setProfileReady(true);
       }
     });
 
