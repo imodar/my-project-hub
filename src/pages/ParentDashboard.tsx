@@ -128,7 +128,7 @@ const ParentDashboard = () => {
         </div>
 
         <div className="px-4 mt-3">
-          <div className="bg-white/80 rounded-xl px-3 py-2 flex items-center justify-between">
+          <div className="bg-card/80 rounded-xl px-3 py-2 flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground">الإنجاز</span>
             <span className="text-sm font-bold" style={{ color: "hsl(270 55% 50%)" }}>
               {doneCount}/{TOTAL_ITEMS}
@@ -141,7 +141,7 @@ const ParentDashboard = () => {
           {categories.map((cat) => (
             <div
               key={cat.id}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm border"
+              className="bg-card rounded-2xl overflow-hidden shadow-sm border"
               style={{ borderColor: `${cat.color}22` }}
             >
               <div className="px-4 py-2 flex items-center gap-2" style={{ background: cat.bg }}>
@@ -161,8 +161,8 @@ const ParentDashboard = () => {
                       onClick={() => toggleItemForChild(item.id)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all active:scale-95"
                       style={{
-                        background: done ? cat.bg : "hsl(0 0% 97%)",
-                        border: `1.5px solid ${done ? cat.color : "hsl(0 0% 90%)"}`,
+                        background: done ? cat.bg : "hsl(var(--muted))",
+                        border: `1.5px solid ${done ? cat.color : "hsl(var(--border))"}`,
                       }}
                     >
                       <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
@@ -188,7 +188,7 @@ const ParentDashboard = () => {
 
   // Main dashboard view
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 pb-28" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 dark:from-background dark:via-background dark:to-background pb-28" dir="rtl">
       <PageHeader
         title="متابعة عبادات الأطفال"
         subtitle="لوحة تحكم الأبوين"
@@ -196,7 +196,7 @@ const ParentDashboard = () => {
 
       {/* Month selector */}
       <div className="px-4 mt-2">
-        <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-border/40 flex items-center justify-between">
+        <div className="bg-card rounded-2xl px-4 py-3 shadow-sm border border-border/40 flex items-center justify-between">
           <div>
             <p className="text-sm font-bold text-foreground">
               {getMonthLabel(selectedYear, selectedMonth)}
@@ -247,7 +247,7 @@ const ParentDashboard = () => {
 
         {/* Add child */}
         {showAddChild ? (
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-purple-100/40">
+          <div className="bg-card rounded-2xl p-4 shadow-sm border border-purple-100/40 dark:border-border">
             <input
               type="text"
               value={newChildName}
@@ -274,7 +274,7 @@ const ParentDashboard = () => {
         ) : (
           <button
             onClick={() => setShowAddChild(true)}
-            className="w-full bg-white/60 rounded-2xl p-4 border-2 border-dashed border-purple-200 flex items-center justify-center gap-2 text-sm font-bold active:scale-[0.98] transition-transform"
+            className="w-full bg-card/60 rounded-2xl p-4 border-2 border-dashed border-purple-200 dark:border-border flex items-center justify-center gap-2 text-sm font-bold active:scale-[0.98] transition-transform"
             style={{ color: "hsl(270 55% 50%)" }}
           >
             <Plus size={18} />
@@ -334,7 +334,7 @@ function ChildCard({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl p-4 shadow-sm border border-purple-100/40"
+      className="bg-card rounded-2xl p-4 shadow-sm border border-purple-100/40 dark:border-border"
     >
       {/* Child header */}
       <div className="flex items-center justify-between mb-3">
