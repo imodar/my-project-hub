@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db";
@@ -17,6 +18,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const qc = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileReady, setProfileReady] = useState(false);
@@ -84,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (newSession?.user?.id) {
           setSentryUser({ id: newSession.user.id, email: newSession.user.email });
           if (event === "SIGNED_IN") {
+            qc.clear();
             // Reset profile state for new session to prevent stale profileReady=true
             setProfileReady(false);
             initialFetchDoneRef.current = false;
@@ -93,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             fetchProfile(newSession.user.id);
           }
         } else {
+          qc.clear();
           setSentryUser(null);
           setProfileName("");
           setProfileReady(false);
@@ -113,7 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [fetchProfile, qc]);
 
   const signOut = async () => {
     setProfileName("");
@@ -171,6 +175,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("first_sync_done");
     localStorage.removeItem("join_or_create_done");
     localStorage.removeItem("profile_complete");
+    qc.clear();
     await supabase.auth.signOut();
   };
 
