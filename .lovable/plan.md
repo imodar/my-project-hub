@@ -1,156 +1,147 @@
 
 
-# خطة المزامنة والنسخ الاحتياطي — النسخة النهائية
-
-## الملفات المتأثرة
-1. `src/integrations/supabase/client.ts` — إضافة `detectSessionInUrl: false`
-2. `supabase/functions/account-api/index.ts` — إضافة action `get-last-updated` باستعلام SQL واحد
-3. `src/hooks/useInitialSync.ts` — **جديد**
-4. `src/components/FirstSyncOverlay.tsx` — تعديل جذري
-5. `src/lib/warmCache.ts` — تحديث `last_sync_ts`
-6. `src/pages/Settings.tsx` — قسم النسخ الاحتياطي
-7. `src/i18n/ar.ts` + `src/i18n/en.ts` — مفاتيح ترجمة
+# خطة إصلاح المشاكل الحرجة والأداء والاستقرار — النسخة النهائية
 
 ---
 
-## 1. `src/integrations/supabase/client.ts`
+## المرحلة 1: مشاكل حرجة
 
-إضافة `detectSessionInUrl: false` في إعدادات auth لمنع مشاكل الموبايل.
+### 1. Rate Limit — DB Function ذرية + UNIQUE constraint
+- **Migration**:
+  1. حذف duplicates قبل إضافة الـ constraint
+  2. إضافة `UNIQUE(user_id, endpoint)`
+  3. إنشاء دالة `check_rate_limit` ذرية بـ `ON CONFLICT DO UPDATE`
 
----
-
-## 2. `supabase/functions/account-api/index.ts` — action `get-last-updated`
-
-إضافة action جديد يستخدم **استعلام SQL واحد** عبر `adminClient.rpc` أو raw query:
-
-```text
-المنطق:
-1. جلب family_id من family_members للمستخدم
-2. تنفيذ استعلام واحد:
-
-SELECT GREATEST(
-  (SELECT MAX(GREATEST(COALESCE(updated_at, created_at), created_at)) FROM task_lists WHERE family_id = $1),
-  (SELECT MAX(GREATEST(COALESCE(updated_at, created_at), created_at)) FROM market_lists WHERE family_id = $1),
-  (SELECT MAX(created_at) FROM calendar_events WHERE family_id = $1),
-  (SELECT MAX(created_at) FROM chat_messages WHERE family_id = $1)
-) as last_updated_at
-
-3. إرجاع { last_updated_at: string | null }
-```
-
-ملاحظة تقنية: بما أن المشروع لا يستخدم raw SQL مباشرة، سيتم إنشاء **database function** باسم `get_family_last_updated(family_id uuid)` عبر migration، ثم استدعاؤها بـ `adminClient.rpc("get_family_last_updated", { _family_id })`. هذا أنظف وأكثر أماناً.
-
-### Migration مطلوب:
 ```sql
-CREATE OR REPLACE FUNCTION public.get_family_last_updated(_family_id uuid)
-RETURNS timestamptz
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT GREATEST(
-    (SELECT MAX(GREATEST(COALESCE(updated_at, created_at), created_at)) FROM task_lists WHERE family_id = _family_id),
-    (SELECT MAX(GREATEST(COALESCE(updated_at, created_at), created_at)) FROM market_lists WHERE family_id = _family_id),
-    (SELECT MAX(created_at) FROM calendar_events WHERE family_id = _family_id),
-    (SELECT MAX(created_at) FROM chat_messages WHERE family_id = _family_id)
-  );
-$$;
+DELETE FROM rate_limit_counters a
+USING rate_limit_counters b
+WHERE a.id > b.id AND a.user_id = b.user_id AND a.endpoint = b.endpoint;
+
+ALTER TABLE rate_limit_counters ADD CONSTRAINT rate_limit_unique UNIQUE (user_id, endpoint);
+
+CREATE OR REPLACE FUNCTION public.check_rate_limit(
+  _user_id uuid, _endpoint text, _max_per_minute int DEFAULT 60
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE _count int;
+BEGIN
+  INSERT INTO rate_limit_counters (user_id, endpoint, count, window_start)
+  VALUES (_user_id, _endpoint, 1, now())
+  ON CONFLICT (user_id, endpoint) DO UPDATE SET
+    count = CASE WHEN rate_limit_counters.window_start > now() - interval '1 minute'
+      THEN rate_limit_counters.count + 1 ELSE 1 END,
+    window_start = CASE WHEN rate_limit_counters.window_start > now() - interval '1 minute'
+      THEN rate_limit_counters.window_start ELSE now() END
+  RETURNING count INTO _count;
+  RETURN _count <= _max_per_minute;
+END; $$;
 ```
 
----
-
-## 3. `src/hooks/useInitialSync.ts` — جديد
-
-```text
-المنطق:
-1. تحقق من IndexedDB (db.task_lists.count()) — هل فيه بيانات؟
-   ├── 0 (جهاز جديد) → state = "new_user"
-   │   → invalidateQueries لكل query keys
-   │   → await refetchQueries({ type: "active" })
-   │   → localStorage.last_sync_ts = now()
-   │   → state = "done"
-   └── >0 (بيانات محلية موجودة)
-       → استدعاء account-api { action: "get-last-updated" }
-       → مقارنة localStorage.last_sync_ts مع cloud last_updated_at
-       ├── cloud أحدث → state = "syncing"
-       │   → invalidateQueries + await refetchQueries({ type: "active" })
-       │   → localStorage.last_sync_ts = now()
-       │   → state = "done"
-       └── محلي أحدث/متساوي → state = "done" (صامت)
-
-يُرجع: { state, message, run }
-```
-
-- `invalidateQueries` يضع queries كـ stale
-- `refetchQueries({ type: "active" })` يسحب البيانات فوراً للصفحة الحالية فقط
-- الباقي يُسحب lazily عند فتح كل صفحة
-
----
-
-## 4. `src/components/FirstSyncOverlay.tsx` — تعديل
-
-- إزالة `Progress` bar والعدّاد وقائمة `CORE_TABLES`
-- استخدام `useInitialSync` بدل المنطق الحالي
-- عرض **spinner بسيط** مع رسالة حسب الحالة:
-  - `new_user`: "تجهيز جهازك والمحتوى العائلي..." / "Setting up your device..."
-  - `syncing`: "مزامنة بياناتك..." / "Syncing your data..."
-- دعم اللغتين عبر `useLanguage`
-- الاحتفاظ بـ `AnimatePresence` للـ fade in/out
-
----
-
-## 5. `src/lib/warmCache.ts`
-
-إضافة سطر واحد في نهاية `warmCache`:
+- **Edge Functions**: استبدال كود `checkRateLimit` المكرر في ~15 function بـ:
 ```ts
-localStorage.setItem("last_sync_ts", new Date().toISOString());
+const { data: allowed } = await adminClient.rpc("check_rate_limit", {
+  _user_id: userId, _endpoint: "function-name", _max_per_minute: 60
+});
+if (!allowed) return json({ error: "Too many requests" }, 429);
 ```
 
----
+### 2. CORS — تقييد Origins عبر env variable
+- قراءة `ALLOWED_ORIGINS` من environment variable
+- إنشاء helper في كل function:
 
-## 6. `src/pages/Settings.tsx` — قسم "البيانات والنسخ الاحتياطي"
+```ts
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+  .split(",").map(s => s.trim()).filter(Boolean);
 
-إضافة كارد جديد يعرض:
-- **آخر مزامنة** من `localStorage.last_sync_ts` بصيغة نسبية + تاريخ
-- **أيقونة حالة**: أخضر إذا < 24 ساعة، أصفر إذا أقدم
-- **زر "مزامنة الآن"** يعمل:
-  ```ts
-  qc.invalidateQueries();
-  await qc.refetchQueries({ type: "active" });
-  localStorage.setItem("last_sync_ts", new Date().toISOString());
-  toast.success(t.sync.syncSuccess);
-  ```
-
-دعم اللغتين كاملاً.
-
----
-
-## 7. مفاتيح الترجمة — `ar.ts` + `en.ts`
-
-```text
-sync: {
-  preparingDevice:  تجهيز جهازك والمحتوى العائلي...  /  Setting up your device...
-  syncingData:      مزامنة بياناتك...                /  Syncing your data...
-  lastBackup:       آخر نسخة احتياطية                /  Last backup
-  syncNow:          مزامنة الآن                      /  Sync now
-  syncing:          جاري المزامنة...                 /  Syncing...
-  syncSuccess:      تمت المزامنة بنجاح               /  Sync completed
-  noSyncYet:        لم تتم المزامنة بعد              /  No sync yet
-  backupTitle:      البيانات والنسخ الاحتياطي         /  Data & Backup
-  welcomeFamily:    أهلاً بك في عائلتي               /  Welcome to My Family
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0] ?? "";
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
 }
 ```
 
+- **Fallback آمن**: إذا كان `ALLOWED_ORIGINS` فارغاً (نسيان إضافة الـ secret)، القيمة ستكون `""` — المتصفح سيرفض الطلب بدل السماح للجميع
+- **يجب إضافة secret**: `ALLOWED_ORIGINS` بقيمة:
+  `https://ailti.app,https://www.ailti.app,https://ailti.lovable.app,capacitor://localhost,http://localhost:8080`
+- تحديث جميع Edge Functions (~15 ملف)
+
+### 3. warmCache — إضافة trip_suggestions
+- إضافة `{ table: "trip_suggestions", queryKeyPrefix: "trips" }` في `warmCache.ts`
+- `trip_packing` موجود فعلاً — يبقى كما هو
+
+### 4. useInitialSync — إصلاح منطق "حساب جديد"
+- استبدال فحص الدقيقتين بمنطق أوضح:
+  - إذا `first_sync_done` غير موجود + لا بيانات في IndexedDB → فحص السحاب عبر `get-last-updated`
+  - إذا أرجع `null` → حساب جديد فعلاً
+  - إذا أرجع timestamp → جهاز جديد لحساب قديم → مزامنة
+  - بعد أول sync ناجح → `localStorage.first_sync_done = "1"`
+
+### 5. Documents — Storage بدل base64
+- رفع الملفات الجديدة إلى Supabase Storage bucket `documents`
+- **التوافقية مع البيانات القديمة**:
+```ts
+const isLegacy = file.url.startsWith("data:");
+// legacy → عرض مباشر من base64
+// https → جلب signed URL من Storage
+```
+- القديمة تعمل كما هي — الجديدة فقط تُرفع إلى Storage
+
 ---
 
-## ملخص التغييرات
+## المرحلة 2: مشاكل الأداء
 
-| الملف | النوع | الجهد |
-|---|---|---|
-| `supabase/client.ts` | سطر واحد | دقيقة |
-| Migration (DB function) | جديد | دقيقتان |
-| `account-api/index.ts` | action جديد | 5 دقائق |
-| `useInitialSync.ts` | هوك جديد | 10 دقائق |
-| `FirstSyncOverlay.tsx` | تعديل جذري | 5 دقائق |
-| `warmCache.ts` | سطر واحد | دقيقة |
-| `Settings.tsx` | قسم جديد | 10 دقائق |
-| `ar.ts` + `en.ts` | مفاتيح ترجمة | 3 دقائق |
+### 6. useOfflineFirst — التأكد من useCallback
+- مراجعة جميع hooks التي تستخدم `useOfflineFirst` والتأكد من أن `apiFn` ملفوفة بـ `useCallback` بـ dependencies صحيحة
+
+### 7. Delta Sync — البدء بـ chat_messages فقط
+- إضافة فلتر `since` في `chat-api` action `get-messages`
+- تمرير `lastSyncedAt` من `useChat` إلى الـ API
+
+### 8. chat_messages — pagination
+- إضافة `limit(50)` + `cursor` في `chat-api`
+- infinite scroll في واجهة الدردشة
+
+### 9. location-api — throttle
+- تغيير `maxPerMinute` إلى `10` لـ action `update`
+
+---
+
+## المرحلة 3: UX والاستقرار
+
+### 10. AuthGuard — API fallback
+- إذا غاب `cached_family_id` من localStorage → استدعاء API قبل التوجيه لـ `join-or-create`
+
+### 11. useMyRole — staleTime
+- تقليل من 30 دقيقة إلى 5 دقائق + invalidation عند `visibilitychange`
+
+### 12. eslint — تفعيل no-unused-vars
+- تغيير من `"off"` إلى `"warn"`
+
+### 13. ParentDashboard — إصلاح dark mode
+- سطر 104: `from-purple-50 via-pink-50 to-amber-50` → إضافة `dark:from-background dark:via-background dark:to-background`
+- سطر 362: `from-purple-50 to-pink-50` → إضافة `dark:from-muted dark:to-muted`
+- سطر 371: `bg-purple-100` → إضافة `dark:bg-muted`
+- سطر 420: `bg-amber-50` → إضافة `dark:bg-amber-950`
+
+---
+
+## ترتيب التنفيذ
+
+| # | المهمة | الملفات | الجهد |
+|---|---|---|---|
+| 1 | Rate limit DB function + UNIQUE | Migration + ~15 Edge Functions | 30 دقيقة |
+| 2 | CORS env variable (fallback آمن `""`) | Secret + ~15 Edge Functions | 15 دقيقة |
+| 3 | warmCache trip_suggestions | `warmCache.ts` | دقيقة |
+| 4 | useInitialSync إصلاح | `useInitialSync.ts` | 5 دقائق |
+| 5 | Documents Storage | `Documents.tsx` | 15 دقيقة |
+| 6 | AuthGuard API fallback | `AuthGuard.tsx` | 10 دقائق |
+| 7 | useMyRole staleTime | `useMyRole.ts` | دقيقة |
+| 8 | location throttle | `location-api/index.ts` | دقيقة |
+| 9 | eslint warn | `eslint.config.js` | دقيقة |
+| 10 | ParentDashboard dark mode | `ParentDashboard.tsx` | 5 دقائق |
+| 11 | Delta sync (chat فقط) | `chat-api` + `useChat` | 20 دقيقة |
+| 12 | Chat pagination | `chat-api` + Chat UI | 15 دقيقة |
 
