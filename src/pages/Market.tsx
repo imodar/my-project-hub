@@ -79,7 +79,7 @@ const Market = () => {
   const lists: MarketList[] = useMemo(() => {
     const mapped = (dbLists || []).map((l: any) => {
       const listType = (l.type || "family") as "family" | "personal" | "shared";
-      const isDefaultFamilyList = listType === "family" && l.name === DEFAULT_FAMILY_LIST_NAME;
+      const isDefaultFamilyList = !!l.is_default;
 
       return {
         id: l.id,

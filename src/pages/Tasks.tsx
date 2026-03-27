@@ -66,7 +66,7 @@ const Tasks = () => {
       id: l.id,
       name: l.name,
       type: (l.type || "family") as "family" | "personal" | "shared",
-      isDefault: l.type === "family" && l.name === DEFAULT_FAMILY_LIST_NAME,
+      isDefault: !!l.is_default,
       sharedWith: l.shared_with || [],
       lastUpdatedBy: "",
       lastUpdatedAt: l.updated_at ? new Date(l.updated_at).toLocaleDateString("ar") : "",
