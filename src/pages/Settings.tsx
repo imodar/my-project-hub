@@ -480,15 +480,8 @@ const Settings = () => {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-foreground">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {member.sosEnabled ? t.emergency.sosEnabled : t.emergency.sosDisabled}
-                          </p>
                         </div>
                       </div>
-                      <Switch
-                        checked={member.sosEnabled}
-                        onCheckedChange={() => toggleMemberSOS(member.id)}
-                      />
                     </div>
                   ))}
                 </div>
