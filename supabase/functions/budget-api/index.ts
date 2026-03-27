@@ -58,8 +58,7 @@ Deno.serve(async (req) => {
     const userId = authUser.id;
 
     const adminClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const _rl = await checkRateLimit(adminClient, userId, "budget-api");
-    if (!_rl) return json({ error: "Too many requests" }, 429);
+    { const { data: _rlOk } = await adminClient.rpc("check_rate_limit", { _user_id: userId, _endpoint: "budget-api", _max_per_minute: 60 }); if (!_rlOk) return json({ error: "Too many requests" }, 429); }
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
