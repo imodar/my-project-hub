@@ -101,7 +101,7 @@ export function useTaskLists() {
       },
       mutateAsync: async (input: any) => {
         const id = input.id || crypto.randomUUID();
-        return createList.mutateAsync({ id, created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input, id });
+        return createList.mutateAsync({ created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input, id });
       },
     },
     deleteList: {
