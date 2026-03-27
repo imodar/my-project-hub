@@ -58,6 +58,40 @@ export function useChat() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const subscriptionRef = useRef<any>(null);
 
+  // ─── 0. Load cached messages from IndexedDB instantly ───
+  useEffect(() => {
+    if (!user || !familyId) return;
+    (async () => {
+      try {
+        const cached = await db.chat_messages
+          .where("family_id").equals(familyId)
+          .reverse().sortBy("created_at");
+        if (cached.length > 0) {
+          const recent = cached.slice(0, PAGE_SIZE).reverse();
+          const mapped: ChatMessage[] = recent.map((row: any) => ({
+            id: row.id,
+            senderId: row.sender_id,
+            senderName: row.sender_name_cache || "عضو",
+            text: row.plain_text_cache || row.encrypted_text || "🔒",
+            time: new Date(row.created_at).toLocaleTimeString("ar-SA", { hour: "numeric", minute: "2-digit", hour12: true }),
+            createdAt: row.created_at,
+            isMe: row.sender_id === user.id,
+            pinned: row.pinned || false,
+            reactions: (row.reactions as Record<string, number>) || {},
+            mentionUserId: row.mention_user_id || undefined,
+            status: row.status || "sent",
+            messageType: (row.message_type as MessageType) || "text",
+            mediaUrl: row.media_url || undefined,
+            mediaMetadata: row.media_metadata || undefined,
+          }));
+          setMessages(mapped);
+        }
+      } catch (e) {
+        console.warn("[Chat] Failed to load cached messages:", e);
+      }
+    })();
+  }, [user, familyId]);
+
   // ─── 1. Initialize encryption keys ───
   useEffect(() => {
     if (!user || !familyId) return;
