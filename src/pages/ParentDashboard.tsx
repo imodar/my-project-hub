@@ -161,8 +161,8 @@ const ParentDashboard = () => {
                       onClick={() => toggleItemForChild(item.id)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all active:scale-95"
                       style={{
-                        background: done ? cat.bg : "hsl(0 0% 97%)",
-                        border: `1.5px solid ${done ? cat.color : "hsl(0 0% 90%)"}`,
+                        background: done ? cat.bg : "hsl(var(--muted))",
+                        border: `1.5px solid ${done ? cat.color : "hsl(var(--border))"}`,
                       }}
                     >
                       <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
