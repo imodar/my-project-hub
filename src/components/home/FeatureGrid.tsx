@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useAppNavigate } from "@/hooks/useAppNavigate";
 import {
   ShoppingCart, Calendar, HandCoins, Wallet,
   Image, Plane, FileText, ListChecks,
