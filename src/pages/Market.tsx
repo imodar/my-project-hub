@@ -305,7 +305,7 @@ const Market = () => {
     setNewListShareMembers([]);
     setNewListUseCategories(false);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, newListUseCategories, createListMutation, familyId, toast]);
+  }, [newListName, newListShareMembers, newListUseCategories, createListMutation, familyId, toast]);
 
   const deleteList = useCallback((listId: string) => {
     setDeleteListTarget(listId);
