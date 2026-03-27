@@ -99,6 +99,36 @@ const Settings = () => {
     },
   ];
 
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      qc.invalidateQueries();
+      await qc.refetchQueries({ type: "active" });
+      const now = new Date().toISOString();
+      localStorage.setItem("last_sync_ts", now);
+      setLastSyncTs(now);
+      toast.success(t.sync.syncSuccess);
+    } catch {
+      toast.error(t.sync.unexpectedError);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const getTimeSince = (ts: string | null) => {
+    if (!ts) return t.sync.noSyncYet;
+    const diff = Date.now() - new Date(ts).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return language === "ar" ? "الآن" : "Just now";
+    if (mins < 60) return language === "ar" ? `منذ ${mins} دقيقة` : `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return language === "ar" ? `منذ ${hours} ساعة` : `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return language === "ar" ? `منذ ${days} يوم` : `${days}d ago`;
+  };
+
+  const isRecent = lastSyncTs ? (Date.now() - new Date(lastSyncTs).getTime()) < 24 * 60 * 60 * 1000 : false;
+
   const handleAddContact = async () => {
     if (!newContactName.trim() || !newContactPhone.trim() || !familyId || !user) return;
     const { data, error } = await supabase.functions.invoke("settings-api", {
