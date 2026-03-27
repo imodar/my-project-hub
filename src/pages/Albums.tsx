@@ -96,6 +96,7 @@ const Albums = () => {
   const { featureAccess } = useUserRole();
   const { albums: dbAlbums, isLoading, createAlbum, deleteAlbum, addPhoto, deletePhoto } = useAlbums();
   const { trips: dbTrips } = useTrips();
+  const albumsQc = useQueryClient();
 
   // Map DB data to UI format
   const albums: Album[] = useMemo(() => {
