@@ -141,6 +141,7 @@ Deno.serve(async (req) => {
       if (typeof checked !== "boolean") return json({ error: "checked يجب أن يكون true أو false" }, 400);
       const { data, error } = await supabase.from("market_items").update({ checked, checked_by: checked ? userId : null }).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
+      if (data?.list_id) await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", data.list_id);
       return json({ data });
     }
 
