@@ -449,14 +449,14 @@ const Tasks = () => {
                   haptic.light();
                   setActiveListId(list.id);
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold max-w-[140px] transition-all ${
                   activeListId === list.id
                     ? "bg-white dark:bg-white/20 text-foreground dark:text-white shadow-md"
                     : "bg-white/15 text-white/80 hover:bg-white/25"
                 }`}
               >
-                {getListIcon(list.type, activeListId === list.id)}
-                {list.name}
+                <span className="shrink-0">{getListIcon(list.type, activeListId === list.id)}</span>
+                <span className="truncate">{list.name}</span>
               </button>
             ))}
           </div>

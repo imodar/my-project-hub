@@ -434,15 +434,15 @@ const Places = () => {
                   setActiveListId(list.id);
                   setActiveCategory("الكل");
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold max-w-[140px] transition-all ${
                   activeListId === list.id
                     ? "bg-white dark:bg-white/20 text-foreground dark:text-white shadow-md"
                     : "bg-white/15 text-white/80 hover:bg-white/25"
                 }`}
               >
-                {getListIcon(list.type, activeListId === list.id)}
-                {list.name}
-                {list.type === "personal" && <Lock size={10} />}
+                <span className="shrink-0">{getListIcon(list.type, activeListId === list.id)}</span>
+                <span className="truncate">{list.name}</span>
+                {list.type === "personal" && <Lock size={10} className="shrink-0" />}
               </button>
             ))}
           </div>
