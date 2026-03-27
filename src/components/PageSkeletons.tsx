@@ -40,7 +40,9 @@ export const ListPageSkeleton = () => (
 
 /** Skeleton loader for calendar page */
 export const CalendarPageSkeleton = () => (
-  <div className="px-4 py-4 space-y-4" dir="rtl">
+  <div dir="rtl">
+    <HeaderShell />
+    <div className="px-4 py-4 space-y-4">
     {/* Month header skeleton */}
     <div className="flex items-center justify-between">
       <Skeleton className="h-5 w-5 rounded" />
