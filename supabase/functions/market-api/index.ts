@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
       if (quantity && !validStr(quantity, MAX_QTY)) return json({ error: "الكمية طويلة جداً" }, 400);
       const { data, error } = await supabase.from("market_items").insert({ list_id, name: sanitize(name, MAX_NAME), category: category ? sanitize(category, MAX_CAT) : null, quantity: quantity ? sanitize(quantity, MAX_QTY) : null, added_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
+      await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", list_id);
       return json({ data });
     }
 
@@ -140,6 +141,7 @@ Deno.serve(async (req) => {
       if (typeof checked !== "boolean") return json({ error: "checked يجب أن يكون true أو false" }, 400);
       const { data, error } = await supabase.from("market_items").update({ checked, checked_by: checked ? userId : null }).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
+      if (data?.list_id) await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", data.list_id);
       return json({ data });
     }
 
@@ -156,14 +158,17 @@ Deno.serve(async (req) => {
       if (checked !== undefined) { updates.checked = checked; updates.checked_by = checked ? userId : null; }
       const { data, error } = await supabase.from("market_items").update(updates).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
+      if (data?.list_id) await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", data.list_id);
       return json({ data });
     }
 
     if (action === "delete-item") {
       const { id } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      const { data: itemToDelete } = await supabase.from("market_items").select("list_id").eq("id", id).maybeSingle();
       const { error } = await supabase.from("market_items").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
+      if (itemToDelete?.list_id) await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", itemToDelete.list_id);
       return json({ success: true });
     }
 
