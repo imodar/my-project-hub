@@ -333,8 +333,11 @@ const FamilyManagement = () => {
                 stopScanner();
                 setShowScanner(false);
                 setJoinCode(code);
-                // Auto-submit join request
-                handleJoinByCode(code);
+                // Extract code from URL if needed, then initiate join with role selection
+                const extracted = code.includes("code=")
+                  ? new URL(code).searchParams.get("code") || code
+                  : code;
+                initiateJoin(extracted);
               }
             }
           } catch {}
