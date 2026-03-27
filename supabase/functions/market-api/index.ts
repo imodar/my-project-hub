@@ -95,7 +95,10 @@ Deno.serve(async (req) => {
       if (shared_with !== undefined && !Array.isArray(shared_with)) return json({ error: "shared_with يجب أن تكون مصفوفة" }, 400);
       const updates: Record<string, unknown> = {};
       if (name !== undefined) updates.name = sanitize(name, MAX_NAME);
-      if (shared_with !== undefined) updates.shared_with = shared_with.slice(0, 50);
+      if (shared_with !== undefined) {
+        updates.shared_with = shared_with.slice(0, 50);
+        updates.type = shared_with.length > 0 ? "family" : "personal";
+      }
       const { data, error } = await supabase.from("market_lists").update(updates).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
