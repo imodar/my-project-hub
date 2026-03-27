@@ -247,7 +247,7 @@ const ParentDashboard = () => {
 
         {/* Add child */}
         {showAddChild ? (
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-purple-100/40">
+          <div className="bg-card rounded-2xl p-4 shadow-sm border border-purple-100/40 dark:border-border">
             <input
               type="text"
               value={newChildName}
