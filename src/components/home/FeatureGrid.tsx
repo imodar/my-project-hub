@@ -9,7 +9,7 @@ import { useUserRole } from "@/contexts/UserRoleContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const FeatureGrid = React.forwardRef<HTMLElement>((_props, ref) => {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { featureAccess } = useUserRole();
   const { t } = useLanguage();
 

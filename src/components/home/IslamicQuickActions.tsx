@@ -22,7 +22,7 @@ const TasbihIcon = React.forwardRef<SVGSVGElement, { size?: number; className?: 
 TasbihIcon.displayName = "TasbihIcon";
 
 const IslamicQuickActions = React.forwardRef<HTMLDivElement>((_props, ref) => {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { islamicMode } = useIslamicMode();
   const { t } = useLanguage();
 

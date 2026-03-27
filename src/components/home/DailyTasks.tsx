@@ -5,7 +5,7 @@ import { useTaskLists } from "@/hooks/useTaskLists";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { lists: taskLists, isLoading } = useTaskLists();
   const { t } = useLanguage();
 
