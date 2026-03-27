@@ -47,9 +47,12 @@ Deno.serve(async (req) => {
     const action = body.action;
 
     if (action === "get-albums") {
-      const { family_id } = body;
+      const { family_id, since } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
-      const { data, error } = await supabase.from("albums").select("*, album_photos(*)").eq("family_id", family_id).order("created_at", { ascending: false });
+      if (since && typeof since !== "string") return json({ error: "since غير صالح" }, 400);
+      let query = supabase.from("albums").select("*, album_photos(*)").eq("family_id", family_id).order("created_at", { ascending: false });
+      if (since) query = query.gt("created_at", since);
+      const { data, error } = await query;
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
