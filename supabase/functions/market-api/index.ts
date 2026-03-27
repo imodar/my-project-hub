@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       const { id } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       // Prevent deleting default lists
-      const { data: listToDelete } = await supabase.from("market_lists").select("is_default").eq("id", id).single();
+      const { data: listToDelete } = await supabase.from("market_lists").select("is_default").eq("id", id).maybeSingle();
       if (listToDelete?.is_default) return json({ error: "لا يمكن حذف القائمة الافتراضية" }, 403);
       const { error } = await supabase.from("market_lists").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
