@@ -203,7 +203,6 @@ const Market = () => {
 
   // New list form
   const [newListName, setNewListName] = useState("");
-  const [newListType, setNewListType] = useState<"family" | "personal">("personal");
   const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
   const [newListUseCategories, setNewListUseCategories] = useState(false);
 
