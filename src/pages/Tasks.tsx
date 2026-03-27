@@ -320,7 +320,7 @@ const Tasks = () => {
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
-  }, [newListName, newListType, newListShareMembers, createListMutation]);
+  }, [newListName, newListShareMembers, createListMutation]);
 
 
   const deleteList = useCallback((listId: string) => {
