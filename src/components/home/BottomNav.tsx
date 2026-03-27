@@ -131,7 +131,7 @@ const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
                 key={item.label}
                 onClick={() => {
                   haptic.light();
-                  rawNavigate(item.path);
+                  navigate(item.path);
                 }}
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
