@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
       if (quantity && !validStr(quantity, MAX_QTY)) return json({ error: "الكمية طويلة جداً" }, 400);
       const { data, error } = await supabase.from("market_items").insert({ list_id, name: sanitize(name, MAX_NAME), category: category ? sanitize(category, MAX_CAT) : null, quantity: quantity ? sanitize(quantity, MAX_QTY) : null, added_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
+      await supabase.from("market_lists").update({ updated_at: new Date().toISOString() }).eq("id", list_id);
       return json({ data });
     }
 
