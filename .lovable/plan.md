@@ -1,39 +1,106 @@
 
+# خطة الإصلاح: منع الرجوع الخاطئ إلى `complete-profile` بعد تسجيل الخروج ثم تسجيل الدخول
 
-# إصلاح Race Condition في AuthContext.tsx
+## التشخيص
+المشكلة ليست من الداتابيز ولا من الـ API:
+- من سجلات الشبكة واضح أن `auth-management` يرجّع الاسم الحالي بنجاح:
+  - `{"name":"مضر"}`
+- إذن البيانات موجودة فعلاً، لكن الواجهة تحكمت مبكرًا بشكل خاطئ.
 
-## المشكلة
-عند تسجيل الدخول، `fetchProfile` يُستدعى مرتين بالتوازي (من `onAuthStateChange` + `getSession`). الاستدعاء الأول يفشل لأن التوكن غير جاهز بعد، فيبقى `profileName = ""` ويُحوَّل المستخدم إلى `/complete-profile` رغم وجود اسمه في قاعدة البيانات.
+## السبب الجذري
+بعد `signOut` ثم `signIn`:
+- `profileReady` يبقى `true` من الجلسة السابقة
+- بينما `profileName` تم مسحه عند الخروج
+- عند بدء الجلسة الجديدة، `AuthGuard` يرى:
+  - `session` موجودة
+  - `profileReady === true`
+  - `profileName === ""`
+- فيحوّل المستخدم فورًا إلى `/complete-profile` قبل أن ينتهي `fetchProfile()` من استرجاع الاسم من:
+  1. `localStorage`
+  2. ثم الـ API إذا لم يوجد كاش
 
-## التعديل: `src/contexts/AuthContext.tsx`
+يعني المشكلة الأساسية: **لم يتم إعادة تهيئة حالة البروفايل عند بدء جلسة جديدة**.
 
-### 1. منع الاستدعاء المزدوج
-إضافة `useRef<boolean>` لمنع تشغيل `fetchProfile` مرتين بالتوازي:
-```ts
-const fetchingRef = useRef(false);
-// في بداية fetchProfile:
-if (fetchingRef.current) return;
-fetchingRef.current = true;
-// في نهاية fetchProfile:
-fetchingRef.current = false;
+## التعديل المطلوب
+
+### 1) إصلاح `src/contexts/AuthContext.tsx`
+عند بداية أي جلسة جديدة للمستخدم:
+- إعادة `profileReady` إلى `false` قبل بدء تحميل البروفايل
+- إعادة تعيين `initialFetchDoneRef` بشكل صحيح عندما يتبدل المستخدم
+- التأكد أن `fetchProfile()` لا يعلن الجاهزية النهائية إلا بعد:
+  - قراءة الكاش المحلي أولاً
+  - ثم محاولة API
+  - ثم retry واحد فقط عند الحاجة
+
+التعديل العملي:
+- داخل `onAuthStateChange` عند وجود `newSession`:
+  - إذا كان المستخدم جديدًا بالنسبة للحالة الحالية أو حدث `SIGNED_IN`
+  - نفذ:
+  ```ts
+  setProfileReady(false);
+  ```
+- داخل `getSession().then(...)`:
+  - قبل `fetchProfile(existingSession.user.id)` أيضًا:
+  ```ts
+  setProfileReady(false);
+  ```
+- الاحتفاظ بمنع الاستدعاء المزدوج الموجود حاليًا.
+
+### 2) تقوية منطق `AuthGuard`
+تعديل شرط التحويل إلى `/complete-profile` ليعتمد على **الاسم من الذاكرة أو الكاش المحلي** بدل `profileName` فقط.
+
+الفكرة:
+- حساب قيمة احتياطية:
+  ```ts
+  const effectiveProfileName =
+    profileName || (session?.user?.id ? localStorage.getItem(`profile_name_${session.user.id}`) ?? "" : "");
+  ```
+- ثم:
+  ```ts
+  if (!effectiveProfileName) {
+    return <Navigate to="/complete-profile" replace />;
+  }
+  ```
+
+هذا يضمن:
+- إذا كان الاسم موجودًا محليًا → يدخل مباشرة
+- إذا لم يكن موجودًا محليًا → ينتظر `profileReady`
+- وإذا انتهى التحميل ولم يجد شيئًا في المحلي ولا في الـ API → فقط وقتها يذهب إلى `complete-profile`
+
+### 3) الحفاظ على التسلسل المطلوب منك
+السلوك النهائي بعد الإصلاح سيكون:
+
+```text
+1. المستخدم يسجل الدخول
+2. التطبيق يشيك على localStorage
+3. إذا الاسم موجود -> يدخل فورًا
+4. إذا غير موجود -> يطلب auth-management/get-profile
+5. إذا API رجّع اسم -> يخزن محليًا ويدخل
+6. إذا المحلي و API كلاهما فارغان -> يذهب إلى /complete-profile فقط
 ```
 
-### 2. إعادة محاولة مرة واحدة إذا فشل ولا يوجد cache
-```ts
-let success = await Promise.race([networkFetch(), timeout]);
-if (!success && !cached) {
-  await new Promise(r => setTimeout(r, 1200));
-  await Promise.race([networkFetch(), timeout2]);
-}
-```
-
-### 3. إصلاح السباق بين onAuthStateChange و getSession
-- `onAuthStateChange`: يضبط `session` و `loading` فقط، **لا يستدعي `fetchProfile`** إلا عند event `SIGNED_IN` وبشرط عدم وجود fetch جارٍ.
-- `getSession().then()`: يستدعي `fetchProfile` للجلسة الموجودة مسبقاً.
-- عند logout (`!newSession`): يمسح `profileName` ويضبط `profileReady = true`.
-
-### الملف الوحيد المتأثر
+## الملفات المتأثرة
 | الملف | التغيير |
 |---|---|
-| `src/contexts/AuthContext.tsx` | منع استدعاء مزدوج + retry + إصلاح race condition |
+| `src/contexts/AuthContext.tsx` | إعادة ضبط `profileReady` عند بدء جلسة جديدة ومنع الحكم المبكر |
+| `src/components/AuthGuard.tsx` | استخدام fallback من localStorage قبل التحويل إلى `/complete-profile` |
 
+## لماذا هذه الخطة صحيحة
+- تستخدم **API فقط** ولا تضيف أي استدعاء مباشر للداتابيز
+- لا تغيّر UX إلا في النقطة الخاطئة الحالية
+- تتوافق مع منطقك المطلوب حرفيًا:
+  - المحلي أولًا
+  - ثم API
+  - ثم `complete-profile` فقط إذا لم يوجد شيء في الاثنين
+
+## ملاحظة تقنية
+بناءً على الكود الحالي، `CompleteProfile.tsx` ما يزال يحدّث جدول `profiles` مباشرة عبر:
+```ts
+supabase.from("profiles").update(...)
+```
+هذا ليس ضمن سبب المشكلة الحالية، لكنه يخالف قاعدة “API فقط”. لن ألمسه ضمن هذا الإصلاح إلا إذا أردت أن أحدّث هذه الشاشة أيضًا لتستخدم `auth-management` بدل الاستدعاء المباشر.
+
+## تنفيذ مقترح
+سأنفذ الإصلاح في خطوتين فقط:
+1. إعادة ضبط حالة البروفايل في `AuthContext`
+2. إضافة fallback محلي واضح في `AuthGuard`
