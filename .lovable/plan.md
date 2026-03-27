@@ -1,40 +1,58 @@
 
 
-# Fix: Market list creation duplicates and missing properties
+# تحويل نوع القائمة ليكون تلقائياً بناءً على المشاركة
 
-## Root Causes
+## الفكرة
+بدل ما المستخدم يختار "عائلية" أو "شخصية" عند إنشاء القائمة، النوع يتحدد تلقائياً:
+- **شاركتها مع حدا** → `type = "family"`
+- **ما شاركتها** → `type = "personal"`
+- يمكن تغيير النوع بأي لحظة عبر إضافة/إزالة المشاركين
 
-### 1. Duplicate lists in header
-`createList` mutation passes `queryKey: key` which triggers **optimistic INSERT** (adds entry with client-generated UUID to cache). Then `onSuccess: () => refetch()` fetches from server which returns the **real** entry with a different server-generated UUID. Result: two entries with different IDs but same name.
-
-### 2. `use_categories` not sent to server
-- `useMarketLists.ts` line 65: `apiFn` only sends `name` and `type` — missing `use_categories`
-- `market-api/index.ts` `create-list`: doesn't read or insert `use_categories`
-- So server always defaults to `use_categories: true`, ignoring user's choice
-
-### 3. Wrong list survives after refresh
-Optimistic entry has `use_categories` from user input (e.g., `false`). Server entry has `use_categories: true` (DB default). After refresh, only server data remains — so the correct settings are lost.
-
-### 4. New list doesn't auto-select
-The `onSuccess` callback path works but the optimistic entry arrives first and auto-select picks the first list, not the new one.
-
-## Changes
-
-### File 1: `src/hooks/useMarketLists.ts`
-- **Remove `queryKey: key`** from `createList` mutation — this prevents optimistic INSERT, eliminating the duplicate. The `onSuccess: () => refetch()` already handles adding the real data.
-- **Pass `use_categories`** in the `apiFn` to the server
-
-### File 2: `supabase/functions/market-api/index.ts`
-- In `create-list` action: read `use_categories` from body and include it in the INSERT
-
-### File 3: `src/pages/Market.tsx`
-- No changes needed — the `onSuccess` callback already handles `setActiveListId(data.id)`, which will work once the duplicate issue is fixed
-
-## Summary
-| Problem | Fix |
+## الصفحات المتأثرة (4 صفحات)
+| الصفحة | الملف |
 |---|---|
-| Two lists appear | Remove `queryKey` from createList mutation |
-| `use_categories` ignored | Pass it through hook → API → DB |
-| Wrong list after refresh | Fixed by sending `use_categories` to server |
-| List doesn't auto-open | Fixed by removing optimistic duplicate race |
+| السوق | `src/pages/Market.tsx` |
+| المهام | `src/pages/Tasks.tsx` |
+| الوثائق | `src/pages/Documents.tsx` |
+| الأماكن | `src/pages/Places.tsx` |
+
+## التغييرات في كل صفحة
+
+### 1. إزالة اختيار النوع من نموذج الإنشاء
+- حذف `newListType` state و أزرار "عائلية / شخصية"
+- إبقاء حقل الاسم وخيار المشاركة (يظهر دائماً بدل ما يظهر فقط عند "عائلية")
+- تحديد النوع تلقائياً عند الإرسال:
+  ```
+  type = newListShareMembers.length > 0 ? "family" : "personal"
+  ```
+
+### 2. تعديل منطق فلترة الموظفين (Staff)
+- حالياً Staff لا يرون قوائم `type === "family"` — هذا يبقى كما هو لأن القوائم المشاركة ستكون `family`
+
+### 3. تحديث عرض التابات في الهيدر
+- الأيقونة تتحدد بناءً على `shared_with.length > 0` بدل `type`
+- أو تبقى كما هي لأن النوع سيعكس المشاركة تلقائياً
+
+### 4. القائمة الافتراضية
+- لا تتأثر — تبقى `is_default: true` و `type: "family"` كما هي
+
+## التغييرات في Edge Functions (4 ملفات)
+| الملف | التغيير |
+|---|---|
+| `market-api/index.ts` | عند `update-list` إذا تم تحديث `shared_with`، يتم تحديث `type` تلقائياً |
+| `tasks-api/index.ts` | نفس الشيء |
+| `documents-api/index.ts` | نفس الشيء |
+| `places-api/index.ts` | نفس الشيء |
+
+في كل API عند تحديث `shared_with`:
+```
+if shared_with.length > 0 → type = "family"
+if shared_with.length === 0 → type = "personal"
+```
+
+## ملخص
+- حذف UI اختيار النوع من 4 صفحات
+- إظهار قسم المشاركة دائماً (بدل إظهاره فقط عند "عائلية")
+- تحديد النوع تلقائياً من `shared_with` عند الإنشاء والتعديل
+- تحديث Edge Functions لتعكس النوع تلقائياً عند تغيير المشاركين
 
