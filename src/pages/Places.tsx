@@ -256,7 +256,7 @@ const Places = () => {
 
   const deleteList = useCallback((listId: string) => {
     haptic.medium();
-    deleteListMut.mutate(listId);
+    deleteListMut.mutate({ id: listId });
     if (activeListId === listId && lists.length > 1) {
       const remaining = lists.filter(l => l.id !== listId);
       if (remaining.length > 0) setActiveListId(remaining[0].id);

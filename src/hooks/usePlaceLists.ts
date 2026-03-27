@@ -20,7 +20,7 @@ export function usePlaceLists() {
     return { data: response?.data || [], error: null };
   }, [familyId]);
 
-  const { data: lists, isLoading, refetch } = useOfflineFirst<Record<string, unknown>>({
+  const { data: lists, isLoading, refetch } = useOfflineFirst<any>({
     table: "place_lists",
     queryKey: key,
     apiFn,
