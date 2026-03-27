@@ -1,124 +1,118 @@
 
 
-# إصلاح المشاكل المتبقية — خطة محدثة نهائية
+# View Transitions API — خطة نهائية محدثة
 
-## ما تم التحقق منه وهو مُصلَح فعلاً ✓
-- `handleRequestOpen` — مُصلَح (onSuccess/onError)
-- `toggleMemberSOS` — محذوف من Settings.tsx
-- `creatorRole` — مُستخدَم فعلاً وليس كود ميت
-- `useChat subscription cleanup` — موجود
-- `Will handleRefresh` — مُصلَح (invalidateQueries)
+## الملفات المتأثرة
+1. `src/hooks/useAppNavigate.ts` — **جديد**
+2. `src/components/PageTransition.tsx` — تبسيط
+3. `src/index.css` — CSS للانتقالات
+4. `src/components/home/BottomNav.tsx` — useAppNavigate + direction: "tab"
+5. `src/components/home/FeatureGrid.tsx` — useAppNavigate
+6. `src/components/home/IslamicQuickActions.tsx` — useAppNavigate
+7. `src/components/home/DailyTasks.tsx` — useAppNavigate
 
 ---
 
-## 1. SOSButton — إصلاح شامل (حرج جداً)
-
-`activateSOS()` حالياً = toast + صوت فقط. لا API call، لا notification حقيقي.
-
-### التغييرات في `src/components/home/SOSButton.tsx`:
-- **حذف useEffect cleanup المكرر** (سطور 91-98 — نسخة مطابقة لـ 83-90)
-- **حذف localStorage لجهات الاتصال** — إزالة `STORAGE_KEY`, `SOS_DISABLED_KEY`, و useEffect الذي يحفظ فيه
-- **استبدال direct DB queries**: بدل `supabase.from("family_members")` + `supabase.from("profiles")`، استدعاء:
-  ```ts
-  supabase.functions.invoke("family-management", {
-    body: { action: "get-members", family_id: familyId }
-  })
-  ```
-- **قراءة جهات الاتصال من DB**: استدعاء `settings-api` بـ `get-emergency-contacts` بدل localStorage
-- **إصلاح `activateSOS()`**: إضافة API call حقيقي:
-  ```ts
-  await supabase.functions.invoke("notifications-api", {
-    body: { action: "send-sos-alert", family_id: familyId }
-  });
-  ```
-- **إصلاح `handleCancelSOS()`**: إرسال إشعار إلغاء عبر `cancel-sos-alert` بنوع مختلف
-
-### التغييرات في `supabase/functions/notifications-api/index.ts`:
-
-**Action: `send-sos-alert`**
-1. التحقق من `family_id` + عضوية المستخدم
-2. جلب أعضاء العائلة النشطين (باستثناء المُرسِل)
-3. جلب اسم المُرسِل من `profiles`
-4. إدخال في `user_notifications` (وليس `scheduled_notifications`) — يظهر فوراً عبر realtime
-5. `is_read: false` صريح في كل insert
-6. إرجاع `{ data: { notified: memberIds.length } }`
+## 1. إنشاء `src/hooks/useAppNavigate.ts`
 
 ```ts
-await adminClient.from("user_notifications").insert(
-  memberIds.map(uid => ({
-    user_id: uid, type: "sos_alert",
-    title: "🚨 تنبيه طوارئ",
-    body: `${senderName} يحتاج مساعدة`,
-    source_type: "sos", source_id: userId, is_read: false,
-  }))
-);
+import { useNavigate, NavigateOptions } from "react-router-dom";
+import { flushSync } from "react-dom";
+
+type NavDirection = "forward" | "back" | "tab";
+
+export function useAppNavigate() {
+  const navigate = useNavigate();
+  return (to: string, options?: NavigateOptions & { direction?: NavDirection }) => {
+    const dir = options?.direction ?? "forward";
+    document.documentElement.dataset.navDirection = dir;
+
+    if (document.startViewTransition) {
+      document.startViewTransition(() => {
+        flushSync(() => navigate(to, options));
+      });
+    } else {
+      navigate(to, options);
+    }
+  };
+}
 ```
 
-**Action: `cancel-sos-alert`**
-- نفس المنطق لكن بنوع **`sos_cancelled`** (وليس `sos_alert`) حتى يميّز الـ client بينهما
-- `is_read: false` صريح
-- العنوان: "✅ إلغاء تنبيه الطوارئ"
-- الجسم: `${senderName} بخير — تم إلغاء التنبيه`
+---
 
+## 2. تبسيط `PageTransition.tsx`
+
+حذف `framer-motion`، إرجاع children فقط:
+
+```tsx
+export default function PageTransition({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+```
+
+---
+
+## 3. إضافة CSS في `index.css`
+
+```css
+/* === View Transitions === */
+
+/* Tab = fade فقط (BottomNav) — الـ tabs "موجودة دائماً" */
+[data-nav-direction="tab"] ::view-transition-new(root) {
+  animation: 150ms ease-out both vt-fade-in;
+}
+[data-nav-direction="tab"] ::view-transition-old(root) {
+  animation: 150ms ease-out both vt-fade-out;
+}
+
+/* Forward = صفحة جديدة تدخل من اليسار (RTL) — الصفحات "تُفتح" */
+[data-nav-direction="forward"] ::view-transition-new(root) {
+  animation: 200ms ease-out both vt-fade-in, 200ms ease-out both vt-slide-in-rtl;
+}
+[data-nav-direction="forward"] ::view-transition-old(root) {
+  animation: 200ms ease-out both vt-fade-out, 200ms ease-out both vt-slide-out-rtl;
+}
+
+/* Back = صفحة ترجع من اليمين */
+[data-nav-direction="back"] ::view-transition-new(root) {
+  animation: 200ms ease-out both vt-fade-in, 200ms ease-out both vt-slide-in-ltr;
+}
+[data-nav-direction="back"] ::view-transition-old(root) {
+  animation: 200ms ease-out both vt-fade-out, 200ms ease-out both vt-slide-out-ltr;
+}
+
+@keyframes vt-fade-in  { from { opacity: 0; } }
+@keyframes vt-fade-out { to   { opacity: 0; } }
+@keyframes vt-slide-in-rtl  { from { transform: translateX(-20px); } }
+@keyframes vt-slide-out-rtl { to   { transform: translateX(20px); } }
+@keyframes vt-slide-in-ltr  { from { transform: translateX(20px); } }
+@keyframes vt-slide-out-ltr { to   { transform: translateX(-20px); } }
+```
+
+---
+
+## 4. تحديث 4 ملفات
+
+**BottomNav.tsx**: `useNavigate()` → `useAppNavigate()` مع `direction: "tab"`:
 ```ts
-await adminClient.from("user_notifications").insert(
-  memberIds.map(uid => ({
-    user_id: uid, type: "sos_cancelled",
-    title: "✅ إلغاء تنبيه الطوارئ",
-    body: `${senderName} بخير — تم إلغاء التنبيه`,
-    source_type: "sos", source_id: userId, is_read: false,
-  }))
-);
+navigate(item.path, { direction: "tab" });
 ```
 
----
+**FeatureGrid.tsx**: `useNavigate()` → `useAppNavigate()` — direction الافتراضي `"forward"`.
 
-## 2. addSuggestion/updateSuggestion — table خاطئ
+**IslamicQuickActions.tsx**: نفس الاستبدال — `"forward"` افتراضي.
 
-### `src/hooks/useTrips.ts`:
-- `table: "trip_packing"` → `table: "trip_suggestions"` في `addSuggestion` و `updateSuggestion`
-
-### `src/lib/db.ts`:
-- إضافة `trip_suggestions!: Table;`
-- إضافة في schema: `trip_suggestions: "id, trip_id, suggested_by, status"`
-- Version bump من 1 إلى 2
-
-### `src/contexts/AuthContext.tsx`:
-- إضافة `db.trip_suggestions.clear()` في signOut
+**DailyTasks.tsx**: نفس الاستبدال — `"forward"` افتراضي.
 
 ---
 
-## 3. rate_limit_counters cleanup
+## ما لا يتغير
+- أزرار "رجوع" في PageHeader — تبقى `useNavigate` العادي، تُحدَّث تدريجياً لاحقاً بـ `{ direction: "back" }`
+- `framer-motion` يبقى في المشروع (مستخدم في أماكن أخرى)
+- الـ offline-first sync مستقل تماماً
 
-إضافة pg_cron job:
-```sql
-SELECT cron.schedule(
-  'cleanup-rate-limits',
-  '0 */6 * * *',
-  $$DELETE FROM public.rate_limit_counters
-    WHERE window_start < now() - interval '24 hours'$$
-);
-```
-
----
-
-## ترتيب التنفيذ
-1. SOSButton + notifications-api (الأهم — ميزة safety)
-2. useTrips + db.ts + AuthContext (trip_suggestions)
-3. rate_limit_counters cron job
-
----
-
-## نقاط ليست مشاكل (تم التحقق)
-
-| النقطة | الحالة |
-|--------|--------|
-| handleRequestOpen race condition | مُصلَح بالفعل |
-| creatorRole unused | مُستخدَم فعلاً |
-| useChat subscription leak | cleanup موجود |
-| useOfflineMutation INSERT duplicate | invalidateQueries يحل الأمر |
-| QueryClient staleTime 10min | قرار تصميمي مقصود |
-| No retry exponential | مقبول مع offline queue |
-| Dark mode | يحفظ في localStorage — يعمل |
-| Chat 0 أعضاء subtitle | طبيعي أثناء التحميل |
+## النتيجة
+- Tab switching (BottomNav) = **fade سريع 150ms** — شعور أن الـ tabs موجودة دائماً
+- Feature navigation (FeatureGrid/Islamic/Tasks) = **slide + fade 200ms** — شعور أن الصفحات تُفتح
+- Back (مستقبلاً) = **slide معاكس** — شعور native
 
