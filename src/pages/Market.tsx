@@ -395,7 +395,7 @@ const Market = () => {
               {item.name}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              {isChecked ? item.quantity : `الكمية: ${item.quantity}`}
+              {item.quantity ? (isChecked ? item.quantity : `الكمية: ${item.quantity}`) : null}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
