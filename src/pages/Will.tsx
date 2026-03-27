@@ -164,12 +164,21 @@ const Will = () => {
 
   const handleRequestOpen = () => {
     haptic.heavy();
-    createOpenRequest.mutate({ reason: "طلب فتح الوصية بعد الوفاة" });
-    setRequestSent(true);
-    toast({
-      title: "تم إرسال الطلب",
-      description: "سيتم إشعار جميع أفراد الأسرة للموافقة على فتح الوصية",
-    });
+    createOpenRequest.mutate(
+      { reason: "طلب فتح الوصية بعد الوفاة" },
+      {
+        onSuccess: () => {
+          setRequestSent(true);
+          toast({
+            title: "تم إرسال الطلب",
+            description: "سيتم إشعار جميع أفراد الأسرة للموافقة على فتح الوصية",
+          });
+        },
+        onError: () => {
+          toast({ title: "فشل إرسال الطلب", variant: "destructive" });
+        },
+      }
+    );
   };
 
   const handleResetPassword = async () => {
