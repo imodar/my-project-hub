@@ -22,6 +22,10 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
     queryFn: async (): Promise<FamilyMemberInfo[]> => {
       if (!familyId) return [];
 
+      // Guard against stale calls after logout
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) return [];
+
       const { data, error } = await supabase.functions.invoke("family-management", {
         body: { action: "get-members", family_id: familyId },
       });
