@@ -239,7 +239,7 @@ const Places = () => {
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     haptic.medium();
-    deletePlaceMut.mutate(deleteTarget.id);
+    deletePlaceMut.mutate({ id: deleteTarget.id });
     setSwipeOffset((prev) => { const n = { ...prev }; delete n[deleteTarget.id]; return n; });
     setDeleteTarget(null);
   }, [activeListId, deleteTarget]);
