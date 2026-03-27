@@ -11,11 +11,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import authFamily from "@/assets/auth-family.png";
 import LanguageSheet from "@/components/LanguageSheet";
+import LegalPageSheet from "@/components/LegalPageSheet";
 
 type Step = "phone" | "otp";
 
 const Auth = () => {
   const [langSheetOpen, setLangSheetOpen] = useState(false);
+  const [privacySheet, setPrivacySheet] = useState(false);
+  const [termsSheet, setTermsSheet] = useState(false);
   const { session } = useAuth();
   const { t, language, setLanguage, dir, isRTL } = useLanguage();
   const navigate = useNavigate();
@@ -238,9 +241,11 @@ const Auth = () => {
                     </span>
                   </button>
                   {" — "}
-                  {t.auth.termsText}{" "}
-                  <span className="underline underline-offset-2 text-muted-foreground/80">{t.auth.termsLink}</span>{" "}
-                  {t.auth.termsEnd}
+                   {t.auth.termsText}{" "}
+                   <button type="button" onClick={() => setTermsSheet(true)} className="underline underline-offset-2 text-muted-foreground/80 hover:text-foreground transition-colors">{t.auth.termsLink}</button>{" "}
+                   {t.auth.andPrivacy}{" "}
+                   <button type="button" onClick={() => setPrivacySheet(true)} className="underline underline-offset-2 text-muted-foreground/80 hover:text-foreground transition-colors">{t.auth.privacyLink}</button>{" "}
+                   {t.auth.termsEnd}
                 </p>
               </div>
             </motion.div>
@@ -311,6 +316,8 @@ const Auth = () => {
       </motion.div>
 
       <LanguageSheet open={langSheetOpen} onOpenChange={setLangSheetOpen} />
+      <LegalPageSheet open={termsSheet} onOpenChange={setTermsSheet} slug="terms-of-service" />
+      <LegalPageSheet open={privacySheet} onOpenChange={setPrivacySheet} slug="privacy-policy" />
     </div>
   );
 };

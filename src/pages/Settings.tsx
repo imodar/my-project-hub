@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { toast } from "sonner";
 import LanguageSheet from "@/components/LanguageSheet";
+import LegalPageSheet from "@/components/LegalPageSheet";
 
 const Settings = () => {
   const { signOut, user } = useAuth();
@@ -37,6 +38,8 @@ const Settings = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTs, setLastSyncTs] = useState(() => localStorage.getItem("last_sync_ts"));
   const qc = useQueryClient();
+  const [privacySheet, setPrivacySheet] = useState(false);
+  const [termsSheet, setTermsSheet] = useState(false);
 
   const isAdmin = isDbAdmin;
 
@@ -86,7 +89,8 @@ const Settings = () => {
       title: t.settings.aboutApp,
       items: [
         { icon: Info, label: t.settings.about, desc: t.settings.version },
-        { icon: Shield, label: t.settings.privacy, desc: "" },
+        { icon: Shield, label: t.settings.privacy, desc: "", onClick: () => setPrivacySheet(true) },
+        { icon: Shield, label: t.settings.terms, desc: "", onClick: () => setTermsSheet(true) },
       ],
     },
     {
@@ -577,6 +581,8 @@ const Settings = () => {
       </Sheet>
 
       <LanguageSheet open={langSheet} onOpenChange={setLangSheet} />
+      <LegalPageSheet open={privacySheet} onOpenChange={setPrivacySheet} slug="privacy-policy" />
+      <LegalPageSheet open={termsSheet} onOpenChange={setTermsSheet} slug="terms-of-service" />
     </div>
   );
 };

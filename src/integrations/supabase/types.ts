@@ -1048,6 +1048,39 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_pages: {
+        Row: {
+          content_ar: string
+          content_en: string
+          id: string
+          last_updated_at: string
+          slug: string
+          title_ar: string
+          title_en: string
+          updated_by: string | null
+        }
+        Insert: {
+          content_ar?: string
+          content_en?: string
+          id?: string
+          last_updated_at?: string
+          slug: string
+          title_ar?: string
+          title_en?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content_ar?: string
+          content_en?: string
+          id?: string
+          last_updated_at?: string
+          slug?: string
+          title_ar?: string
+          title_en?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       market_items: {
         Row: {
           added_by: string | null
