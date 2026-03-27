@@ -1,36 +1,64 @@
 
 
-# تحديث الخطة: سياسة حذف القوائم في السوق والمهام
+# تحليل: كيف يتم تحديد `isDefault` حاليًا ومشاكله
 
 ## الوضع الحالي
 
-### السوق (Market)
-- القائمة الافتراضية العائلية (`isDefault`) **محمية من الحذف** في الواجهة: زر الحذف (⋮) لا يظهر إلا إذا `!activeList.isDefault`
-- القوائم العائلية الإضافية **يمكن حذفها** (لأن `isDefault` يكون `false`)
+**لا يوجد عمود `is_default` في قاعدة البيانات.** التحديد يتم بالكامل في الواجهة الأمامية عبر **مقارنة الاسم**:
 
-### المهام (Tasks)
-- نفس المنطق: القائمة الافتراضية (`مهام العائلة`) محمية، والباقي يمكن حذفه
+- **المهام**: `isDefault = type === "family" && name === "مهام العائلة"`
+- **السوق**: `isDefault = type === "family" && name === "قائمة العائلة"`
 
-### Server (market-api)
-- لا يوجد أي حماية على مستوى الـ API — أي قائمة يمكن حذفها من الـ backend
+### مشاكل هذا الأسلوب
+1. إذا غيّر المستخدم اسم القائمة → تفقد صفة `isDefault` ويظهر لها زر حذف
+2. إذا أنشأ قائمة عائلية بنفس الاسم → تُعتبر خطأً كـ `isDefault`
+3. لا توجد حماية حقيقية — الحماية مبنية على نص هش
 
-## السؤال والإجابة
+## الحل المطلوب
 
-| السؤال | الإجابة الحالية | الصحيح |
-|---|---|---|
-| هل يمكن حذف القائمة الافتراضية العائلية؟ | ❌ لا (محمية في الواجهة) | ✅ صحيح — يجب أن تبقى محمية |
-| هل يمكن حذف القوائم العائلية المضافة؟ | ✅ نعم | ✅ صحيح — يمكن حذفها |
+### 1. إضافة عمود `is_default` في قاعدة البيانات
+```sql
+ALTER TABLE task_lists ADD COLUMN is_default boolean NOT NULL DEFAULT false;
+ALTER TABLE market_lists ADD COLUMN is_default boolean NOT NULL DEFAULT false;
+```
 
-## الخلاصة
-**لا تغيير مطلوب** على سياسة الحذف — السلوك الحالي صحيح:
-- القائمة الافتراضية محمية ولا يظهر لها خيار حذف
-- القوائم العائلية الإضافية والشخصية يمكن حذفها عادي
+### 2. تحديث القوائم الافتراضية الموجودة
+```sql
+-- تعيين أقدم قائمة عائلية في كل عائلة كافتراضية
+UPDATE task_lists SET is_default = true 
+WHERE id IN (
+  SELECT DISTINCT ON (family_id) id FROM task_lists 
+  WHERE type = 'family' ORDER BY family_id, created_at ASC
+);
 
-## التغيير المطلوب (من المحادثة السابقة)
-إزالة منع إنشاء أكثر من قائمة عائلة في `market-api` (سطور 77-81) — لأن المستخدم يجب أن يتمكن من إنشاء عدة قوائم عائلية إضافية بجانب الافتراضية.
+UPDATE market_lists SET is_default = true 
+WHERE id IN (
+  SELECT DISTINCT ON (family_id) id FROM market_lists 
+  WHERE type = 'family' ORDER BY family_id, created_at ASC
+);
+```
+
+### 3. تحديث IndexedDB (Dexie)
+إضافة `is_default` ضمن البيانات المخزنة محليًا (لا يحتاج تغيير في schema لأن Dexie مرن).
+
+### 4. تحديث Edge Functions
+- **tasks-api**: عند `create-list`، إذا كان `type === "family"` ولا توجد قائمة عائلية → `is_default = true`، وإلا → `is_default = false`
+- **market-api**: نفس المنطق
+- **كلاهما**: منع حذف قائمة `is_default = true`
+
+### 5. تحديث الواجهة الأمامية
+- `Tasks.tsx`: استبدال `l.name === DEFAULT_FAMILY_LIST_NAME` بـ `l.is_default === true`
+- `Market.tsx`: نفس الشيء
+- `Documents.tsx` و `Places.tsx`: نفس المنطق إذا كانوا يستخدمون نمطًا مشابهًا
 
 ### الملفات المتأثرة
 | الملف | التغيير |
 |---|---|
-| `supabase/functions/market-api/index.ts` | إزالة شرط منع تكرار قوائم العائلة في `create-list` |
+| Migration SQL | إضافة عمود `is_default` + تحديث القوائم الموجودة |
+| `supabase/functions/tasks-api/index.ts` | تعيين `is_default` عند الإنشاء + منع حذف الافتراضية |
+| `supabase/functions/market-api/index.ts` | نفس الشيء |
+| `src/pages/Tasks.tsx` | استبدال مقارنة الاسم بـ `is_default` |
+| `src/pages/Market.tsx` | نفس الشيء |
+| `src/pages/Documents.tsx` | نفس الشيء إن وُجد |
+| `src/pages/Places.tsx` | نفس الشيء إن وُجد |
 
