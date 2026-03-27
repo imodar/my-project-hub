@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Home, Map, MessageCircle, Settings, ShieldAlert } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useAppNavigate } from "@/hooks/useAppNavigate";
 import { haptic } from "@/lib/haptics";
 import { useLanguage } from "@/contexts/LanguageContext";
 
