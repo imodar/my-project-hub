@@ -86,5 +86,6 @@ export const CardPageSkeleton = () => (
         <Skeleton key={i} className="h-24 rounded-2xl" />
       ))}
     </div>
+    </div>
   </div>
 );
