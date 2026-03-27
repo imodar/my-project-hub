@@ -81,9 +81,10 @@ const Tasks = () => {
           done: i.done,
         })),
     }));
+    // Sort by created_at ascending (oldest first) — consistent with useTaskLists sortListsAsc
     mapped.sort((a, b) => {
-      const da = (dbLists || []).find((l: any) => l.id === a.id)?.updated_at || "";
-      const db2 = (dbLists || []).find((l: any) => l.id === b.id)?.updated_at || "";
+      const da = (dbLists || []).find((l: any) => l.id === a.id)?.created_at || "";
+      const db2 = (dbLists || []).find((l: any) => l.id === b.id)?.created_at || "";
       return da.localeCompare(db2);
     });
     return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
@@ -289,18 +290,17 @@ const Tasks = () => {
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     haptic.medium();
+    const newId = crypto.randomUUID();
     createListMutation.mutate(
       {
         name: newListName.trim(),
         type: newListType === "family" && newListShareMembers.length > 0 ? "shared" : newListType,
         shared_with: newListType === "family" ? newListShareMembers : [],
+        id: newId,
       },
-      {
-        onSuccess: (data: { id?: string } | null) => {
-          if (data?.id) setActiveListId(data.id);
-        },
-      }
     );
+    // Switch to new list immediately using the known id
+    setActiveListId(newId);
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);
