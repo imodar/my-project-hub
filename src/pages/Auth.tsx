@@ -17,6 +17,8 @@ type Step = "phone" | "otp";
 
 const Auth = () => {
   const [langSheetOpen, setLangSheetOpen] = useState(false);
+  const [privacySheet, setPrivacySheet] = useState(false);
+  const [termsSheet, setTermsSheet] = useState(false);
   const { session } = useAuth();
   const { t, language, setLanguage, dir, isRTL } = useLanguage();
   const navigate = useNavigate();
