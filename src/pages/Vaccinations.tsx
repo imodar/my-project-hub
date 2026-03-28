@@ -51,7 +51,10 @@ const Vaccinations = () => {
   const [openChildCardId, setOpenChildCardId] = useState<string | null>(null);
 
   // Keep selectedChild in sync with data
-  const resolvedSelected = selectedChild ? children.find((c) => c.id === selectedChild.id) || selectedChild : null;
+  const resolvedSelected = selectedChild ? children.find((c: Child) => c.id === selectedChild.id) || selectedChild : null;
+  const resolvedCompleted = resolvedSelected?.completedVaccines || [];
+  const resolvedNotes = resolvedSelected?.vaccineNotes || [];
+  const resolvedReminder = resolvedSelected?.reminderSettings || { beforeDay: true, beforeWeek: true, beforeMonth: true };
 
   const handleAddChild = async () => {
     if (!newName.trim()) { toast.error("يرجى إدخال اسم الطفل"); return; }
