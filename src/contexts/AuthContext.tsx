@@ -21,7 +21,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const qc = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileReady, setProfileReady] = useState(false);
+  const [profileReady, setProfileReady] = useState(() => {
+    const hasSession = !!localStorage.getItem("sb-ptmhrfovbyvpewfdpejf-auth-token");
+    const hasProfile = !!localStorage.getItem("profile_complete");
+    return hasSession && hasProfile;
+  });
   const [profileName, setProfileName] = useState("");
   const fetchingRef = useRef(false);
   const initialFetchDoneRef = useRef(false);
