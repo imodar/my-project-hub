@@ -196,14 +196,7 @@ const Medications = () => {
         end_date: baseMed.endDate, notes: baseMed.notes, color: baseMed.color,
         reminder_enabled: formReminderEnabled,
       });
-      setMedications((prev) =>
-        prev.map((m) => {
-          if (m.id !== editingMed.id) return m;
-          const updated = { ...m, ...baseMed, reminder: { ...m.reminder, enabled: formReminderEnabled } };
-          updated.reminder.nextDueAt = calculateNextDue(updated);
-          return updated;
-        })
-      );
+      // optimistic update handled via refetch from hook
       toast.success("تم تحديث الدواء");
     } else {
       addMedMut.mutate({
