@@ -8,7 +8,7 @@ import { useOfflineMutation } from "./useOfflineMutation";
 export function useDebts() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
-  const key = ["debts", user?.id];
+  const key = ["debts", familyId];
 
   const apiFn = useCallback(async () => {
     if (!user) return { data: [], error: null };

@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFamilyId } from "./useFamilyId";
 
 export function useWill() {
   const { user } = useAuth();
+  const { familyId } = useFamilyId();
   const qc = useQueryClient();
-  const key = ["will", user?.id];
+  const key = ["will", familyId];
 
   const willQuery = useQuery({
     queryKey: key,
@@ -18,7 +20,7 @@ export function useWill() {
       if (data?.error) throw new Error(data.error);
       return data?.data ?? null;
     },
-    enabled: !!user,
+    enabled: !!user && !!familyId,
   });
 
   const upsertWill = useMutation({
