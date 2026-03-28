@@ -13,7 +13,7 @@ const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
 
   useEffect(() => {
     if (!user || startedRef.current) return;
-    if (localStorage.getItem("first_sync_done") === "true") return;
+    if (localStorage.getItem("first_sync_done")) return;
     startedRef.current = true;
     run(user.id);
   }, [user, run]);
