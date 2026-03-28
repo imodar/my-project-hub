@@ -24,7 +24,7 @@ export function useZakatAssets() {
     table: "zakat_assets",
     queryKey: key,
     apiFn,
-    enabled: !!user,
+    enabled: !!user && !!familyId,
   });
 
   const addAsset = useOfflineMutation<any, any>({
