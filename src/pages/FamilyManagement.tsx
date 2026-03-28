@@ -363,32 +363,28 @@ const FamilyManagement = () => {
     }
   }, []);
 
-  const initiateJoin = (codeValue: string) => {
+  const initiateJoin = async (codeValue: string) => {
     if (!codeValue.trim()) return;
-    setPendingJoinCode(codeValue.trim());
-    setShowJoinRoleGrid(true);
-  };
-
-  const handleJoinByCode = async () => {
-    if (!pendingJoinCode || !joinRole) return;
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "join", invite_code: pendingJoinCode, role: joinRole },
+        body: { action: "join", invite_code: codeValue.trim() },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل الانضمام", variant: "destructive" });
+        const msg = data?.error || error?.message || "فشل الانضمام";
+        if (msg.includes("طلبك قيد الانتظار")) {
+          toast({ title: "طلبك قيد الانتظار بالفعل" });
+        } else if (msg.includes("عضو بالفعل")) {
+          toast({ title: "أنت عضو بالفعل في هذه العائلة" });
+        } else {
+          toast({ title: msg, variant: "destructive" });
+        }
       } else {
-        toast({ title: "تم الانضمام بنجاح! 🎉" });
+        toast({ title: "تم إرسال طلب الانضمام — بانتظار موافقة المشرف" });
         queryClient.invalidateQueries({ queryKey: ["family-id"] });
-        queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
         refetchMembers();
       }
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
-    } finally {
-      setShowJoinRoleGrid(false);
-      setJoinRole(null);
-      setPendingJoinCode("");
     }
   };
 
