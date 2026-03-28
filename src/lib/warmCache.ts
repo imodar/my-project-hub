@@ -21,7 +21,7 @@ const TABLES_TO_WARM = [
   { table: "album_photos", queryKeyPrefix: "albums" },
   { table: "family_members", queryKeyPrefix: "family-members-list" },
   { table: "trip_suggestions", queryKeyPrefix: "trips" },
-  { table: "vaccination_children", queryKeyPrefix: "vaccinations" },
+  { table: "vaccinations", queryKeyPrefix: "vaccinations" },
   { table: "place_lists", queryKeyPrefix: "place-lists" },
   { table: "medication_logs", queryKeyPrefix: "medication-logs" },
   { table: "zakat_assets", queryKeyPrefix: "zakat-assets" },

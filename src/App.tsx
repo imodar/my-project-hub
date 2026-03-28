@@ -113,9 +113,10 @@ const queryClient = new QueryClient({
 
 /** Pre-warms React Query cache from IndexedDB on startup + global Realtime */
 const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
-  const { familyId } = useFamilyId();
+  const { familyId, isLoading: familyLoading } = useFamilyId();
   const qc = useQueryClient();
   const warmedRef = useRef(false);
+  const [cacheReady, setCacheReady] = useState(false);
 
   // Global realtime for cross-device sync
   useFamilyRealtime();
@@ -123,9 +124,11 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (familyId && !warmedRef.current) {
       warmedRef.current = true;
-      warmCache(qc, familyId);
+      warmCache(qc, familyId).then(() => setCacheReady(true));
+    } else if (!familyId && !familyLoading) {
+      setCacheReady(true);
     }
-  }, [familyId, qc]);
+  }, [familyId, familyLoading, qc]);
 
   // Listen for sync queue failures and notify user
   useEffect(() => {
@@ -139,6 +142,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
     return () => window.removeEventListener("sync-queue-failed", handler);
   }, []);
 
+  if (!cacheReady) return <FirstSyncOverlay />;
   return <>{children}</>;
 };
 

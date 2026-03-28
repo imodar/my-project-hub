@@ -20,7 +20,7 @@ export function useWill() {
       if (data?.error) throw new Error(data.error);
       return data?.data ?? null;
     },
-    enabled: !!user,
+    enabled: !!user && !!familyId,
   });
 
   const upsertWill = useMutation({
