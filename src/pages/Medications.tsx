@@ -205,7 +205,7 @@ const Medications = () => {
         start_date: baseMed.startDate, end_date: baseMed.endDate,
         notes: baseMed.notes, color: baseMed.color, reminder_enabled: formReminderEnabled,
       });
-      // optimistic update handled via refetch from hook
+      toast.success("تمت إضافة الدواء");
     }
     setShowAddDrawer(false); resetForm();
   };
