@@ -237,17 +237,12 @@ const Medications = () => {
     const skippedDoseAt = targetMedication.reminder.nextDueAt || new Date().toISOString();
     addLogMut.mutate({ medication_id: medId, skipped: true, taken_at: skippedDoseAt });
 
-    setMedications((prev) =>
-      prev.map((m) => {
-        if (m.id !== medId) return m;
-        const updated = {
-          ...m,
-          reminder: { ...m.reminder, lastConfirmedAt: skippedDoseAt },
-        };
-        updated.reminder.nextDueAt = calculateNextDue(updated);
-        return updated;
-      })
-    );
+    setLocalOverrides((prev) => ({
+      ...prev,
+      [medId]: {
+        reminder: { ...targetMedication.reminder, lastConfirmedAt: skippedDoseAt },
+      },
+    }));
     setShowDueAlert(null);
     toast("تم تخطي الجرعة", { icon: "⏭️" });
   };
