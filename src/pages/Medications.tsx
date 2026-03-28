@@ -64,18 +64,6 @@ const Medications = () => {
   const [formColor, setFormColor] = useState(MEDICATION_COLORS[0]);
   const [formReminderEnabled, setFormReminderEnabled] = useState(true);
 
-  useEffect(() => {
-    const checkDue = () => {
-      const dueMed = medications.find((m) => isMedicationDue(m));
-      if (dueMed && !showDueAlert) setShowDueAlert(dueMed);
-    };
-    checkDue();
-    const interval = setInterval(checkDue, 60000);
-    return () => clearInterval(interval);
-  }, [showDueAlert, medications]);
-
-  // nextDueAt is now computed inside useMemo, no need for separate effect
-
   const medications = useMemo(() => {
     if (!dbMeds || dbMeds.length === 0) return [];
     return dbMeds.map((m: any) => {
