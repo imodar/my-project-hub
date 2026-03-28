@@ -147,6 +147,20 @@ const FamilyManagement = () => {
   const [confirmRole, setConfirmRole] = useState<FamilyRole | null>(null);
   const [confirmingRole, setConfirmingRole] = useState(false);
 
+  // Pending member acceptance drawer
+  const [pendingDrawerMember, setPendingDrawerMember] = useState<FamilyMember | null>(null);
+  const [pendingRole, setPendingRole] = useState<FamilyRole | null>(null);
+  const [processingPending, setProcessingPending] = useState(false);
+
+  // Auto-open drawer for first pending member
+  useEffect(() => {
+    if (!isMyAdmin) return;
+    const pending = members.filter((m) => m.status === "pending");
+    if (pending.length > 0 && !pendingDrawerMember) {
+      setPendingDrawerMember(pending[0]);
+    }
+  }, [members, isMyAdmin, pendingDrawerMember]);
+
   // Role warning banner
   const [roleWarningDismissed, setRoleWarningDismissed] = useState(() =>
     familyId ? !!localStorage.getItem(`role_warning_dismissed_${familyId}`) : true
