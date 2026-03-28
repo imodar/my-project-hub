@@ -43,6 +43,9 @@ function validUuid(v: unknown): v is string { return typeof v === "string" && UU
 function validStr(v: unknown, max = MAX_NAME): v is string { return typeof v === "string" && v.trim().length > 0 && v.length <= max; }
 function validAmount(v: unknown): v is number { return typeof v === "number" && v > 0 && v <= MAX_AMOUNT && isFinite(v); }
 function sanitize(s: string, max = MAX_NAME): string { return s.trim().slice(0, max); }
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : typeof err === "string" ? err : "Unknown error";
+}
 
 Deno.serve(async (req) => {
   corsHeaders = getCorsHeaders(req);
@@ -146,6 +149,6 @@ Deno.serve(async (req) => {
 
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
-    return json({ error: err.message }, 500);
+    return json({ error: getErrorMessage(err) }, 500);
   }
 });
