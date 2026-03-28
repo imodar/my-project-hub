@@ -1,61 +1,54 @@
 
 
-# إصلاح offline-first للـ mutations الناقصة — 5 ملفات
+# إصلاح bug التكرار — تعديل useOfflineMutation.ts فقط
 
-## الحالة الحالية بعد المراجعة
+## التقييم
 
-| الملف | المشكلة | الحالة |
-|-------|---------|--------|
-| useZakatAssets.ts | queryKey خاطئ | **تم إصلاحه سابقاً** |
-| useMedications.ts (addLog) | لا يحدّث IndexedDB | **تم إصلاحه سابقاً** |
-| useWill.ts | لا يستخدم useOfflineFirst | **يحتاج إصلاح** |
-| useDebts.ts | updateDebt/deleteDebt بدون onSuccess | **يحتاج إصلاح** |
-| useBudgets.ts | updateBudget/deleteBudget بدون onSuccess | **يحتاج إصلاح** |
-| useVehicles.ts | updateVehicle/deleteVehicle بدون onSuccess | **يحتاج إصلاح** |
-| useCalendarEvents.ts | updateEvent/deleteEvent بدون onSuccess | **يحتاج إصلاح** |
-| useMedications.ts | updateMedication/deleteMedication بدون onSuccess | **يحتاج إصلاح** |
+الحل ممتاز. بدل تعديل 6 ملفات وحذف `queryKey`، نعدل ملف واحد (`useOfflineMutation.ts`) ونحل المشكلة لكل INSERT في التطبيق دفعة واحدة. المنطق سليم:
 
-## التعديلات
+- API رجع `data` حقيقي → استبدل الـ optimistic item (بـ UUID المؤقت) بالحقيقي
+- API رجع `null` → fallback لـ `invalidateQueries` (الحالة النادرة)
+- فحص `exists` يحمي من حالة الـ race condition (لو الـ real item وصل قبل الاستبدال)
 
-### 1. `src/hooks/useWill.ts` — تحويل لـ useOfflineFirst
+## التعديل
 
-تحويل `willQuery` من `useQuery` العادي إلى `useOfflineFirst` مع جدول `will_sections`:
+### `src/hooks/useOfflineMutation.ts` — سطر 144-150
 
-- إضافة imports: `useOfflineFirst`, `useOfflineMutation`, `useCallback`
-- استبدال `useQuery` بـ `useOfflineFirst<any>({ table: "will_sections", queryKey: key, apiFn, enabled })`
-- `apiFn` يستدعي `will-api` مع `action: "get-will"` ويرجع `{ data: [data], error }` (يلف النتيجة في array لأن useOfflineFirst يتوقع array)
-- تحويل `upsertWill` و `deleteWill` لـ `useOfflineMutation` مع `onSuccess: () => refetch()`
-- `createOpenRequest` يبقى `useMutation` عادي (لا يحتاج offline)
-- النتيجة: `will: data?.[0] ?? null` (أول عنصر من الـ array)
+استبدال:
+```ts
+onSuccess: (result, variables) => {
+  if (!result.queued && queryKey) {
+    qc.invalidateQueries({ queryKey });
+  }
+  onSuccess?.(result.data, variables);
+},
+```
 
-### 2. `src/hooks/useDebts.ts` — إضافة onSuccess
+بـ:
+```ts
+onSuccess: (result, variables) => {
+  if (!result.queued && queryKey) {
+    if (result.data && operation === "INSERT") {
+      qc.setQueryData<Record<string, unknown>[]>(queryKey, (old) => {
+        if (!old) return old;
+        const realId = (result.data as any)?.id;
+        if (old.some(item => item.id === realId)) return old;
+        return old.map(item =>
+          item.id === variables.id ? result.data as Record<string, unknown> : item
+        );
+      });
+    } else {
+      qc.invalidateQueries({ queryKey });
+    }
+  }
+  onSuccess?.(result.data, variables);
+},
+```
 
-- سطر 66 (`updateDebt`): إضافة `onSuccess: () => refetch(),`
-- سطر 78 (`deleteDebt`): إضافة `onSuccess: () => refetch(),`
+ملاحظة: أضفت شرط `operation === "INSERT"` لأن UPDATE/DELETE لا يحتاجان استبدال — يكفيهم `invalidateQueries`.
 
-### 3. `src/hooks/useBudgets.ts` — إضافة onSuccess
-
-- سطر 62 (`updateBudget`): إضافة `onSuccess: () => refetch(),`
-- سطر 74 (`deleteBudget`): إضافة `onSuccess: () => refetch(),`
-
-### 4. `src/hooks/useVehicles.ts` — إضافة onSuccess
-
-- سطر 51 (`updateVehicle`): إضافة `onSuccess: () => refetch(),`
-- سطر 62 (`deleteVehicle`): إضافة `onSuccess: () => refetch(),`
-
-### 5. `src/hooks/useCalendarEvents.ts` — إضافة onSuccess
-
-- سطر 54 (`updateEvent`): إضافة `onSuccess: () => refetch(),`
-- سطر 66 (`deleteEvent`): إضافة `onSuccess: () => refetch(),`
-
-### 6. `src/hooks/useMedications.ts` — إضافة onSuccess
-
-- سطر 75 (`updateMedication`): إضافة `onSuccess: () => refetch(),`
-- سطر 87 (`deleteMedication`): إضافة `onSuccess: () => refetch(),`
-
-## ملخص
-- **6 ملفات** تعديل
-- **10 mutations** تحصل على `onSuccess: () => refetch()`
-- **useWill** يتحول من `useQuery` إلى `useOfflineFirst` + `useOfflineMutation`
-- النتيجة: كل update/delete يحدّث الكاش فوراً بدل انتظار إعادة تشغيل التطبيق
+## النتيجة
+- ملف واحد فقط
+- كل INSERT في التطبيق يستفيد تلقائياً — optimistic فوري + لا تكرار
+- UPDATE/DELETE يبقون على `invalidateQueries` كالعادة
 
