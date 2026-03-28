@@ -89,9 +89,7 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
       const projected = await projectPendingChanges(tableName, items);
       const filtered = applyFilter(projected);
       if (!cancelled) {
-        if (filtered.length > 0) {
-          qc.setQueryData(queryKey, filtered);
-        }
+        qc.setQueryData(queryKey, filtered);
         setInitialLoaded(true);
       }
     })();

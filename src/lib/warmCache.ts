@@ -21,6 +21,13 @@ const TABLES_TO_WARM = [
   { table: "album_photos", queryKeyPrefix: "albums" },
   { table: "family_members", queryKeyPrefix: "family-members-list" },
   { table: "trip_suggestions", queryKeyPrefix: "trips" },
+  { table: "vaccination_children", queryKeyPrefix: "vaccinations" },
+  { table: "place_lists", queryKeyPrefix: "place-lists" },
+  { table: "medication_logs", queryKeyPrefix: "medication-logs" },
+  { table: "zakat_assets", queryKeyPrefix: "zakat-assets" },
+  { table: "will_sections", queryKeyPrefix: "will" },
+  { table: "profiles", queryKeyPrefix: "profiles" },
+  { table: "emergency_contacts", queryKeyPrefix: "emergency-contacts" },
 ] as const;
 
 export async function warmCache(qc: QueryClient, familyId: string | null): Promise<void> {
@@ -33,9 +40,7 @@ export async function warmCache(qc: QueryClient, familyId: string | null): Promi
       // Skip if React Query already has data for this key
       if (qc.getQueryData([queryKeyPrefix, familyId])) return;
       const items = await table.toArray();
-      if (items.length > 0) {
-        qc.setQueryData([queryKeyPrefix, familyId], items);
-      }
+      qc.setQueryData([queryKeyPrefix, familyId], items);
     } catch {
       // silent fail — warmup is best-effort
     }
