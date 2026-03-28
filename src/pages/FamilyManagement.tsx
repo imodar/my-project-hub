@@ -439,6 +439,61 @@ const FamilyManagement = () => {
     }
   };
 
+  // Accept pending member
+  const handleAcceptMember = async () => {
+    if (!pendingDrawerMember || !pendingRole || !familyId || processingPending) return;
+    setProcessingPending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: {
+          action: "accept-member",
+          family_id: familyId,
+          target_user_id: pendingDrawerMember.id,
+          role: pendingRole,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل القبول", variant: "destructive" });
+      } else {
+        toast({ title: `تم قبول ${pendingDrawerMember.name} 🎉` });
+        setPendingDrawerMember(null);
+        setPendingRole(null);
+        refetchMembers();
+      }
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    } finally {
+      setProcessingPending(false);
+    }
+  };
+
+  // Reject pending member
+  const handleRejectMember = async () => {
+    if (!pendingDrawerMember || !familyId || processingPending) return;
+    setProcessingPending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: {
+          action: "reject-member",
+          family_id: familyId,
+          target_user_id: pendingDrawerMember.id,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل الرفض", variant: "destructive" });
+      } else {
+        toast({ title: `تم رفض ${pendingDrawerMember.name}` });
+        setPendingDrawerMember(null);
+        setPendingRole(null);
+        refetchMembers();
+      }
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    } finally {
+      setProcessingPending(false);
+    }
+  };
+
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [leavingFamily, setLeavingFamily] = useState(false);
 
