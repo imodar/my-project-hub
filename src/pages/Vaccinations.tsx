@@ -105,9 +105,9 @@ const Vaccinations = () => {
   };
 
   const handleToggleVaccine = (childId: string, vaccineId: string) => {
-    const child = children.find((c) => c.id === childId);
+    const child = children.find((c: Child) => c.id === childId);
     if (!child) return;
-    toggleVaccine.mutate({ childId, vaccineId, completed: child.completedVaccines });
+    toggleVaccine.mutate({ childId, vaccineId, completed: child.completedVaccines || [] });
   };
 
   const handleUpdateReminderSettings = (childId: string, settings: ReminderSettings) => {
