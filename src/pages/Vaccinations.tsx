@@ -402,7 +402,7 @@ const Vaccinations = () => {
                         <AccordionContent className="pt-2 pb-0">
                           <div className="space-y-2 pr-4">
                             {group.vaccines.map((vaccine) => {
-                              const isCompleted = resolvedSelected.completedVaccines.includes(vaccine.id);
+                              const isCompleted = resolvedCompleted.includes(vaccine.id);
                               const isOverdue = isDue && !isCompleted;
                               const hasNote = !!getVaccineNote(resolvedSelected, vaccine.id);
 
