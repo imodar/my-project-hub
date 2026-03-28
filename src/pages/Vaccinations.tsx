@@ -126,7 +126,7 @@ const Vaccinations = () => {
   };
 
   const getVaccineNote = (child: Child, vaccineId: string): string => {
-    return child.vaccineNotes.find((n) => n.vaccineId === vaccineId)?.note || "";
+    return (child.vaccineNotes || []).find((n) => n.vaccineId === vaccineId)?.note || "";
   };
 
   const openNoteSheet = (vaccineId: string) => {
