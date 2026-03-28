@@ -41,6 +41,7 @@ function validUuid(v: unknown): v is string { return typeof v === "string" && UU
 function validStr(v: unknown, max: number): v is string { return typeof v === "string" && v.trim().length > 0 && v.length <= max; }
 function validAmount(v: unknown): boolean { return typeof v === "number" && v >= 0 && v <= MAX_AMOUNT && isFinite(v); }
 function sanitize(s: string, max: number): string { return s.trim().slice(0, max); }
+function getErrorMessage(err: unknown): string { return err instanceof Error ? err.message : String(err); }
 
 Deno.serve(async (req) => {
   corsHeaders = getCorsHeaders(req);
