@@ -106,10 +106,6 @@ const FamilyManagement = () => {
   const scanStreamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Join role selection state
-  const [showJoinRoleGrid, setShowJoinRoleGrid] = useState(false);
-  const [joinRole, setJoinRole] = useState<JoinRole | null>(null);
-  const [pendingJoinCode, setPendingJoinCode] = useState("");
 
   // No auto-open setup dialog — inline UI handles !familyId case
 
