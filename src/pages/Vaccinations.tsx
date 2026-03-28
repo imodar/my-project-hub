@@ -395,7 +395,7 @@ const Vaccinations = () => {
                               {someCompleted && <span className="text-xs text-muted-foreground mr-2">(جزئي)</span>}
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {group.vaccines.filter((v) => resolvedSelected.completedVaccines.includes(v.id)).length}/{group.vaccines.length}
+                              {group.vaccines.filter((v) => resolvedCompleted.includes(v.id)).length}/{group.vaccines.length}
                             </span>
                           </div>
                         </AccordionTrigger>
