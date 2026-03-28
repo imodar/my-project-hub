@@ -219,18 +219,13 @@ const Medications = () => {
     const confirmedDoseAt = targetMedication.reminder.nextDueAt || new Date().toISOString();
     addLogMut.mutate({ medication_id: medId, taken_at: confirmedDoseAt });
 
-    setMedications((prev) =>
-      prev.map((m) => {
-        if (m.id !== medId) return m;
-        const updated = {
-          ...m,
-          takenLog: [...m.takenLog, confirmedDoseAt],
-          reminder: { ...m.reminder, lastConfirmedAt: confirmedDoseAt },
-        };
-        updated.reminder.nextDueAt = calculateNextDue(updated);
-        return updated;
-      })
-    );
+    setLocalOverrides((prev) => ({
+      ...prev,
+      [medId]: {
+        takenLog: [...(targetMedication.takenLog || []), confirmedDoseAt],
+        reminder: { ...targetMedication.reminder, lastConfirmedAt: confirmedDoseAt },
+      },
+    }));
     setShowDueAlert((prev) => (prev?.id === medId ? null : prev));
     toast.success("تم تسجيل تناول الدواء ✅");
   };
