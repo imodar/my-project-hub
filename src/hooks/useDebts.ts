@@ -64,6 +64,7 @@ export function useDebts() {
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const deleteDebt = useOfflineMutation<any, any>({
@@ -76,6 +77,7 @@ export function useDebts() {
       return { data: null, error: data?.error || error?.message || null };
     },
     queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const addPayment = useOfflineMutation<any, any>({

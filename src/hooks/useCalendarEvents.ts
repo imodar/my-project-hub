@@ -52,6 +52,7 @@ export function useCalendarEvents() {
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const deleteEvent = useOfflineMutation<any, any>({
@@ -64,6 +65,7 @@ export function useCalendarEvents() {
       return { data: null, error: response?.error || error?.message || null };
     },
     queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   return {

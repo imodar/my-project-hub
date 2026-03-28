@@ -73,6 +73,7 @@ export function useMedications() {
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey,
+    onSuccess: () => refetch(),
   });
 
   const deleteMedication = useOfflineMutation<any, any>({
@@ -85,6 +86,7 @@ export function useMedications() {
       return { data: null, error: response?.error || error?.message || null };
     },
     queryKey,
+    onSuccess: () => refetch(),
   });
 
   const addLog = useOfflineMutation<any, any>({
