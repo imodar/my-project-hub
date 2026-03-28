@@ -116,7 +116,7 @@ export function useBudgets() {
       });
       return { data: null, error: data?.error || error?.message || null };
     },
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   return {
