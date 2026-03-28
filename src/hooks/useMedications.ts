@@ -102,7 +102,27 @@ export function useMedications() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
+    onSuccess: async (_data, variables) => {
+      try {
+        const med = await db.medications.get(variables.medication_id as string);
+        if (med) {
+          const logs = med.medication_logs || [];
+          await db.medications.put({
+            ...med,
+            medication_logs: [
+              {
+                id: variables.id,
+                taken_at: variables.created_at,
+                created_at: variables.created_at,
+                skipped: variables.skipped || false,
+              },
+              ...logs,
+            ],
+          });
+        }
+      } catch { /* silent */ }
+      refetch();
+    },
   });
 
   return {
