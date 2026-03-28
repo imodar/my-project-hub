@@ -91,7 +91,6 @@ export function useBudgets() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    queryKey: key,
     onSuccess: () => refetch(),
   });
 
@@ -105,7 +104,7 @@ export function useBudgets() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const deleteExpense = useOfflineMutation<any, any>({
@@ -117,7 +116,7 @@ export function useBudgets() {
       });
       return { data: null, error: data?.error || error?.message || null };
     },
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   return {

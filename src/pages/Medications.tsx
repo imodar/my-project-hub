@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useMedications } from "@/hooks/useMedications";
@@ -40,7 +40,7 @@ import SwipeableCard from "@/components/SwipeableCard";
 const Medications = () => {
   const { members: familyMembers } = useFamilyMembers();
   const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut, addLog: addLogMut } = useMedications();
-  const [medications, setMedications] = useState<Medication[]>([]);
+  const [localOverrides, setLocalOverrides] = useState<Record<string, Partial<Medication>>>({});
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
   const [showDueAlert, setShowDueAlert] = useState<Medication | null>(null);
@@ -64,6 +64,48 @@ const Medications = () => {
   const [formColor, setFormColor] = useState(MEDICATION_COLORS[0]);
   const [formReminderEnabled, setFormReminderEnabled] = useState(true);
 
+  const medications = useMemo(() => {
+    if (!dbMeds || dbMeds.length === 0) return [];
+    return dbMeds.map((m: any) => {
+      const takenLog = Array.isArray(m.medication_logs)
+        ? m.medication_logs
+            .filter((log: any) => !log.skipped)
+            .map((log: any) => log.taken_at || log.created_at)
+            .sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())
+        : [];
+
+      const override = localOverrides[m.id];
+
+      const mappedMedication: Medication = {
+        id: m.id,
+        name: m.name,
+        dosage: m.dosage || "",
+        memberId: m.member_id || "me",
+        memberName: m.member_name || "أنا",
+        frequencyType: (m.frequency_type || "daily") as FrequencyType,
+        frequencyValue: m.frequency_value || 1,
+        selectedDays: m.selected_days || [],
+        timesPerDay: m.times_per_day || 1,
+        specificTimes: m.specific_times || ["08:00"],
+        startDate: m.start_date || "",
+        endDate: m.end_date || "",
+        notes: m.notes || "",
+        color: m.color || MEDICATION_COLORS[0],
+        reminder: {
+          id: m.id,
+          enabled: m.reminder_enabled || false,
+          lastConfirmedAt: override?.reminder?.lastConfirmedAt || takenLog[0],
+          nextDueAt: "",
+        },
+        takenLog: override?.takenLog || takenLog,
+        createdAt: m.created_at,
+      };
+
+      mappedMedication.reminder.nextDueAt = calculateNextDue(mappedMedication);
+      return mappedMedication;
+    });
+  }, [dbMeds, localOverrides]);
+
   useEffect(() => {
     const checkDue = () => {
       const dueMed = medications.find((m) => isMedicationDue(m));
@@ -73,57 +115,6 @@ const Medications = () => {
     const interval = setInterval(checkDue, 60000);
     return () => clearInterval(interval);
   }, [showDueAlert, medications]);
-
-  useEffect(() => {
-    const updated = medications.map((med) => ({
-      ...med,
-      reminder: { ...med.reminder, nextDueAt: calculateNextDue(med) },
-    }));
-    const hasChanges = updated.some((m, i) => m.reminder.nextDueAt !== medications[i].reminder.nextDueAt);
-    if (hasChanges) setMedications(updated);
-  }, []);
-
-  useEffect(() => {
-    if (dbMeds && dbMeds.length > 0) {
-      const mapped: Medication[] = dbMeds.map((m: any) => {
-        const takenLog = Array.isArray(m.medication_logs)
-          ? m.medication_logs
-              .filter((log: any) => !log.skipped)
-              .map((log: any) => log.taken_at || log.created_at)
-              .sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())
-          : [];
-
-        const mappedMedication: Medication = {
-          id: m.id,
-          name: m.name,
-          dosage: m.dosage || "",
-          memberId: m.member_id || "me",
-          memberName: m.member_name || "أنا",
-          frequencyType: (m.frequency_type || "daily") as FrequencyType,
-          frequencyValue: m.frequency_value || 1,
-          selectedDays: m.selected_days || [],
-          timesPerDay: m.times_per_day || 1,
-          specificTimes: m.specific_times || ["08:00"],
-          startDate: m.start_date || "",
-          endDate: m.end_date || "",
-          notes: m.notes || "",
-          color: m.color || MEDICATION_COLORS[0],
-          reminder: {
-            id: m.id,
-            enabled: m.reminder_enabled || false,
-            lastConfirmedAt: takenLog[0],
-            nextDueAt: "",
-          },
-          takenLog,
-          createdAt: m.created_at,
-        };
-
-        mappedMedication.reminder.nextDueAt = calculateNextDue(mappedMedication);
-        return mappedMedication;
-      });
-      setMedications(mapped);
-    }
-  }, [dbMeds]);
 
   useEffect(() => {
     if (!showDetailSheet) return;
@@ -203,14 +194,7 @@ const Medications = () => {
         end_date: baseMed.endDate, notes: baseMed.notes, color: baseMed.color,
         reminder_enabled: formReminderEnabled,
       });
-      setMedications((prev) =>
-        prev.map((m) => {
-          if (m.id !== editingMed.id) return m;
-          const updated = { ...m, ...baseMed, reminder: { ...m.reminder, enabled: formReminderEnabled } };
-          updated.reminder.nextDueAt = calculateNextDue(updated);
-          return updated;
-        })
-      );
+      // optimistic update handled via refetch from hook
       toast.success("تم تحديث الدواء");
     } else {
       addMedMut.mutate({
@@ -221,14 +205,7 @@ const Medications = () => {
         start_date: baseMed.startDate, end_date: baseMed.endDate,
         notes: baseMed.notes, color: baseMed.color, reminder_enabled: formReminderEnabled,
       });
-      const newMed: Medication = {
-        id: crypto.randomUUID(), ...baseMed,
-        reminder: { id: crypto.randomUUID(), enabled: formReminderEnabled, nextDueAt: "" },
-        takenLog: [], createdAt: new Date().toISOString(),
-      };
-      newMed.reminder.nextDueAt = calculateNextDue(newMed);
-      setMedications((prev) => [...prev, newMed]);
-      toast.success(`تمت إضافة ${newMed.name}`);
+      toast.success("تمت إضافة الدواء");
     }
     setShowAddDrawer(false); resetForm();
   };
@@ -240,18 +217,13 @@ const Medications = () => {
     const confirmedDoseAt = targetMedication.reminder.nextDueAt || new Date().toISOString();
     addLogMut.mutate({ medication_id: medId, taken_at: confirmedDoseAt });
 
-    setMedications((prev) =>
-      prev.map((m) => {
-        if (m.id !== medId) return m;
-        const updated = {
-          ...m,
-          takenLog: [...m.takenLog, confirmedDoseAt],
-          reminder: { ...m.reminder, lastConfirmedAt: confirmedDoseAt },
-        };
-        updated.reminder.nextDueAt = calculateNextDue(updated);
-        return updated;
-      })
-    );
+    setLocalOverrides((prev) => ({
+      ...prev,
+      [medId]: {
+        takenLog: [...(targetMedication.takenLog || []), confirmedDoseAt],
+        reminder: { ...targetMedication.reminder, lastConfirmedAt: confirmedDoseAt },
+      },
+    }));
     setShowDueAlert((prev) => (prev?.id === medId ? null : prev));
     toast.success("تم تسجيل تناول الدواء ✅");
   };
@@ -263,24 +235,19 @@ const Medications = () => {
     const skippedDoseAt = targetMedication.reminder.nextDueAt || new Date().toISOString();
     addLogMut.mutate({ medication_id: medId, skipped: true, taken_at: skippedDoseAt });
 
-    setMedications((prev) =>
-      prev.map((m) => {
-        if (m.id !== medId) return m;
-        const updated = {
-          ...m,
-          reminder: { ...m.reminder, lastConfirmedAt: skippedDoseAt },
-        };
-        updated.reminder.nextDueAt = calculateNextDue(updated);
-        return updated;
-      })
-    );
+    setLocalOverrides((prev) => ({
+      ...prev,
+      [medId]: {
+        reminder: { ...targetMedication.reminder, lastConfirmedAt: skippedDoseAt },
+      },
+    }));
     setShowDueAlert(null);
     toast("تم تخطي الجرعة", { icon: "⏭️" });
   };
 
   const handleDeleteMedication = (medId: string) => {
     deleteMedMut.mutate(medId);
-    setMedications((prev) => prev.filter((m) => m.id !== medId));
+    setLocalOverrides((prev) => { const n = { ...prev }; delete n[medId]; return n; });
     setShowDeleteConfirm(null);
     setShowDetailSheet(null);
     toast.success("تم حذف الدواء");

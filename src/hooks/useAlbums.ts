@@ -79,7 +79,7 @@ export function useAlbums() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    queryKey: key, onSuccess: () => refetch(),
+    onSuccess: () => refetch(),
   });
 
   const deletePhoto = useOfflineMutation<null, { id: string }>({
@@ -90,7 +90,7 @@ export function useAlbums() {
       });
       return { data: null, error: response?.error || error?.message || null };
     },
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   return {
