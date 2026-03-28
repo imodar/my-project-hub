@@ -107,6 +107,16 @@ const Medications = () => {
   }, [dbMeds, localOverrides]);
 
   useEffect(() => {
+    const checkDue = () => {
+      const dueMed = medications.find((m) => isMedicationDue(m));
+      if (dueMed && !showDueAlert) setShowDueAlert(dueMed);
+    };
+    checkDue();
+    const interval = setInterval(checkDue, 60000);
+    return () => clearInterval(interval);
+  }, [showDueAlert, medications]);
+
+  useEffect(() => {
     if (!showDetailSheet) return;
     const latestMedication = medications.find((m) => m.id === showDetailSheet.id);
     if (!latestMedication) return;
