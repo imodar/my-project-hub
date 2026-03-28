@@ -51,7 +51,10 @@ const Vaccinations = () => {
   const [openChildCardId, setOpenChildCardId] = useState<string | null>(null);
 
   // Keep selectedChild in sync with data
-  const resolvedSelected = selectedChild ? children.find((c) => c.id === selectedChild.id) || selectedChild : null;
+  const resolvedSelected = selectedChild ? children.find((c: Child) => c.id === selectedChild.id) || selectedChild : null;
+  const resolvedCompleted = resolvedSelected?.completedVaccines || [];
+  const resolvedNotes = resolvedSelected?.vaccineNotes || [];
+  const resolvedReminder = resolvedSelected?.reminderSettings || { beforeDay: true, beforeWeek: true, beforeMonth: true };
 
   const handleAddChild = async () => {
     if (!newName.trim()) { toast.error("يرجى إدخال اسم الطفل"); return; }
@@ -105,9 +108,9 @@ const Vaccinations = () => {
   };
 
   const handleToggleVaccine = (childId: string, vaccineId: string) => {
-    const child = children.find((c) => c.id === childId);
+    const child = children.find((c: Child) => c.id === childId);
     if (!child) return;
-    toggleVaccine.mutate({ childId, vaccineId, completed: child.completedVaccines });
+    toggleVaccine.mutate({ childId, vaccineId, completed: child.completedVaccines || [] });
   };
 
   const handleUpdateReminderSettings = (childId: string, settings: ReminderSettings) => {
@@ -126,7 +129,7 @@ const Vaccinations = () => {
   };
 
   const getVaccineNote = (child: Child, vaccineId: string): string => {
-    return child.vaccineNotes.find((n) => n.vaccineId === vaccineId)?.note || "";
+    return (child.vaccineNotes || []).find((n) => n.vaccineId === vaccineId)?.note || "";
   };
 
   const openNoteSheet = (vaccineId: string) => {
@@ -166,9 +169,10 @@ const Vaccinations = () => {
           </div>
         ) : (
           children.map((child) => {
-            const completedCount = child.completedVaccines.length;
+            const completed = child.completedVaccines || [];
+            const completedCount = completed.length;
             const progress = Math.round((completedCount / totalVaccines) * 100);
-            const dueVaccines = getNextDueVaccines(child.birthDate, child.completedVaccines);
+            const dueVaccines = child.birthDate ? getNextDueVaccines(child.birthDate, completed) : [];
 
             return (
               <SwipeableCard
@@ -304,12 +308,13 @@ const Vaccinations = () => {
                 { key: "beforeMonth" as const, label: "قبل شهر" },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between flex-row-reverse p-3 rounded-xl bg-card border border-border/50">
-                  <Switch
-                    checked={reminderChild.reminderSettings[item.key]}
-                    onCheckedChange={(checked) => {
-                      const newSettings = { ...reminderChild.reminderSettings, [item.key]: checked };
-                      handleUpdateReminderSettings(reminderChild.id, newSettings);
-                      setReminderChild({ ...reminderChild, reminderSettings: newSettings });
+                   <Switch
+                     checked={(reminderChild.reminderSettings || { beforeDay: true, beforeWeek: true, beforeMonth: true })[item.key]}
+                     onCheckedChange={(checked) => {
+                       const current = reminderChild.reminderSettings || { beforeDay: true, beforeWeek: true, beforeMonth: true };
+                       const newSettings = { ...current, [item.key]: checked };
+                       handleUpdateReminderSettings(reminderChild.id, newSettings);
+                       setReminderChild({ ...reminderChild, reminderSettings: newSettings });
                     }}
                   />
                   <span className="font-medium text-foreground">{item.label}</span>
@@ -359,12 +364,12 @@ const Vaccinations = () => {
                       <span className="text-sm text-muted-foreground">
                         العمر: {getChildAge(resolvedSelected.birthDate)}
                       </span>
-                      <span className="text-sm font-bold text-primary">
-                        {resolvedSelected.completedVaccines.length}/{totalVaccines}
-                      </span>
-                    </div>
-                    <Progress
-                      value={Math.round((resolvedSelected.completedVaccines.length / totalVaccines) * 100)}
+                       <span className="text-sm font-bold text-primary">
+                        {resolvedCompleted.length}/{totalVaccines}
+                       </span>
+                     </div>
+                     <Progress
+                       value={Math.round((resolvedCompleted.length / totalVaccines) * 100)}
                       className="h-2.5"
                     />
                   </div>
@@ -376,8 +381,8 @@ const Vaccinations = () => {
                       (new Date().getTime() - new Date(resolvedSelected.birthDate).getTime()) / (1000 * 60 * 60 * 24)
                     );
                     const isDue = childAgeDays >= group.vaccines[0].ageDays;
-                    const allCompleted = group.vaccines.every((v) => resolvedSelected.completedVaccines.includes(v.id));
-                    const someCompleted = !allCompleted && group.vaccines.some((v) => resolvedSelected.completedVaccines.includes(v.id));
+                     const allCompleted = group.vaccines.every((v) => resolvedCompleted.includes(v.id));
+                     const someCompleted = !allCompleted && group.vaccines.some((v) => resolvedCompleted.includes(v.id));
 
                     return (
                       <AccordionItem key={group.id} value={group.id} className="border-b-0 mb-2">
@@ -391,14 +396,14 @@ const Vaccinations = () => {
                               {someCompleted && <span className="text-xs text-muted-foreground mr-2">(جزئي)</span>}
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {group.vaccines.filter((v) => resolvedSelected.completedVaccines.includes(v.id)).length}/{group.vaccines.length}
+                              {group.vaccines.filter((v) => resolvedCompleted.includes(v.id)).length}/{group.vaccines.length}
                             </span>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="pt-2 pb-0">
                           <div className="space-y-2 pr-4">
                             {group.vaccines.map((vaccine) => {
-                              const isCompleted = resolvedSelected.completedVaccines.includes(vaccine.id);
+                              const isCompleted = resolvedCompleted.includes(vaccine.id);
                               const isOverdue = isDue && !isCompleted;
                               const hasNote = !!getVaccineNote(resolvedSelected, vaccine.id);
 

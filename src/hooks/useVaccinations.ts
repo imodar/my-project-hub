@@ -121,9 +121,9 @@ export function useVaccinations() {
     addChild: {
       ...addChild,
       mutate: (input: { name: string; gender: string; birthDate: string }) =>
-        addChild.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+        addChild.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), completedVaccines: [], vaccineNotes: [], reminderSettings: { beforeDay: true, beforeWeek: true, beforeMonth: true }, ...input }),
       mutateAsync: async (input: { name: string; gender: string; birthDate: string }) =>
-        addChild.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+        addChild.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), completedVaccines: [], vaccineNotes: [], reminderSettings: { beforeDay: true, beforeWeek: true, beforeMonth: true }, ...input }),
     },
     updateChild: {
       ...updateChild,
