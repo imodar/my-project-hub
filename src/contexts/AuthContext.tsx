@@ -34,9 +34,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const cached = localStorage.getItem(`profile_name_${userId}`);
       if (cached) {
         setProfileName(cached);
+        setProfileReady(true);
         localStorage.setItem("profile_complete", "true");
+        initialFetchDoneRef.current = true;
       }
 
+      // Background network update (non-blocking if cache exists)
       const networkFetch = async (): Promise<boolean> => {
         try {
           const { data, error } = await supabase.functions.invoke("auth-management", {
@@ -54,18 +57,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return false;
       };
 
-      const timeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5000));
-      let success = await Promise.race([networkFetch(), timeout]);
+      if (cached) {
+        // Update in background silently
+        networkFetch();
+      } else {
+        // No cache — must wait for network
+        const timeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5000));
+        let success = await Promise.race([networkFetch(), timeout]);
 
-      // Retry once if failed and no cache (token may not have been ready)
-      if (!success && !cached) {
-        await new Promise((r) => setTimeout(r, 1200));
-        const timeout2 = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5000));
-        await Promise.race([networkFetch(), timeout2]);
+        // Retry once if failed (token may not have been ready)
+        if (!success) {
+          await new Promise((r) => setTimeout(r, 1200));
+          const timeout2 = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5000));
+          await Promise.race([networkFetch(), timeout2]);
+        }
+
+        setProfileReady(true);
+        initialFetchDoneRef.current = true;
       }
-
-      setProfileReady(true);
-      initialFetchDoneRef.current = true;
     } finally {
       fetchingRef.current = false;
     }
