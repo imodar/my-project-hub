@@ -363,12 +363,12 @@ const Vaccinations = () => {
                       <span className="text-sm text-muted-foreground">
                         العمر: {getChildAge(resolvedSelected.birthDate)}
                       </span>
-                      <span className="text-sm font-bold text-primary">
-                        {resolvedSelected.completedVaccines.length}/{totalVaccines}
-                      </span>
-                    </div>
-                    <Progress
-                      value={Math.round((resolvedSelected.completedVaccines.length / totalVaccines) * 100)}
+                       <span className="text-sm font-bold text-primary">
+                        {resolvedCompleted.length}/{totalVaccines}
+                       </span>
+                     </div>
+                     <Progress
+                       value={Math.round((resolvedCompleted.length / totalVaccines) * 100)}
                       className="h-2.5"
                     />
                   </div>
