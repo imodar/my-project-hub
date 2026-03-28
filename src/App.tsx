@@ -75,17 +75,17 @@ const Medications = lazyRetry(() => import("./pages/Medications.tsx"));
 const IslamicReminders = lazyRetry(() => import("./pages/IslamicReminders.tsx"));
 
 // Admin Panel (lazy)
-const AdminLayout = React.lazy(() => import("./pages/admin/AdminLayout"));
-const AdminOverview = React.lazy(() => import("./pages/admin/AdminOverview"));
-const AdminUsers = React.lazy(() => import("./pages/admin/AdminUsers"));
-const AdminFamilies = React.lazy(() => import("./pages/admin/AdminFamilies"));
-const AdminContent = React.lazy(() => import("./pages/admin/AdminContent"));
-const AdminNotifications = React.lazy(() => import("./pages/admin/AdminNotifications"));
-const AdminSubscriptions = React.lazy(() => import("./pages/admin/AdminSubscriptions"));
-const AdminSystem = React.lazy(() => import("./pages/admin/AdminSystem"));
-const AdminAudit = React.lazy(() => import("./pages/admin/AdminAudit"));
-const AdminSecurity = React.lazy(() => import("./pages/admin/AdminSecurity"));
-const AdminLegalPages = React.lazy(() => import("./pages/admin/AdminLegalPages"));
+const AdminLayout = lazyRetry(() => import("./pages/admin/AdminLayout"));
+const AdminOverview = lazyRetry(() => import("./pages/admin/AdminOverview"));
+const AdminUsers = lazyRetry(() => import("./pages/admin/AdminUsers"));
+const AdminFamilies = lazyRetry(() => import("./pages/admin/AdminFamilies"));
+const AdminContent = lazyRetry(() => import("./pages/admin/AdminContent"));
+const AdminNotifications = lazyRetry(() => import("./pages/admin/AdminNotifications"));
+const AdminSubscriptions = lazyRetry(() => import("./pages/admin/AdminSubscriptions"));
+const AdminSystem = lazyRetry(() => import("./pages/admin/AdminSystem"));
+const AdminAudit = lazyRetry(() => import("./pages/admin/AdminAudit"));
+const AdminSecurity = lazyRetry(() => import("./pages/admin/AdminSecurity"));
+const AdminLegalPages = lazyRetry(() => import("./pages/admin/AdminLegalPages"));
 
 const queryClient = new QueryClient({
   mutationCache: new MutationCache({
