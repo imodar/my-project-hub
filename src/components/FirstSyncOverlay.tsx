@@ -3,20 +3,23 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useInitialSync } from "@/hooks/useInitialSync";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { Progress } from "@/components/ui/progress";
 import { Loader2 } from "lucide-react";
 
 const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { state, run } = useInitialSync();
+  const { familyId } = useFamilyId();
+  const { state, run, progress } = useInitialSync();
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!user || startedRef.current) return;
+    if (!user || !familyId || startedRef.current) return;
     if (localStorage.getItem("first_sync_done")) return;
     startedRef.current = true;
-    run(user.id);
-  }, [user, run]);
+    run(user.id, familyId);
+  }, [user, familyId, run]);
 
   const visible = state === "new_user" || state === "syncing";
 
@@ -40,11 +43,19 @@ const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
               <h2 className="text-xl font-bold text-foreground">
                 {t.sync.welcomeFamily}
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col items-center gap-3">
                 <Loader2 size={18} className="animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">
                   {message}
                 </p>
+                {state === "new_user" && (
+                  <>
+                    <Progress value={progress.current} className="w-48 h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {progress.label} — {progress.current}%
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
