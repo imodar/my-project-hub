@@ -40,9 +40,7 @@ export async function warmCache(qc: QueryClient, familyId: string | null): Promi
       // Skip if React Query already has data for this key
       if (qc.getQueryData([queryKeyPrefix, familyId])) return;
       const items = await table.toArray();
-      if (items.length > 0) {
-        qc.setQueryData([queryKeyPrefix, familyId], items);
-      }
+      qc.setQueryData([queryKeyPrefix, familyId], items);
     } catch {
       // silent fail — warmup is best-effort
     }
