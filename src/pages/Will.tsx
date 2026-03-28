@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ListPageSkeleton } from "@/components/PageSkeletons";
+
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Lock, KeyRound, CheckCircle2, Circle,
