@@ -74,14 +74,7 @@ const Medications = () => {
     return () => clearInterval(interval);
   }, [showDueAlert, medications]);
 
-  useEffect(() => {
-    const updated = medications.map((med) => ({
-      ...med,
-      reminder: { ...med.reminder, nextDueAt: calculateNextDue(med) },
-    }));
-    const hasChanges = updated.some((m, i) => m.reminder.nextDueAt !== medications[i].reminder.nextDueAt);
-    if (hasChanges) setMedications(updated);
-  }, []);
+  // nextDueAt is now computed inside useMemo, no need for separate effect
 
   const medications = useMemo(() => {
     if (!dbMeds || dbMeds.length === 0) return [];
