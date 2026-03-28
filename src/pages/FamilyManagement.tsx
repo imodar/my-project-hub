@@ -12,7 +12,7 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { ROLE_LABELS, isParentRole, isStaffRole } from "@/contexts/UserRoleContext";
 
 type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife" | "worker" | "maid" | "driver";
-type JoinRole = "father" | "mother" | "son" | "daughter";
+
 type InviteStatus = "active" | "pending";
 
 interface FamilyMember {
@@ -86,7 +86,7 @@ const FamilyManagement = () => {
       role: m.role as FamilyRole,
       isCreator: m.isCreator,
       isAdmin: m.isAdmin,
-      status: "active" as InviteStatus,
+      status: (m.status || "active") as InviteStatus,
       roleConfirmed: m.roleConfirmed,
     })),
   [dbMembers]);
@@ -106,10 +106,6 @@ const FamilyManagement = () => {
   const scanStreamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Join role selection state
-  const [showJoinRoleGrid, setShowJoinRoleGrid] = useState(false);
-  const [joinRole, setJoinRole] = useState<JoinRole | null>(null);
-  const [pendingJoinCode, setPendingJoinCode] = useState("");
 
   // No auto-open setup dialog — inline UI handles !familyId case
 
@@ -146,6 +142,20 @@ const FamilyManagement = () => {
   const [confirmMember, setConfirmMember] = useState<FamilyMember | null>(null);
   const [confirmRole, setConfirmRole] = useState<FamilyRole | null>(null);
   const [confirmingRole, setConfirmingRole] = useState(false);
+
+  // Pending member acceptance drawer
+  const [pendingDrawerMember, setPendingDrawerMember] = useState<FamilyMember | null>(null);
+  const [pendingRole, setPendingRole] = useState<FamilyRole | null>(null);
+  const [processingPending, setProcessingPending] = useState(false);
+
+  // Auto-open drawer for first pending member
+  useEffect(() => {
+    if (!isMyAdmin) return;
+    const pending = members.filter((m) => m.status === "pending");
+    if (pending.length > 0 && !pendingDrawerMember) {
+      setPendingDrawerMember(pending[0]);
+    }
+  }, [members, isMyAdmin, pendingDrawerMember]);
 
   // Role warning banner
   const [roleWarningDismissed, setRoleWarningDismissed] = useState(() =>
@@ -349,32 +359,28 @@ const FamilyManagement = () => {
     }
   }, []);
 
-  const initiateJoin = (codeValue: string) => {
+  const initiateJoin = async (codeValue: string) => {
     if (!codeValue.trim()) return;
-    setPendingJoinCode(codeValue.trim());
-    setShowJoinRoleGrid(true);
-  };
-
-  const handleJoinByCode = async () => {
-    if (!pendingJoinCode || !joinRole) return;
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "join", invite_code: pendingJoinCode, role: joinRole },
+        body: { action: "join", invite_code: codeValue.trim() },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل الانضمام", variant: "destructive" });
+        const msg = data?.error || error?.message || "فشل الانضمام";
+        if (msg.includes("طلبك قيد الانتظار")) {
+          toast({ title: "طلبك قيد الانتظار بالفعل" });
+        } else if (msg.includes("عضو بالفعل")) {
+          toast({ title: "أنت عضو بالفعل في هذه العائلة" });
+        } else {
+          toast({ title: msg, variant: "destructive" });
+        }
       } else {
-        toast({ title: "تم الانضمام بنجاح! 🎉" });
+        toast({ title: "تم إرسال طلب الانضمام — بانتظار موافقة المشرف" });
         queryClient.invalidateQueries({ queryKey: ["family-id"] });
-        queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
         refetchMembers();
       }
     } catch {
       toast({ title: "حدث خطأ", variant: "destructive" });
-    } finally {
-      setShowJoinRoleGrid(false);
-      setJoinRole(null);
-      setPendingJoinCode("");
     }
   };
 
@@ -422,6 +428,61 @@ const FamilyManagement = () => {
       toast({ title: "حدث خطأ", variant: "destructive" });
     } finally {
       setConfirmingRole(false);
+    }
+  };
+
+  // Accept pending member
+  const handleAcceptMember = async () => {
+    if (!pendingDrawerMember || !pendingRole || !familyId || processingPending) return;
+    setProcessingPending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: {
+          action: "accept-member",
+          family_id: familyId,
+          target_user_id: pendingDrawerMember.id,
+          role: pendingRole,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل القبول", variant: "destructive" });
+      } else {
+        toast({ title: `تم قبول ${pendingDrawerMember.name} 🎉` });
+        setPendingDrawerMember(null);
+        setPendingRole(null);
+        refetchMembers();
+      }
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    } finally {
+      setProcessingPending(false);
+    }
+  };
+
+  // Reject pending member
+  const handleRejectMember = async () => {
+    if (!pendingDrawerMember || !familyId || processingPending) return;
+    setProcessingPending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("family-management", {
+        body: {
+          action: "reject-member",
+          family_id: familyId,
+          target_user_id: pendingDrawerMember.id,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: data?.error || "فشل الرفض", variant: "destructive" });
+      } else {
+        toast({ title: `تم رفض ${pendingDrawerMember.name}` });
+        setPendingDrawerMember(null);
+        setPendingRole(null);
+        refetchMembers();
+      }
+    } catch {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    } finally {
+      setProcessingPending(false);
     }
   };
 
@@ -573,7 +634,16 @@ const FamilyManagement = () => {
                   <div className="flex-1 text-right">
                     <p className={`text-sm font-semibold ${isPending ? "text-muted-foreground" : "text-foreground"}`}>{member.name}</p>
                     <p className="text-xs text-muted-foreground">{ROLE_LABELS[member.role]}</p>
-                    {isPending && (
+                    {isPending && isMyAdmin && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPendingDrawerMember(member); setPendingRole(null); }}
+                        className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 mt-0.5 active:bg-amber-200"
+                      >
+                        <Clock size={8} />
+                        بانتظار القبول — اضغط للمراجعة
+                      </button>
+                    )}
+                    {isPending && !isMyAdmin && (
                       <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 mt-0.5">
                         <Clock size={8} />
                         بانتظار القبول
@@ -1083,43 +1153,64 @@ const FamilyManagement = () => {
         </DrawerContent>
       </Drawer>
 
-      {/* Join Role Selection Drawer */}
-      <Drawer open={showJoinRoleGrid} onOpenChange={(open) => { if (!open) { setShowJoinRoleGrid(false); setJoinRole(null); } }}>
-        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+      {/* Pending Member Acceptance Drawer */}
+      <Drawer open={!!pendingDrawerMember} onOpenChange={(open) => {
+        if (!open) { setPendingDrawerMember(null); setPendingRole(null); }
+      }}>
+        <DrawerContent className="px-4 pb-8" style={{ direction: "rtl" }}>
           <DrawerHeader>
-            <DrawerTitle className="text-center text-lg">اختر دورك في الأسرة</DrawerTitle>
+            <DrawerTitle className="text-center text-lg">
+              طلب انضمام جديد
+            </DrawerTitle>
           </DrawerHeader>
-          <div className="space-y-4 mt-2">
-            <div className="grid grid-cols-2 gap-3">
-              {(["father", "mother", "son", "daughter"] as JoinRole[]).map((role) => {
-                const icons: Record<string, typeof User> = { father: User, mother: Heart, son: Baby, daughter: Baby };
-                const labels: Record<string, string> = { father: "أب", mother: "أم", son: "ابن", daughter: "ابنة" };
-                const colors: Record<string, string> = { father: "text-primary", mother: "text-primary", son: "text-blue-500", daughter: "text-pink-500" };
-                const bgs: Record<string, string> = { father: "hsl(var(--primary) / 0.15)", mother: "hsl(var(--primary) / 0.15)", son: "hsl(200, 60%, 92%)", daughter: "hsl(340, 60%, 92%)" };
-                const Icon = icons[role];
-                const selected = joinRole === role;
-                return (
-                  <button
-                    key={role}
-                    onClick={() => setJoinRole(role)}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
-                      selected ? "border-primary bg-primary/10" : "border-border bg-card"
-                    }`}
-                  >
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: bgs[role] }}>
-                      <Icon size={22} className={colors[role]} />
-                    </div>
-                    <span className="text-sm font-bold text-foreground">{labels[role]}</span>
-                  </button>
-                );
-              })}
+
+          <div className="text-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+              <User size={28} className="text-primary" />
             </div>
+            <p className="font-bold text-foreground text-base">{pendingDrawerMember?.name}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              يرغب بالانضمام للعائلة — حدد دوره
+            </p>
+          </div>
+
+          {/* Role grid */}
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            {(["father", "mother", "husband", "wife", "son", "daughter", "worker", "maid", "driver"] as FamilyRole[]).map((r) => {
+              const selected = pendingRole === r;
+              return (
+                <button
+                  key={r}
+                  onClick={() => setPendingRole(r)}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                    selected ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <RoleIcon role={r} size={18} className={selected ? "text-primary" : "text-muted-foreground"} />
+                  <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Accept / Reject buttons */}
+          <div className="flex gap-3">
             <button
-              onClick={handleJoinByCode}
-              disabled={!joinRole}
-              className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+              onClick={handleRejectMember}
+              disabled={processingPending}
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-destructive border-2 border-destructive/30 bg-destructive/5 disabled:opacity-40"
             >
-              انضمام
+              رفض
+            </button>
+            <button
+              onClick={handleAcceptMember}
+              disabled={!pendingRole || processingPending}
+              className="flex-[2] py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              {processingPending
+                ? <Loader2 size={16} className="animate-spin" />
+                : "قبول"
+              }
             </button>
           </div>
         </DrawerContent>

@@ -25,6 +25,7 @@ export const ROLE_LABELS: Record<string, string> = {
   worker: "عامل",
   maid: "عاملة",
   driver: "سائق",
+  pending: "بانتظار القبول",
 };
 
 const STAFF_HIDDEN_FEATURES = ["/places", "/will", "/calendar", "/zakat", "/albums"];

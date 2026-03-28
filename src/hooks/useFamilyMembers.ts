@@ -11,6 +11,7 @@ export interface FamilyMemberInfo {
   isAdmin: boolean;
   isCreator: boolean;
   roleConfirmed: boolean;
+  status: string;
 }
 
 export function useFamilyMembers({ excludeSelf = true } = {}) {
@@ -47,6 +48,7 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
         isAdmin: m.is_admin || false,
         isCreator: m.user_id === creatorId,
         roleConfirmed: m.role_confirmed ?? true,
+        status: m.status || "active",
       }));
     },
     enabled: !!familyId && !!user,

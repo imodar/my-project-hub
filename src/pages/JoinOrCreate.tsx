@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useToast } from "@/hooks/use-toast";
-import { ScanLine, Users, ArrowLeft, Loader2, User, Heart, Baby, Crown, ShieldCheck } from "lucide-react";
+import { ScanLine, Users, ArrowLeft, Loader2, User, Heart, Baby, Crown, ShieldCheck, Clock, X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 
@@ -20,7 +20,7 @@ const ROLE_INFO: Record<CreateRole, { label: string; icon: typeof User; iconColo
 
 const JoinOrCreate = () => {
   const { session, loading: authLoading } = useAuth();
-  const { familyId, isLoading: familyLoading } = useFamilyId();
+  const { familyId, pendingFamilyId, isLoading: familyLoading } = useFamilyId();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -35,9 +35,10 @@ const JoinOrCreate = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [createRole, setCreateRole] = useState<CreateRole | null>(null);
   const [creating, setCreating] = useState(false);
-  const [joinRole, setJoinRole] = useState<CreateRole | null>(null);
-  const [showJoinRoleGrid, setShowJoinRoleGrid] = useState(false);
-  const [pendingJoinCode, setPendingJoinCode] = useState("");
+
+  // Join status: idle → pending → accepted/rejected
+  const [joinStatus, setJoinStatus] = useState<"idle" | "pending" | "accepted" | "rejected">("idle");
+  const [pendingJoinFamilyId, setPendingJoinFamilyId] = useState<string | null>(null);
 
   // QR scanner refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -57,22 +58,27 @@ const JoinOrCreate = () => {
     }
   }, [familyId, navigate]);
 
-  const initiateJoin = (inviteCode: string) => {
-    if (!inviteCode.trim() || joining) return;
-    setPendingJoinCode(inviteCode.trim());
-    setShowJoinRoleGrid(true);
-  };
+  // If user has a pending family from a previous session, show pending UI
+  useEffect(() => {
+    if (pendingFamilyId && joinStatus === "idle") {
+      setPendingJoinFamilyId(pendingFamilyId);
+      setJoinStatus("pending");
+    }
+  }, [pendingFamilyId, joinStatus]);
 
   const handleJoin = async () => {
-    if (!pendingJoinCode || !joinRole || joining) return;
+    if (!code.trim() || joining) return;
     setJoining(true);
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "join", invite_code: pendingJoinCode, role: joinRole },
+        body: { action: "join", invite_code: code.trim() },
       });
-      console.log("Join response:", { data, error });
       if (error || data?.error) {
         const msg = data?.error || error?.message || "فشل الانضمام — تحقق من الكود وحاول مرة أخرى";
+        if (msg.includes("طلبك قيد الانتظار")) {
+          setJoinStatus("pending");
+          return;
+        }
         if (msg.includes("عضو بالفعل")) {
           localStorage.setItem("join_or_create_done", "true");
           queryClient.invalidateQueries({ queryKey: ["family-id"] });
@@ -82,11 +88,8 @@ const JoinOrCreate = () => {
         }
         toast({ title: msg, variant: "destructive" });
       } else {
-        localStorage.setItem("join_or_create_done", "true");
-        queryClient.invalidateQueries({ queryKey: ["family-id"] });
-        queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
-        toast({ title: "تم الانضمام بنجاح! 🎉" });
-        navigate("/", { replace: true });
+        setPendingJoinFamilyId(data?.data?.family_id);
+        setJoinStatus("pending");
       }
     } catch {
       toast({ title: "حدث خطأ غير متوقع", variant: "destructive" });
@@ -94,6 +97,34 @@ const JoinOrCreate = () => {
       setJoining(false);
     }
   };
+
+  // Realtime listener — wait for admin to accept/reject
+  useEffect(() => {
+    if (joinStatus !== "pending" || !session?.user?.id) return;
+
+    const channel = supabase
+      .channel(`join-status-${session.user.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "family_members",
+        filter: `user_id=eq.${session.user.id}`,
+      }, (payload: any) => {
+        const newStatus = payload.new?.status;
+        if (newStatus === "active") {
+          setJoinStatus("accepted");
+          localStorage.setItem("join_or_create_done", "true");
+          queryClient.invalidateQueries({ queryKey: ["family-id"] });
+          setTimeout(() => navigate("/", { replace: true }), 1500);
+        }
+        if (payload.eventType === "DELETE") {
+          setJoinStatus("rejected");
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [joinStatus, session?.user?.id, queryClient, navigate]);
 
   const handleCreateFamily = async () => {
     if (!createRole || creating) return;
@@ -163,7 +194,6 @@ const JoinOrCreate = () => {
                   ? new URL(rawValue).searchParams.get("code") || rawValue
                   : rawValue;
                 setCode(extracted);
-                initiateJoin(extracted);
               }
             }
           } catch {}
@@ -173,7 +203,7 @@ const JoinOrCreate = () => {
       toast({ title: "لا يمكن الوصول للكاميرا", variant: "destructive" });
       setShowScanner(false);
     }
-  }, [stopScanner]);
+  }, [stopScanner, toast]);
 
   useEffect(() => {
     if (showScanner) startScanner();
@@ -185,6 +215,60 @@ const JoinOrCreate = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Pending state — waiting for admin approval
+  if (joinStatus === "pending") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6" dir="rtl">
+        <div className="text-center space-y-4">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Clock size={36} className="text-primary animate-pulse" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">بانتظار موافقة المشرف</h2>
+          <p className="text-sm text-muted-foreground">
+            تم إرسال طلبك — سيتلقى مشرف العائلة إشعاراً ويقوم بتحديد دورك
+          </p>
+          <p className="text-xs text-muted-foreground/60">سيتم تحديث الصفحة تلقائياً عند القبول</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Rejected state
+  if (joinStatus === "rejected") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6" dir="rtl">
+        <div className="text-center space-y-4">
+          <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+            <X size={36} className="text-destructive" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">تم رفض الطلب</h2>
+          <p className="text-sm text-muted-foreground">تعذّر قبول انضمامك — تواصل مع مشرف العائلة</p>
+          <button
+            onClick={() => { setJoinStatus("idle"); setCode(""); }}
+            className="mt-4 px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
+          >
+            حاول مرة أخرى
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Accepted state
+  if (joinStatus === "accepted") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6" dir="rtl">
+        <div className="text-center space-y-4">
+          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+            <Check size={36} className="text-green-600" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">تم القبول! 🎉</h2>
+          <p className="text-sm text-muted-foreground">جاري الدخول للتطبيق...</p>
+        </div>
       </div>
     );
   }
@@ -245,7 +329,7 @@ const JoinOrCreate = () => {
             </div>
 
             <button
-              onClick={() => initiateJoin(code)}
+              onClick={handleJoin}
               disabled={code.length < 8 || joining}
               className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
             >
@@ -399,48 +483,6 @@ const JoinOrCreate = () => {
               </div>
             </div>
             <p className="text-xs text-muted-foreground text-center">وجّه الكاميرا نحو رمز QR الخاص بالعائلة</p>
-          </div>
-        </DrawerContent>
-      </Drawer>
-
-      {/* Join Role Selection Drawer */}
-      <Drawer open={showJoinRoleGrid} onOpenChange={(open) => { if (!open) { setShowJoinRoleGrid(false); setJoinRole(null); } }}>
-        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
-          <DrawerHeader>
-            <DrawerTitle className="text-center text-lg">اختر دورك في الأسرة</DrawerTitle>
-          </DrawerHeader>
-          <div className="space-y-4 mt-2">
-            <div className="grid grid-cols-2 gap-3">
-              {(["father", "mother", "son", "daughter"] as CreateRole[]).map((role) => {
-                const info = ROLE_INFO[role];
-                const Icon = info.icon;
-                const selected = joinRole === role;
-                return (
-                  <button
-                    key={role}
-                    onClick={() => setJoinRole(role)}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
-                      selected ? "border-primary bg-primary/10" : "border-border bg-card"
-                    }`}
-                  >
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center"
-                      style={{ background: info.bgColor }}
-                    >
-                      <Icon size={22} className={info.iconColor} />
-                    </div>
-                    <span className="text-sm font-bold text-foreground">{info.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => { handleJoin(); setShowJoinRoleGrid(false); }}
-              disabled={!joinRole || joining}
-              className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
-            >
-              {joining ? <Loader2 className="h-5 w-5 animate-spin" /> : "انضمام"}
-            </button>
           </div>
         </DrawerContent>
       </Drawer>

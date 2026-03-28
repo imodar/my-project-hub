@@ -35,7 +35,7 @@ function json(data: unknown, status = 200) {
 // ── Validation helpers ──
 const MAX_NAME = 100;
 const MAX_REASON = 500;
-const ALLOWED_ROLES = ["father", "mother", "son", "daughter", "grandfather", "grandmother", "worker", "maid", "driver", "other"];
+const ALLOWED_ROLES = ["father", "mother", "son", "daughter", "grandfather", "grandmother", "husband", "wife", "worker", "maid", "driver", "other"];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function validStr(v: unknown, max = MAX_NAME): v is string {
@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     if (typeof action !== "string" || !action) return json({ error: "action مطلوب" }, 400);
 
     // ── Admin authorization for sensitive actions ──
-    if (["toggle-admin", "remove-member", "confirm-role"].includes(action)) {
+    if (["toggle-admin", "remove-member", "confirm-role", "accept-member", "reject-member"].includes(action)) {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
       const { data: isAdmin } = await supabase.rpc("is_family_admin", {
@@ -146,11 +146,10 @@ Deno.serve(async (req) => {
       return json({ data: family });
     }
 
-    // JOIN family by invite code
+    // JOIN family by invite code — status: pending, no role
     if (action === "join") {
-      const { invite_code, role } = body;
+      const { invite_code } = body;
       if (!validStr(invite_code, 20)) return json({ error: "رمز الدعوة مطلوب" }, 400);
-      if (role && !ALLOWED_ROLES.includes(role)) return json({ error: "دور غير صالح" }, 400);
 
       const code = invite_code.trim().toUpperCase().slice(0, 20);
 
@@ -161,25 +160,28 @@ Deno.serve(async (req) => {
         .single();
       if (findErr || !family) return json({ error: "رمز الدعوة غير صحيح — تأكد من الكود" }, 404);
 
+      // Check existing membership (active or pending)
       const { data: existing } = await supabase
         .from("family_members")
-        .select("id")
+        .select("id, status")
         .eq("family_id", family.id)
         .eq("user_id", userId)
         .maybeSingle();
-      if (existing) return json({ error: "أنت عضو بالفعل في هذه العائلة" }, 400);
+      if (existing?.status === "active") return json({ error: "أنت عضو بالفعل في هذه العائلة" }, 400);
+      if (existing?.status === "pending") return json({ error: "طلبك قيد الانتظار" }, 400);
 
+      // Insert as pending without a role
       const { error: joinErr } = await adminClient.from("family_members").insert({
         family_id: family.id,
         user_id: userId,
-        role: role || "son",
+        role: "pending",
         is_admin: false,
-        status: "active",
+        status: "pending",
         role_confirmed: false,
       });
       if (joinErr) return json({ error: "فشل الانضمام: " + joinErr.message }, 400);
 
-      // Notify admins about new member
+      // Notify admins via user_notifications (instant via Realtime)
       try {
         const { data: profile } = await adminClient
           .from("profiles")
@@ -196,26 +198,84 @@ Deno.serve(async (req) => {
           .eq("status", "active");
 
         if (admins && admins.length > 0) {
-          const notifications = admins
-            .filter((a: any) => a.user_id !== userId)
-            .map((a: any) => ({
-              user_id: a.user_id,
-              type: "new_member",
-              title: "طلب انضمام جديد",
-              body: `${memberName} انضم للعائلة — تحقق من دوره`,
-              scheduled_at: new Date().toISOString(),
-              sent: false,
-              data: { family_id: family.id, member_id: userId },
-            }));
-          if (notifications.length > 0) {
-            await adminClient.from("scheduled_notifications").insert(notifications);
-          }
+          await adminClient.from("user_notifications").insert(
+            admins
+              .filter((a: any) => a.user_id !== userId)
+              .map((a: any) => ({
+                user_id: a.user_id,
+                type: "join_request",
+                title: "طلب انضمام جديد",
+                body: `${memberName} يطلب الانضمام للعائلة`,
+                source_type: "family",
+                source_id: userId,
+                is_read: false,
+              }))
+          );
         }
       } catch {
         // Non-critical
       }
 
-      return json({ data: { family_id: family.id } });
+      return json({ data: { family_id: family.id, status: "pending" } });
+    }
+
+    // ACCEPT member (admin only)
+    if (action === "accept-member") {
+      const { family_id, target_user_id, role } = body;
+      if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
+      if (!validStr(role, 30) || !ALLOWED_ROLES.includes(role)) return json({ error: "دور غير صالح" }, 400);
+
+      // Update member from pending → active with the chosen role
+      const { error } = await adminClient.from("family_members")
+        .update({ role, status: "active", role_confirmed: true })
+        .eq("family_id", family_id)
+        .eq("user_id", target_user_id)
+        .eq("status", "pending");
+      if (error) return json({ error: error.message }, 400);
+
+      // Notify the accepted member
+      try {
+        await adminClient.from("user_notifications").insert({
+          user_id: target_user_id,
+          type: "join_accepted",
+          title: "تم قبول طلبك! 🎉",
+          body: "تم قبول انضمامك للعائلة وتحديد دورك",
+          source_type: "family",
+          source_id: family_id,
+          is_read: false,
+        });
+      } catch {}
+
+      return json({ success: true });
+    }
+
+    // REJECT member (admin only)
+    if (action === "reject-member") {
+      const { family_id, target_user_id } = body;
+      if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
+
+      // Notify the rejected member first
+      try {
+        await adminClient.from("user_notifications").insert({
+          user_id: target_user_id,
+          type: "join_rejected",
+          title: "تم رفض طلبك",
+          body: "تعذّر قبول طلب انضمامك للعائلة",
+          source_type: "family",
+          source_id: family_id,
+          is_read: false,
+        });
+      } catch {}
+
+      // Delete the pending record
+      const { error } = await adminClient.from("family_members")
+        .delete()
+        .eq("family_id", family_id)
+        .eq("user_id", target_user_id)
+        .eq("status", "pending");
+      if (error) return json({ error: error.message }, 400);
+
+      return json({ success: true });
     }
 
     // CONFIRM ROLE
@@ -246,7 +306,7 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // GET members
+    // GET members — admins see active + pending, others see active only
     if (action === "get-members") {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
@@ -257,11 +317,20 @@ Deno.serve(async (req) => {
         .eq("id", family_id)
         .single();
 
-      const { data: members, error } = await supabase
-        .from("family_members")
-        .select("*")
-        .eq("family_id", family_id)
-        .eq("status", "active");
+      // Check if current user is admin
+      const { data: isAdmin } = await supabase.rpc("is_family_admin", {
+        _user_id: userId,
+        _family_id: family_id,
+      });
+
+      let query = supabase.from("family_members").select("*").eq("family_id", family_id);
+      if (isAdmin) {
+        query = query.in("status", ["active", "pending"]);
+      } else {
+        query = query.eq("status", "active");
+      }
+
+      const { data: members, error } = await query;
       if (error) return json({ error: error.message }, 400);
 
       // Fetch profiles separately since there's no FK relationship
@@ -417,17 +486,22 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // GET family-id
+    // GET family-id — returns both active and pending family ids
     if (action === "get-family-id") {
       const { data, error } = await adminClient
         .from("family_members")
-        .select("family_id")
+        .select("family_id, status")
         .eq("user_id", userId)
-        .eq("status", "active")
+        .in("status", ["active", "pending"])
         .limit(1)
         .maybeSingle();
       if (error) return json({ error: error.message }, 400);
-      return json({ data: { family_id: data?.family_id || null } });
+      return json({
+        data: {
+          family_id: data?.status === "active" ? data?.family_id : null,
+          pending_family_id: data?.status === "pending" ? data?.family_id : null,
+        },
+      });
     }
 
     // GET my role
