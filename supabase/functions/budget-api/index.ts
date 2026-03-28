@@ -36,7 +36,7 @@ const MAX_NAME = 100;
 const MAX_LABEL = 100;
 const MAX_AMOUNT = 10_000_000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ALLOWED_TYPES = ["month", "trip", "custom"];
+const ALLOWED_TYPES = ["month", "trip", "custom", "project"];
 const ALLOWED_CURRENCIES = ["SAR", "USD", "EUR", "GBP", "AED", "KWD", "BHD", "QAR", "OMR", "EGP", "JOD"];
 
 function validUuid(v: unknown): v is string { return typeof v === "string" && UUID_RE.test(v); }
