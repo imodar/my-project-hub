@@ -25,39 +25,54 @@ import { ListPageSkeleton } from "@/components/PageSkeletons";
 import BottomNav from "@/components/home/BottomNav";
 import RoleGuard from "@/components/RoleGuard";
 
+// ── Retry wrapper for stale chunk recovery ──
+function lazyRetry(importFn: () => Promise<any>) {
+  return React.lazy(() =>
+    importFn().catch(() => {
+      // Stale chunk — reload once to get fresh assets
+      const key = "chunk_reload";
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        window.location.reload();
+      }
+      return importFn(); // fallback attempt
+    })
+  );
+}
+
 // ── Lazy-loaded pages ──
-const Auth = React.lazy(() => import("./pages/Auth.tsx"));
-const GetStarted = React.lazy(() => import("./pages/GetStarted.tsx"));
-const Index = React.lazy(() => import("./pages/Index.tsx"));
-const Tasbih = React.lazy(() => import("./pages/Tasbih.tsx"));
-const Settings = React.lazy(() => import("./pages/Settings.tsx"));
-const NotFound = React.lazy(() => import("./pages/NotFound.tsx"));
-const Chat = React.lazy(() => import("./pages/Chat.tsx"));
-const Map = React.lazy(() => import("./pages/Map.tsx"));
-const Debts = React.lazy(() => import("./pages/Debts.tsx"));
-const FamilyManagement = React.lazy(() => import("./pages/FamilyManagement.tsx"));
-const JoinOrCreate = React.lazy(() => import("./pages/JoinOrCreate.tsx"));
-const CompleteProfile = React.lazy(() => import("./pages/CompleteProfile.tsx"));
-const Profile = React.lazy(() => import("./pages/Profile.tsx"));
-const CalendarPage = React.lazy(() => import("./pages/Calendar.tsx"));
-const Trash = React.lazy(() => import("./pages/Trash.tsx"));
-const Market = React.lazy(() => import("./pages/Market.tsx"));
-const Places = React.lazy(() => import("./pages/Places.tsx"));
-const AddPlace = React.lazy(() => import("./pages/AddPlace.tsx"));
-const Budget = React.lazy(() => import("./pages/Budget.tsx"));
-const Tasks = React.lazy(() => import("./pages/Tasks.tsx"));
-const Documents = React.lazy(() => import("./pages/Documents.tsx"));
-const Zakat = React.lazy(() => import("./pages/Zakat.tsx"));
-const Will = React.lazy(() => import("./pages/Will.tsx"));
-const Trips = React.lazy(() => import("./pages/Trips.tsx"));
-const Albums = React.lazy(() => import("./pages/Albums.tsx"));
-const KidsWorship = React.lazy(() => import("./pages/KidsWorship.tsx"));
-const ParentDashboard = React.lazy(() => import("./pages/ParentDashboard.tsx"));
-const Athkar = React.lazy(() => import("./pages/Athkar.tsx"));
-const Vehicle = React.lazy(() => import("./pages/Vehicle.tsx"));
-const Vaccinations = React.lazy(() => import("./pages/Vaccinations.tsx"));
-const Medications = React.lazy(() => import("./pages/Medications.tsx"));
-const IslamicReminders = React.lazy(() => import("./pages/IslamicReminders.tsx"));
+const Auth = lazyRetry(() => import("./pages/Auth.tsx"));
+const GetStarted = lazyRetry(() => import("./pages/GetStarted.tsx"));
+const Index = lazyRetry(() => import("./pages/Index.tsx"));
+const Tasbih = lazyRetry(() => import("./pages/Tasbih.tsx"));
+const Settings = lazyRetry(() => import("./pages/Settings.tsx"));
+const NotFound = lazyRetry(() => import("./pages/NotFound.tsx"));
+const Chat = lazyRetry(() => import("./pages/Chat.tsx"));
+const Map = lazyRetry(() => import("./pages/Map.tsx"));
+const Debts = lazyRetry(() => import("./pages/Debts.tsx"));
+const FamilyManagement = lazyRetry(() => import("./pages/FamilyManagement.tsx"));
+const JoinOrCreate = lazyRetry(() => import("./pages/JoinOrCreate.tsx"));
+const CompleteProfile = lazyRetry(() => import("./pages/CompleteProfile.tsx"));
+const Profile = lazyRetry(() => import("./pages/Profile.tsx"));
+const CalendarPage = lazyRetry(() => import("./pages/Calendar.tsx"));
+const Trash = lazyRetry(() => import("./pages/Trash.tsx"));
+const Market = lazyRetry(() => import("./pages/Market.tsx"));
+const Places = lazyRetry(() => import("./pages/Places.tsx"));
+const AddPlace = lazyRetry(() => import("./pages/AddPlace.tsx"));
+const Budget = lazyRetry(() => import("./pages/Budget.tsx"));
+const Tasks = lazyRetry(() => import("./pages/Tasks.tsx"));
+const Documents = lazyRetry(() => import("./pages/Documents.tsx"));
+const Zakat = lazyRetry(() => import("./pages/Zakat.tsx"));
+const Will = lazyRetry(() => import("./pages/Will.tsx"));
+const Trips = lazyRetry(() => import("./pages/Trips.tsx"));
+const Albums = lazyRetry(() => import("./pages/Albums.tsx"));
+const KidsWorship = lazyRetry(() => import("./pages/KidsWorship.tsx"));
+const ParentDashboard = lazyRetry(() => import("./pages/ParentDashboard.tsx"));
+const Athkar = lazyRetry(() => import("./pages/Athkar.tsx"));
+const Vehicle = lazyRetry(() => import("./pages/Vehicle.tsx"));
+const Vaccinations = lazyRetry(() => import("./pages/Vaccinations.tsx"));
+const Medications = lazyRetry(() => import("./pages/Medications.tsx"));
+const IslamicReminders = lazyRetry(() => import("./pages/IslamicReminders.tsx"));
 
 // Admin Panel (lazy)
 const AdminLayout = React.lazy(() => import("./pages/admin/AdminLayout"));
