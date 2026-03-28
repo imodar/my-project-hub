@@ -64,14 +64,20 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
 
   // Check if React Query cache already has data (synchronous — 0ms)
   const cachedData = qc.getQueryData<T[]>(queryKey);
-  const [initialLoaded, setInitialLoaded] = useState(() => !!cachedData);
+  const hasCachedData = cachedData !== undefined;
+  const [initialLoaded, setInitialLoaded] = useState(hasCachedData);
 
   // Serialize queryKey for stable dependency comparison
   const queryKeyStr = JSON.stringify(queryKey);
 
+  // Keep loading state in sync with the current query key cache
+  useEffect(() => {
+    setInitialLoaded(hasCachedData);
+  }, [hasCachedData, queryKeyStr]);
+
   // ── 1. قراءة IndexedDB فقط إذا لم يكن هناك كاش ──
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || hasCachedData) return;
     let cancelled = false;
     (async () => {
       const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
@@ -90,7 +96,7 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
       }
     })();
     return () => { cancelled = true; };
-  }, [tableName, enabled, queryKeyStr]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tableName, enabled, hasCachedData, queryKeyStr]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 2. جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
@@ -106,9 +112,9 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   });
 
   // ── 3. مصدر وحيد: React Query cache ──
-  const data = query.data ?? [];
-  const isLoading = !initialLoaded && query.isLoading;
-  const isSyncing = query.isFetching && initialLoaded;
+  const data = query.data ?? cachedData ?? [];
+  const isLoading = enabled && !hasCachedData && !initialLoaded && query.isLoading;
+  const isSyncing = query.isFetching && (hasCachedData || initialLoaded);
 
   return {
     data,
