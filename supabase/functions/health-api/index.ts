@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
       const { medication_id, skipped, notes } = body;
       if (!validUuid(medication_id)) return json({ error: "medication_id غير صالح" }, 400);
       if (notes && typeof notes === "string" && notes.length > MAX_NOTE) return json({ error: "الملاحظات طويلة جداً" }, 400);
-      const { data, error } = await supabase.from("medication_logs").insert({ medication_id, taken_by: userId, skipped: skipped || false, notes: notes ? sanitize(notes, MAX_NOTE) : null }).select().single();
+      const { data, error } = await adminClient.from("medication_logs").insert({ medication_id, taken_by: userId, skipped: skipped || false, notes: notes ? sanitize(notes, MAX_NOTE) : null }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
