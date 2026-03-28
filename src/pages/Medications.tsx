@@ -207,14 +207,7 @@ const Medications = () => {
         start_date: baseMed.startDate, end_date: baseMed.endDate,
         notes: baseMed.notes, color: baseMed.color, reminder_enabled: formReminderEnabled,
       });
-      const newMed: Medication = {
-        id: crypto.randomUUID(), ...baseMed,
-        reminder: { id: crypto.randomUUID(), enabled: formReminderEnabled, nextDueAt: "" },
-        takenLog: [], createdAt: new Date().toISOString(),
-      };
-      newMed.reminder.nextDueAt = calculateNextDue(newMed);
-      setMedications((prev) => [...prev, newMed]);
-      toast.success(`تمت إضافة ${newMed.name}`);
+      // optimistic update handled via refetch from hook
     }
     setShowAddDrawer(false); resetForm();
   };
