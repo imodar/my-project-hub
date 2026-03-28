@@ -3,6 +3,7 @@
  * يستخدم Edge Function health-api لكل العمليات
  */
 import { useCallback } from "react";
+import { db } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
