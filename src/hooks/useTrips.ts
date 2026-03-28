@@ -58,67 +58,67 @@ export function useTrips() {
   const addDayPlan = useOfflineMutation<any, any>({
     table: "trip_day_plans", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-day-plan", { trip_id: rest.trip_id, day_number: rest.day_number, city: rest.city }); },
-    queryKey: key, onSuccess: () => refetch(),
+    onSuccess: () => refetch(),
   });
 
   const addActivity = useOfflineMutation<any, any>({
     table: "trip_activities", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-activity", { day_plan_id: rest.day_plan_id, name: rest.name, time: rest.time, location: rest.location, cost: rest.cost }); },
-    queryKey: key, onSuccess: () => refetch(),
+    onSuccess: () => refetch(),
   });
 
   const updateActivity = useOfflineMutation<any, any>({
     table: "trip_activities", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("toggle-activity", { id, ...updates }); },
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const addExpense = useOfflineMutation<any, any>({
     table: "trip_expenses", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-expense", { trip_id: rest.trip_id, name: rest.name, amount: rest.amount }); },
-    queryKey: key, onSuccess: () => refetch(),
+    onSuccess: () => refetch(),
   });
 
   const deleteExpense = useOfflineMutation<any, any>({
     table: "trip_expenses", operation: "DELETE",
     apiFn: async (input) => invoke("delete-expense", { id: input.id }),
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const addPackingItem = useOfflineMutation<any, any>({
     table: "trip_packing", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-packing", { trip_id: rest.trip_id, name: rest.name }); },
-    queryKey: key, onSuccess: () => refetch(),
+    onSuccess: () => refetch(),
   });
 
   const updatePackingItem = useOfflineMutation<any, any>({
     table: "trip_packing", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("toggle-packing", { id, ...updates }); },
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const addSuggestion = useOfflineMutation<any, any>({
     table: "trip_suggestions", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-suggestion", { trip_id: rest.trip_id, place_name: rest.place_name, type: rest.type, reason: rest.reason, location: rest.location }); },
-    queryKey: key, onSuccess: () => refetch(),
+    onSuccess: () => refetch(),
   });
 
   const updateSuggestion = useOfflineMutation<any, any>({
     table: "trip_suggestions", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-suggestion-status", { id, ...updates }); },
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const addDocument = useOfflineMutation<any, any>({
     table: "trip_documents", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-document", { trip_id: rest.trip_id, name: rest.name, type: rest.type, file_url: rest.file_url, file_name: rest.file_name, notes: rest.notes }); },
-    queryKey: key, onSuccess: () => refetch(),
+    onSuccess: () => refetch(),
   });
 
   const deleteDocument = useOfflineMutation<any, any>({
     table: "trip_documents", operation: "DELETE",
     apiFn: async (input) => invoke("delete-document", { id: input.id }),
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const wrapInsert = (mut: any, defaults: any = {}) => ({

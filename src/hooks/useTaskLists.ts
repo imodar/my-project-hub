@@ -75,13 +75,13 @@ export function useTaskLists() {
   const updateItem = useOfflineMutation<any, any>({
     table: "task_items", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-item", { id, ...updates }); },
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const deleteItem = useOfflineMutation<any, any>({
     table: "task_items", operation: "DELETE",
     apiFn: async (input) => invoke("delete-item", { id: input.id }),
-    queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   return {
