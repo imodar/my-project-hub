@@ -40,7 +40,7 @@ import SwipeableCard from "@/components/SwipeableCard";
 const Medications = () => {
   const { members: familyMembers } = useFamilyMembers();
   const { medications: dbMeds, isLoading: medsLoading, addMedication: addMedMut, updateMedication: updateMedMut, deleteMedication: deleteMedMut, addLog: addLogMut } = useMedications();
-  const [medications, setMedications] = useState<Medication[]>([]);
+  const [localOverrides, setLocalOverrides] = useState<Record<string, Partial<Medication>>>({});
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
   const [showDueAlert, setShowDueAlert] = useState<Medication | null>(null);
