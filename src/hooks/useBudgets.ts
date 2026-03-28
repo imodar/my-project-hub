@@ -91,7 +91,6 @@ export function useBudgets() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    queryKey: key,
     onSuccess: () => refetch(),
   });
 
