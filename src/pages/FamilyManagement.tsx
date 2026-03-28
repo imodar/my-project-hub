@@ -634,7 +634,16 @@ const FamilyManagement = () => {
                   <div className="flex-1 text-right">
                     <p className={`text-sm font-semibold ${isPending ? "text-muted-foreground" : "text-foreground"}`}>{member.name}</p>
                     <p className="text-xs text-muted-foreground">{ROLE_LABELS[member.role]}</p>
-                    {isPending && (
+                    {isPending && isMyAdmin && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPendingDrawerMember(member); setPendingRole(null); }}
+                        className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 mt-0.5 active:bg-amber-200"
+                      >
+                        <Clock size={8} />
+                        بانتظار القبول — اضغط للمراجعة
+                      </button>
+                    )}
+                    {isPending && !isMyAdmin && (
                       <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 mt-0.5">
                         <Clock size={8} />
                         بانتظار القبول
