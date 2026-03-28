@@ -1,67 +1,57 @@
 
 
-# إصلاح التحميل الفوري — الخطة الكاملة النهائية (5 ملفات)
+# Full Sync مع Progress Bar — الخطة الكاملة النهائية
 
-## التعديلات
+## المشكلة
+على جهاز جديد، `useInitialSync` يستخدم `refetchQueries({ type: "active" })` الذي يجلب فقط بيانات الصفحة المفتوحة (Home). باقي البيانات لا تُجلب حتى يفتح المستخدم كل صفحة يدوياً.
 
-### 1. `src/lib/warmCache.ts` — سطر 24
-```ts
-// قبل:
-{ table: "vaccination_children", queryKeyPrefix: "vaccinations" },
-// بعد:
-{ table: "vaccinations", queryKeyPrefix: "vaccinations" },
-```
+## الحل — 3 ملفات
 
-### 2. `src/hooks/useDebts.ts` — سطر 11
-```ts
-// قبل:
-const key = ["debts", user?.id];
-// بعد:
-const key = ["debts", familyId];
-```
+### 1. `src/lib/fullSync.ts` — ملف جديد
 
-### 3. `src/hooks/useZakatAssets.ts`
-- إضافة `import { useFamilyId } from "./useFamilyId"`
-- إضافة `const { familyId } = useFamilyId()`
-- تغيير key إلى `["zakat-assets", familyId]`
-- تغيير `enabled: !!user && !!familyId`
+يحتوي على:
+- `SyncProgress` interface: `{ current: number; label: string }`
+- `SYNC_STEPS` array: 12 جدول (المهام، السوق، التقويم، الأدوية، الميزانية، الديون، الرحلات، الوثائق، الأماكن، الألبومات، المركبات، اللقاحات)
+- `fullSync(familyId, onProgress)`: يمر على كل step بالتسلسل، يستدعي Edge Function المناسبة، يكتب النتائج في IndexedDB عبر `db[table].bulkPut(items)`، ويحدث progress. فشل جدول واحد لا يوقف الباقي.
+- عند الانتهاء يضبط `first_sync_done` و `last_sync_ts` في localStorage.
 
-### 4. `src/hooks/useWill.ts`
-- إضافة `import { useFamilyId } from "./useFamilyId"`
-- إضافة `const { familyId } = useFamilyId()`
-- تغيير key إلى `["will", familyId]`
-- تغيير `enabled: !!user && !!familyId`
+### 2. `src/hooks/useInitialSync.ts` — تعديل
 
-### 5. `src/App.tsx` — WarmCacheProvider
-```ts
-const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
-  const { familyId, isLoading: familyLoading } = useFamilyId();
-  const qc = useQueryClient();
-  const warmedRef = useRef(false);
-  const [cacheReady, setCacheReady] = useState(false);
+**التغييرات:**
+- إضافة `import { fullSync } from "@/lib/fullSync"`
+- إضافة `progress` state: `useState({ current: 0, label: "" })`
+- تغيير signature الـ `run` ليستقبل `familyId` كـ parameter ثاني: `run(userId: string, familyId: string)`
+- **حالة new_user فقط** (سطر 35-44): استبدال `invalidateQueries` + `refetchQueries` + `setTimeout(800)` بـ:
+  ```ts
+  setState("new_user");
+  await fullSync(familyId, setProgress);
+  setState("done");
+  ```
+- **حالة syncing** (سطر 69-76): تبقى كما هي — `invalidateQueries` + `refetchQueries` كافية لأن البيانات موجودة محلياً والكلاود أحدث فقط.
+- إرجاع `progress` من الـ hook: `return { state, run, progress }`
 
-  useFamilyRealtime();
+### 3. `src/components/FirstSyncOverlay.tsx` — تعديل
 
-  useEffect(() => {
-    if (familyId && !warmedRef.current) {
-      warmedRef.current = true;
-      warmCache(qc, familyId).then(() => setCacheReady(true));
-    } else if (!familyId && !familyLoading) {
-      setCacheReady(true);
-    }
-  }, [familyId, familyLoading, qc]);
+**التغييرات:**
+- إضافة `import { useFamilyId } from "@/hooks/useFamilyId"`
+- إضافة `import { Progress } from "@/components/ui/progress"`
+- استخدام `progress` من `useInitialSync()`
+- استخدام `familyId` من `useFamilyId()` وتمريره لـ `run(user.id, familyId)` بدل الاعتماد على localStorage
+- إضافة شرط: لا تبدأ الـ sync إلا بعد توفر `familyId`
+- إضافة Progress bar و label تحت الـ spinner:
+  ```tsx
+  <Progress value={progress.current} className="w-48 h-2" />
+  <p className="text-xs text-muted-foreground mt-2">
+    {progress.label} — {progress.current}%
+  </p>
+  ```
 
-  // ... sync queue listener يبقى كما هو ...
+## ملاحظات
+- `familyId` يُمرر كـ parameter مباشر من `useFamilyId()` hook — لا يعتمد على `localStorage.getItem("cached_family_id")` الذي قد يكون null
+- حالة `syncing` (بيانات محلية + كلاود أحدث) لا تحتاج fullSync — يكفي `invalidateQueries`
+- حالة `new_user` (جهاز جديد بدون بيانات) هي الوحيدة التي تستخدم fullSync الكامل
 
-  if (!cacheReady) return <FirstSyncOverlay />;
-  return <>{children}</>;
-};
-```
-
-ملاحظة: `FirstSyncOverlay` مستورد أصلاً في `App.tsx`. استخدامه هنا بدل `null` يمنع الشاشة البيضاء ويعرض overlay مناسب أثناء تجهيز الكاش.
-
----
-
-## ملخص
-- **5 ملفات** — تصحيح جدول، توحيد 3 queryKeys، معالجة race condition مع `<FirstSyncOverlay />` بدل شاشة بيضاء
+## النتيجة
+- جهاز جديد → overlay + progress bar 0%→100% → كل البيانات في IndexedDB → overlay يختفي → كل الشاشات تفتح فوراً
+- نفس الجهاز → `first_sync_done` موجود → لا overlay
 
