@@ -1,56 +1,67 @@
 
 
-# إصلاح التحميل الفوري لكل الصفحات — خطة محدّثة
+# إصلاح التحميل الفوري — الخطة الكاملة النهائية (5 ملفات)
 
-## المشكلة
-شاشة "جاري التحميل" تظهر رغم توفر البيانات محلياً، بسبب:
-1. `warmCache.ts` لا يشمل كل الجداول
-2. الكاش لا يُكتب عندما تكون البيانات `[]` فيبقى `undefined`
+## التعديلات
 
-## الحل — ملفان
-
-### ملف 1: `src/lib/warmCache.ts`
-
-**إضافة الجداول الناقصة:**
+### 1. `src/lib/warmCache.ts` — سطر 24
 ```ts
+// قبل:
+{ table: "vaccination_children", queryKeyPrefix: "vaccinations" },
+// بعد:
 { table: "vaccinations", queryKeyPrefix: "vaccinations" },
-{ table: "place_lists", queryKeyPrefix: "place-lists" },
-{ table: "medication_logs", queryKeyPrefix: "medication-logs" },
-{ table: "zakat_assets", queryKeyPrefix: "zakat-assets" },
-{ table: "will_sections", queryKeyPrefix: "will" },
-{ table: "profiles", queryKeyPrefix: "profiles" },
-{ table: "emergency_contacts", queryKeyPrefix: "emergency-contacts" },
 ```
 
-**تغيير شرط الكتابة:**
+### 2. `src/hooks/useDebts.ts` — سطر 11
 ```ts
 // قبل:
-if (items.length > 0) {
-  qc.setQueryData([queryKeyPrefix, familyId], items);
-}
+const key = ["debts", user?.id];
 // بعد:
-qc.setQueryData([queryKeyPrefix, familyId], items);
+const key = ["debts", familyId];
 ```
 
-### ملف 2: `src/hooks/useOfflineFirst.ts`
+### 3. `src/hooks/useZakatAssets.ts`
+- إضافة `import { useFamilyId } from "./useFamilyId"`
+- إضافة `const { familyId } = useFamilyId()`
+- تغيير key إلى `["zakat-assets", familyId]`
+- تغيير `enabled: !!user && !!familyId`
 
-**كتابة الكاش حتى لو فارغ:**
+### 4. `src/hooks/useWill.ts`
+- إضافة `import { useFamilyId } from "./useFamilyId"`
+- إضافة `const { familyId } = useFamilyId()`
+- تغيير key إلى `["will", familyId]`
+- تغيير `enabled: !!user && !!familyId`
+
+### 5. `src/App.tsx` — WarmCacheProvider
 ```ts
-// قبل:
-if (filtered.length > 0) {
-  qc.setQueryData(queryKey, filtered);
-}
-// بعد:
-qc.setQueryData(queryKey, filtered);
+const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
+  const { familyId, isLoading: familyLoading } = useFamilyId();
+  const qc = useQueryClient();
+  const warmedRef = useRef(false);
+  const [cacheReady, setCacheReady] = useState(false);
+
+  useFamilyRealtime();
+
+  useEffect(() => {
+    if (familyId && !warmedRef.current) {
+      warmedRef.current = true;
+      warmCache(qc, familyId).then(() => setCacheReady(true));
+    } else if (!familyId && !familyLoading) {
+      setCacheReady(true);
+    }
+  }, [familyId, familyLoading, qc]);
+
+  // ... sync queue listener يبقى كما هو ...
+
+  if (!cacheReady) return <FirstSyncOverlay />;
+  return <>{children}</>;
+};
 ```
 
-## ملاحظات مهمة
-- `medication_logs` يستخدم prefix `"medication-logs"` (منفصل عن `"medications"`) لتجنب الكتابة فوق كاش الأدوية
-- كتابة `[]` في الكاش تعني أن المستخدم يرى "لا توجد بيانات" فوراً بدل skeleton — وهذا هو السلوك الصحيح للـ offline-first
-- كل صفحة يجب أن تعرض حالة "فارغة" مناسبة (وليس شاشة بيضاء) عندما `data.length === 0`
+ملاحظة: `FirstSyncOverlay` مستورد أصلاً في `App.tsx`. استخدامه هنا بدل `null` يمنع الشاشة البيضاء ويعرض overlay مناسب أثناء تجهيز الكاش.
+
+---
 
 ## ملخص
-- **ملفان** فقط
-- **7 جداول** جديدة في warmCache
-- **إصلاح واحد** لشرط الكتابة في كلا الملفين
+- **5 ملفات** — تصحيح جدول، توحيد 3 queryKeys، معالجة race condition مع `<FirstSyncOverlay />` بدل شاشة بيضاء
 
