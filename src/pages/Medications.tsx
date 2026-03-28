@@ -83,47 +83,47 @@ const Medications = () => {
     if (hasChanges) setMedications(updated);
   }, []);
 
-  useEffect(() => {
-    if (dbMeds && dbMeds.length > 0) {
-      const mapped: Medication[] = dbMeds.map((m: any) => {
-        const takenLog = Array.isArray(m.medication_logs)
-          ? m.medication_logs
-              .filter((log: any) => !log.skipped)
-              .map((log: any) => log.taken_at || log.created_at)
-              .sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())
-          : [];
+  const medications = useMemo(() => {
+    if (!dbMeds || dbMeds.length === 0) return [];
+    return dbMeds.map((m: any) => {
+      const takenLog = Array.isArray(m.medication_logs)
+        ? m.medication_logs
+            .filter((log: any) => !log.skipped)
+            .map((log: any) => log.taken_at || log.created_at)
+            .sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())
+        : [];
 
-        const mappedMedication: Medication = {
+      const override = localOverrides[m.id];
+
+      const mappedMedication: Medication = {
+        id: m.id,
+        name: m.name,
+        dosage: m.dosage || "",
+        memberId: m.member_id || "me",
+        memberName: m.member_name || "أنا",
+        frequencyType: (m.frequency_type || "daily") as FrequencyType,
+        frequencyValue: m.frequency_value || 1,
+        selectedDays: m.selected_days || [],
+        timesPerDay: m.times_per_day || 1,
+        specificTimes: m.specific_times || ["08:00"],
+        startDate: m.start_date || "",
+        endDate: m.end_date || "",
+        notes: m.notes || "",
+        color: m.color || MEDICATION_COLORS[0],
+        reminder: {
           id: m.id,
-          name: m.name,
-          dosage: m.dosage || "",
-          memberId: m.member_id || "me",
-          memberName: m.member_name || "أنا",
-          frequencyType: (m.frequency_type || "daily") as FrequencyType,
-          frequencyValue: m.frequency_value || 1,
-          selectedDays: m.selected_days || [],
-          timesPerDay: m.times_per_day || 1,
-          specificTimes: m.specific_times || ["08:00"],
-          startDate: m.start_date || "",
-          endDate: m.end_date || "",
-          notes: m.notes || "",
-          color: m.color || MEDICATION_COLORS[0],
-          reminder: {
-            id: m.id,
-            enabled: m.reminder_enabled || false,
-            lastConfirmedAt: takenLog[0],
-            nextDueAt: "",
-          },
-          takenLog,
-          createdAt: m.created_at,
-        };
+          enabled: m.reminder_enabled || false,
+          lastConfirmedAt: override?.reminder?.lastConfirmedAt || takenLog[0],
+          nextDueAt: "",
+        },
+        takenLog: override?.takenLog || takenLog,
+        createdAt: m.created_at,
+      };
 
-        mappedMedication.reminder.nextDueAt = calculateNextDue(mappedMedication);
-        return mappedMedication;
-      });
-      setMedications(mapped);
-    }
-  }, [dbMeds]);
+      mappedMedication.reminder.nextDueAt = calculateNextDue(mappedMedication);
+      return mappedMedication;
+    });
+  }, [dbMeds, localOverrides]);
 
   useEffect(() => {
     if (!showDetailSheet) return;
