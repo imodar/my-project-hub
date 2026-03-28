@@ -1,12 +1,14 @@
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
 import { useOfflineMutation } from "./useOfflineMutation";
 
 export function useZakatAssets() {
   const { user } = useAuth();
-  const key = ["zakat_assets", user?.id];
+  const { familyId } = useFamilyId();
+  const key = ["zakat-assets", familyId];
 
   const apiFn = useCallback(async () => {
     if (!user) return { data: [], error: null };
