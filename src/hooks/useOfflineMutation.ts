@@ -142,10 +142,20 @@ export function useOfflineMutation<
     },
 
     onSuccess: (result, variables) => {
-      // عند نجاح API: invalidate لتحل البيانات الحقيقية محل الـ optimistic
-      // هذا يحل مشكلة العنصر المكرر عند INSERT (optimistic id ≠ server id)
       if (!result.queued && queryKey) {
-        qc.invalidateQueries({ queryKey });
+        if (result.data && operation === "INSERT") {
+          // استبدل الـ optimistic item (UUID مؤقت) بالحقيقي من API
+          qc.setQueryData<Record<string, unknown>[]>(queryKey, (old) => {
+            if (!old) return old;
+            const realId = (result.data as any)?.id;
+            if (old.some(item => item.id === realId)) return old;
+            return old.map(item =>
+              item.id === variables.id ? result.data as Record<string, unknown> : item
+            );
+          });
+        } else {
+          qc.invalidateQueries({ queryKey });
+        }
       }
       onSuccess?.(result.data, variables);
     },
