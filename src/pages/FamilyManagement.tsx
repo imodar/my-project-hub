@@ -1148,43 +1148,64 @@ const FamilyManagement = () => {
         </DrawerContent>
       </Drawer>
 
-      {/* Join Role Selection Drawer */}
-      <Drawer open={showJoinRoleGrid} onOpenChange={(open) => { if (!open) { setShowJoinRoleGrid(false); setJoinRole(null); } }}>
-        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+      {/* Pending Member Acceptance Drawer */}
+      <Drawer open={!!pendingDrawerMember} onOpenChange={(open) => {
+        if (!open) { setPendingDrawerMember(null); setPendingRole(null); }
+      }}>
+        <DrawerContent className="px-4 pb-8" style={{ direction: "rtl" }}>
           <DrawerHeader>
-            <DrawerTitle className="text-center text-lg">اختر دورك في الأسرة</DrawerTitle>
+            <DrawerTitle className="text-center text-lg">
+              طلب انضمام جديد
+            </DrawerTitle>
           </DrawerHeader>
-          <div className="space-y-4 mt-2">
-            <div className="grid grid-cols-2 gap-3">
-              {(["father", "mother", "son", "daughter"] as JoinRole[]).map((role) => {
-                const icons: Record<string, typeof User> = { father: User, mother: Heart, son: Baby, daughter: Baby };
-                const labels: Record<string, string> = { father: "أب", mother: "أم", son: "ابن", daughter: "ابنة" };
-                const colors: Record<string, string> = { father: "text-primary", mother: "text-primary", son: "text-blue-500", daughter: "text-pink-500" };
-                const bgs: Record<string, string> = { father: "hsl(var(--primary) / 0.15)", mother: "hsl(var(--primary) / 0.15)", son: "hsl(200, 60%, 92%)", daughter: "hsl(340, 60%, 92%)" };
-                const Icon = icons[role];
-                const selected = joinRole === role;
-                return (
-                  <button
-                    key={role}
-                    onClick={() => setJoinRole(role)}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
-                      selected ? "border-primary bg-primary/10" : "border-border bg-card"
-                    }`}
-                  >
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: bgs[role] }}>
-                      <Icon size={22} className={colors[role]} />
-                    </div>
-                    <span className="text-sm font-bold text-foreground">{labels[role]}</span>
-                  </button>
-                );
-              })}
+
+          <div className="text-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+              <User size={28} className="text-primary" />
             </div>
+            <p className="font-bold text-foreground text-base">{pendingDrawerMember?.name}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              يرغب بالانضمام للعائلة — حدد دوره
+            </p>
+          </div>
+
+          {/* Role grid */}
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            {(["father", "mother", "husband", "wife", "son", "daughter", "worker", "maid", "driver"] as FamilyRole[]).map((r) => {
+              const selected = pendingRole === r;
+              return (
+                <button
+                  key={r}
+                  onClick={() => setPendingRole(r)}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                    selected ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <RoleIcon role={r} size={18} className={selected ? "text-primary" : "text-muted-foreground"} />
+                  <span className="text-xs font-bold text-foreground">{ROLE_LABELS[r]}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Accept / Reject buttons */}
+          <div className="flex gap-3">
             <button
-              onClick={handleJoinByCode}
-              disabled={!joinRole}
-              className="w-full py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+              onClick={handleRejectMember}
+              disabled={processingPending}
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-destructive border-2 border-destructive/30 bg-destructive/5 disabled:opacity-40"
             >
-              انضمام
+              رفض
+            </button>
+            <button
+              onClick={handleAcceptMember}
+              disabled={!pendingRole || processingPending}
+              className="flex-[2] py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              {processingPending
+                ? <Loader2 size={16} className="animate-spin" />
+                : "قبول"
+              }
             </button>
           </div>
         </DrawerContent>
