@@ -166,9 +166,10 @@ const Vaccinations = () => {
           </div>
         ) : (
           children.map((child) => {
-            const completedCount = child.completedVaccines.length;
+            const completed = child.completedVaccines || [];
+            const completedCount = completed.length;
             const progress = Math.round((completedCount / totalVaccines) * 100);
-            const dueVaccines = getNextDueVaccines(child.birthDate, child.completedVaccines);
+            const dueVaccines = child.birthDate ? getNextDueVaccines(child.birthDate, completed) : [];
 
             return (
               <SwipeableCard
