@@ -380,8 +380,8 @@ const Vaccinations = () => {
                       (new Date().getTime() - new Date(resolvedSelected.birthDate).getTime()) / (1000 * 60 * 60 * 24)
                     );
                     const isDue = childAgeDays >= group.vaccines[0].ageDays;
-                    const allCompleted = group.vaccines.every((v) => resolvedSelected.completedVaccines.includes(v.id));
-                    const someCompleted = !allCompleted && group.vaccines.some((v) => resolvedSelected.completedVaccines.includes(v.id));
+                     const allCompleted = group.vaccines.every((v) => resolvedCompleted.includes(v.id));
+                     const someCompleted = !allCompleted && group.vaccines.some((v) => resolvedCompleted.includes(v.id));
 
                     return (
                       <AccordionItem key={group.id} value={group.id} className="border-b-0 mb-2">
