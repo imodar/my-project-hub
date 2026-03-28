@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ListPageSkeleton } from "@/components/PageSkeletons";
+
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Lock, KeyRound, CheckCircle2, Circle,
@@ -235,7 +235,11 @@ const Will = () => {
       <PageHeader title="الوصية" subtitle="وصيتك الشرعية محفوظة وآمنة" />
 
       {isLoading ? (
-        <ListPageSkeleton />
+        <div className="px-4 py-4 space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
+          ))}
+        </div>
       ) : (
         <PullToRefresh onRefresh={handleRefresh}>
           {/* ── Hero Hadith ── */}
