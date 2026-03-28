@@ -249,7 +249,7 @@ const Medications = () => {
 
   const handleDeleteMedication = (medId: string) => {
     deleteMedMut.mutate(medId);
-    setMedications((prev) => prev.filter((m) => m.id !== medId));
+    setLocalOverrides((prev) => { const n = { ...prev }; delete n[medId]; return n; });
     setShowDeleteConfirm(null);
     setShowDetailSheet(null);
     toast.success("تم حذف الدواء");
