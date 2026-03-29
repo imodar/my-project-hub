@@ -88,7 +88,7 @@ class AppDatabase extends Dexie {
   constructor() {
     super("ailti_offline_db");
 
-    this.version(3).stores({
+    this.version(4).stores({
       // ── الأدوية ──
       medications: "id, family_id, member_id, created_at",
       medication_logs: "id, medication_id, taken_at",
