@@ -278,33 +278,6 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // CONFIRM ROLE
-    if (action === "confirm-role") {
-      const { family_id, target_user_id, role } = body;
-      if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
-      if (!validStr(role, 30) || !ALLOWED_ROLES.includes(role)) return json({ error: "دور غير صالح" }, 400);
-
-      const { error } = await adminClient
-        .from("family_members")
-        .update({ role, role_confirmed: true })
-        .eq("family_id", family_id)
-        .eq("user_id", target_user_id);
-      if (error) return json({ error: error.message }, 400);
-
-      try {
-        await adminClient.from("scheduled_notifications").insert({
-          user_id: target_user_id,
-          type: "role_confirmed",
-          title: "تم تأكيد انضمامك",
-          body: "تم تأكيد دورك في العائلة من قبل المشرف",
-          scheduled_at: new Date().toISOString(),
-          sent: false,
-          data: { family_id },
-        });
-      } catch {}
-
-      return json({ success: true });
-    }
 
     // GET members — admins see active + pending, others see active only
     if (action === "get-members") {
