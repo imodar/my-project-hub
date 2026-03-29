@@ -27,6 +27,7 @@ const TABLES_TO_WARM = [
   { table: "zakat_assets", queryKeyPrefix: "zakat-assets" },
   { table: "will_sections", queryKeyPrefix: "will" },
   { table: "profiles", queryKeyPrefix: "profiles" },
+  { table: "worship_children", queryKeyPrefix: "worship-children" },
   { table: "emergency_contacts", queryKeyPrefix: "emergency-contacts" },
 ] as const;
 

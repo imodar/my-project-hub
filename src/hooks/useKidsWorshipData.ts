@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { db } from "@/lib/db";
 import type { DayData, MonthData } from "@/components/kids-worship/worshipData";
 
 export function useKidsWorshipData(childId: string, year: number, month: number) {
@@ -8,8 +10,27 @@ export function useKidsWorshipData(childId: string, year: number, month: number)
   const queryClient = useQueryClient();
   const queryKey = ["kids-worship", childId, year, month];
 
+  // Load initial data from IndexedDB
+  const [initialData, setInitialData] = useState<MonthData | undefined>(undefined);
+  useEffect(() => {
+    db.kids_worship_data
+      .where({ child_id: childId, year, month })
+      .toArray()
+      .then((rows: any[]) => {
+        if (rows.length > 0) {
+          const result: MonthData = {};
+          rows.forEach((row) => { result[row.day] = (row.items as Record<string, boolean>) || {}; });
+          setInitialData(result);
+        }
+      })
+      .catch(() => {});
+  }, [childId, year, month]);
+
   const dataQuery = useQuery({
     queryKey,
+    initialData,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     queryFn: async (): Promise<MonthData> => {
       const { data: response, error } = await supabase.functions.invoke("worship-api", {
         body: { action: "get-worship-data", child_id: childId, year, month },

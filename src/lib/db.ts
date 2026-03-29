@@ -160,6 +160,7 @@ class AppDatabase extends Dexie {
       // ── عبادة الأطفال ──
       kids_worship_data: "id, child_id, year, month, day",
       prayer_logs: "id, child_id, date",
+      worship_children: "id, family_id",
 
       // ── الطوارئ ──
       emergency_contacts: "id, family_id",
