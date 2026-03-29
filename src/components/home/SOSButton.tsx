@@ -227,7 +227,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
       } catch {}
     }
 
-    appToast.success(`تم إلغاء التنبيه — "${reason}"`, { duration: 3000 });
+    appToast.success(`تم إلغاء التنبيه — "${reason}"`);
     setCancelReason("");
   }, [cancelReason, familyId]);
 
