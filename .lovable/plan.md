@@ -1,44 +1,74 @@
 
 
-# إصلاح ترتيب الشاشات بعد تسجيل الدخول — App.tsx
+# توست مخصص موحد — AppToast (محدّث)
 
-## المشكلة
+## التحديثات عن الخطة السابقة
 
-التسلسل الحالي في `App.tsx` (سطر 233-242):
+### 1. دعم `description` — نعم
+بعد الفحص، هناك ~15 استخدام مع `description` (خصوصاً في `Will.tsx`, `Auth.tsx`, `KidsWorship.tsx`, و`App.tsx`). التصميم سيدعم سطرين:
+- **سطر أول**: العنوان (خط عادي، أبيض)
+- **سطر ثاني** (اختياري): الوصف (خط أصغر، أبيض شفاف 80%)
 
-```text
-<BrowserRouter>
-  <OfflineBanner />
-  <FirstSyncOverlay />    ← خارج WarmCacheProvider
-  <ScrollToTop />
-  <WarmCacheProvider>     ← يعرض FirstSyncOverlay ثاني كـ fallback
-    <AnimatedRoutes />
-  </WarmCacheProvider>
-  <BottomNav />           ← خارج WarmCacheProvider — يظهر دائماً
-</BrowserRouter>
+API الجديد:
+```ts
+appToast.success("تم الحفظ", "تم حفظ القسم بنجاح");  // title + description
+appToast.error("فشل الحفظ");                          // title فقط
 ```
 
-النتيجة: بعد تسجيل الدخول، يظهر `BottomNav` + شاشة بيضاء + توست "تم تسجيل الدخول"، ثم بعدها تظهر شاشة "أهلاً بك في عائلي". السبب أن `BottomNav` و`FirstSyncOverlay` الأول خارج `WarmCacheProvider`.
+### 2. استبدال `toast.error` في `MutationCache` قبل حذف sonner
+سطر 94 في `App.tsx` سيتحول من:
+```ts
+toast.error("فشل الحفظ", { description: message });
+```
+إلى:
+```ts
+appToast.error("فشل الحفظ", message);
+```
+وكذلك سطر 137 (sync-queue-failed). هذا يضمن عدم فقدان أي رسالة خطأ بعد حذف sonner.
 
-## الحل
+---
 
-ملف واحد: `src/App.tsx`
+## الملفات
 
-1. **حذف** `<FirstSyncOverlay />` من سطر 235 — يكفي الذي داخل `WarmCacheProvider`
-2. **نقل** `<BottomNav />` إلى **داخل** `WarmCacheProvider` — لا يظهر إلا بعد جاهزية الكاش
+### ملفات جديدة (2)
+| الملف | الوصف |
+|-------|-------|
+| `src/lib/toast.ts` | Store + API: `appToast.success/error/warning/info(title, description?)` |
+| `src/components/AppToast.tsx` | مكون بصري — لسان ينزل من الأعلى، سطرين، 4 ألوان، swipe dismiss |
 
-```text
-<BrowserRouter>
-  <OfflineBanner />
-  <ScrollToTop />
-  <WarmCacheProvider>
-    <Suspense fallback={null}>
-      <AnimatedRoutes />
-    </Suspense>
-    <BottomNav />
-  </WarmCacheProvider>
-</BrowserRouter>
+### تعديل (1)
+| الملف | التعديل |
+|-------|---------|
+| `src/App.tsx` | إضافة `<AppToast />`، استبدال `toast.error` في MutationCache + sync handler بـ `appToast.error`، حذف `<Toaster />` و`<Sonner />` وimports القديمة |
+
+### استبدال الاستخدامات (~20+ ملف)
+
+**`toast({ title, description, variant })` من shadcn** (Auth, Will, KidsWorship):
+```ts
+// قبل
+toast({ title: "تم الحفظ", description: "...", variant: "destructive" });
+// بعد
+appToast.error("تم الحفظ", "...");
 ```
 
-النتيجة: أثناء التجهيز يظهر `FirstSyncOverlay` فقط (من داخل `WarmCacheProvider`)، وبعد الجاهزية يظهر المحتوى + `BottomNav` معاً.
+**`toast.success/error()` من sonner** (Market, Tasks, Documents, Places, Medications, Vaccinations, Chat, Settings, CompleteProfile, JoinOrCreate, Debts, Vehicle, Albums, Trips, Trash, Budget, Calendar, Zakat, Tasbih, Profile, AdminDashboard + hooks/contexts):
+```ts
+// قبل
+toast.success("تم الحفظ");
+// بعد
+appToast.success("تم الحفظ");
+```
+
+### حذف (3)
+- `src/components/ui/sonner.tsx`
+- `src/components/ui/toaster.tsx`
+- `src/components/ui/use-toast.ts`
+- `src/hooks/use-toast.ts`
+
+---
+
+## ملخص
+- ملفان جديدان + تعديل App.tsx + استبدال في ~20+ ملف + حذف 4 ملفات قديمة
+- التوست يدعم `description` اختياري (سطر ثاني بخط أصغر)
+- MutationCache و sync handler يُستبدلان **قبل** حذف sonner
 
