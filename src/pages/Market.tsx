@@ -336,7 +336,7 @@ const Market = () => {
     deleteListMutation.mutate(deleteListTarget);
     setDeleteListTarget(null);
     appToast.success("تم نقل القائمة إلى سلة المحذوفات");
-  }, [deleteListTarget, deleteListMutation, dbLists, addToTrash, toast]);
+  }, [deleteListTarget, deleteListMutation, dbLists, addToTrash]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0 || !activeListId) return;

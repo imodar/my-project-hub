@@ -242,7 +242,7 @@ const Medications = () => {
       },
     }));
     setShowDueAlert(null);
-    toast("تم تخطي الجرعة", { icon: "⏭️" });
+    appToast.info("تم تخطي الجرعة");
   };
 
   const handleDeleteMedication = (medId: string) => {

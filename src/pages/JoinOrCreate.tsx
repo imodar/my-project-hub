@@ -202,7 +202,7 @@ const JoinOrCreate = () => {
       appToast.error("لا يمكن الوصول للكاميرا");
       setShowScanner(false);
     }
-  }, [stopScanner, toast]);
+  }, [stopScanner]);
 
   useEffect(() => {
     if (showScanner) startScanner();
