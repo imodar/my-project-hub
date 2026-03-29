@@ -73,7 +73,7 @@ const Market = () => {
   const { familyId } = useFamilyId();
   const { toast } = useToast();
   const { addToTrash } = useTrash();
-  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useMarketLists();
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useMarketLists();
   const createdDefaultListRef = useRef<string | null>(null);
 
   const lists: MarketList[] = useMemo(() => {
