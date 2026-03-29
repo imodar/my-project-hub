@@ -1,38 +1,44 @@
 
 
-# إصلاح المشاركة + flickering — 8 ملفات
+# إصلاح ترتيب الشاشات بعد تسجيل الدخول — App.tsx
 
-## التحقق المطلوب ✅
-تم التحقق: `update-list` action موجود في **كل** الـ Edge Functions الأربع:
-- `tasks-api` ✅
-- `market-api` ✅
-- `documents-api` ✅ (سطر 77)
-- `places-api` ✅ (سطر 84)
+## المشكلة
 
-لا حاجة لتعديل أي Edge Function.
+التسلسل الحالي في `App.tsx` (سطر 233-242):
 
----
+```text
+<BrowserRouter>
+  <OfflineBanner />
+  <FirstSyncOverlay />    ← خارج WarmCacheProvider
+  <ScrollToTop />
+  <WarmCacheProvider>     ← يعرض FirstSyncOverlay ثاني كـ fallback
+    <AnimatedRoutes />
+  </WarmCacheProvider>
+  <BottomNav />           ← خارج WarmCacheProvider — يظهر دائماً
+</BrowserRouter>
+```
 
-## التغييرات — نفس الخطة السابقة بدون تغيير
+النتيجة: بعد تسجيل الدخول، يظهر `BottomNav` + شاشة بيضاء + توست "تم تسجيل الدخول"، ثم بعدها تظهر شاشة "أهلاً بك في عائلي". السبب أن `BottomNav` و`FirstSyncOverlay` الأول خارج `WarmCacheProvider`.
 
-### الـ Hooks (4 ملفات) — إضافة `updateList` + حذف `queryKey` من `createList`
+## الحل
 
-| الملف | التعديل |
-|-------|---------|
-| `useMarketLists.ts` | إضافة `updateList` mutation + حذف `queryKey` من `createList` + إرجاع `updateList` |
-| `useTaskLists.ts` | نفس الشيء |
-| `useDocumentLists.ts` | نفس الشيء |
-| `usePlaceLists.ts` | نفس الشيء |
+ملف واحد: `src/App.tsx`
 
-### الشاشات (4 ملفات) — ربط `shareList` بالـ mutation
+1. **حذف** `<FirstSyncOverlay />` من سطر 235 — يكفي الذي داخل `WarmCacheProvider`
+2. **نقل** `<BottomNav />` إلى **داخل** `WarmCacheProvider` — لا يظهر إلا بعد جاهزية الكاش
 
-| الملف | التعديل |
-|-------|---------|
-| `Market.tsx` | `shareList` يستدعي `updateList.mutate({ id, shared_with })` |
-| `Tasks.tsx` | نفس الشيء |
-| `Documents.tsx` | نفس الشيء |
-| `Places.tsx` | نفس الشيء |
+```text
+<BrowserRouter>
+  <OfflineBanner />
+  <ScrollToTop />
+  <WarmCacheProvider>
+    <Suspense fallback={null}>
+      <AnimatedRoutes />
+    </Suspense>
+    <BottomNav />
+  </WarmCacheProvider>
+</BrowserRouter>
+```
 
-## ملخص
-8 ملفات، لا تغيير عن الخطة المعتمدة سابقاً.
+النتيجة: أثناء التجهيز يظهر `FirstSyncOverlay` فقط (من داخل `WarmCacheProvider`)، وبعد الجاهزية يظهر المحتوى + `BottomNav` معاً.
 
