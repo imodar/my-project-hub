@@ -22,12 +22,18 @@ export function useVehicles() {
     return { data: response?.data || [], error: null };
   }, [familyId]);
 
+  const filterByFamily = useCallback(
+    (items: any[]) => familyId ? items.filter((v: any) => v.family_id === familyId) : [],
+    [familyId]
+  );
+
   const { data: vehicles, isLoading, refetch } = useOfflineFirst<any>({
     table: "vehicles",
     queryKey: key,
     apiFn,
     enabled: !!familyId,
     scopeKey: familyId ?? undefined,
+    filterFn: filterByFamily,
   });
 
   // Helper: optimistic update for maintenance inside a vehicle

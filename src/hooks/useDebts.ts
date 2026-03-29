@@ -26,7 +26,7 @@ export function useDebts() {
     table: "debts",
     queryKey: key,
     apiFn,
-    enabled: !!user,
+    enabled: !!user && !!familyId,
     scopeKey: familyId ?? undefined,
   });
 
