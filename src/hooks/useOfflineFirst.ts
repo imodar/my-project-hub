@@ -28,6 +28,8 @@ export interface UseOfflineFirstOptions<T> {
   filterFn?: (items: T[]) => T[];
   /** هل الـ Hook مُفعّل؟ */
   enabled?: boolean;
+  /** مفتاح نطاق لعزل sync_meta بين العائلات (مثل familyId) */
+  scopeKey?: string;
 }
 
 export interface UseOfflineFirstReturn<T> {

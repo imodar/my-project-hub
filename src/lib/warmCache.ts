@@ -1,6 +1,18 @@
 import { db } from "./db";
 import type { QueryClient } from "@tanstack/react-query";
 
+/**
+ * الجداول التي تحتوي family_id مباشرة — تُفلتر في warmCache.
+ * الجداول الفرعية (medication_logs, trip_day_plans, album_photos...) لا تُفلتر
+ * لأنها لا تملك family_id — فلترتها تتم عبر الجدول الأب.
+ */
+const FAMILY_SCOPED_TABLES = new Set([
+  "task_lists", "market_lists", "calendar_events", "medications",
+  "budgets", "debts", "trips", "vehicles", "document_lists",
+  "albums", "family_members", "vaccinations", "place_lists",
+  "worship_children", "emergency_contacts", "chat_messages",
+]);
+
 const TABLES_TO_WARM = [
   { table: "task_lists", queryKeyPrefix: "task-lists" },
   { table: "market_lists", queryKeyPrefix: "market-lists" },
@@ -40,7 +52,11 @@ export async function warmCache(qc: QueryClient, familyId: string | null): Promi
       if (!table) return;
       // Skip if React Query already has data for this key
       if (qc.getQueryData([queryKeyPrefix, familyId])) return;
-      const items = await table.toArray();
+      let items = await table.toArray();
+      // فلترة الجداول العائلية فقط — الجداول الفرعية تبقى بدون فلترة
+      if (FAMILY_SCOPED_TABLES.has(tableName)) {
+        items = items.filter((i: any) => i.family_id === familyId);
+      }
       qc.setQueryData([queryKeyPrefix, familyId], items);
     } catch {
       // silent fail — warmup is best-effort
