@@ -169,7 +169,7 @@ const Will = () => {
         body: { action: "verify-reset-otp", code: resetOtp },
       });
       if (error || data?.error) {
-        appToast.success("الرمز غير صحيح", description: data?.error || error?.message, variant: "destructive");
+        appToast.error("الرمز غير صحيح", data?.error || error?.message);
         setResetLoading(false);
         return;
       }

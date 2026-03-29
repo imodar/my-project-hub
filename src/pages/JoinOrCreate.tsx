@@ -136,7 +136,7 @@ const JoinOrCreate = () => {
         body: { action: "create", name: profileName, role: createRole },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل إنشاء الأسرة", variant: "destructive" });
+        appToast.error(data?.error || "فشل إنشاء الأسرة");
       } else {
         localStorage.setItem("join_or_create_done", "true");
         queryClient.invalidateQueries({ queryKey: ["family-id"] });

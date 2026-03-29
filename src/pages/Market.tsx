@@ -257,10 +257,7 @@ const Market = () => {
     if (!newItemName.trim() || !activeList) return;
 
     if (!familyId || activeList.id === DEFAULT_FAMILY_LIST_ID) {
-      toast({
-        title: familyId ? "جارٍ تجهيز القائمة العائلية" : "يجب الانضمام لعائلة أولاً",
-        variant: "destructive",
-      });
+      appToast.error(familyId ? "جارٍ تجهيز القائمة العائلية" : "يجب الانضمام لعائلة أولاً");
       return;
     }
 
