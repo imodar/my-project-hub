@@ -403,29 +403,6 @@ const FamilyManagement = () => {
     setNewName("");
   };
 
-  // Note: approval flow removed — joining is instant via edge function
-
-  const handleConfirmRole = async () => {
-    if (!confirmMember || !confirmRole || !familyId || confirmingRole) return;
-    setConfirmingRole(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "confirm-role", family_id: familyId, target_user_id: confirmMember.id, role: confirmRole },
-      });
-      if (error || data?.error) {
-        toast({ title: data?.error || "فشل تأكيد الدور", variant: "destructive" });
-      } else {
-        refetchMembers();
-        toast({ title: `تم تأكيد دور ${confirmMember.name}` });
-        setConfirmMember(null);
-        setConfirmRole(null);
-      }
-    } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
-    } finally {
-      setConfirmingRole(false);
-    }
-  };
 
   // Accept pending member
   const handleAcceptMember = async () => {
