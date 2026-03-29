@@ -117,6 +117,10 @@ export function useDocumentLists() {
 
   return {
     lists: lists || [], isLoading,
+    updateList: {
+      ...updateList,
+      mutate: (input: any) => updateList.mutate(input),
+    },
     createList: {
       ...createList,
       mutate: (input: any) => createList.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, document_items: [], ...input }),

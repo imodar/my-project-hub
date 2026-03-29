@@ -351,11 +351,16 @@ const Tasks = () => {
   }, [deleteListMutation, dbLists, addToTrash]);
 
   const shareList = useCallback(() => {
-    if (selectedShareMembers.length === 0) return;
+    if (selectedShareMembers.length === 0 || !activeListId) return;
     haptic.medium();
+    updateListMutation.mutate({
+      id: activeListId,
+      shared_with: selectedShareMembers,
+      type: "shared",
+    });
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [selectedShareMembers]);
+  }, [activeListId, selectedShareMembers, updateListMutation]);
 
   const getListIcon = (type: TaskList["type"], isActive: boolean) => {
     switch (type) {

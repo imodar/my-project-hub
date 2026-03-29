@@ -284,11 +284,16 @@ const Documents = () => {
   }, [activeListId, lists, deleteDocListMut]);
 
   const shareList = useCallback(() => {
-    if (selectedShareMembers.length === 0) return;
+    if (selectedShareMembers.length === 0 || !activeListId) return;
     haptic.medium();
+    updateDocListMut.mutate({
+      id: activeListId,
+      shared_with: selectedShareMembers,
+      type: "shared",
+    });
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [selectedShareMembers]);
+  }, [activeListId, selectedShareMembers, updateDocListMut]);
 
   const getListIcon = (type: DocList["type"], isActive: boolean) => {
     switch (type) {

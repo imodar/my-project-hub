@@ -91,6 +91,10 @@ export function useMarketLists() {
   return {
     lists: normalizedLists,
     isLoading,
+    updateList: {
+      ...updateList,
+      mutate: (input: any) => updateList.mutate(input),
+    },
     createList: {
       ...createList,
       mutate: (input: any, options?: any) => {

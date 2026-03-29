@@ -95,6 +95,10 @@ export function useTaskLists() {
   return {
     lists: lists || [],
     isLoading,
+    updateList: {
+      ...updateList,
+      mutate: (input: any) => updateList.mutate(input),
+    },
     createList: {
       ...createList,
       mutate: (input: any, options?: any) => {
