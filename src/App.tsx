@@ -133,9 +133,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      toast.error(`فشلت مزامنة ${detail.label || "البيانات"}`, {
-        description: "تحقق من الاتصال وحاول مرة أخرى",
-      });
+      appToast.error(`فشلت مزامنة ${detail.label || "البيانات"}`, "تحقق من الاتصال وحاول مرة أخرى");
     };
     window.addEventListener("sync-queue-failed", handler);
     return () => window.removeEventListener("sync-queue-failed", handler);
