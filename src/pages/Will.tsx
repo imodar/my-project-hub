@@ -142,7 +142,7 @@ const Will = () => {
         body: { action: "request-reset-otp" },
       });
       if (error || data?.error) {
-        appToast.success("فشل إرسال الرمز", description: data?.error || error?.message, variant: "destructive");
+        appToast.error("فشل إرسال الرمز", data?.error || error?.message);
         return;
       }
       // In production, SMS is sent. For now, code is returned for testing
