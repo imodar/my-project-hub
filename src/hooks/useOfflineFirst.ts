@@ -101,9 +101,14 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
 
   // ── 2. جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
-    const result = await syncTable<T>(tableName, (lastSyncedAt) => apiFn(lastSyncedAt));
+    const result = await syncTable<T>(
+      tableName,
+      (lastSyncedAt) => apiFn(lastSyncedAt),
+      filterFnRef.current || undefined,
+      scopeKey
+    );
     return applyFilter(result);
-  }, [tableName, apiFn, applyFilter]);
+  }, [tableName, apiFn, applyFilter, scopeKey]);
 
   const query = useQuery<T[]>({
     queryKey,
