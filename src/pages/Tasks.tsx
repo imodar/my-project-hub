@@ -57,7 +57,7 @@ const Tasks = () => {
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { familyId } = useFamilyId();
-  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useTaskLists();
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useTaskLists();
   const { addToTrash } = useTrash();
   const createdDefaultListRef = useRef<string | null>(null);
 
