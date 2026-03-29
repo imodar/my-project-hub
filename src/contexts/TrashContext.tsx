@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 
 export interface TrashItem {
   id: string;
@@ -106,15 +106,15 @@ export const TrashProvider = ({ children }: { children: React.ReactNode }) => {
         const restoredTitle = data?.data?.title || item.title;
 
         if (restoredType === "market_list" || restoredType === "task_list") {
-          toast.success(`تم استعادة قائمة "${restoredTitle}" بجميع عناصرها`);
+          appToast.success(`تم استعادة قائمة "${restoredTitle}" بجميع عناصرها`);
         } else {
-          toast.success(`تم استعادة "${restoredTitle}"`);
+          appToast.success(`تم استعادة "${restoredTitle}"`);
         }
 
         qc.invalidateQueries({ queryKey });
         return item;
       } catch (err: any) {
-        toast.error("فشل في استعادة العنصر");
+        appToast.error("فشل في استعادة العنصر");
         return undefined;
       }
     },

@@ -32,7 +32,7 @@ import {
   formatFrequency,
   getTimeUntilNext,
 } from "@/data/medicationData";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 
 // Using shared SwipeableCard component
 import SwipeableCard from "@/components/SwipeableCard";
@@ -172,8 +172,8 @@ const Medications = () => {
   };
 
   const handleSave = () => {
-    if (!formName.trim()) { toast.error("يرجى إدخال اسم الدواء"); return; }
-    if (!formDosage.trim()) { toast.error("يرجى إدخال الجرعة"); return; }
+    if (!formName.trim()) { appToast.error("يرجى إدخال اسم الدواء"); return; }
+    if (!formDosage.trim()) { appToast.error("يرجى إدخال الجرعة"); return; }
 
     const baseMed = {
       name: formName.trim(), dosage: formDosage.trim(), memberId: formMemberId,
@@ -195,7 +195,7 @@ const Medications = () => {
         reminder_enabled: formReminderEnabled,
       });
       // optimistic update handled via refetch from hook
-      toast.success("تم تحديث الدواء");
+      appToast.success("تم تحديث الدواء");
     } else {
       addMedMut.mutate({
         name: baseMed.name, dosage: baseMed.dosage, member_id: baseMed.memberId,
@@ -205,7 +205,7 @@ const Medications = () => {
         start_date: baseMed.startDate, end_date: baseMed.endDate,
         notes: baseMed.notes, color: baseMed.color, reminder_enabled: formReminderEnabled,
       });
-      toast.success("تمت إضافة الدواء");
+      appToast.success("تمت إضافة الدواء");
     }
     setShowAddDrawer(false); resetForm();
   };
@@ -225,7 +225,7 @@ const Medications = () => {
       },
     }));
     setShowDueAlert((prev) => (prev?.id === medId ? null : prev));
-    toast.success("تم تسجيل تناول الدواء ✅");
+    appToast.success("تم تسجيل تناول الدواء ✅");
   };
 
   const skipMedication = (medId: string) => {
@@ -242,7 +242,7 @@ const Medications = () => {
       },
     }));
     setShowDueAlert(null);
-    toast("تم تخطي الجرعة", { icon: "⏭️" });
+    appToast.info("تم تخطي الجرعة");
   };
 
   const handleDeleteMedication = (medId: string) => {
@@ -250,7 +250,7 @@ const Medications = () => {
     setLocalOverrides((prev) => { const n = { ...prev }; delete n[medId]; return n; });
     setShowDeleteConfirm(null);
     setShowDetailSheet(null);
-    toast.success("تم حذف الدواء");
+    appToast.success("تم حذف الدواء");
   };
 
   const handleTimesPerDayChange = (count: number) => {

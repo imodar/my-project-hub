@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Plus, QrCode, Copy, Check, UserPlus, Trash2, Share2, Crown, User, Baby, ShieldCheck, Heart, Clock, Shield, Briefcase, Car, ScanLine, X, RefreshCw, Loader2, AlertTriangle } from "lucide-react";
 import SwipeableCard from "@/components/SwipeableCard";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { toast } from "@/hooks/use-toast";
+import { appToast } from "@/lib/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "@/hooks/useFamilyId";
@@ -116,15 +116,15 @@ const FamilyManagement = () => {
         body: { action: "create", name: user?.user_metadata?.name || "عائلتي", role: setupRole },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل إنشاء الأسرة", variant: "destructive" });
+        appToast.error(data?.error || "فشل إنشاء الأسرة");
         return;
       }
       queryClient.invalidateQueries({ queryKey: ["family-id"] });
       queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
       setShowSetupDialog(false);
-      toast({ title: "تم إنشاء الأسرة بنجاح!" });
+      appToast.success("تم إنشاء الأسرة بنجاح!");
     } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      appToast.error("حدث خطأ");
     }
   };
 
@@ -189,7 +189,7 @@ const FamilyManagement = () => {
         setCodeTimer(300);
       }
     } catch {
-      toast({ title: "فشل تجديد الكود", variant: "destructive" });
+      appToast.error("فشل تجديد الكود");
     } finally {
       setIsRegeneratingCode(false);
     }
@@ -244,14 +244,14 @@ const FamilyManagement = () => {
         body: { action: "remove-member", family_id: familyId, target_user_id: id },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل حذف العضو", variant: "destructive" });
+        appToast.error(data?.error || "فشل حذف العضو");
         return;
       }
       refetchMembers();
       
-      toast({ title: "تم حذف الفرد من الأسرة" });
+      appToast.success("تم حذف الفرد من الأسرة");
     } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      appToast.error("حدث خطأ");
     }
   };
 
@@ -260,7 +260,7 @@ const FamilyManagement = () => {
     const member = members.find((m) => m.id === id);
     if (!member) return;
     if (isParentRole(member.role)) {
-      toast({ title: "لا يمكن إلغاء إشراف الوالدين", variant: "destructive" });
+      appToast.error("لا يمكن إلغاء إشراف الوالدين");
       return;
     }
     const newAdmin = !member.isAdmin;
@@ -269,13 +269,13 @@ const FamilyManagement = () => {
         body: { action: "toggle-admin", family_id: familyId, target_user_id: id, is_admin: newAdmin },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل تعديل الصلاحية", variant: "destructive" });
+        appToast.error(data?.error || "فشل تعديل الصلاحية");
         return;
       }
       refetchMembers();
-      toast({ title: newAdmin ? `تم تعيين ${member.name} كمشرف` : `تم إلغاء إشراف ${member.name}` });
+      appToast.success(newAdmin ? `تم تعيين ${member.name} كمشرف` : `تم إلغاء إشراف ${member.name}`);
     } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      appToast.error("حدث خطأ");
     }
     
   };
@@ -284,7 +284,7 @@ const FamilyManagement = () => {
     navigator.clipboard.writeText(inviteCode);
     setCodeCopied(true);
     setTimeout(() => setCodeCopied(false), 2000);
-    toast({ title: "تم نسخ الكود" });
+    appToast.success("تم نسخ الكود");
   };
 
   const handleShareInvite = async () => {
@@ -294,12 +294,12 @@ const FamilyManagement = () => {
         await navigator.share({ title: "دعوة انضمام للأسرة", text });
       } else {
         await navigator.clipboard.writeText(text);
-        toast({ title: "تم نسخ رسالة الدعوة" });
+        appToast.success("تم نسخ رسالة الدعوة");
       }
     } catch {
       try {
         await navigator.clipboard.writeText(text);
-        toast({ title: "تم نسخ رسالة الدعوة" });
+        appToast.success("تم نسخ رسالة الدعوة");
       } catch {}
     }
   };
@@ -350,7 +350,7 @@ const FamilyManagement = () => {
         }, 500);
       }
     } catch {
-      toast({ title: "لا يمكن الوصول للكاميرا", variant: "destructive" });
+      appToast.error("لا يمكن الوصول للكاميرا");
       setShowScanner(false);
     }
   }, []);
@@ -364,19 +364,19 @@ const FamilyManagement = () => {
       if (error || data?.error) {
         const msg = data?.error || error?.message || "فشل الانضمام";
         if (msg.includes("طلبك قيد الانتظار")) {
-          toast({ title: "طلبك قيد الانتظار بالفعل" });
+          appToast.success("طلبك قيد الانتظار بالفعل");
         } else if (msg.includes("عضو بالفعل")) {
-          toast({ title: "أنت عضو بالفعل في هذه العائلة" });
+          appToast.success("أنت عضو بالفعل في هذه العائلة");
         } else {
-          toast({ title: msg, variant: "destructive" });
+          appToast.error(msg);
         }
       } else {
-        toast({ title: "تم إرسال طلب الانضمام — بانتظار موافقة المشرف" });
+        appToast.success("تم إرسال طلب الانضمام — بانتظار موافقة المشرف");
         queryClient.invalidateQueries({ queryKey: ["family-id"] });
         refetchMembers();
       }
     } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      appToast.error("حدث خطأ");
     }
   };
 
@@ -418,15 +418,15 @@ const FamilyManagement = () => {
         },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل القبول", variant: "destructive" });
+        appToast.error(data?.error || "فشل القبول");
       } else {
-        toast({ title: `تم قبول ${pendingDrawerMember.name} 🎉` });
+        appToast.success(`تم قبول ${pendingDrawerMember.name} 🎉`);
         setPendingDrawerMember(null);
         setPendingRole(null);
         refetchMembers();
       }
     } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      appToast.error("حدث خطأ");
     } finally {
       setProcessingPending(false);
     }
@@ -445,15 +445,15 @@ const FamilyManagement = () => {
         },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل الرفض", variant: "destructive" });
+        appToast.error(data?.error || "فشل الرفض");
       } else {
-        toast({ title: `تم رفض ${pendingDrawerMember.name}` });
+        appToast.success(`تم رفض ${pendingDrawerMember.name}`);
         setPendingDrawerMember(null);
         setPendingRole(null);
         refetchMembers();
       }
     } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      appToast.error("حدث خطأ");
     } finally {
       setProcessingPending(false);
     }
@@ -470,17 +470,17 @@ const FamilyManagement = () => {
         body: { action: "leave", family_id: familyId },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل مغادرة العائلة", variant: "destructive" });
+        appToast.error(data?.error || "فشل مغادرة العائلة");
         return;
       }
       localStorage.removeItem("cached_family_id");
       queryClient.invalidateQueries({ queryKey: ["family-id"] });
       queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
-      toast({ title: "تم مغادرة العائلة بنجاح" });
+      appToast.success("تم مغادرة العائلة بنجاح");
       setShowLeaveConfirm(false);
       navigate("/", { replace: true });
     } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      appToast.error("حدث خطأ");
     } finally {
       setLeavingFamily(false);
     }

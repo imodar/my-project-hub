@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
-import { useToast } from "@/hooks/use-toast";
+import { appToast } from "@/lib/toast";
 import { ScanLine, Users, ArrowLeft, Loader2, User, Heart, Baby, Crown, ShieldCheck, Clock, X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
@@ -24,7 +24,6 @@ const JoinOrCreate = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   // Read ?code= from URL (e.g. from QR scan)
   const urlCode = searchParams.get("code") || "";
@@ -82,17 +81,17 @@ const JoinOrCreate = () => {
         if (msg.includes("عضو بالفعل")) {
           localStorage.setItem("join_or_create_done", "true");
           queryClient.invalidateQueries({ queryKey: ["family-id"] });
-          toast({ title: "أنت عضو بالفعل في هذه العائلة" });
+          appToast.success("أنت عضو بالفعل في هذه العائلة");
           navigate("/", { replace: true });
           return;
         }
-        toast({ title: msg, variant: "destructive" });
+        appToast.error(msg);
       } else {
         setPendingJoinFamilyId(data?.data?.family_id);
         setJoinStatus("pending");
       }
     } catch {
-      toast({ title: "حدث خطأ غير متوقع", variant: "destructive" });
+      appToast.error("حدث خطأ غير متوقع");
     } finally {
       setJoining(false);
     }
@@ -137,16 +136,16 @@ const JoinOrCreate = () => {
         body: { action: "create", name: profileName, role: createRole },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل إنشاء الأسرة", variant: "destructive" });
+        appToast.error(data?.error || "فشل إنشاء الأسرة");
       } else {
         localStorage.setItem("join_or_create_done", "true");
         queryClient.invalidateQueries({ queryKey: ["family-id"] });
         queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
-        toast({ title: "تم إنشاء الأسرة بنجاح! 🎉" });
+        appToast.success("تم إنشاء الأسرة بنجاح! 🎉");
         navigate("/", { replace: true });
       }
     } catch {
-      toast({ title: "حدث خطأ غير متوقع", variant: "destructive" });
+      appToast.error("حدث خطأ غير متوقع");
     } finally {
       setCreating(false);
     }
@@ -200,10 +199,10 @@ const JoinOrCreate = () => {
         }, 500);
       }
     } catch {
-      toast({ title: "لا يمكن الوصول للكاميرا", variant: "destructive" });
+      appToast.error("لا يمكن الوصول للكاميرا");
       setShowScanner(false);
     }
-  }, [stopScanner, toast]);
+  }, [stopScanner]);
 
   useEffect(() => {
     if (showScanner) startScanner();

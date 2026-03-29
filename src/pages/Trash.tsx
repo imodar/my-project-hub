@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 
 const TYPE_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
   event: { label: "مناسبة", icon: CalendarDays, color: "hsl(var(--primary))" },
@@ -41,7 +41,7 @@ const Trash = () => {
     if (deleteConfirm) {
       permanentlyDelete(deleteConfirm);
       setDeleteConfirm(null);
-      toast.success("تم الحذف نهائياً");
+      appToast.success("تم الحذف نهائياً");
     }
   };
 

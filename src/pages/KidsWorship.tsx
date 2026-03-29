@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Star, Sparkles, Trophy, RotateCcw, Lock, Users } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { appToast } from "@/lib/toast";
 import MonthDaySelector from "@/components/kids-worship/MonthDaySelector";
 import {
   categories, allItems, TOTAL_ITEMS,
@@ -58,7 +58,7 @@ const KidsWorship = () => {
 
   const toggleItem = (itemId: string) => {
     if (!canEdit) {
-      toast({ title: "⏰ لا يمكن التعديل على أيام سابقة", description: "اطلب من أهلك التعديل" });
+      appToast.success("⏰ لا يمكن التعديل على أيام سابقة", "اطلب من أهلك التعديل");
       return;
     }
     const newDayData = { ...dayData, [itemId]: !dayData[itemId] };
@@ -68,7 +68,7 @@ const KidsWorship = () => {
     if (doneCount === TOTAL_ITEMS && !dayData[itemId]) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2500);
-      toast({ title: "🎉 ما شاء الله!", description: "أكملت جميع العبادات اليوم! بارك الله فيك" });
+      appToast.success("🎉 ما شاء الله!", "أكملت جميع العبادات اليوم! بارك الله فيك");
     }
   };
 
@@ -88,11 +88,11 @@ const KidsWorship = () => {
 
   const handleResetDay = () => {
     if (!canEdit) {
-      toast({ title: "⏰ لا يمكن التعديل على أيام سابقة" });
+      appToast.success("⏰ لا يمكن التعديل على أيام سابقة");
       return;
     }
     resetDay.mutate(selectedDay);
-    toast({ title: "تم إعادة تعيين اليوم" });
+    appToast.success("تم إعادة تعيين اليوم");
   };
 
   const activeChild = childList.find(c => c.id === activeChildId);

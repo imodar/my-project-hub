@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { format, addDays, differenceInDays } from "date-fns";
 import { ar } from "date-fns/locale";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 // tripBudgetSync removed — trips & budgets are synced via Supabase hooks
 import { useTrips as useTripsHook } from "@/hooks/useTrips";
 import { useAlbums } from "@/hooks/useAlbums";
@@ -259,7 +259,7 @@ const Trips = () => {
         end_date: tripEnd,
         budget: Number(tripBudget) || 0,
       });
-      toast.success("تم تعديل الرحلة");
+      appToast.success("تم تعديل الرحلة");
     } else {
       createTrip.mutate({
         name: tripName,
@@ -269,7 +269,7 @@ const Trips = () => {
         budget: Number(tripBudget) || 0,
         status: "planning",
       });
-      toast.success("تم إنشاء الرحلة");
+      appToast.success("تم إنشاء الرحلة");
     }
     resetTripForm();
     setNewTripDrawer(false);
@@ -292,7 +292,7 @@ const Trips = () => {
     if (selectedTrip?.id === deleteTarget) setSelectedTrip(null);
     setDeleteTarget(null);
     setDeleteDrawer(false);
-    toast.success("تم حذف الرحلة");
+    appToast.success("تم حذف الرحلة");
   };
 
   const handleAddDay = () => {
@@ -304,7 +304,7 @@ const Trips = () => {
     });
     setDayCity("");
     setNewDayDrawer(false);
-    toast.success("تم إضافة اليوم");
+    appToast.success("تم إضافة اليوم");
   };
 
   const handleAddActivity = () => {
@@ -318,7 +318,7 @@ const Trips = () => {
     });
     setActivityName(""); setActivityTime(""); setActivityLocation(""); setActivityCost("");
     setNewActivityDrawer(false);
-    toast.success("تم إضافة النشاط");
+    appToast.success("تم إضافة النشاط");
   };
 
   const handleAddSuggestion = () => {
@@ -332,7 +332,7 @@ const Trips = () => {
     });
     setSuggestionName(""); setSuggestionType(""); setSuggestionReason(""); setSuggestionLocation("");
     setNewSuggestionDrawer(false);
-    toast.success("تم إرسال المقترح");
+    appToast.success("تم إرسال المقترح");
   };
 
   const handleSuggestionDecision = (status: "accepted" | "rejected" | "reviewing") => {
@@ -340,7 +340,7 @@ const Trips = () => {
     updateSuggestion.mutate({ id: reviewingSuggestion.id, status });
     setReviewingSuggestion(null);
     setSuggestionReviewDrawer(false);
-    toast.success(status === "accepted" ? "تم قبول المقترح" : status === "rejected" ? "تم رفض المقترح" : "قيد الدراسة");
+    appToast.success(status === "accepted" ? "تم قبول المقترح" : status === "rejected" ? "تم رفض المقترح" : "قيد الدراسة");
   };
 
   const handleAddPackingItem = () => {
@@ -348,7 +348,7 @@ const Trips = () => {
     addPackingItem.mutate({ trip_id: selectedTrip.id, name: packingItemName });
     setPackingItemName("");
     setNewPackingDrawer(false);
-    toast.success("تم إضافة العنصر");
+    appToast.success("تم إضافة العنصر");
   };
 
   const handleAddExpense = () => {
@@ -361,7 +361,7 @@ const Trips = () => {
     setExpenseName("");
     setExpenseAmount("");
     setNewExpenseDrawer(false);
-    toast.success("تم إضافة المصروف");
+    appToast.success("تم إضافة المصروف");
   };
 
   const handleAddDocument = () => {
@@ -376,7 +376,7 @@ const Trips = () => {
     });
     setDocName(""); setDocType("ticket"); setDocNotes(""); setDocFileInput(null);
     setNewDocDrawer(false);
-    toast.success("تم إضافة المستند");
+    appToast.success("تم إضافة المستند");
   };
 
   const handleDeleteDocument = (docId: string) => {
@@ -384,7 +384,7 @@ const Trips = () => {
     deleteDocument.mutate(docId);
     setDocViewDrawer(false);
     setViewingDoc(null);
-    toast.success("تم حذف المستند");
+    appToast.success("تم حذف المستند");
   };
 
   const togglePackingItem = (itemId: string) => {

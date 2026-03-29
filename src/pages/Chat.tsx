@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import { useChat, type ChatMessage } from "@/hooks/useChat";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { validateFile } from "@/lib/storage";
 
@@ -135,7 +135,7 @@ const VoiceRecorder = ({ onRecorded, onCancel }: { onRecorded: (blob: Blob) => v
         mr.start();
         timerRef.current = window.setInterval(() => setElapsed(p => p + 1), 1000);
       } catch {
-        toast.error("تعذر الوصول للميكروفون");
+        appToast.error("تعذر الوصول للميكروفون");
         onCancel();
       }
     })();
@@ -246,7 +246,7 @@ const Chat = () => {
 
     if (error) {
       console.error("Upload error:", error);
-      toast.error("فشل رفع الملف");
+      appToast.error("فشل رفع الملف");
       return null;
     }
 
@@ -257,7 +257,7 @@ const Chat = () => {
   // ─── Handle image pick ───
   const handleImagePick = useCallback(async (file: File) => {
     const err = validateFile(file, { maxSizeMB: 5, allowedTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"] });
-    if (err) { toast.error(err); return; }
+    if (err) { appToast.error(err); return; }
 
     setShowAttachments(false);
     setUploading(true);
@@ -268,7 +268,7 @@ const Chat = () => {
     if (url) {
       await sendMediaMessage("image", url, { fileName: file.name, fileSize: file.size });
     } else {
-      toast.error("فشل رفع الصورة");
+      appToast.error("فشل رفع الصورة");
     }
     setUploading(false);
   }, [uploadChatMedia, sendMediaMessage]);
@@ -282,7 +282,7 @@ const Chat = () => {
     if (url) {
       await sendMediaMessage("voice", url, { fileSize: blob.size });
     } else {
-      toast.error("فشل رفع التسجيل");
+      appToast.error("فشل رفع التسجيل");
     }
     setUploading(false);
   }, [uploadChatMedia, sendMediaMessage]);
@@ -290,14 +290,14 @@ const Chat = () => {
   // ─── Handle location share ───
   const handleShareLocation = useCallback(async () => {
     setShowAttachments(false);
-    if (!navigator.geolocation) { toast.error("المتصفح لا يدعم تحديد الموقع"); return; }
+    if (!navigator.geolocation) { appToast.error("المتصفح لا يدعم تحديد الموقع"); return; }
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
         await sendMediaMessage("location", `https://www.google.com/maps?q=${lat},${lng}`, { lat, lng });
       },
-      () => toast.error("تعذر تحديد الموقع، تأكد من تفعيل GPS"),
+      () => appToast.error("تعذر تحديد الموقع، تأكد من تفعيل GPS"),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }, [sendMediaMessage]);

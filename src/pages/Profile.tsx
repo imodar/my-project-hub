@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Camera, Mail, Phone } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { appToast } from "@/lib/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadImage } from "@/lib/storage";
@@ -60,7 +60,7 @@ const Profile = () => {
     if (avatarFile) {
       const result = await uploadImage("avatars", avatarFile, user.id);
       if (result.error) {
-        toast({ title: result.error, variant: "destructive" });
+        appToast.error(result.error);
         setSaving(false);
         return;
       }
@@ -77,14 +77,14 @@ const Profile = () => {
 
     setSaving(false);
     if (error || result?.error) {
-      toast({ title: "حدث خطأ أثناء الحفظ", variant: "destructive" });
+      appToast.error("حدث خطأ أثناء الحفظ");
     } else {
       setEditing(false);
       setAvatarFile(null);
       // Update localStorage cache
       localStorage.setItem(`profile_name_${user.id}`, name);
       if (avatarUrl) setAvatar(avatarUrl);
-      toast({ title: "تم حفظ التغييرات" });
+      appToast.success("تم حفظ التغييرات");
     }
   };
 
@@ -211,11 +211,11 @@ const Profile = () => {
                     const { error } = await supabase.auth.updateUser({ email: gmail });
                     setSavingEmail(false);
                     if (error) {
-                      toast({ title: "هذا البريد مستخدم بحساب آخر", variant: "destructive" });
+                      appToast.error("هذا البريد مستخدم بحساب آخر");
                       setGmail("");
                     } else {
                       setEditingEmail(false);
-                      toast({ title: "تم حفظ البريد الإلكتروني" });
+                      appToast.success("تم حفظ البريد الإلكتروني");
                     }
                   }}
                   disabled={savingEmail}

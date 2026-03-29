@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 import { Save, FileText, Eye } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -54,9 +54,9 @@ export default function AdminLegalPages() {
       .eq("id", page.id);
 
     if (error) {
-      toast.error("فشل الحفظ: " + error.message);
+      appToast.error("فشل الحفظ: " + error.message);
     } else {
-      toast.success("تم الحفظ بنجاح ✓");
+      appToast.success("تم الحفظ بنجاح ✓");
       await loadPages();
       setEditingPage(null);
     }

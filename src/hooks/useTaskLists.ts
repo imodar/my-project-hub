@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
 import { useOfflineMutation } from "./useOfflineMutation";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 
 export function useTaskLists() {
   const { user } = useAuth();
@@ -77,7 +77,7 @@ export function useTaskLists() {
   const toggleItem = useOfflineMutation<any, any>({
     table: "task_items", operation: "UPDATE",
     apiFn: async (input) => invoke("update-item", { id: input.id, done: input.done }),
-    onError: () => toast.error("فشل تحديث المهمة"),
+    onError: () => appToast.error("فشل تحديث المهمة"),
   });
 
   const updateItem = useOfflineMutation<any, any>({

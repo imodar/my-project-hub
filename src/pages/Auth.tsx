@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { useToast } from "@/hooks/use-toast";
+import { appToast } from "@/lib/toast";
 import { Phone, ArrowRight, Loader2, Globe } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,7 +22,6 @@ const Auth = () => {
   const { session } = useAuth();
   const { t, language, setLanguage, dir, isRTL } = useLanguage();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -48,7 +47,7 @@ const Auth = () => {
 
   const sendOtp = async () => {
     if (!phone || phone.replace(/\D/g, "").length < 9) {
-      toast({ title: "أدخل رقم جوال صحيح", variant: "destructive" });
+      appToast.error("أدخل رقم جوال صحيح");
       return;
     }
     setLoading(true);
@@ -58,9 +57,9 @@ const Auth = () => {
       setGeneratedOtp(code);
       setStep("otp");
       setCountdown(60);
-      toast({ title: `رمز التحقق: ${code}`, description: "سيختفي خلال ٣ ثوانٍ", duration: 3000 });
+      appToast.info(`رمز التحقق: ${code}`, "سيختفي خلال ٣ ثوانٍ");
     } catch (err: any) {
-      toast({ title: "خطأ في إرسال الرمز", description: err.message, variant: "destructive" });
+      appToast.error("خطأ في إرسال الرمز", err.message);
     } finally {
       setLoading(false);
     }
@@ -72,7 +71,7 @@ const Auth = () => {
     setLoading(true);
     try {
       if (code !== generatedOtp) {
-        toast({ title: "رمز التحقق غير صحيح", variant: "destructive" });
+        appToast.error("رمز التحقق غير صحيح");
         return;
       }
       const res = await supabase.functions.invoke("test-login", {
@@ -82,9 +81,9 @@ const Auth = () => {
       const { access_token, refresh_token } = res.data;
       if (!access_token) throw new Error(res.data?.error || "فشل تسجيل الدخول");
       await supabase.auth.setSession({ access_token, refresh_token });
-      toast({ title: "تم الدخول بنجاح ✓" });
+      appToast.success("تم الدخول بنجاح ✓");
     } catch (err: any) {
-      toast({ title: "رمز التحقق غير صحيح", description: err.message, variant: "destructive" });
+      appToast.error("رمز التحقق غير صحيح", err.message);
     } finally {
       setLoading(false);
     }
@@ -99,7 +98,7 @@ const Auth = () => {
       });
       if (error) throw error;
     } catch (err: any) {
-      toast({ title: "خطأ في تسجيل الدخول", description: err.message, variant: "destructive" });
+      appToast.error("خطأ في تسجيل الدخول", err.message);
       setLoading(false);
     }
   };

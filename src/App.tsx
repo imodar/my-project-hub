@@ -1,9 +1,8 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient, MutationCache } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
-import { toast } from "sonner";
+import AppToast from "@/components/AppToast";
+import { appToast } from "@/lib/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
@@ -91,7 +90,7 @@ const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: (error) => {
       const message = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
-      toast.error("فشل الحفظ", { description: message });
+      appToast.error("فشل الحفظ", message);
     },
   }),
   defaultOptions: {
@@ -134,9 +133,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      toast.error(`فشلت مزامنة ${detail.label || "البيانات"}`, {
-        description: "تحقق من الاتصال وحاول مرة أخرى",
-      });
+      appToast.error(`فشلت مزامنة ${detail.label || "البيانات"}`, "تحقق من الاتصال وحاول مرة أخرى");
     };
     window.addEventListener("sync-queue-failed", handler);
     return () => window.removeEventListener("sync-queue-failed", handler);
@@ -228,8 +225,7 @@ const App = () => (
             <IslamicModeProvider>
               <TrashProvider>
                 <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
+                  <AppToast />
                   <BrowserRouter>
                     <OfflineBanner />
                     <ScrollToTop />

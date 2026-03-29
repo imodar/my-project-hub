@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -29,10 +29,10 @@ export default function AdminSystem() {
     if (!newVersion.version.trim()) return;
     try {
       await addVersion.mutateAsync(newVersion);
-      toast.success("تم إضافة الإصدار");
+      appToast.success("تم إضافة الإصدار");
       setShowAddVersion(false);
       setNewVersion({ version: "", release_notes: "", force_update: false, min_supported_version: "", update_message: "" });
-    } catch { toast.error("فشلت الإضافة"); }
+    } catch { appToast.error("فشلت الإضافة"); }
   };
 
   return (

@@ -4,7 +4,7 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useTrash } from "@/contexts/TrashContext";
 import { useMarketLists } from "@/hooks/useMarketLists";
 import { useFamilyId } from "@/hooks/useFamilyId";
-import { useToast } from "@/hooks/use-toast";
+import { appToast } from "@/lib/toast";
 import FAB from "@/components/FAB";
 import SwipeableCard from "@/components/SwipeableCard";
 import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
@@ -71,7 +71,6 @@ const Market = () => {
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { familyId } = useFamilyId();
-  const { toast } = useToast();
   const { addToTrash } = useTrash();
   const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useMarketLists();
   const createdDefaultListRef = useRef<string | null>(null);
@@ -258,10 +257,7 @@ const Market = () => {
     if (!newItemName.trim() || !activeList) return;
 
     if (!familyId || activeList.id === DEFAULT_FAMILY_LIST_ID) {
-      toast({
-        title: familyId ? "جارٍ تجهيز القائمة العائلية" : "يجب الانضمام لعائلة أولاً",
-        variant: "destructive",
-      });
+      appToast.error(familyId ? "جارٍ تجهيز القائمة العائلية" : "يجب الانضمام لعائلة أولاً");
       return;
     }
 
@@ -271,12 +267,12 @@ const Market = () => {
     setNewItemQuantity("");
     setNewItemCategory("أخرى");
     setShowAddItem(false);
-  }, [activeList, newItemName, newItemCategory, newItemQuantity, addItemMutation, familyId, toast]);
+  }, [activeList, newItemName, newItemCategory, newItemQuantity, addItemMutation, familyId]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
     if (!familyId) {
-      toast({ title: "يجب الانضمام لعائلة أولاً", variant: "destructive" });
+      appToast.error("يجب الانضمام لعائلة أولاً");
       return;
     }
     haptic.medium();
@@ -305,7 +301,7 @@ const Market = () => {
     setNewListShareMembers([]);
     setNewListUseCategories(false);
     setShowAddList(false);
-  }, [newListName, newListShareMembers, newListUseCategories, createListMutation, familyId, toast]);
+  }, [newListName, newListShareMembers, newListUseCategories, createListMutation, familyId]);
 
   const deleteList = useCallback((listId: string) => {
     setDeleteListTarget(listId);
@@ -339,8 +335,8 @@ const Market = () => {
 
     deleteListMutation.mutate(deleteListTarget);
     setDeleteListTarget(null);
-    toast({ title: "تم نقل القائمة إلى سلة المحذوفات" });
-  }, [deleteListTarget, deleteListMutation, dbLists, addToTrash, toast]);
+    appToast.success("تم نقل القائمة إلى سلة المحذوفات");
+  }, [deleteListTarget, deleteListMutation, dbLists, addToTrash]);
 
   const shareList = useCallback(() => {
     if (selectedShareMembers.length === 0 || !activeListId) return;

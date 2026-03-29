@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Send, ChevronLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -26,11 +26,11 @@ export default function AdminNotifications() {
     if (!title.trim()) return;
     try {
       await sendBroadcast.mutateAsync({ title, body });
-      toast.success("تم إرسال الإشعار الجماعي");
+      appToast.success("تم إرسال الإشعار الجماعي");
       setShowBroadcast(false);
       setTitle("");
       setBody("");
-    } catch { toast.error("فشل الإرسال"); }
+    } catch { appToast.error("فشل الإرسال"); }
   };
 
   return (
