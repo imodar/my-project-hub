@@ -9,7 +9,7 @@ import {
   ShieldAlert, X, Phone, MapPin, Plus, Trash2,
   Radio, PhoneCall, MessageSquare, Check, AlertTriangle
 } from "lucide-react";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { supabase } from "@/integrations/supabase/client";
@@ -196,12 +196,12 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
         });
         if (!error && data?.data?.notified) {
           setNotifiedCount(data.data.notified);
-          toast.error(`🚨 تم تفعيل تنبيه الطوارئ — تم إشعار ${data.data.notified} من أفراد العائلة`, { duration: 5000 });
+          appToast.error(`🚨 تم تفعيل تنبيه الطوارئ — تم إشعار ${data.data.notified} من أفراد العائلة`, { duration: 5000 });
         } else {
-          toast.error("🚨 تم تفعيل تنبيه الطوارئ", { duration: 5000 });
+          appToast.error("🚨 تم تفعيل تنبيه الطوارئ", { duration: 5000 });
         }
       } catch {
-        toast.error("🚨 تم تفعيل التنبيه — لكن فشل إرسال الإشعارات", { duration: 5000 });
+        appToast.error("🚨 تم تفعيل التنبيه — لكن فشل إرسال الإشعارات", { duration: 5000 });
       }
     }
 
@@ -227,7 +227,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
       } catch {}
     }
 
-    toast.success(`تم إلغاء التنبيه — "${reason}"`, { duration: 3000 });
+    appToast.success(`تم إلغاء التنبيه — "${reason}"`, { duration: 3000 });
     setCancelReason("");
   }, [cancelReason, familyId]);
 
@@ -246,9 +246,9 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
       setNewPhone("");
       setNewRelation("");
       setAddContactDrawer(false);
-      toast.success("تم إضافة جهة الاتصال");
+      appToast.success("تم إضافة جهة الاتصال");
     } else {
-      toast.error("فشل إضافة جهة الاتصال");
+      appToast.error("فشل إضافة جهة الاتصال");
     }
   };
 
@@ -259,7 +259,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
     });
     if (!error) {
       setContacts((prev) => prev.filter((c) => c.id !== id));
-      toast.success("تم حذف جهة الاتصال");
+      appToast.success("تم حذف جهة الاتصال");
     }
   };
 

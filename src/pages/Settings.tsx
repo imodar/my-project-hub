@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "@/hooks/useFamilyId";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 import LanguageSheet from "@/components/LanguageSheet";
 import LegalPageSheet from "@/components/LegalPageSheet";
 
@@ -73,7 +73,7 @@ const Settings = () => {
     setDarkMode(next);
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
-    toast.success(next ? t.settings.darkEnabled : t.settings.lightEnabled);
+    appToast.success(next ? t.settings.darkEnabled : t.settings.lightEnabled);
   };
 
   const settingsGroups = [
@@ -111,9 +111,9 @@ const Settings = () => {
       const now = new Date().toISOString();
       localStorage.setItem("last_sync_ts", now);
       setLastSyncTs(now);
-      toast.success(t.sync.syncSuccess);
+      appToast.success(t.sync.syncSuccess);
     } catch {
-      toast.error(t.sync.unexpectedError);
+      appToast.error(t.sync.unexpectedError);
     } finally {
       setIsSyncing(false);
     }
@@ -139,13 +139,13 @@ const Settings = () => {
       body: { action: "add-emergency-contact", family_id: familyId, name: newContactName.trim(), phone: newContactPhone.trim() },
     });
     if (error || data?.error) {
-      toast.error(t.emergency.addContactFailed);
+      appToast.error(t.emergency.addContactFailed);
     } else if (data?.data) {
       setContacts(prev => [...prev, { id: data.data.id, name: data.data.name, phone: data.data.phone }]);
       setNewContactName("");
       setNewContactPhone("");
       setAddContactOpen(false);
-      toast.success(t.emergency.contactAdded);
+      appToast.success(t.emergency.contactAdded);
     }
   };
 

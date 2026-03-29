@@ -1,7 +1,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Check } from "lucide-react";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 
 interface LanguageSheetProps {
   open: boolean;
@@ -14,7 +14,7 @@ const LanguageSheet = ({ open, onOpenChange }: LanguageSheetProps) => {
   const handleLanguageChange = (lang: "ar" | "en") => {
     setLanguage(lang);
     onOpenChange(false);
-    toast.success(t.settings.languageChanged);
+    appToast.success(t.settings.languageChanged);
   };
 
   return (

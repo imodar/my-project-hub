@@ -8,7 +8,7 @@ import PageHeader from "@/components/PageHeader";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { useDebts } from "@/hooks/useDebts";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 
 type PaymentType = "cash" | "item" | "installment";
 
@@ -278,7 +278,7 @@ const Debts = () => {
       });
     }
     await updateDebt.mutateAsync({ id: debtId, is_fully_paid: true, is_archived: true });
-    toast.success("تم تسجيل السداد الكامل");
+    appToast.success("تم تسجيل السداد الكامل");
   };
 
   const handleStartEdit = (debt: Debt) => {
@@ -308,7 +308,7 @@ const Debts = () => {
           due_date: newDebt.dueDate,
           note: newDebt.note,
         });
-        toast.success("تم تحديث الدين");
+        appToast.success("تم تحديث الدين");
       } else {
         await addDebt.mutateAsync({
           person_name: newDebt.personName,
@@ -320,10 +320,10 @@ const Debts = () => {
           note: newDebt.note,
           payment_details: multiCurrency || undefined,
         });
-        toast.success("تمت إضافة الدين");
+        appToast.success("تمت إضافة الدين");
       }
     } catch {
-      toast.error("حدث خطأ");
+      appToast.error("حدث خطأ");
       return;
     }
 
@@ -375,9 +375,9 @@ const Debts = () => {
         }
       }
 
-      toast.success("تم تسجيل الدفعة");
+      appToast.success("تم تسجيل الدفعة");
     } catch {
-      toast.error("حدث خطأ في تسجيل الدفعة");
+      appToast.error("حدث خطأ في تسجيل الدفعة");
     }
 
     setShowPaymentDrawer(false);
@@ -399,9 +399,9 @@ const Debts = () => {
         reason: postponeData.reason,
       });
       await updateDebt.mutateAsync({ id: postponeDebtId, due_date: postponeData.newDate });
-      toast.success("تم تأجيل الدين");
+      appToast.success("تم تأجيل الدين");
     } catch {
-      toast.error("حدث خطأ في التأجيل");
+      appToast.error("حدث خطأ في التأجيل");
     }
     setShowPostponeDrawer(false);
     setPostponeDebtId(null);
@@ -411,9 +411,9 @@ const Debts = () => {
     if (!deleteTarget) return;
     try {
       await deleteDebt.mutateAsync(deleteTarget.id);
-      toast.success("تم حذف الدين");
+      appToast.success("تم حذف الدين");
     } catch {
-      toast.error("حدث خطأ في الحذف");
+      appToast.error("حدث خطأ في الحذف");
     }
     setDeleteTarget(null);
   };

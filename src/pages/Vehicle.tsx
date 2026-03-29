@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerClose } from "@/components/ui/drawer";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
 
@@ -277,16 +277,16 @@ const Vehicle = () => {
 
   const handleAddCar = () => {
     if (!newManufacturer || !newModel || !newYear) {
-      toast.error("يرجى تعبئة الحقول المطلوبة");
+      appToast.error("يرجى تعبئة الحقول المطلوبة");
       return;
     }
     const yearNum = Number(newYear);
     if (yearNum < 1900 || yearNum > maxYear) {
-      toast.error(`السنة يجب أن تكون بين 1900 و ${maxYear}`);
+      appToast.error(`السنة يجب أن تكون بين 1900 و ${maxYear}`);
       return;
     }
     if (newMileage && Number(newMileage) < 0) {
-      toast.error("الممشى يجب أن يكون أكبر من 0");
+      appToast.error("الممشى يجب أن يكون أكبر من 0");
       return;
     }
     addVehicleMut.mutate({
@@ -301,7 +301,7 @@ const Vehicle = () => {
     });
     setAddCarOpen(false);
     resetAddForm();
-    toast.success("تمت إضافة المركبة بنجاح");
+    appToast.success("تمت إضافة المركبة بنجاح");
   };
 
   const openEditCar = (car: CarData) => {
@@ -320,12 +320,12 @@ const Vehicle = () => {
 
   const handleEditCar = () => {
     if (!editingCar || !newManufacturer || !newModel || !newYear) {
-      toast.error("يرجى تعبئة الحقول المطلوبة");
+      appToast.error("يرجى تعبئة الحقول المطلوبة");
       return;
     }
     const yearNum = Number(newYear);
     if (yearNum < 1900 || yearNum > maxYear) {
-      toast.error(`السنة يجب أن تكون بين 1900 و ${maxYear}`);
+      appToast.error(`السنة يجب أن تكون بين 1900 و ${maxYear}`);
       return;
     }
     updateVehicleMut.mutate({
@@ -342,7 +342,7 @@ const Vehicle = () => {
     setEditCarOpen(false);
     setEditingCar(null);
     resetAddForm();
-    toast.success("تم تعديل المركبة بنجاح");
+    appToast.success("تم تعديل المركبة بنجاح");
   };
 
   const handleDeleteCar = (car: CarData) => {
@@ -360,7 +360,7 @@ const Vehicle = () => {
     deleteVehicleMut.mutate(car.id);
     if (selectedCar?.id === car.id) setSelectedCar(null);
     setDeleteConfirmCar(null);
-    toast.success("تم نقل المركبة إلى سلة المحذوفات");
+    appToast.success("تم نقل المركبة إلى سلة المحذوفات");
   };
 
   const handleAddMaintenance = () => {
@@ -399,14 +399,14 @@ const Vehicle = () => {
     setSelectedCar(null); // will re-select from refreshed data
     setAddMaintenanceOpen(false);
     resetMaintForm();
-    toast.success(editMaintenanceRecord ? "تم تعديل السجل" : "تمت إضافة سجل الصيانة");
+    appToast.success(editMaintenanceRecord ? "تم تعديل السجل" : "تمت إضافة سجل الصيانة");
   };
 
   const handleDeleteMaintenance = (recordId: string) => {
     if (!selectedCar) return;
     deleteMaintMut.mutate(recordId);
     setSelectedCar(prev => prev ? { ...prev, maintenance: prev.maintenance.filter(m => m.id !== recordId) } : null);
-    toast.success("تم حذف السجل");
+    appToast.success("تم حذف السجل");
   };
 
   const handleEditMaintenance = (record: MaintenanceRecord) => {
@@ -421,7 +421,7 @@ const Vehicle = () => {
   };
 
   const handleSetReminder = (record: MaintenanceRecord) => {
-    toast.success(`سيتم تذكيرك بـ ${record.label} عند ${record.nextMileage > 0 ? `${record.nextMileage.toLocaleString()} ${selectedCar?.mileageUnit === "km" ? "كم" : "ميل"}` : record.nextDate}`);
+    appToast.success(`سيتم تذكيرك بـ ${record.label} عند ${record.nextMileage > 0 ? `${record.nextMileage.toLocaleString()} ${selectedCar?.mileageUnit === "km" ? "كم" : "ميل"}` : record.nextDate}`);
   };
 
   const handleShareCar = (car: CarData) => {
@@ -434,7 +434,7 @@ const Vehicle = () => {
     updateVehicleMut.mutate({ id: selectedCar.id, shared_with: shareWith });
     setSelectedCar(prev => prev ? { ...prev, sharedWith: shareWith } : null);
     setShareDrawerOpen(false);
-    toast.success("تم تحديث المشاركة");
+    appToast.success("تم تحديث المشاركة");
   };
 
   const toggleShareMember = (memberId: string) => {

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useTrips } from "@/hooks/useTrips";
@@ -136,7 +136,7 @@ const Albums = () => {
 
   const handleCreateAlbum = () => {
     if (!newName.trim()) {
-      toast.error("أدخل اسم الألبوم");
+      appToast.error("أدخل اسم الألبوم");
       return;
     }
     createAlbum.mutate({
@@ -149,13 +149,13 @@ const Albums = () => {
     setLinkToTrip(false);
     setSelectedTripId("");
     
-    toast.success("تم إنشاء الألبوم");
+    appToast.success("تم إنشاء الألبوم");
   };
 
   const handleDeleteAlbum = (albumId: string) => {
     deleteAlbum.mutate(albumId);
     setSelectedAlbum(null);
-    toast.success("تم حذف الألبوم");
+    appToast.success("تم حذف الألبوم");
   };
 
   const handleAddPhoto = () => {
@@ -175,7 +175,7 @@ const Albums = () => {
       caption: "صورة جديدة",
     };
     setSelectedAlbum(prev => prev ? { ...prev, photos: [newPhoto, ...prev.photos] } : null);
-    toast.success("تمت إضافة الصورة");
+    appToast.success("تمت إضافة الصورة");
   };
 
   const handleDeletePhoto = (photoId: string) => {
@@ -183,7 +183,7 @@ const Albums = () => {
     deletePhoto.mutate(photoId);
     setSelectedAlbum(prev => prev ? { ...prev, photos: prev.photos.filter(p => p.id !== photoId) } : null);
     setSelectedPhoto(null);
-    toast.success("تم حذف الصورة");
+    appToast.success("تم حذف الصورة");
   };
 
   // Group photos by date

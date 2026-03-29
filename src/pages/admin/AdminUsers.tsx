@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Search, ChevronLeft, ChevronRight, Ban, CheckCircle, Eye } from "lucide-react";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -35,17 +35,17 @@ export default function AdminUsers() {
   const handleSuspend = async (userId: string) => {
     try {
       await suspendUser.mutateAsync({ target_user_id: userId, reason: suspendReason });
-      toast.success("تم تعليق المستخدم");
+      appToast.success("تم تعليق المستخدم");
       setSuspendDialog(null);
       setSuspendReason("");
-    } catch { toast.error("فشل تعليق المستخدم"); }
+    } catch { appToast.error("فشل تعليق المستخدم"); }
   };
 
   const handleUnsuspend = async (userId: string) => {
     try {
       await unsuspendUser.mutateAsync({ target_user_id: userId });
-      toast.success("تم إلغاء التعليق");
-    } catch { toast.error("فشلت العملية"); }
+      appToast.success("تم إلغاء التعليق");
+    } catch { appToast.error("فشلت العملية"); }
   };
 
   return (

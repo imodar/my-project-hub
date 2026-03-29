@@ -22,7 +22,7 @@ import {
   getNextDueVaccines,
 } from "@/data/vaccinationData";
 import { useVaccinations } from "@/hooks/useVaccinations";
-import { toast } from "sonner";
+import { appToast } from "@/lib/toast";
 
 const Vaccinations = () => {
   const {
@@ -57,8 +57,8 @@ const Vaccinations = () => {
   const resolvedReminder = resolvedSelected?.reminderSettings || { beforeDay: true, beforeWeek: true, beforeMonth: true };
 
   const handleAddChild = async () => {
-    if (!newName.trim()) { toast.error("يرجى إدخال اسم الطفل"); return; }
-    if (!newBirthDate) { toast.error("يرجى إدخال تاريخ الميلاد"); return; }
+    if (!newName.trim()) { appToast.error("يرجى إدخال اسم الطفل"); return; }
+    if (!newBirthDate) { appToast.error("يرجى إدخال تاريخ الميلاد"); return; }
 
     try {
       await addChild.mutateAsync({ name: newName.trim(), gender: newGender, birthDate: newBirthDate });
@@ -66,16 +66,16 @@ const Vaccinations = () => {
       setNewGender("male");
       setNewBirthDate("");
       setShowAddSheet(false);
-      toast.success(`تمت إضافة ${newName.trim()}`);
+      appToast.success(`تمت إضافة ${newName.trim()}`);
     } catch {
-      toast.error("حدث خطأ في الإضافة");
+      appToast.error("حدث خطأ في الإضافة");
     }
   };
 
   const handleEditChild = async () => {
     if (!editingChild) return;
-    if (!newName.trim()) { toast.error("يرجى إدخال اسم الطفل"); return; }
-    if (!newBirthDate) { toast.error("يرجى إدخال تاريخ الميلاد"); return; }
+    if (!newName.trim()) { appToast.error("يرجى إدخال اسم الطفل"); return; }
+    if (!newBirthDate) { appToast.error("يرجى إدخال تاريخ الميلاد"); return; }
 
     try {
       await updateChild.mutateAsync({
@@ -87,9 +87,9 @@ const Vaccinations = () => {
       setShowEditSheet(false);
       setEditingChild(null);
       setOpenChildCardId(null);
-      toast.success("تم تحديث بيانات الطفل");
+      appToast.success("تم تحديث بيانات الطفل");
     } catch {
-      toast.error("حدث خطأ");
+      appToast.error("حدث خطأ");
     }
   };
 
@@ -125,7 +125,7 @@ const Vaccinations = () => {
       note: noteText,
     });
     setShowNoteSheet(false);
-    toast.success("تم حفظ الملاحظة");
+    appToast.success("تم حفظ الملاحظة");
   };
 
   const getVaccineNote = (child: Child, vaccineId: string): string => {
@@ -323,7 +323,7 @@ const Vaccinations = () => {
               <Button
                 onClick={() => {
                   setShowReminderSheet(false);
-                  toast.success("تم حفظ إعدادات التنبيهات");
+                  appToast.success("تم حفظ إعدادات التنبيهات");
                 }}
                 className="w-full h-12 text-base font-bold"
               >
