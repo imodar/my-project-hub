@@ -54,6 +54,12 @@ export function useMarketLists() {
   const createList = useOfflineMutation<any, any>({
     table: "market_lists", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family", use_categories: rest.use_categories ?? true, id: input.id }); },
+    onSuccess: () => refetch(),
+  });
+
+  const updateList = useOfflineMutation<any, any>({
+    table: "market_lists", operation: "UPDATE",
+    apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-list", { id, ...updates }); },
     queryKey: key, onSuccess: () => refetch(),
   });
 
@@ -85,6 +91,10 @@ export function useMarketLists() {
   return {
     lists: normalizedLists,
     isLoading,
+    updateList: {
+      ...updateList,
+      mutate: (input: any) => updateList.mutate(input),
+    },
     createList: {
       ...createList,
       mutate: (input: any, options?: any) => {

@@ -69,6 +69,12 @@ export function useDocumentLists() {
   const createList = useOfflineMutation<any, any>({
     table: "document_lists", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family" }); },
+    onSuccess: () => refetch(),
+  });
+
+  const updateList = useOfflineMutation<any, any>({
+    table: "document_lists", operation: "UPDATE",
+    apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-list", { id, ...updates }); },
     queryKey: key, onSuccess: () => refetch(),
   });
 
@@ -111,6 +117,10 @@ export function useDocumentLists() {
 
   return {
     lists: lists || [], isLoading,
+    updateList: {
+      ...updateList,
+      mutate: (input: any) => updateList.mutate(input),
+    },
     createList: {
       ...createList,
       mutate: (input: any) => createList.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, document_items: [], ...input }),

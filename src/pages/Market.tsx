@@ -73,7 +73,7 @@ const Market = () => {
   const { familyId } = useFamilyId();
   const { toast } = useToast();
   const { addToTrash } = useTrash();
-  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useMarketLists();
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useMarketLists();
   const createdDefaultListRef = useRef<string | null>(null);
 
   const lists: MarketList[] = useMemo(() => {
@@ -343,12 +343,16 @@ const Market = () => {
   }, [deleteListTarget, deleteListMutation, dbLists, addToTrash, toast]);
 
   const shareList = useCallback(() => {
-    if (selectedShareMembers.length === 0) return;
+    if (selectedShareMembers.length === 0 || !activeListId) return;
     haptic.medium();
-    // TODO: add updateList mutation for sharing
+    updateListMutation.mutate({
+      id: activeListId,
+      shared_with: selectedShareMembers,
+      type: "shared",
+    });
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [selectedShareMembers]);
+  }, [activeListId, selectedShareMembers, updateListMutation]);
 
   const getListIcon = (type: MarketList["type"], isActive: boolean) => {
     switch (type) {

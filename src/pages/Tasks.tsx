@@ -57,7 +57,7 @@ const Tasks = () => {
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { familyId } = useFamilyId();
-  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, pendingItemIds } = useTaskLists();
+  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useTaskLists();
   const { addToTrash } = useTrash();
   const createdDefaultListRef = useRef<string | null>(null);
 
@@ -351,11 +351,16 @@ const Tasks = () => {
   }, [deleteListMutation, dbLists, addToTrash]);
 
   const shareList = useCallback(() => {
-    if (selectedShareMembers.length === 0) return;
+    if (selectedShareMembers.length === 0 || !activeListId) return;
     haptic.medium();
+    updateListMutation.mutate({
+      id: activeListId,
+      shared_with: selectedShareMembers,
+      type: "shared",
+    });
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [selectedShareMembers]);
+  }, [activeListId, selectedShareMembers, updateListMutation]);
 
   const getListIcon = (type: TaskList["type"], isActive: boolean) => {
     switch (type) {

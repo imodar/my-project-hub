@@ -82,7 +82,7 @@ const SWIPE_WIDTH = 140;
 const Places = () => {
   const navigate = useNavigate();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
-  const { lists: dbLists, isLoading: placesLoading, createList: createListMut, deleteList: deleteListMut, addPlace: addPlaceMut, updatePlace: updatePlaceMut, deletePlace: deletePlaceMut } = usePlaceLists();
+  const { lists: dbLists, isLoading: placesLoading, createList: createListMut, deleteList: deleteListMut, addPlace: addPlaceMut, updatePlace: updatePlaceMut, deletePlace: deletePlaceMut, updateList: updateListMut } = usePlaceLists();
 
   const lists: PlaceList[] = useMemo(() => dbLists.map((l: any) => ({
     id: l.id,
@@ -264,13 +264,16 @@ const Places = () => {
   }, [activeListId, lists, deleteListMut]);
 
   const shareList = useCallback(() => {
-    if (selectedShareMembers.length === 0) return;
+    if (selectedShareMembers.length === 0 || !activeListId) return;
     haptic.medium();
-    // Update list type to shared via the places list — we'd need an updateList mutation
-    // For now just close the dialog
+    updateListMut.mutate({
+      id: activeListId,
+      shared_with: selectedShareMembers,
+      type: "shared",
+    });
     setSelectedShareMembers([]);
     setShowShareDialog(false);
-  }, [activeListId, selectedShareMembers]);
+  }, [activeListId, selectedShareMembers, updateListMut]);
 
   const getListIcon = (type: PlaceList["type"], isActive: boolean) => {
     switch (type) {
