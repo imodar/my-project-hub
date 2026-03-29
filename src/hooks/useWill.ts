@@ -29,6 +29,7 @@ export function useWill() {
     queryKey: key,
     apiFn,
     enabled: !!user && !!familyId,
+    scopeKey: familyId ?? undefined,
   });
 
   const upsertWill = useOfflineMutation<any, any>({
