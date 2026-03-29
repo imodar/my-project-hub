@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -9,6 +10,7 @@ import type { Child, ReminderSettings } from "@/data/vaccinationData";
 export function useVaccinations() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
+  const qc = useQueryClient();
   const key = ["vaccinations", familyId];
 
   const apiFn = useCallback(async () => {
@@ -40,9 +42,19 @@ export function useVaccinations() {
     enabled: !!familyId,
   });
 
+  // Helper: optimistic update for a specific child
+  const optimisticChildUpdate = useCallback(
+    (childId: string, updater: (child: any) => any) => {
+      qc.setQueryData<any[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((c: any) => (c.id === childId ? updater(c) : c));
+      });
+    },
+    [qc, key]
+  );
+
   const addChild = useOfflineMutation<any, any>({
-    table: "vaccinations",
-    operation: "INSERT",
+    table: "vaccinations", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
       const { data: response, error } = await supabase.functions.invoke("health-api", {
@@ -50,13 +62,11 @@ export function useVaccinations() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const updateChild = useOfflineMutation<any, any>({
-    table: "vaccinations",
-    operation: "UPDATE",
+    table: "vaccinations", operation: "UPDATE",
     apiFn: async (input) => {
       const { id, ...rest } = input;
       const updates: any = {};
@@ -68,13 +78,11 @@ export function useVaccinations() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const toggleVaccine = useOfflineMutation<any, any>({
-    table: "vaccinations",
-    operation: "UPDATE",
+    table: "vaccinations", operation: "UPDATE",
     apiFn: async (input) => {
       const { childId, vaccineId, completed } = input;
       const isCompleted = completed.includes(vaccineId);
@@ -83,13 +91,11 @@ export function useVaccinations() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const updateReminderSettings = useOfflineMutation<any, any>({
-    table: "vaccinations",
-    operation: "UPDATE",
+    table: "vaccinations", operation: "UPDATE",
     apiFn: async (input) => {
       const { childId, settings } = input;
       const { data: response, error } = await supabase.functions.invoke("health-api", {
@@ -97,13 +103,11 @@ export function useVaccinations() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const saveVaccineNote = useOfflineMutation<any, any>({
-    table: "vaccinations",
-    operation: "UPDATE",
+    table: "vaccinations", operation: "UPDATE",
     apiFn: async (input) => {
       const { childId, vaccineId, note } = input;
       const { data: response, error } = await supabase.functions.invoke("health-api", {
@@ -111,8 +115,7 @@ export function useVaccinations() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   return {
@@ -127,23 +130,40 @@ export function useVaccinations() {
     },
     updateChild: {
       ...updateChild,
-      mutate: (input: { id: string; name?: string; gender?: string; birthDate?: string }) =>
-        updateChild.mutate(input),
+      mutate: (input: { id: string; name?: string; gender?: string; birthDate?: string }) => {
+        optimisticChildUpdate(input.id, (c) => ({ ...c, ...input }));
+        updateChild.mutate(input);
+      },
     },
     toggleVaccine: {
       ...toggleVaccine,
-      mutate: (input: { childId: string; vaccineId: string; completed: string[] }) =>
-        toggleVaccine.mutate({ id: input.childId, ...input }),
+      mutate: (input: { childId: string; vaccineId: string; completed: string[] }) => {
+        const isCompleted = input.completed.includes(input.vaccineId);
+        optimisticChildUpdate(input.childId, (c) => ({
+          ...c,
+          completedVaccines: isCompleted
+            ? c.completedVaccines.filter((v: string) => v !== input.vaccineId)
+            : [...(c.completedVaccines || []), input.vaccineId],
+        }));
+        toggleVaccine.mutate({ id: input.childId, ...input });
+      },
     },
     updateReminderSettings: {
       ...updateReminderSettings,
-      mutate: (input: { childId: string; settings: ReminderSettings }) =>
-        updateReminderSettings.mutate({ id: input.childId, ...input }),
+      mutate: (input: { childId: string; settings: ReminderSettings }) => {
+        optimisticChildUpdate(input.childId, (c) => ({ ...c, reminderSettings: input.settings }));
+        updateReminderSettings.mutate({ id: input.childId, ...input });
+      },
     },
     saveVaccineNote: {
       ...saveVaccineNote,
-      mutate: (input: { childId: string; vaccineId: string; note: string }) =>
-        saveVaccineNote.mutate({ id: input.childId, ...input }),
+      mutate: (input: { childId: string; vaccineId: string; note: string }) => {
+        optimisticChildUpdate(input.childId, (c) => {
+          const existing = (c.vaccineNotes || []).filter((n: any) => n.vaccineId !== input.vaccineId);
+          return { ...c, vaccineNotes: [...existing, { vaccineId: input.vaccineId, note: input.note.trim() }] };
+        });
+        saveVaccineNote.mutate({ id: input.childId, ...input });
+      },
     },
   };
 }

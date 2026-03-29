@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -8,6 +9,7 @@ import { useOfflineMutation } from "./useOfflineMutation";
 export function useTrips() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
+  const qc = useQueryClient();
   const key = ["trips", familyId];
 
   const apiFn = useCallback(async () => {
@@ -33,6 +35,37 @@ export function useTrips() {
     });
     return { data: response?.data ?? null, error: response?.error || error?.message || null };
   };
+
+  // Helper: optimistic update for sub-items inside a trip
+  const optimisticTripSub = useCallback(
+    (tripId: string, subKey: string, updater: (items: any[]) => any[]) => {
+      qc.setQueryData<any[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((t: any) =>
+          t.id === tripId ? { ...t, [subKey]: updater(t[subKey] || []) } : t
+        );
+      });
+    },
+    [qc, key]
+  );
+
+  // Helper: optimistic update for activities inside day plans
+  const optimisticActivitySub = useCallback(
+    (dayPlanId: string, updater: (items: any[]) => any[]) => {
+      qc.setQueryData<any[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((t: any) => ({
+          ...t,
+          trip_day_plans: (t.trip_day_plans || []).map((dp: any) =>
+            dp.id === dayPlanId
+              ? { ...dp, trip_activities: updater(dp.trip_activities || []) }
+              : dp
+          ),
+        }));
+      });
+    },
+    [qc, key]
+  );
 
   const createTrip = useOfflineMutation<any, any>({
     table: "trips", operation: "INSERT",
@@ -121,31 +154,150 @@ export function useTrips() {
     onSuccess: () => refetch(),
   });
 
-  const wrapInsert = (mut: any, defaults: any = {}) => ({
-    ...mut,
-    mutate: (input: any) => mut.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...defaults, ...input }),
-    mutateAsync: async (input: any) => mut.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...defaults, ...input }),
-  });
-  const wrapDelete = (mut: any) => ({
-    ...mut,
-    mutate: (id: string) => mut.mutate({ id }),
-    mutateAsync: async (id: string) => mut.mutateAsync({ id }),
-  });
-
   return {
     trips: trips || [], isLoading,
-    createTrip: wrapInsert(createTrip, { family_id: familyId, trip_day_plans: [], trip_expenses: [], trip_packing: [], trip_suggestions: [], trip_documents: [] }),
-    updateTrip, deleteTrip: wrapDelete(deleteTrip),
-    addDayPlan: wrapInsert(addDayPlan),
-    addActivity: wrapInsert(addActivity),
-    updateActivity,
-    addExpense: wrapInsert(addExpense),
-    deleteExpense: wrapDelete(deleteExpense),
-    addPackingItem: wrapInsert(addPackingItem),
-    updatePackingItem,
-    addSuggestion: wrapInsert(addSuggestion),
-    updateSuggestion,
-    addDocument: wrapInsert(addDocument),
-    deleteDocument: wrapDelete(deleteDocument),
+    createTrip: {
+      ...createTrip,
+      mutate: (input: any) => createTrip.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, trip_day_plans: [], trip_expenses: [], trip_packing: [], trip_suggestions: [], trip_documents: [], ...input }),
+      mutateAsync: async (input: any) => createTrip.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, trip_day_plans: [], trip_expenses: [], trip_packing: [], trip_suggestions: [], trip_documents: [], ...input }),
+    },
+    updateTrip, deleteTrip: {
+      ...deleteTrip,
+      mutate: (id: string) => deleteTrip.mutate({ id }),
+      mutateAsync: async (id: string) => deleteTrip.mutateAsync({ id }),
+    },
+    addDayPlan: {
+      ...addDayPlan,
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), trip_activities: [], ...input };
+        optimisticTripSub(input.trip_id, "trip_day_plans", (dps) => [...dps, item]);
+        addDayPlan.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), trip_activities: [], ...input };
+        optimisticTripSub(input.trip_id, "trip_day_plans", (dps) => [...dps, item]);
+        return addDayPlan.mutateAsync(item);
+      },
+    },
+    addActivity: {
+      ...addActivity,
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), completed: false, ...input };
+        optimisticActivitySub(input.day_plan_id, (acts) => [...acts, item]);
+        addActivity.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), completed: false, ...input };
+        optimisticActivitySub(input.day_plan_id, (acts) => [...acts, item]);
+        return addActivity.mutateAsync(item);
+      },
+    },
+    updateActivity: {
+      ...updateActivity,
+      mutate: (input: any) => {
+        if (input.day_plan_id) {
+          optimisticActivitySub(input.day_plan_id, (acts) =>
+            acts.map((a: any) => (a.id === input.id ? { ...a, ...input } : a))
+          );
+        }
+        updateActivity.mutate(input);
+      },
+    },
+    addExpense: {
+      ...addExpense,
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticTripSub(input.trip_id, "trip_expenses", (exps) => [...exps, item]);
+        addExpense.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticTripSub(input.trip_id, "trip_expenses", (exps) => [...exps, item]);
+        return addExpense.mutateAsync(item);
+      },
+    },
+    deleteExpense: {
+      ...deleteExpense,
+      mutate: (id: string, tripId?: string) => {
+        if (tripId) optimisticTripSub(tripId, "trip_expenses", (exps) => exps.filter((e: any) => e.id !== id));
+        deleteExpense.mutate({ id });
+      },
+      mutateAsync: async (id: string, tripId?: string) => {
+        if (tripId) optimisticTripSub(tripId, "trip_expenses", (exps) => exps.filter((e: any) => e.id !== id));
+        return deleteExpense.mutateAsync({ id });
+      },
+    },
+    addPackingItem: {
+      ...addPackingItem,
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), packed: false, ...input };
+        optimisticTripSub(input.trip_id, "trip_packing", (items) => [...items, item]);
+        addPackingItem.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), packed: false, ...input };
+        optimisticTripSub(input.trip_id, "trip_packing", (items) => [...items, item]);
+        return addPackingItem.mutateAsync(item);
+      },
+    },
+    updatePackingItem: {
+      ...updatePackingItem,
+      mutate: (input: any) => {
+        if (input.trip_id) {
+          optimisticTripSub(input.trip_id, "trip_packing", (items) =>
+            items.map((i: any) => (i.id === input.id ? { ...i, ...input } : i))
+          );
+        }
+        updatePackingItem.mutate(input);
+      },
+    },
+    addSuggestion: {
+      ...addSuggestion,
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), status: "pending", ...input };
+        optimisticTripSub(input.trip_id, "trip_suggestions", (sugs) => [...sugs, item]);
+        addSuggestion.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), status: "pending", ...input };
+        optimisticTripSub(input.trip_id, "trip_suggestions", (sugs) => [...sugs, item]);
+        return addSuggestion.mutateAsync(item);
+      },
+    },
+    updateSuggestion: {
+      ...updateSuggestion,
+      mutate: (input: any) => {
+        if (input.trip_id) {
+          optimisticTripSub(input.trip_id, "trip_suggestions", (sugs) =>
+            sugs.map((s: any) => (s.id === input.id ? { ...s, ...input } : s))
+          );
+        }
+        updateSuggestion.mutate(input);
+      },
+    },
+    addDocument: {
+      ...addDocument,
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), added_at: new Date().toISOString(), ...input };
+        optimisticTripSub(input.trip_id, "trip_documents", (docs) => [...docs, item]);
+        addDocument.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), added_at: new Date().toISOString(), ...input };
+        optimisticTripSub(input.trip_id, "trip_documents", (docs) => [...docs, item]);
+        return addDocument.mutateAsync(item);
+      },
+    },
+    deleteDocument: {
+      ...deleteDocument,
+      mutate: (id: string, tripId?: string) => {
+        if (tripId) optimisticTripSub(tripId, "trip_documents", (docs) => docs.filter((d: any) => d.id !== id));
+        deleteDocument.mutate({ id });
+      },
+      mutateAsync: async (id: string, tripId?: string) => {
+        if (tripId) optimisticTripSub(tripId, "trip_documents", (docs) => docs.filter((d: any) => d.id !== id));
+        return deleteDocument.mutateAsync({ id });
+      },
+    },
   };
 }

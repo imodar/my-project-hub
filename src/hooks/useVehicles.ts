@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -8,6 +9,7 @@ import { useOfflineMutation } from "./useOfflineMutation";
 export function useVehicles() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
+  const qc = useQueryClient();
   const key = ["vehicles", familyId];
 
   const apiFn = useCallback(async () => {
@@ -26,6 +28,19 @@ export function useVehicles() {
     apiFn,
     enabled: !!familyId,
   });
+
+  // Helper: optimistic update for maintenance inside a vehicle
+  const optimisticVehicleSub = useCallback(
+    (vehicleId: string, updater: (items: any[]) => any[]) => {
+      qc.setQueryData<any[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((v: any) =>
+          v.id === vehicleId ? { ...v, vehicle_maintenance: updater(v.vehicle_maintenance || []) } : v
+        );
+      });
+    },
+    [qc, key]
+  );
 
   const addVehicle = useOfflineMutation<any, any>({
     table: "vehicles", operation: "INSERT",
@@ -48,8 +63,7 @@ export function useVehicles() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const deleteVehicle = useOfflineMutation<any, any>({
@@ -60,8 +74,7 @@ export function useVehicles() {
       });
       return { data: null, error: response?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const addMaintenance = useOfflineMutation<any, any>({
@@ -99,21 +112,53 @@ export function useVehicles() {
     onSuccess: () => refetch(),
   });
 
-  const wrap = (mut: any, defaults: any = {}) => ({
-    ...mut,
-    mutate: (input: any) => mut.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...defaults, ...input }),
-    mutateAsync: async (input: any) => mut.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...defaults, ...input }),
-  });
-  const wrapDel = (mut: any) => ({
-    ...mut,
-    mutate: (id: string) => mut.mutate({ id }),
-    mutateAsync: async (id: string) => mut.mutateAsync({ id }),
-  });
-
   return {
     vehicles: vehicles || [], isLoading,
-    addVehicle: wrap(addVehicle, { family_id: familyId, vehicle_maintenance: [] }),
-    updateVehicle, deleteVehicle: wrapDel(deleteVehicle),
-    addMaintenance: wrap(addMaintenance), updateMaintenance, deleteMaintenance: wrapDel(deleteMaintenance),
+    addVehicle: {
+      ...addVehicle,
+      mutate: (input: any) => addVehicle.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, vehicle_maintenance: [], ...input }),
+      mutateAsync: async (input: any) => addVehicle.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, vehicle_maintenance: [], ...input }),
+    },
+    updateVehicle,
+    deleteVehicle: {
+      ...deleteVehicle,
+      mutate: (id: string) => deleteVehicle.mutate({ id }),
+      mutateAsync: async (id: string) => deleteVehicle.mutateAsync({ id }),
+    },
+    addMaintenance: {
+      ...addMaintenance,
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticVehicleSub(input.vehicle_id, (items) => [...items, item]);
+        addMaintenance.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticVehicleSub(input.vehicle_id, (items) => [...items, item]);
+        return addMaintenance.mutateAsync(item);
+      },
+    },
+    updateMaintenance: {
+      ...updateMaintenance,
+      mutate: (input: any) => {
+        if (input.vehicle_id) {
+          optimisticVehicleSub(input.vehicle_id, (items) =>
+            items.map((i: any) => (i.id === input.id ? { ...i, ...input } : i))
+          );
+        }
+        updateMaintenance.mutate(input);
+      },
+    },
+    deleteMaintenance: {
+      ...deleteMaintenance,
+      mutate: (id: string, vehicleId?: string) => {
+        if (vehicleId) optimisticVehicleSub(vehicleId, (items) => items.filter((i: any) => i.id !== id));
+        deleteMaintenance.mutate({ id });
+      },
+      mutateAsync: async (id: string, vehicleId?: string) => {
+        if (vehicleId) optimisticVehicleSub(vehicleId, (items) => items.filter((i: any) => i.id !== id));
+        return deleteMaintenance.mutateAsync({ id });
+      },
+    },
   };
 }
