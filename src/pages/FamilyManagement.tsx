@@ -138,10 +138,6 @@ const FamilyManagement = () => {
   const [codeCopied, setCodeCopied] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
-  // Role confirmation drawer
-  const [confirmMember, setConfirmMember] = useState<FamilyMember | null>(null);
-  const [confirmRole, setConfirmRole] = useState<FamilyRole | null>(null);
-  const [confirmingRole, setConfirmingRole] = useState(false);
 
   // Pending member acceptance drawer
   const [pendingDrawerMember, setPendingDrawerMember] = useState<FamilyMember | null>(null);
