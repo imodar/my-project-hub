@@ -1,37 +1,27 @@
 
 
-# إصلاح المشكلتين المتبقيتين
+# إصلاح النقطة المتبقية — إزالة `handleConfirmRole` القديم
 
-## المشاكل المؤكدة
+## الملخص
 
-| # | الملف | المشكلة |
-|---|-------|---------|
-| 1 | `src/hooks/useDocumentLists.ts` | `deleteList` بدون `onSuccess: () => refetch()` |
-| 2 | `src/hooks/useMarketLists.ts` | `updateItem` بدون `onSuccess` — الـ optimistic update اليدوي موجود لكن لا refetch بعد نجاح السيرفر |
+من أصل 3 نقاط:
+- **النقطة 1**: غير صحيحة — `useWorshipChildren` محوّل بالفعل لـ `useOfflineFirst`
+- **النقطة 2**: لا مشكلة — `get-family-id` يُرجع `pending_family_id` بشكل صحيح
+- **النقطة 3**: صحيحة — `handleConfirmRole` والـ drawer المرتبط به لا يزالان موجودين من النظام القديم
 
-## التغييرات
+## التغييرات المطلوبة
 
-### 1. `src/hooks/useDocumentLists.ts` — سطر 74-78
-إضافة `onSuccess: () => refetch(),` في `deleteList`:
-```ts
-const deleteList = useOfflineMutation<any, any>({
-  table: "document_lists", operation: "DELETE",
-  apiFn: async (input) => invoke("delete-list", { id: input.id }),
-  queryKey: key,
-  onSuccess: () => refetch(),  // ← إضافة
-});
-```
+### `src/pages/FamilyManagement.tsx`
 
-### 2. `src/hooks/useMarketLists.ts` — سطر 72-75
-إضافة `onSuccess: () => refetch(),` في `updateItem`:
-```ts
-const updateItem = useOfflineMutation<any, any>({
-  table: "market_items", operation: "UPDATE",
-  apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-item", { id, ...updates }); },
-  onSuccess: () => refetch(),  // ← إضافة
-});
-```
+1. **حذف `handleConfirmRole`** (سطر 412-431) — الدالة القديمة التي تستدعي `confirm-role`
+2. **حذف state المرتبط**: `confirmMember`, `confirmRole`, `confirmingRole`
+3. **حذف الـ Drawer/Bottom Sheet** الخاص بتأكيد الدور للأعضاء الـ active بدون `role_confirmed`
+4. **إبقاء `handleAcceptMember`** و `handleRejectMember` — هذا هو النظام الجديد الصحيح
+
+### `supabase/functions/family-management/index.ts`
+
+- **اختياري**: حذف action `confirm-role` (سطر 282+) — لكن يمكن إبقاؤه كـ backward compatibility بدون ضرر. الأفضل حذفه لتنظيف الكود.
 
 ## ملخص
-تعديلان بسيطان — سطر واحد في كل ملف.
+تعديل ملف واحد أساسي (`FamilyManagement.tsx`) لإزالة المسار القديم، مع تعديل اختياري للـ Edge Function.
 
