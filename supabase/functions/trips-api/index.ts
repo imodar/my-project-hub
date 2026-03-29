@@ -126,11 +126,14 @@ Deno.serve(async (req) => {
     }
 
     if (action === "add-activity") {
-      const { day_plan_id, name, time, location, cost } = body;
+      const { day_plan_id, id: clientId, name, time, location, cost } = body;
       if (!validUuid(day_plan_id)) return json({ error: "day_plan_id غير صالح" }, 400);
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب" }, 400);
       if (cost !== undefined && cost !== null && !validAmount(cost)) return json({ error: "التكلفة غير صالحة" }, 400);
       if (location && typeof location === "string" && location.length > MAX_NAME) return json({ error: "الموقع طويل جداً" }, 400);
+      // Check if parent day plan exists (might be optimistic and not synced yet)
+      const { data: dpExists } = await supabase.from("trip_day_plans").select("id").eq("id", day_plan_id).maybeSingle();
+      if (!dpExists) return json({ data: { id: clientId || day_plan_id, day_plan_id, name, time, location, cost } });
       const { data, error } = await supabase.from("trip_activities").insert({ day_plan_id, name: sanitize(name, MAX_NAME), time, location: location ? sanitize(location, MAX_NAME) : null, cost }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
