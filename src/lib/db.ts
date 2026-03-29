@@ -143,7 +143,7 @@ class AppDatabase extends Dexie {
       chat_messages: "id, family_id, sender_id, created_at",
 
       // ── المركبات ──
-      vehicles: "id",
+      vehicles: "id, family_id",
 
       // ── التطعيمات ──
       vaccinations: "id",
