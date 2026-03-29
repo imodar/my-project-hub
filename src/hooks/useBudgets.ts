@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -8,6 +9,7 @@ import { useOfflineMutation } from "./useOfflineMutation";
 export function useBudgets() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
+  const qc = useQueryClient();
   const key = ["budgets", familyId];
 
   const apiFn = useCallback(async () => {
@@ -121,6 +123,21 @@ export function useBudgets() {
     onSuccess: () => refetch(),
   });
 
+  // Helper: تحديث budget_expenses داخل الكاش optimistically
+  const optimisticExpenseUpdate = useCallback(
+    (budgetId: string, updater: (expenses: any[]) => any[]) => {
+      qc.setQueryData<any[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((b: any) =>
+          b.id === budgetId
+            ? { ...b, budget_expenses: updater(b.budget_expenses || []) }
+            : b
+        );
+      });
+    },
+    [qc, key]
+  );
+
   return {
     budgets: budgets || [],
     isLoading,
@@ -137,14 +154,50 @@ export function useBudgets() {
     },
     addExpense: {
       ...addExpense,
-      mutate: (input: any) => addExpense.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
-      mutateAsync: async (input: any) => addExpense.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), currency: "SAR", ...input };
+        optimisticExpenseUpdate(input.budget_id, (exps) => [...exps, item]);
+        addExpense.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), currency: "SAR", ...input };
+        optimisticExpenseUpdate(input.budget_id, (exps) => [...exps, item]);
+        return addExpense.mutateAsync(item);
+      },
     },
-    updateExpense,
+    updateExpense: {
+      ...updateExpense,
+      mutate: (input: any) => {
+        if (input.budget_id) {
+          optimisticExpenseUpdate(input.budget_id, (exps) =>
+            exps.map((e: any) => (e.id === input.id ? { ...e, ...input } : e))
+          );
+        }
+        updateExpense.mutate(input);
+      },
+      mutateAsync: async (input: any) => {
+        if (input.budget_id) {
+          optimisticExpenseUpdate(input.budget_id, (exps) =>
+            exps.map((e: any) => (e.id === input.id ? { ...e, ...input } : e))
+          );
+        }
+        return updateExpense.mutateAsync(input);
+      },
+    },
     deleteExpense: {
       ...deleteExpense,
-      mutate: (expenseId: string) => deleteExpense.mutate({ id: expenseId }),
-      mutateAsync: async (expenseId: string) => deleteExpense.mutateAsync({ id: expenseId }),
+      mutate: (expenseId: string, budgetId?: string) => {
+        if (budgetId) {
+          optimisticExpenseUpdate(budgetId, (exps) => exps.filter((e: any) => e.id !== expenseId));
+        }
+        deleteExpense.mutate({ id: expenseId });
+      },
+      mutateAsync: async (expenseId: string, budgetId?: string) => {
+        if (budgetId) {
+          optimisticExpenseUpdate(budgetId, (exps) => exps.filter((e: any) => e.id !== expenseId));
+        }
+        return deleteExpense.mutateAsync({ id: expenseId });
+      },
     },
   };
 }
