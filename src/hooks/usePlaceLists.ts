@@ -52,6 +52,18 @@ export function usePlaceLists() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
+    onSuccess: () => refetch(),
+  });
+
+  const updateList = useOfflineMutation<Record<string, unknown>, Record<string, unknown>>({
+    table: "place_lists", operation: "UPDATE",
+    apiFn: async (input) => {
+      const { id, ...updates } = input;
+      const { data: response, error } = await supabase.functions.invoke("places-api", {
+        body: { action: "update-list", id, ...updates },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
+    },
     queryKey: key, onSuccess: () => refetch(),
   });
 
