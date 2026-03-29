@@ -162,7 +162,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
     setPhase("idle");
     setCountdown(3);
     setHoldProgress(0);
-    toast("تم إلغاء التنبيه", { icon: "✓" });
+    appToast.info("تم إلغاء التنبيه");
   }, []);
 
   // Active SOS — sends real notification to family
