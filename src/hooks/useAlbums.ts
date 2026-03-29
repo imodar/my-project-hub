@@ -47,6 +47,7 @@ export function useAlbums() {
     queryKey: key,
     apiFn,
     enabled: !!familyId,
+    scopeKey: familyId ?? undefined,
   });
 
   // Helper: optimistic update for photos inside an album

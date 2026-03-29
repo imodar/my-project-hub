@@ -37,6 +37,7 @@ export function useTaskLists() {
     apiFn,
     enabled: !!familyId,
     filterFn: useCallback((items: any[]) => sortListsAsc(items), []),
+    scopeKey: familyId ?? undefined,
   });
 
   // Realtime handled by useFamilyRealtime — no duplicate channel needed

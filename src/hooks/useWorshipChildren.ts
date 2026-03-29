@@ -37,6 +37,7 @@ export function useWorshipChildren() {
       (items: WorshipChild[]) => (!familyId ? items : items.filter(c => c.family_id === familyId)),
       [familyId],
     ),
+    scopeKey: familyId ?? undefined,
   });
 
   const addChild = useOfflineMutation<any, any>({

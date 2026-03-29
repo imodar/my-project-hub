@@ -25,6 +25,7 @@ export function useCalendarEvents() {
     queryKey: key,
     apiFn,
     enabled: !!familyId,
+    scopeKey: familyId ?? undefined,
   });
 
   const addEvent = useOfflineMutation<any, any>({

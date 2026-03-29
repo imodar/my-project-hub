@@ -28,6 +28,8 @@ export interface UseOfflineFirstOptions<T> {
   filterFn?: (items: T[]) => T[];
   /** هل الـ Hook مُفعّل؟ */
   enabled?: boolean;
+  /** مفتاح نطاق لعزل sync_meta بين العائلات (مثل familyId) */
+  scopeKey?: string;
 }
 
 export interface UseOfflineFirstReturn<T> {
@@ -49,6 +51,7 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   staleTime = 10 * 60 * 1000,
   filterFn,
   enabled = true,
+  scopeKey,
 }: UseOfflineFirstOptions<T>): UseOfflineFirstReturn<T> {
   const qc = useQueryClient();
 
@@ -98,9 +101,14 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
 
   // ── 2. جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
-    const result = await syncTable<T>(tableName, (lastSyncedAt) => apiFn(lastSyncedAt));
+    const result = await syncTable<T>(
+      tableName,
+      (lastSyncedAt) => apiFn(lastSyncedAt),
+      filterFnRef.current || undefined,
+      scopeKey
+    );
     return applyFilter(result);
-  }, [tableName, apiFn, applyFilter]);
+  }, [tableName, apiFn, applyFilter, scopeKey]);
 
   const query = useQuery<T[]>({
     queryKey,
