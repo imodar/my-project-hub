@@ -75,14 +75,20 @@ export function useWorshipChildren() {
     isLoading,
     addChild: {
       ...addChild,
-      mutate: (name: string) =>
-        addChild.mutate({
+      mutate: (name: string, options?: { onSuccess?: () => void; onError?: (err: any) => void }) => {
+        const payload = {
           id: crypto.randomUUID(),
           created_at: new Date().toISOString(),
           family_id: familyId,
           name,
           created_by: user?.id,
-        }),
+        };
+        if (options?.onSuccess || options?.onError) {
+          addChild.mutateAsync(payload).then(() => options?.onSuccess?.()).catch((err) => options?.onError?.(err));
+        } else {
+          addChild.mutate(payload);
+        }
+      },
       mutateAsync: async (name: string) =>
         addChild.mutateAsync({
           id: crypto.randomUUID(),
@@ -94,7 +100,13 @@ export function useWorshipChildren() {
     },
     removeChild: {
       ...removeChild,
-      mutate: (id: string) => removeChild.mutate({ id }),
+      mutate: (id: string, options?: { onSuccess?: () => void; onError?: (err: any) => void }) => {
+        if (options?.onSuccess || options?.onError) {
+          removeChild.mutateAsync({ id }).then(() => options?.onSuccess?.()).catch((err) => options?.onError?.(err));
+        } else {
+          removeChild.mutate({ id });
+        }
+      },
       mutateAsync: async (id: string) => removeChild.mutateAsync({ id }),
     },
   };
