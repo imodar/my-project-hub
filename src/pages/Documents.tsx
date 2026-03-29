@@ -83,7 +83,7 @@ const Documents = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
-  const { lists: dbDocLists, isLoading: docsLoading, createList: createDocListMut, deleteList: deleteDocListMut, addItem: addDocItemMut, updateItem: updateDocItemMut, deleteItem: deleteDocItemMut } = useDocumentLists();
+  const { lists: dbDocLists, isLoading: docsLoading, createList: createDocListMut, deleteList: deleteDocListMut, addItem: addDocItemMut, updateItem: updateDocItemMut, deleteItem: deleteDocItemMut, updateList: updateDocListMut } = useDocumentLists();
 
   const lists: DocList[] = useMemo(() => {
     const mapped = (dbDocLists || []).map((l: any) => ({
