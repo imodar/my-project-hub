@@ -116,7 +116,7 @@ const FamilyManagement = () => {
         body: { action: "create", name: user?.user_metadata?.name || "عائلتي", role: setupRole },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل إنشاء الأسرة", variant: "destructive" });
+        appToast.error(data?.error || "فشل إنشاء الأسرة");
         return;
       }
       queryClient.invalidateQueries({ queryKey: ["family-id"] });
@@ -244,7 +244,7 @@ const FamilyManagement = () => {
         body: { action: "remove-member", family_id: familyId, target_user_id: id },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل حذف العضو", variant: "destructive" });
+        appToast.error(data?.error || "فشل حذف العضو");
         return;
       }
       refetchMembers();
@@ -269,11 +269,11 @@ const FamilyManagement = () => {
         body: { action: "toggle-admin", family_id: familyId, target_user_id: id, is_admin: newAdmin },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل تعديل الصلاحية", variant: "destructive" });
+        appToast.error(data?.error || "فشل تعديل الصلاحية");
         return;
       }
       refetchMembers();
-      toast({ title: newAdmin ? `تم تعيين ${member.name} كمشرف` : `تم إلغاء إشراف ${member.name}` });
+      appToast.success(newAdmin ? `تم تعيين ${member.name} كمشرف` : `تم إلغاء إشراف ${member.name}`);
     } catch {
       appToast.error("حدث خطأ");
     }
@@ -418,7 +418,7 @@ const FamilyManagement = () => {
         },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل القبول", variant: "destructive" });
+        appToast.error(data?.error || "فشل القبول");
       } else {
         appToast.success(`تم قبول ${pendingDrawerMember.name} 🎉`);
         setPendingDrawerMember(null);
@@ -445,7 +445,7 @@ const FamilyManagement = () => {
         },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل الرفض", variant: "destructive" });
+        appToast.error(data?.error || "فشل الرفض");
       } else {
         appToast.success(`تم رفض ${pendingDrawerMember.name}`);
         setPendingDrawerMember(null);
@@ -470,7 +470,7 @@ const FamilyManagement = () => {
         body: { action: "leave", family_id: familyId },
       });
       if (error || data?.error) {
-        toast({ title: data?.error || "فشل مغادرة العائلة", variant: "destructive" });
+        appToast.error(data?.error || "فشل مغادرة العائلة");
         return;
       }
       localStorage.removeItem("cached_family_id");
