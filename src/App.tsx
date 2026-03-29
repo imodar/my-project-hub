@@ -225,8 +225,7 @@ const App = () => (
             <IslamicModeProvider>
               <TrashProvider>
                 <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
+                  <AppToast />
                   <BrowserRouter>
                     <OfflineBanner />
                     <ScrollToTop />
