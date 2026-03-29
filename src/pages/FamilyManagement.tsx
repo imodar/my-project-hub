@@ -622,14 +622,6 @@ const FamilyManagement = () => {
                         بانتظار القبول
                       </span>
                     )}
-                    {false && (
-                      <button
-                        className="hidden"
-                      >
-                        <ShieldCheck size={8} />
-                        تأكيد الدور
-                      </button>
-                    )}
                   </div>
                   {memberIsAdmin && (
                     <span className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-semibold" style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}>
