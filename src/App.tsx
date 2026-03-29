@@ -90,7 +90,7 @@ const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: (error) => {
       const message = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
-      toast.error("فشل الحفظ", { description: message });
+      appToast.error("فشل الحفظ", message);
     },
   }),
   defaultOptions: {
