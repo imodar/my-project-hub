@@ -78,6 +78,7 @@ class AppDatabase extends Dexie {
   tasbih_sessions!: Table;
   kids_worship_data!: Table;
   prayer_logs!: Table;
+  worship_children!: Table;
   emergency_contacts!: Table;
 
   // ── جداول المزامنة ──
