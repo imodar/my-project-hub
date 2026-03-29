@@ -1298,7 +1298,7 @@ const Trips = () => {
                             }
                             handleSelectTrip(trip);
                           }}
-                          className="w-full text-right p-4 bg-muted/50 active:bg-muted/70 transition-colors"
+                          className="w-full text-right p-4 bg-muted active:bg-muted/80 transition-colors"
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
