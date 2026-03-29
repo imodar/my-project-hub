@@ -18,51 +18,34 @@ export function useInitialSync() {
     try {
       const firstSyncDone = localStorage.getItem("first_sync_done");
 
-      // Check if local IndexedDB has data
-      let localCount = 0;
-      try {
-        localCount = await db.task_lists.count();
-      } catch {
-        // IndexedDB may not be ready
-      }
-
-      if (localCount === 0 && !firstSyncDone) {
-        // No local data and never synced — check cloud to determine if new account or new device
+      if (!firstSyncDone) {
         try {
           const { data, error } = await supabase.functions.invoke("account-api", {
             body: { action: "get-last-updated" },
           });
-
           if (!error && data?.last_updated_at) {
-            // Cloud has data — existing account on new device → full sync
             setState("new_user");
             await fullSync(familyId, setProgress);
             setState("done");
             return;
           }
-        } catch {
-          // Network error — assume new account
-        }
+        } catch {}
 
-        // Cloud returned null or error — brand new account
         localStorage.setItem("first_sync_done", "1");
         localStorage.setItem("last_sync_ts", new Date().toISOString());
         setState("done");
         return;
       }
 
-      // Local data exists — compare timestamps
+      // delta sync
       const localTs = localStorage.getItem("last_sync_ts");
-
       try {
         const { data, error } = await supabase.functions.invoke("account-api", {
           body: { action: "get-last-updated" },
         });
-
         if (!error && data?.last_updated_at) {
           const cloudTime = new Date(data.last_updated_at).getTime();
           const localTime = localTs ? new Date(localTs).getTime() : 0;
-
           if (cloudTime > localTime) {
             setState("syncing");
             await qc.invalidateQueries();
@@ -73,12 +56,8 @@ export function useInitialSync() {
             return;
           }
         }
-      } catch {
-        // Network error — skip cloud check
-      }
+      } catch {}
 
-      // Local is up to date or couldn't reach cloud
-      localStorage.setItem("first_sync_done", "true");
       setState("done");
     } catch {
       setState("done");
