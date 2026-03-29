@@ -267,7 +267,7 @@ const Market = () => {
     setNewItemQuantity("");
     setNewItemCategory("أخرى");
     setShowAddItem(false);
-  }, [activeList, newItemName, newItemCategory, newItemQuantity, addItemMutation, familyId, toast]);
+  }, [activeList, newItemName, newItemCategory, newItemQuantity, addItemMutation, familyId]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
