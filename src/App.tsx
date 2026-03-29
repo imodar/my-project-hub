@@ -232,14 +232,13 @@ const App = () => (
                   <Sonner />
                   <BrowserRouter>
                     <OfflineBanner />
-                    <FirstSyncOverlay />
                     <ScrollToTop />
                     <WarmCacheProvider>
                       <Suspense fallback={null}>
                         <AnimatedRoutes />
                       </Suspense>
+                      <BottomNav />
                     </WarmCacheProvider>
-                    <BottomNav />
                   </BrowserRouter>
                 </TooltipProvider>
               </TrashProvider>
