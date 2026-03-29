@@ -1,16 +1,38 @@
 
 
-# تسريع fullSync — من تسلسلي إلى متوازي
+# إصلاح المشاركة + flickering — 8 ملفات
 
-## الملخص
-ملف واحد: `src/lib/fullSync.ts` — تحويل الـ loop من `for...await` إلى `Promise.allSettled` مع `map`.
+## التحقق المطلوب ✅
+تم التحقق: `update-list` action موجود في **كل** الـ Edge Functions الأربع:
+- `tasks-api` ✅
+- `market-api` ✅
+- `documents-api` ✅ (سطر 77)
+- `places-api` ✅ (سطر 84)
 
-## التغيير
-استبدال الـ `for` loop بـ `Promise.allSettled(SYNC_STEPS.map(...))` كما في المقترح بالضبط:
-- متغير `completed` يزيد مع كل جدول ينتهي
-- `onProgress` يتحدث بعد كل جدول
-- الأخطاء لا توقف الباقي (بفضل `allSettled`)
+لا حاجة لتعديل أي Edge Function.
 
-## النتيجة المتوقعة
-من ~7.5 ثانية إلى ~1-1.5 ثانية.
+---
+
+## التغييرات — نفس الخطة السابقة بدون تغيير
+
+### الـ Hooks (4 ملفات) — إضافة `updateList` + حذف `queryKey` من `createList`
+
+| الملف | التعديل |
+|-------|---------|
+| `useMarketLists.ts` | إضافة `updateList` mutation + حذف `queryKey` من `createList` + إرجاع `updateList` |
+| `useTaskLists.ts` | نفس الشيء |
+| `useDocumentLists.ts` | نفس الشيء |
+| `usePlaceLists.ts` | نفس الشيء |
+
+### الشاشات (4 ملفات) — ربط `shareList` بالـ mutation
+
+| الملف | التعديل |
+|-------|---------|
+| `Market.tsx` | `shareList` يستدعي `updateList.mutate({ id, shared_with })` |
+| `Tasks.tsx` | نفس الشيء |
+| `Documents.tsx` | نفس الشيء |
+| `Places.tsx` | نفس الشيء |
+
+## ملخص
+8 ملفات، لا تغيير عن الخطة المعتمدة سابقاً.
 
