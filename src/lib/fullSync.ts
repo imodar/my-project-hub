@@ -29,28 +29,33 @@ export async function fullSync(
   onProgress: (p: SyncProgress) => void
 ): Promise<void> {
   const total = SYNC_STEPS.length;
+  let completed = 0;
 
-  for (let i = 0; i < total; i++) {
-    const step = SYNC_STEPS[i];
-    onProgress({
-      current: Math.round((i / total) * 100),
-      label: step.label,
-    });
+  onProgress({ current: 0, label: "جاري التجهيز..." });
 
-    try {
-      const { data: response } = await supabase.functions.invoke(step.fn, {
-        body: { action: step.action, family_id: familyId },
-      });
+  await Promise.allSettled(
+    SYNC_STEPS.map(async (step) => {
+      try {
+        const { data: response } = await supabase.functions.invoke(step.fn, {
+          body: { action: step.action, family_id: familyId },
+        });
 
-      const items = response?.data || [];
-      if (items.length > 0) {
-        const table = (db as any)[step.table];
-        if (table) await table.bulkPut(items);
+        const items = response?.data || [];
+        if (items.length > 0) {
+          const table = (db as any)[step.table];
+          if (table) await table.bulkPut(items);
+        }
+      } catch {
+        // فشل جدول واحد لا يوقف الباقي
       }
-    } catch {
-      // فشل جدول واحد لا يوقف الباقي
-    }
-  }
+
+      completed++;
+      onProgress({
+        current: Math.round((completed / total) * 100),
+        label: step.label,
+      });
+    })
+  );
 
   onProgress({ current: 100, label: "اكتمل" });
   localStorage.setItem("first_sync_done", "1");
