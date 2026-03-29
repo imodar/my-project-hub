@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { haptic } from "@/lib/haptics";
-import { toast } from "@/hooks/use-toast";
+import { appToast } from "@/lib/toast";
 import { useWill } from "@/hooks/useWill";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -97,7 +97,7 @@ const Will = () => {
   const handleCreatePassword = async () => {
     if (!createPassword.trim() || createPassword !== createPasswordConfirm) return;
     if (createPassword.length < 4) {
-      toast({ title: "كلمة المرور قصيرة جداً", description: "يجب أن تكون 4 أحرف على الأقل", variant: "destructive" });
+      appToast.error("كلمة المرور قصيرة جداً", "يجب أن تكون 4 أحرف على الأقل");
       return;
     }
     const hash = await sha256(createPassword);
@@ -109,10 +109,10 @@ const Will = () => {
           setCreatePassword("");
           setCreatePasswordConfirm("");
           haptic.medium();
-          toast({ title: "تم إنشاء الوصية", description: "وصيتك الآن محمية بكلمة مرور" });
+          appToast.success("تم إنشاء الوصية", "وصيتك الآن محمية بكلمة مرور");
         },
         onError: () => {
-          toast({ title: "حدث خطأ", variant: "destructive" });
+          appToast.error("حدث خطأ");
         },
       }
     );
@@ -127,7 +127,7 @@ const Will = () => {
       haptic.medium();
       setIsUnlocked(true);
       setEnterPassword("");
-      toast({ title: "تم فتح الوصية", description: "يمكنك الآن تعديل وصيتك" });
+      appToast.success("تم فتح الوصية", "يمكنك الآن تعديل وصيتك");
     } else {
       setEnterError("كلمة المرور غير صحيحة");
       haptic.heavy();
@@ -142,19 +142,19 @@ const Will = () => {
         body: { action: "request-reset-otp" },
       });
       if (error || data?.error) {
-        toast({ title: "فشل إرسال الرمز", description: data?.error || error?.message, variant: "destructive" });
+        appToast.success("فشل إرسال الرمز", description: data?.error || error?.message, variant: "destructive");
         return;
       }
       // In production, SMS is sent. For now, code is returned for testing
       if (data?.code) {
         setExpectedOtp(data.code);
-        toast({ title: `رمز التحقق: ${data.code}`, description: "تم إرسال الرمز لرقم جوالك" });
+        appToast.success(`رمز التحقق: ${data.code}`, "تم إرسال الرمز لرقم جوالك");
       } else {
-        toast({ title: "تم إرسال رمز التحقق", description: "تحقق من رسائل جوالك" });
+        appToast.success("تم إرسال رمز التحقق", "تحقق من رسائل جوالك");
       }
       setResetStep("otp");
     } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      appToast.error("حدث خطأ");
     } finally {
       setResetLoading(false);
     }
@@ -169,7 +169,7 @@ const Will = () => {
         body: { action: "verify-reset-otp", code: resetOtp },
       });
       if (error || data?.error) {
-        toast({ title: "الرمز غير صحيح", description: data?.error || error?.message, variant: "destructive" });
+        appToast.success("الرمز غير صحيح", description: data?.error || error?.message, variant: "destructive");
         setResetLoading(false);
         return;
       }
@@ -182,14 +182,14 @@ const Will = () => {
           setResetOtp("");
           setEnterPassword("");
           haptic.heavy();
-          toast({ title: "تم حذف الوصية", description: "تم مسح الوصية وكلمة المرور بالكامل. يمكنك إنشاء وصية جديدة." });
+          appToast.success("تم حذف الوصية", "تم مسح الوصية وكلمة المرور بالكامل. يمكنك إنشاء وصية جديدة.");
         },
         onError: () => {
-          toast({ title: "فشل حذف الوصية", variant: "destructive" });
+          appToast.error("فشل حذف الوصية");
         },
       });
     } catch {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      appToast.error("حدث خطأ");
     } finally {
       setResetLoading(false);
     }
@@ -213,7 +213,7 @@ const Will = () => {
     setSections(updated);
     upsertWill.mutate({ sections: updated });
     setEditingSection(null);
-    toast({ title: "تم الحفظ", description: `تم حفظ "${editingSection.label}" بنجاح` });
+    appToast.success("تم الحفظ", `تم حفظ "${editingSection.label}" بنجاح`);
   };
 
   const handleDeleteWill = () => {
@@ -223,7 +223,7 @@ const Will = () => {
         setSections(DEFAULT_SECTIONS.map(s => ({ ...s, completed: false, content: "" })));
         setDeleteDrawer(false);
         setIsUnlocked(false);
-        toast({ title: "تم حذف الوصية", description: "تم مسح جميع محتويات الوصية" });
+        appToast.success("تم حذف الوصية", "تم مسح جميع محتويات الوصية");
       },
     });
   };

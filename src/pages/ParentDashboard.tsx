@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Users, Star, Download, ChevronLeft, Plus, Trash2, TrendingUp, Eye } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { appToast } from "@/lib/toast";
 import {
   categories, allItems, TOTAL_ITEMS,
   type ChildProfile, type MonthData,
@@ -45,7 +45,7 @@ const ParentDashboard = () => {
       onSuccess: () => {
         setNewChildName("");
         setShowAddChild(false);
-        toast({ title: `تمت إضافة ${newChildName.trim()}` });
+        appToast.success(`تمت إضافة ${newChildName.trim()}`);
       },
     });
   };
@@ -53,7 +53,7 @@ const ParentDashboard = () => {
   const removeChild = (id: string) => {
     removeChildMutation.mutate(id, {
       onSuccess: () => {
-        toast({ title: "تم حذف الطفل" });
+        appToast.success("تم حذف الطفل");
       },
     });
   };
@@ -61,7 +61,7 @@ const ParentDashboard = () => {
   const handleExportPdf = async (childId: string) => {
     const child = children.find((c) => c.id === childId);
     await exportWorshipPdf(worshipData, selectedYear, selectedMonth, child?.name || "", totalDays);
-    toast({ title: "تم تصدير الجدول بنجاح ✅" });
+    appToast.success("تم تصدير الجدول بنجاح ✅");
   };
 
   const fillAllData = (childId: string) => {
@@ -71,7 +71,7 @@ const ParentDashboard = () => {
       items.forEach(id => { dayItems[id] = true; });
       saveDayData.mutate({ day, items: dayItems });
     }
-    toast({ title: "تم تعبئة كل الشهر" });
+    appToast.success("تم تعبئة كل الشهر");
   };
 
   const openChildEditor = (childId: string) => {

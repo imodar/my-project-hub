@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { appToast } from "@/lib/toast";
 import { Camera, User, Loader2, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -15,7 +15,6 @@ const isGoogleEmail = (email: string): boolean => {
 const CompleteProfile = () => {
   const { session, user, refreshProfile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [name, setName] = useState("");
   const [gmail, setGmail] = useState("");
@@ -35,7 +34,7 @@ const CompleteProfile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "حجم الصورة يجب أن يكون أقل من 5 ميجا", variant: "destructive" });
+      appToast.error("حجم الصورة يجب أن يكون أقل من 5 ميجا");
       return;
     }
     setAvatarFile(file);
@@ -95,7 +94,7 @@ const CompleteProfile = () => {
         .eq("id", user.id);
 
       if (profileErr) {
-        toast({ title: "حدث خطأ أثناء الحفظ", variant: "destructive" });
+        appToast.error("حدث خطأ أثناء الحفظ");
         setSaving(false);
         return;
       }
@@ -104,7 +103,7 @@ const CompleteProfile = () => {
       if (gmail && isGoogleEmail(gmail)) {
         const { error: emailErr } = await supabase.auth.updateUser({ email: gmail });
         if (emailErr) {
-          toast({ title: "هذا البريد مستخدم بحساب آخر", variant: "destructive" });
+          appToast.error("هذا البريد مستخدم بحساب آخر");
           setGmail("");
           setSaving(false);
           return;
@@ -117,7 +116,7 @@ const CompleteProfile = () => {
       await refreshProfile();
       navigate("/", { replace: true });
     } catch {
-      toast({ title: "حدث خطأ غير متوقع", variant: "destructive" });
+      appToast.error("حدث خطأ غير متوقع");
     } finally {
       setSaving(false);
     }
