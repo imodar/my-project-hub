@@ -40,6 +40,10 @@ export function useVaccinations() {
     queryKey: key,
     apiFn,
     enabled: !!familyId,
+    filterFn: useCallback(
+      (items: any[]) => items.filter((c: any) => !familyId || !c.family_id || c.family_id === familyId),
+      [familyId],
+    ),
   });
 
   // Helper: optimistic update for a specific child

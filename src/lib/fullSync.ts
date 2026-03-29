@@ -19,6 +19,9 @@ const SYNC_STEPS = [
   { label: "الألبومات", action: "get-albums", fn: "albums-api", table: "albums" },
   { label: "المركبات", action: "get-vehicles", fn: "vehicles-api", table: "vehicles" },
   { label: "اللقاحات", action: "get-children", fn: "health-api", table: "vaccinations" },
+  { label: "الزكاة", action: "get-assets", fn: "zakat-api", table: "zakat_assets" },
+  { label: "الوصية", action: "get-will", fn: "will-api", table: "will_sections" },
+  { label: "العبادات", action: "get-children", fn: "worship-api", table: "worship_children" },
 ];
 
 export async function fullSync(

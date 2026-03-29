@@ -60,6 +60,7 @@ export function useMarketLists() {
     table: "market_lists", operation: "DELETE",
     apiFn: async (input) => invoke("delete-list", { id: input.id }),
     queryKey: key,
+    onSuccess: () => refetch(),
   });
 
   const addItem = useOfflineMutation<any, any>({

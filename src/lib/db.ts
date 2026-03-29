@@ -78,6 +78,7 @@ class AppDatabase extends Dexie {
   tasbih_sessions!: Table;
   kids_worship_data!: Table;
   prayer_logs!: Table;
+  worship_children!: Table;
   emergency_contacts!: Table;
 
   // ── جداول المزامنة ──
@@ -87,7 +88,7 @@ class AppDatabase extends Dexie {
   constructor() {
     super("ailti_offline_db");
 
-    this.version(2).stores({
+    this.version(3).stores({
       // ── الأدوية ──
       medications: "id, family_id, member_id, created_at",
       medication_logs: "id, medication_id, taken_at",
@@ -159,6 +160,7 @@ class AppDatabase extends Dexie {
       // ── عبادة الأطفال ──
       kids_worship_data: "id, child_id, year, month, day",
       prayer_logs: "id, child_id, date",
+      worship_children: "id, family_id",
 
       // ── الطوارئ ──
       emergency_contacts: "id, family_id",
