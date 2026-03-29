@@ -51,6 +51,7 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   staleTime = 10 * 60 * 1000,
   filterFn,
   enabled = true,
+  scopeKey,
 }: UseOfflineFirstOptions<T>): UseOfflineFirstReturn<T> {
   const qc = useQueryClient();
 
