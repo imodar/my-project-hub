@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -28,6 +29,7 @@ export interface Album {
 export function useAlbums() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
+  const qc = useQueryClient();
   const key = ["albums", familyId];
 
   const apiFn = useCallback(async (since?: string | null) => {
@@ -46,6 +48,19 @@ export function useAlbums() {
     apiFn,
     enabled: !!familyId,
   });
+
+  // Helper: optimistic update for photos inside an album
+  const optimisticAlbumSub = useCallback(
+    (albumId: string, updater: (photos: AlbumPhoto[]) => AlbumPhoto[]) => {
+      qc.setQueryData<Album[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((a) =>
+          a.id === albumId ? { ...a, album_photos: updater(a.album_photos || []) } : a
+        );
+      });
+    },
+    [qc, key]
+  );
 
   const createAlbum = useOfflineMutation<Album, Partial<Album>>({
     table: "albums", operation: "INSERT",
@@ -107,13 +122,27 @@ export function useAlbums() {
     },
     addPhoto: {
       ...addPhoto,
-      mutate: (input: Partial<AlbumPhoto>) => addPhoto.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input } as AlbumPhoto),
-      mutateAsync: async (input: Partial<AlbumPhoto>) => addPhoto.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input } as AlbumPhoto),
+      mutate: (input: Partial<AlbumPhoto>) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input } as AlbumPhoto;
+        optimisticAlbumSub(input.album_id!, (photos) => [...photos, item]);
+        addPhoto.mutate(item);
+      },
+      mutateAsync: async (input: Partial<AlbumPhoto>) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input } as AlbumPhoto;
+        optimisticAlbumSub(input.album_id!, (photos) => [...photos, item]);
+        return addPhoto.mutateAsync(item);
+      },
     },
     deletePhoto: {
       ...deletePhoto,
-      mutate: (photoId: string) => deletePhoto.mutate({ id: photoId }),
-      mutateAsync: async (photoId: string) => deletePhoto.mutateAsync({ id: photoId }),
+      mutate: (photoId: string, albumId?: string) => {
+        if (albumId) optimisticAlbumSub(albumId, (photos) => photos.filter((p) => p.id !== photoId));
+        deletePhoto.mutate({ id: photoId });
+      },
+      mutateAsync: async (photoId: string, albumId?: string) => {
+        if (albumId) optimisticAlbumSub(albumId, (photos) => photos.filter((p) => p.id !== photoId));
+        return deletePhoto.mutateAsync({ id: photoId });
+      },
     },
   };
 }

@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -8,6 +9,7 @@ import { useOfflineMutation } from "./useOfflineMutation";
 export function useZakatAssets() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
+  const qc = useQueryClient();
   const key = ["zakat-assets", familyId];
 
   const apiFn = useCallback(async () => {
@@ -26,6 +28,19 @@ export function useZakatAssets() {
     apiFn,
     enabled: !!user && !!familyId,
   });
+
+  // Helper: optimistic update for zakat_history inside an asset
+  const optimisticAssetSub = useCallback(
+    (assetId: string, updater: (history: any[]) => any[]) => {
+      qc.setQueryData<any[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((a: any) =>
+          a.id === assetId ? { ...a, zakat_history: updater(a.zakat_history || []) } : a
+        );
+      });
+    },
+    [qc, key]
+  );
 
   const addAsset = useOfflineMutation<any, any>({
     table: "zakat_assets", operation: "INSERT",
@@ -96,8 +111,16 @@ export function useZakatAssets() {
     },
     addZakatPayment: {
       ...addZakatPayment,
-      mutate: (input: any) => addZakatPayment.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
-      mutateAsync: async (input: any) => addZakatPayment.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticAssetSub(input.asset_id, (history) => [...history, { amount_paid: input.amount_paid, notes: input.notes, paid_at: new Date().toISOString() }]);
+        addZakatPayment.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticAssetSub(input.asset_id, (history) => [...history, { amount_paid: input.amount_paid, notes: input.notes, paid_at: new Date().toISOString() }]);
+        return addZakatPayment.mutateAsync(item);
+      },
     },
   };
 }

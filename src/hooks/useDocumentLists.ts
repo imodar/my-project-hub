@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -8,6 +9,7 @@ import { useOfflineMutation } from "./useOfflineMutation";
 export function useDocumentLists() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
+  const qc = useQueryClient();
   const key = ["document-lists", familyId];
 
   const apiFn = useCallback(async () => {
@@ -31,6 +33,37 @@ export function useDocumentLists() {
     const { data: response, error } = await supabase.functions.invoke("documents-api", { body: { action, ...payload } });
     return { data: response?.data ?? null, error: response?.error || error?.message || null };
   };
+
+  // Helper: optimistic update for sub-items inside a document list
+  const optimisticListSub = useCallback(
+    (listId: string, subKey: string, updater: (items: any[]) => any[]) => {
+      qc.setQueryData<any[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((l: any) =>
+          l.id === listId ? { ...l, [subKey]: updater(l[subKey] || []) } : l
+        );
+      });
+    },
+    [qc, key]
+  );
+
+  // Helper: optimistic update for files inside a document item
+  const optimisticFileSub = useCallback(
+    (documentId: string, updater: (files: any[]) => any[]) => {
+      qc.setQueryData<any[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((l: any) => ({
+          ...l,
+          document_items: (l.document_items || []).map((item: any) =>
+            item.id === documentId
+              ? { ...item, document_files: updater(item.document_files || []) }
+              : item
+          ),
+        }));
+      });
+    },
+    [qc, key]
+  );
 
   const createList = useOfflineMutation<any, any>({
     table: "document_lists", operation: "INSERT",
@@ -74,23 +107,76 @@ export function useDocumentLists() {
     onSuccess: () => refetch(),
   });
 
-  const wrap = (mut: any, defaults: any = {}) => ({
-    ...mut,
-    mutate: (input: any) => mut.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...defaults, ...input }),
-    mutateAsync: async (input: any) => mut.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...defaults, ...input }),
-  });
-  const wrapDel = (mut: any) => ({
-    ...mut,
-    mutate: (id: string) => mut.mutate({ id }),
-    mutateAsync: async (id: string) => mut.mutateAsync({ id }),
-  });
-
   return {
     lists: lists || [], isLoading,
-    createList: wrap(createList, { family_id: familyId, document_items: [] }),
-    deleteList: wrapDel(deleteList),
-    addItem: wrap(addItem, { document_files: [] }),
-    updateItem, deleteItem: wrapDel(deleteItem),
-    addFile: wrap(addFile), deleteFile: wrapDel(deleteFile),
+    createList: {
+      ...createList,
+      mutate: (input: any) => createList.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, document_items: [], ...input }),
+      mutateAsync: async (input: any) => createList.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, document_items: [], ...input }),
+    },
+    deleteList: {
+      ...deleteList,
+      mutate: (id: string) => deleteList.mutate({ id }),
+      mutateAsync: async (id: string) => deleteList.mutateAsync({ id }),
+    },
+    addItem: {
+      ...addItem,
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), document_files: [], ...input };
+        optimisticListSub(input.list_id, "document_items", (items) => [...items, item]);
+        addItem.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), document_files: [], ...input };
+        optimisticListSub(input.list_id, "document_items", (items) => [...items, item]);
+        return addItem.mutateAsync(item);
+      },
+    },
+    updateItem: {
+      ...updateItem,
+      mutate: (input: any) => {
+        if (input.list_id) {
+          optimisticListSub(input.list_id, "document_items", (items) =>
+            items.map((i: any) => (i.id === input.id ? { ...i, ...input } : i))
+          );
+        }
+        updateItem.mutate(input);
+      },
+    },
+    deleteItem: {
+      ...deleteItem,
+      mutate: (id: string, listId?: string) => {
+        if (listId) optimisticListSub(listId, "document_items", (items) => items.filter((i: any) => i.id !== id));
+        deleteItem.mutate({ id });
+      },
+      mutateAsync: async (id: string, listId?: string) => {
+        if (listId) optimisticListSub(listId, "document_items", (items) => items.filter((i: any) => i.id !== id));
+        return deleteItem.mutateAsync({ id });
+      },
+    },
+    addFile: {
+      ...addFile,
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), added_at: new Date().toISOString(), ...input };
+        optimisticFileSub(input.document_id, (files) => [...files, item]);
+        addFile.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), added_at: new Date().toISOString(), ...input };
+        optimisticFileSub(input.document_id, (files) => [...files, item]);
+        return addFile.mutateAsync(item);
+      },
+    },
+    deleteFile: {
+      ...deleteFile,
+      mutate: (id: string, documentId?: string) => {
+        if (documentId) optimisticFileSub(documentId, (files) => files.filter((f: any) => f.id !== id));
+        deleteFile.mutate({ id });
+      },
+      mutateAsync: async (id: string, documentId?: string) => {
+        if (documentId) optimisticFileSub(documentId, (files) => files.filter((f: any) => f.id !== id));
+        return deleteFile.mutateAsync({ id });
+      },
+    },
   };
 }

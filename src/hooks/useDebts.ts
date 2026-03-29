@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -8,6 +9,7 @@ import { useOfflineMutation } from "./useOfflineMutation";
 export function useDebts() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
+  const qc = useQueryClient();
   const key = ["debts", familyId];
 
   const apiFn = useCallback(async () => {
@@ -27,35 +29,39 @@ export function useDebts() {
     enabled: !!user,
   });
 
+  // Helper: optimistic update for sub-items inside a debt
+  const optimisticDebtSub = useCallback(
+    (debtId: string, subKey: string, updater: (items: any[]) => any[]) => {
+      qc.setQueryData<any[]>(key, (old) => {
+        if (!old) return old;
+        return old.map((d: any) =>
+          d.id === debtId ? { ...d, [subKey]: updater(d[subKey] || []) } : d
+        );
+      });
+    },
+    [qc, key]
+  );
+
   const addDebt = useOfflineMutation<any, any>({
-    table: "debts",
-    operation: "INSERT",
+    table: "debts", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
       const { data, error } = await supabase.functions.invoke("debts-api", {
         body: {
-          action: "create-debt",
-          family_id: familyId,
-          person_name: rest.person_name,
-          amount: rest.amount,
-          currency: rest.currency || "SAR",
-          direction: rest.direction,
-          date: rest.date,
-          due_date: rest.due_date,
-          note: rest.note || "",
-          payment_details: rest.payment_details || null,
+          action: "create-debt", family_id: familyId,
+          person_name: rest.person_name, amount: rest.amount, currency: rest.currency || "SAR",
+          direction: rest.direction, date: rest.date, due_date: rest.due_date,
+          note: rest.note || "", payment_details: rest.payment_details || null,
           has_reminder: rest.has_reminder || false,
         },
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const updateDebt = useOfflineMutation<any, any>({
-    table: "debts",
-    operation: "UPDATE",
+    table: "debts", operation: "UPDATE",
     apiFn: async (input) => {
       const { id, ...updates } = input;
       const { data, error } = await supabase.functions.invoke("debts-api", {
@@ -63,37 +69,29 @@ export function useDebts() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const deleteDebt = useOfflineMutation<any, any>({
-    table: "debts",
-    operation: "DELETE",
+    table: "debts", operation: "DELETE",
     apiFn: async (input) => {
       const { data, error } = await supabase.functions.invoke("debts-api", {
         body: { action: "delete-debt", id: input.id },
       });
       return { data: null, error: data?.error || error?.message || null };
     },
-    queryKey: key,
-    onSuccess: () => refetch(),
+    queryKey: key, onSuccess: () => refetch(),
   });
 
   const addPayment = useOfflineMutation<any, any>({
-    table: "debt_payments",
-    operation: "INSERT",
+    table: "debt_payments", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
       const { data, error } = await supabase.functions.invoke("debts-api", {
         body: {
-          action: "add-payment",
-          debt_id: rest.debt_id,
-          amount: rest.amount,
-          currency: rest.currency || "SAR",
-          type: rest.type || "cash",
-          item_description: rest.item_description,
-          date: rest.date,
+          action: "add-payment", debt_id: rest.debt_id, amount: rest.amount,
+          currency: rest.currency || "SAR", type: rest.type || "cash",
+          item_description: rest.item_description, date: rest.date,
           payment_details: rest.payment_details || null,
         },
       });
@@ -103,17 +101,11 @@ export function useDebts() {
   });
 
   const addPostponement = useOfflineMutation<any, any>({
-    table: "debt_payments",
-    operation: "INSERT",
+    table: "debt_payments", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
       const { data, error } = await supabase.functions.invoke("debts-api", {
-        body: {
-          action: "add-postponement",
-          debt_id: rest.debt_id,
-          new_date: rest.new_date,
-          reason: rest.reason,
-        },
+        body: { action: "add-postponement", debt_id: rest.debt_id, new_date: rest.new_date, reason: rest.reason },
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
@@ -121,8 +113,7 @@ export function useDebts() {
   });
 
   return {
-    debts: debts || [],
-    isLoading,
+    debts: debts || [], isLoading,
     addDebt: {
       ...addDebt,
       mutate: (input: any) => addDebt.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), user_id: user?.id, family_id: familyId, debt_payments: [], debt_postponements: [], ...input }),
@@ -136,13 +127,29 @@ export function useDebts() {
     },
     addPayment: {
       ...addPayment,
-      mutate: (input: any) => addPayment.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
-      mutateAsync: async (input: any) => addPayment.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticDebtSub(input.debt_id, "debt_payments", (payments) => [...payments, item]);
+        addPayment.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticDebtSub(input.debt_id, "debt_payments", (payments) => [...payments, item]);
+        return addPayment.mutateAsync(item);
+      },
     },
     addPostponement: {
       ...addPostponement,
-      mutate: (input: any) => addPostponement.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
-      mutateAsync: async (input: any) => addPostponement.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input }),
+      mutate: (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticDebtSub(input.debt_id, "debt_postponements", (posts) => [...posts, item]);
+        addPostponement.mutate(item);
+      },
+      mutateAsync: async (input: any) => {
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...input };
+        optimisticDebtSub(input.debt_id, "debt_postponements", (posts) => [...posts, item]);
+        return addPostponement.mutateAsync(item);
+      },
     },
   };
 }
