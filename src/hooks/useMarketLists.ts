@@ -38,6 +38,7 @@ export function useMarketLists() {
       (items: any[]) => normalizeMarketLists(items, familyId),
       [familyId]
     ),
+    scopeKey: familyId ?? undefined,
   });
 
   // normalizeMarketLists already applied in apiFn and filterFn — no need to re-apply

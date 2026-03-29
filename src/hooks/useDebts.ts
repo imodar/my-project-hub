@@ -27,6 +27,7 @@ export function useDebts() {
     queryKey: key,
     apiFn,
     enabled: !!user,
+    scopeKey: familyId ?? undefined,
   });
 
   // Helper: optimistic update for sub-items inside a debt

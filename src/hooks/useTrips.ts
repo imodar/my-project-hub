@@ -27,6 +27,7 @@ export function useTrips() {
     queryKey: key,
     apiFn,
     enabled: !!familyId,
+    scopeKey: familyId ?? undefined,
   });
 
   const invoke = async (action: string, payload: any) => {

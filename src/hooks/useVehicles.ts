@@ -27,6 +27,7 @@ export function useVehicles() {
     queryKey: key,
     apiFn,
     enabled: !!familyId,
+    scopeKey: familyId ?? undefined,
   });
 
   // Helper: optimistic update for maintenance inside a vehicle

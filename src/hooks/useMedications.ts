@@ -37,6 +37,7 @@ export function useMedications() {
     enabled: !!familyId,
     staleTime: 5 * 60 * 1000,
     filterFn: filterByFamily,
+    scopeKey: familyId ?? undefined,
   });
 
   const addMedication = useOfflineMutation<any, any>({

@@ -27,6 +27,7 @@ export function usePlaceLists() {
     queryKey: key,
     apiFn,
     enabled: !!familyId,
+    scopeKey: familyId ?? undefined,
   });
 
   // Helper: optimistic update for places inside a list

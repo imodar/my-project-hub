@@ -44,6 +44,7 @@ export function useVaccinations() {
       (items: any[]) => items.filter((c: any) => !familyId || !c.family_id || c.family_id === familyId),
       [familyId],
     ),
+    scopeKey: familyId ?? undefined,
   });
 
   // Helper: optimistic update for a specific child

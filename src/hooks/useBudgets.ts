@@ -27,6 +27,7 @@ export function useBudgets() {
     queryKey: key,
     apiFn,
     enabled: !!familyId,
+    scopeKey: familyId ?? undefined,
   });
 
   const createBudget = useOfflineMutation<any, any>({
