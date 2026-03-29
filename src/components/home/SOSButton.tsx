@@ -201,7 +201,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
           appToast.error("🚨 تم تفعيل تنبيه الطوارئ");
         }
       } catch {
-        appToast.error("🚨 تم تفعيل التنبيه — لكن فشل إرسال الإشعارات", { duration: 5000 });
+        appToast.error("🚨 تم تفعيل التنبيه — لكن فشل إرسال الإشعارات");
       }
     }
 
