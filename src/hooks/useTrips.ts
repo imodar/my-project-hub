@@ -137,7 +137,6 @@ export function useTrips() {
   const addDocument = useOfflineMutation<any, any>({
     table: "trip_documents", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-document", { trip_id: rest.trip_id, name: rest.name, type: rest.type, file_url: rest.file_url, file_name: rest.file_name, notes: rest.notes }); },
-    onSuccess: () => refetch(),
   });
 
   const deleteDocument = useOfflineMutation<any, any>({
