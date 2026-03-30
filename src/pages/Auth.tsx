@@ -43,7 +43,6 @@ const Auth = () => {
   }, [countdown]);
 
   const fullPhone = phone.startsWith("+") ? phone : `+966${phone.replace(/^0/, "")}`;
-  const [generatedOtp, setGeneratedOtp] = useState("");
 
   const sendOtp = async () => {
     if (!phone || phone.replace(/\D/g, "").length < 9) {
@@ -52,12 +51,17 @@ const Auth = () => {
     }
     setLoading(true);
     try {
-      // Generate a random 6-digit OTP and show it as a toast
-      const code = String(Math.floor(100000 + Math.random() * 900000));
-      setGeneratedOtp(code);
+      const res = await supabase.functions.invoke("phone-auth", {
+        body: { action: "send-otp", phone: fullPhone },
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+
+      // مؤقت: عرض الكود بتوست (يُحذف عند ربط SMS)
+      if (res.data?.code) {
+        appToast.info(`رمز التحقق: ${res.data.code}`, "سيختفي خلال ٣ ثوانٍ");
+      }
       setStep("otp");
       setCountdown(60);
-      appToast.info(`رمز التحقق: ${code}`, "سيختفي خلال ٣ ثوانٍ");
     } catch (err: any) {
       appToast.error("خطأ في إرسال الرمز", err.message);
     } finally {
@@ -65,22 +69,22 @@ const Auth = () => {
     }
   };
 
-
   const verifyOtp = async (code: string) => {
     if (code.length < 6) return;
     setLoading(true);
     try {
-      if (code !== generatedOtp) {
-        appToast.error("رمز التحقق غير صحيح");
-        return;
-      }
-      const res = await supabase.functions.invoke("test-login", {
-        body: { phone: fullPhone },
+      const res = await supabase.functions.invoke("phone-auth", {
+        body: { action: "verify-otp", phone: fullPhone, code },
       });
-      if (res.error) throw res.error;
-      const { access_token, refresh_token } = res.data;
-      if (!access_token) throw new Error(res.data?.error || "فشل تسجيل الدخول");
-      await supabase.auth.setSession({ access_token, refresh_token });
+      if (res.data?.error) throw new Error(res.data.error);
+
+      // verifyOtp من client SDK — ينشئ الجلسة تلقائياً
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: res.data.token_hash,
+        type: "magiclink",
+      });
+      if (error) throw error;
+
       appToast.success("تم الدخول بنجاح ✓");
     } catch (err: any) {
       appToast.error("رمز التحقق غير صحيح", err.message);
