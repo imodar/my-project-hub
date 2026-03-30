@@ -62,7 +62,6 @@ export function useTaskLists() {
     table: "task_lists", operation: "DELETE",
     apiFn: async (input) => invoke("delete-list", { id: input.id }),
     queryKey: key,
-    onSuccess: () => refetch(),
   });
 
   const addItem = useOfflineMutation<any, any>({
