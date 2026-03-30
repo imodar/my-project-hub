@@ -50,20 +50,18 @@ export function useTaskLists() {
   const createList = useOfflineMutation<any, any>({
     table: "task_lists", operation: "INSERT",
     apiFn: async (input) => { const { created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family", id: rest.id }); },
-    onSuccess: () => refetch(),
   });
 
   const updateList = useOfflineMutation<any, any>({
     table: "task_lists", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-list", { id, ...updates }); },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const deleteList = useOfflineMutation<any, any>({
     table: "task_lists", operation: "DELETE",
     apiFn: async (input) => invoke("delete-list", { id: input.id }),
     queryKey: key,
-    onSuccess: () => refetch(),
   });
 
   const addItem = useOfflineMutation<any, any>({
@@ -83,13 +81,11 @@ export function useTaskLists() {
   const updateItem = useOfflineMutation<any, any>({
     table: "task_items", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-item", { id, ...updates }); },
-    onSuccess: () => refetch(),
   });
 
   const deleteItem = useOfflineMutation<any, any>({
     table: "task_items", operation: "DELETE",
     apiFn: async (input) => invoke("delete-item", { id: input.id }),
-    onSuccess: () => refetch(),
   });
 
   return {
@@ -157,7 +153,16 @@ export function useTaskLists() {
     },
     deleteItem: {
       ...deleteItem,
-      mutate: (itemId: string) => deleteItem.mutate({ id: itemId }),
+      mutate: (itemId: string) => {
+        qc.setQueryData(key, (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map((list: any) => ({
+            ...list,
+            task_items: (list.task_items || []).filter((item: any) => item.id !== itemId),
+          }));
+        });
+        deleteItem.mutate({ id: itemId });
+      },
       mutateAsync: async (itemId: string) => deleteItem.mutateAsync({ id: itemId }),
     },
     pendingItemIds,

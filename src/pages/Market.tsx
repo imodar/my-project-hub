@@ -135,14 +135,14 @@ const Market = () => {
   }, [familyId]);
 
   useEffect(() => {
-    // Only create default list if NO family-type list exists
     const hasFamilyList = (dbLists || []).some((l: any) => l.type === "family");
     if (
       featureAccess.isStaff ||
       !familyId ||
       isLoading ||
       hasFamilyList ||
-      createdDefaultListRef.current === familyId
+      createdDefaultListRef.current === familyId ||
+      createListMutation.isPending
     ) {
       return;
     }
@@ -161,7 +161,8 @@ const Market = () => {
         },
       }
     );
-  }, [familyId, featureAccess.isStaff, isLoading, dbLists, createListMutation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [familyId, featureAccess.isStaff, isLoading, dbLists]);
 
   // Auto-select first list when data loads, but don't override a just-created optimistic list
   useEffect(() => {
