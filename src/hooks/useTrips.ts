@@ -97,7 +97,6 @@ export function useTrips() {
   const addActivity = useOfflineMutation<any, any>({
     table: "trip_activities", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-activity", { id, day_plan_id: rest.day_plan_id, name: rest.name, time: rest.time, location: rest.location, cost: rest.cost }); },
-    onSuccess: () => refetch(),
   });
 
   const updateActivity = useOfflineMutation<any, any>({
