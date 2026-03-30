@@ -74,7 +74,7 @@ export function useTrips() {
       const { id, created_at, ...rest } = input;
       return invoke("create-trip", { family_id: familyId, name: rest.name, destination: rest.destination, start_date: rest.start_date, end_date: rest.end_date, budget: rest.budget || 0, status: rest.status || "planning" });
     },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const updateTrip = useOfflineMutation<any, any>({

@@ -95,7 +95,6 @@ export function useAlbums() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   const deletePhoto = useOfflineMutation<null, { id: string }>({
