@@ -102,7 +102,6 @@ export function useTrips() {
   const updateActivity = useOfflineMutation<any, any>({
     table: "trip_activities", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("toggle-activity", { id, ...updates }); },
-    onSuccess: () => refetch(),
   });
 
   const addExpense = useOfflineMutation<any, any>({
