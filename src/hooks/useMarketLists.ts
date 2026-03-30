@@ -81,7 +81,6 @@ export function useMarketLists() {
   const deleteItem = useOfflineMutation<any, any>({
     table: "market_items", operation: "DELETE",
     apiFn: async (input) => invoke("delete-item", { id: input.id }),
-    onSuccess: () => refetch(),
   });
 
   return {
