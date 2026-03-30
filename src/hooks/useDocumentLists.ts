@@ -75,44 +75,38 @@ export function useDocumentLists() {
   const updateList = useOfflineMutation<any, any>({
     table: "document_lists", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-list", { id, ...updates }); },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const deleteList = useOfflineMutation<any, any>({
     table: "document_lists", operation: "DELETE",
     apiFn: async (input) => invoke("delete-list", { id: input.id }),
     queryKey: key,
-    onSuccess: () => refetch(),
   });
 
   const addItem = useOfflineMutation<any, any>({
     table: "document_items", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-item", { list_id: rest.list_id, name: rest.name, category: rest.category || "other", expiry_date: rest.expiry_date, reminder_enabled: rest.reminder_enabled || false, note: rest.note || "" }); },
-    onSuccess: () => refetch(),
   });
 
   const updateItem = useOfflineMutation<any, any>({
     table: "document_items", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-item", { id, ...updates }); },
-    onSuccess: () => refetch(),
   });
 
   const deleteItem = useOfflineMutation<any, any>({
     table: "document_items", operation: "DELETE",
     apiFn: async (input) => invoke("delete-item", { id: input.id }),
-    onSuccess: () => refetch(),
   });
 
   const addFile = useOfflineMutation<any, any>({
     table: "document_files", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-file", { document_id: rest.document_id, name: rest.name, file_url: rest.file_url, type: rest.type, size: rest.size }); },
-    onSuccess: () => refetch(),
   });
 
   const deleteFile = useOfflineMutation<any, any>({
     table: "document_files", operation: "DELETE",
     apiFn: async (input) => invoke("delete-file", { id: input.id }),
-    onSuccess: () => refetch(),
   });
 
   return {

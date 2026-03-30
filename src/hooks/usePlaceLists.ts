@@ -64,7 +64,7 @@ export function usePlaceLists() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const deleteList = useOfflineMutation<Record<string, unknown>, Record<string, unknown>>({
@@ -75,7 +75,7 @@ export function usePlaceLists() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const addPlace = useOfflineMutation<Record<string, unknown>, Record<string, unknown>>({
@@ -93,7 +93,6 @@ export function usePlaceLists() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   const updatePlace = useOfflineMutation<Record<string, unknown>, Record<string, unknown>>({
@@ -105,7 +104,6 @@ export function usePlaceLists() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   const deletePlace = useOfflineMutation<Record<string, unknown>, Record<string, unknown>>({
@@ -116,7 +114,6 @@ export function usePlaceLists() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   return {
