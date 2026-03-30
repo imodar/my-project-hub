@@ -122,7 +122,6 @@ export function useTrips() {
   const updatePackingItem = useOfflineMutation<any, any>({
     table: "trip_packing", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("toggle-packing", { id, ...updates }); },
-    onSuccess: () => refetch(),
   });
 
   const addSuggestion = useOfflineMutation<any, any>({
