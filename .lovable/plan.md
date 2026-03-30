@@ -1,82 +1,84 @@
 
 
-# إصلاح تكرار القوائم + Flickering — خطة محدّثة
+# حذف `onSuccess: refetch()` الزائد من 5 hooks
 
-## المشاكل
-
-| # | المشكلة | السبب |
-|---|---------|-------|
-| 1 | قائمة العائلة تُنشأ عدة مرات في DB | `createListMutation` في dependency array → reference تتغير كل render → effect يُعاد |
-| 2 | القوائم تختفي وترجع (flickering) | `onSuccess: () => refetch()` في كل mutation → invalidate + re-fetch → loading مؤقت |
+## القاعدة
+أي mutation عنده optimistic يدوي في الـ wrapper → حذف `onSuccess: () => refetch()`.
 
 ## التغييرات
 
-### 1. حذف `createListMutation` من dependency array
+### 1. `useTrips.ts` — 11 mutation
 
-**ملفان:** `Market.tsx` (سطر 164) + `Tasks.tsx` (سطر 109)
+| Mutation | عنده optimistic يدوي؟ | التغيير |
+|----------|----------------------|---------|
+| `createTrip` | نعم (queryKey) | حذف `onSuccess: () => refetch()` |
+| `addDayPlan` | نعم | حذف `onSuccess` |
+| `addActivity` | نعم | حذف `onSuccess` |
+| `updateActivity` | نعم | حذف `onSuccess` |
+| `addExpense` | نعم | حذف `onSuccess` |
+| `deleteExpense` | نعم | حذف `onSuccess` |
+| `addPackingItem` | نعم | حذف `onSuccess` |
+| `updatePackingItem` | نعم | حذف `onSuccess` |
+| `addSuggestion` | نعم | حذف `onSuccess` |
+| `updateSuggestion` | نعم | حذف `onSuccess` |
+| `addDocument` | نعم | حذف `onSuccess` |
+| `deleteDocument` | نعم | حذف `onSuccess` |
 
-```ts
-// قبل
-}, [familyId, featureAccess.isStaff, isLoading, dbLists, createListMutation]);
-// بعد
-}, [familyId, featureAccess.isStaff, isLoading, dbLists]);
-```
+### 2. `useBudgets.ts` — 6 mutations
 
-### 2. حذف `onSuccess: () => refetch()` من mutations مع optimistic يدوي
+| Mutation | عنده optimistic؟ | التغيير |
+|----------|------------------|---------|
+| `createBudget` | queryKey | حذف `onSuccess` |
+| `updateBudget` | queryKey | حذف `onSuccess` |
+| `deleteBudget` | queryKey | حذف `onSuccess` |
+| `addExpense` | نعم (يدوي) | حذف `onSuccess` |
+| `updateExpense` | نعم (يدوي) | حذف `onSuccess` |
+| `deleteExpense` | نعم (يدوي) | حذف `onSuccess` |
 
-**ملفان:** `useMarketLists.ts` + `useTaskLists.ts`
+### 3. `useAlbums.ts` — 3 mutations
 
-| Mutation | الوضع الحالي | التغيير |
-|----------|-------------|---------|
-| `createList` | `onSuccess: refetch()` | حذف `onSuccess` — الـ optimistic الموجود في wrapper function كافٍ |
-| `addItem` | `onSuccess: refetch()` + optimistic يدوي في wrapper | حذف `onSuccess` — الـ optimistic اليدوي كافٍ |
-| `updateItem` | `onSuccess: refetch()` + optimistic يدوي في wrapper (market) | حذف `onSuccess` — الـ optimistic اليدوي كافٍ |
-| `toggleItem` (tasks) | لا يوجد refetch + optimistic يدوي | لا تغيير |
-| `deleteItem` | `onSuccess: refetch()` بدون optimistic يدوي | **إضافة optimistic يدوي** + حذف `onSuccess` |
-| `deleteList` | `onSuccess: refetch()` + `queryKey` (optimistic) | إبقاء `queryKey` للـ optimistic، حذف `onSuccess` |
-| `updateList` | `onSuccess: refetch()` + `queryKey` (optimistic) | إبقاء `queryKey` للـ optimistic، حذف `onSuccess` |
+| Mutation | عنده optimistic؟ | التغيير |
+|----------|------------------|---------|
+| `createAlbum` | queryKey | حذف `onSuccess` |
+| `addPhoto` | نعم (يدوي) | حذف `onSuccess` |
+| `deletePhoto` | نعم (يدوي) | حذف `onSuccess` |
 
-### 3. إضافة optimistic يدوي لـ `deleteItem`
+### 4. `useDocumentLists.ts` — 6 mutations
 
-في wrapper function الخاص بـ `deleteItem.mutate`:
+| Mutation | عنده optimistic؟ | التغيير |
+|----------|------------------|---------|
+| `createList` | لا | **إبقاء** `onSuccess: refetch()` (ضروري) |
+| `updateList` | queryKey | حذف `onSuccess` |
+| `deleteList` | queryKey | حذف `onSuccess` |
+| `addItem` | نعم (يدوي) | حذف `onSuccess` |
+| `updateItem` | نعم (يدوي) | حذف `onSuccess` |
+| `deleteItem` | نعم (يدوي) | حذف `onSuccess` |
+| `addFile` | نعم (يدوي) | حذف `onSuccess` |
+| `deleteFile` | نعم (يدوي) | حذف `onSuccess` |
 
-```ts
-// useMarketLists.ts
-deleteItem: {
-  ...deleteItem,
-  mutate: (itemId: string) => {
-    qc.setQueryData(key, (old: any[] | undefined) => {
-      if (!old) return old;
-      return old.map((list: any) => ({
-        ...list,
-        market_items: (list.market_items || []).filter((item: any) => item.id !== itemId),
-      }));
-    });
-    deleteItem.mutate({ id: itemId });
-  },
-},
-```
+### 5. `usePlaceLists.ts` — 5 mutations
 
-نفس الشيء لـ `useTaskLists.ts` مع `task_items`.
-
-### 4. إضافة guard `isPending` لمنع التكرار
-
-**ملفان:** `Market.tsx` + `Tasks.tsx`
-
-```ts
-if (createListMutation.isPending) return; // قبل createdDefaultListRef check
-```
+| Mutation | عنده optimistic؟ | التغيير |
+|----------|------------------|---------|
+| `createList` | لا | **إبقاء** `onSuccess: refetch()` |
+| `updateList` | queryKey | حذف `onSuccess` |
+| `deleteList` | queryKey | حذف `onSuccess` |
+| `addPlace` | نعم (يدوي) | حذف `onSuccess` |
+| `updatePlace` | نعم (يدوي) | حذف `onSuccess` |
+| `deletePlace` | نعم (يدوي) | حذف `onSuccess` |
 
 ---
 
-## ملخص الملفات
+## ملخص
 
-| الملف | التعديل |
-|-------|---------|
-| `src/pages/Market.tsx` | حذف `createListMutation` من deps + guard `isPending` |
-| `src/pages/Tasks.tsx` | نفس الشيء |
-| `src/hooks/useMarketLists.ts` | حذف `onSuccess: refetch()` من create/add/update/deleteItem/deleteList/updateList + optimistic يدوي لـ deleteItem |
-| `src/hooks/useTaskLists.ts` | نفس الشيء |
+| الملف | عدد `onSuccess: refetch()` محذوف |
+|-------|--------------------------------|
+| `useTrips.ts` | 11 |
+| `useBudgets.ts` | 6 |
+| `useAlbums.ts` | 3 |
+| `useDocumentLists.ts` | 7 (إبقاء 1 في createList) |
+| `usePlaceLists.ts` | 5 (إبقاء 1 في createList) |
+| **المجموع** | **32** |
 
-4 ملفات، لا ملفات جديدة، لا migration.
+5 ملفات، تغيير واحد متكرر: حذف `, onSuccess: () => refetch()` من سطور الـ mutation definitions.
 
