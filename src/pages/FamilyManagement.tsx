@@ -203,6 +203,23 @@ const FamilyManagement = () => {
     }
   }, [familyId, creatorRole, fetchInviteCode]);
 
+  // Realtime subscription — auto-update members when changes happen
+  useEffect(() => {
+    if (!familyId) return;
+    const channel = supabase
+      .channel(`family-members-rt-${familyId}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "family_members",
+        filter: `family_id=eq.${familyId}`,
+      }, () => {
+        refetchMembers();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [familyId, refetchMembers]);
+
   // Countdown timer - always runs when we have a code
   useEffect(() => {
     if (!inviteCode || !creatorRole) return;
