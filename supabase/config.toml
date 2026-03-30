@@ -9,7 +9,7 @@ verify_jwt = false
 [functions.family-management]
 verify_jwt = false
 
-[functions.test-login]
+[functions.phone-auth]
 verify_jwt = false
 
 [functions.account-api]
