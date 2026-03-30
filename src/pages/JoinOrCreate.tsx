@@ -495,6 +495,7 @@ const JoinOrCreate = () => {
           <div className="space-y-4 mt-2">
             <div className="relative w-full aspect-square max-w-[300px] mx-auto rounded-2xl overflow-hidden bg-black">
               <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+              <canvas ref={canvasRef} className="hidden" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-48 h-48 border-2 border-primary rounded-2xl relative">
                   <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-lg" />
