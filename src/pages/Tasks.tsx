@@ -98,7 +98,8 @@ const Tasks = () => {
       !familyId ||
       isLoading ||
       hasFamilyList ||
-      createdDefaultListRef.current === familyId
+      createdDefaultListRef.current === familyId ||
+      createListMutation.isPending
     ) return;
     createdDefaultListRef.current = familyId;
     createListMutation.mutate({
@@ -106,7 +107,8 @@ const Tasks = () => {
       type: "family",
       shared_with: [],
     });
-  }, [familyId, featureAccess.isStaff, isLoading, dbLists, createListMutation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [familyId, featureAccess.isStaff, isLoading, dbLists]);
 
   const [activeListId, setActiveListId] = useState("");
   const pendingActiveListIdRef = useRef<string | null>(null);
