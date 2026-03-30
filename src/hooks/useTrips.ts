@@ -112,7 +112,6 @@ export function useTrips() {
   const deleteExpense = useOfflineMutation<any, any>({
     table: "trip_expenses", operation: "DELETE",
     apiFn: async (input) => invoke("delete-expense", { id: input.id }),
-    onSuccess: () => refetch(),
   });
 
   const addPackingItem = useOfflineMutation<any, any>({
