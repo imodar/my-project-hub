@@ -107,7 +107,6 @@ export function useTrips() {
   const addExpense = useOfflineMutation<any, any>({
     table: "trip_expenses", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-expense", { trip_id: rest.trip_id, name: rest.name, amount: rest.amount }); },
-    onSuccess: () => refetch(),
   });
 
   const deleteExpense = useOfflineMutation<any, any>({
