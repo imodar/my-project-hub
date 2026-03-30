@@ -49,7 +49,6 @@ export function useBudgets() {
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
-    onSuccess: () => refetch(),
   });
 
   const updateBudget = useOfflineMutation<any, any>({
@@ -63,7 +62,6 @@ export function useBudgets() {
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
     queryKey: key,
-    onSuccess: () => refetch(),
   });
 
   const deleteBudget = useOfflineMutation<any, any>({
@@ -76,7 +74,6 @@ export function useBudgets() {
       return { data: null, error: data?.error || error?.message || null };
     },
     queryKey: key,
-    onSuccess: () => refetch(),
   });
 
   const addExpense = useOfflineMutation<any, any>({
