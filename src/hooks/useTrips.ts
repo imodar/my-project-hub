@@ -117,7 +117,6 @@ export function useTrips() {
   const addPackingItem = useOfflineMutation<any, any>({
     table: "trip_packing", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-packing", { trip_id: rest.trip_id, name: rest.name }); },
-    onSuccess: () => refetch(),
   });
 
   const updatePackingItem = useOfflineMutation<any, any>({
