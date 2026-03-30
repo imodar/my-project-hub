@@ -153,7 +153,16 @@ export function useTaskLists() {
     },
     deleteItem: {
       ...deleteItem,
-      mutate: (itemId: string) => deleteItem.mutate({ id: itemId }),
+      mutate: (itemId: string) => {
+        qc.setQueryData(key, (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map((list: any) => ({
+            ...list,
+            task_items: (list.task_items || []).filter((item: any) => item.id !== itemId),
+          }));
+        });
+        deleteItem.mutate({ id: itemId });
+      },
       mutateAsync: async (itemId: string) => deleteItem.mutateAsync({ id: itemId }),
     },
     pendingItemIds,

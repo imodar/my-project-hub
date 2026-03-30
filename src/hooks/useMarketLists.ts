@@ -146,7 +146,16 @@ export function useMarketLists() {
     },
     deleteItem: {
       ...deleteItem,
-      mutate: (itemId: string) => deleteItem.mutate({ id: itemId }),
+      mutate: (itemId: string) => {
+        qc.setQueryData(key, (old: any[] | undefined) => {
+          if (!old) return old;
+          return old.map((list: any) => ({
+            ...list,
+            market_items: (list.market_items || []).filter((item: any) => item.id !== itemId),
+          }));
+        });
+        deleteItem.mutate({ id: itemId });
+      },
       mutateAsync: async (itemId: string) => deleteItem.mutateAsync({ id: itemId }),
     },
     pendingItemIds: updateItem.variables?.id && updateItem.isPending ? [updateItem.variables.id as string] : [],
