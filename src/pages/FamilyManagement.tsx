@@ -316,6 +316,18 @@ const FamilyManagement = () => {
     }
   }, []);
 
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const handleQrResult = useCallback((rawValue: string) => {
+    stopScanner();
+    setShowScanner(false);
+    setJoinCode(rawValue);
+    const extracted = rawValue.includes("code=")
+      ? new URL(rawValue).searchParams.get("code") || rawValue
+      : rawValue;
+    initiateJoin(extracted);
+  }, [stopScanner]);
+
   const startScanner = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -327,34 +339,42 @@ const FamilyManagement = () => {
         videoRef.current.play();
       }
 
-      // Use BarcodeDetector if available
-      if ("BarcodeDetector" in window) {
+      const useBarcodeDetector = "BarcodeDetector" in window;
+
+      if (useBarcodeDetector) {
         const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
         scanIntervalRef.current = setInterval(async () => {
           if (!videoRef.current || videoRef.current.readyState < 2) return;
           try {
             const barcodes = await detector.detect(videoRef.current);
-            if (barcodes.length > 0) {
-              const code = barcodes[0].rawValue;
-              if (code) {
-                stopScanner();
-                setShowScanner(false);
-                setJoinCode(code);
-                // Extract code from URL if needed, then initiate join with role selection
-                const extracted = code.includes("code=")
-                  ? new URL(code).searchParams.get("code") || code
-                  : code;
-                initiateJoin(extracted);
-              }
+            if (barcodes.length > 0 && barcodes[0].rawValue) {
+              handleQrResult(barcodes[0].rawValue);
             }
           } catch {}
         }, 500);
+      } else {
+        // jsQR fallback
+        scanIntervalRef.current = setInterval(() => {
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+          if (!video || video.readyState < 2 || !canvas) return;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const qr = jsQR(imageData.data, canvas.width, canvas.height);
+          if (qr?.data) {
+            handleQrResult(qr.data);
+          }
+        }, 400);
       }
     } catch {
       appToast.error("لا يمكن الوصول للكاميرا");
       setShowScanner(false);
     }
-  }, []);
+  }, [stopScanner, handleQrResult]);
 
   const initiateJoin = async (codeValue: string) => {
     if (!codeValue.trim()) return;
