@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import jsQR from "jsqr";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -168,6 +169,17 @@ const JoinOrCreate = () => {
     }
   }, []);
 
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const handleQrResult = useCallback((rawValue: string) => {
+    stopScanner();
+    setShowScanner(false);
+    const extracted = rawValue.includes("code=")
+      ? new URL(rawValue).searchParams.get("code") || rawValue
+      : rawValue;
+    setCode(extracted);
+  }, [stopScanner]);
+
   const startScanner = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -178,31 +190,43 @@ const JoinOrCreate = () => {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
       }
-      if ("BarcodeDetector" in window) {
+
+      const useBarcodeDetector = "BarcodeDetector" in window;
+
+      if (useBarcodeDetector) {
         const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
         scanIntervalRef.current = setInterval(async () => {
           if (!videoRef.current || videoRef.current.readyState < 2) return;
           try {
             const barcodes = await detector.detect(videoRef.current);
-            if (barcodes.length > 0) {
-              const rawValue = barcodes[0].rawValue;
-              if (rawValue) {
-                stopScanner();
-                setShowScanner(false);
-                const extracted = rawValue.includes("code=")
-                  ? new URL(rawValue).searchParams.get("code") || rawValue
-                  : rawValue;
-                setCode(extracted);
-              }
+            if (barcodes.length > 0 && barcodes[0].rawValue) {
+              handleQrResult(barcodes[0].rawValue);
             }
           } catch {}
         }, 500);
+      } else {
+        // jsQR fallback
+        scanIntervalRef.current = setInterval(() => {
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+          if (!video || video.readyState < 2 || !canvas) return;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const qr = jsQR(imageData.data, canvas.width, canvas.height);
+          if (qr?.data) {
+            handleQrResult(qr.data);
+          }
+        }, 400);
       }
     } catch {
       appToast.error("لا يمكن الوصول للكاميرا");
       setShowScanner(false);
     }
-  }, [stopScanner]);
+  }, [stopScanner, handleQrResult]);
 
   useEffect(() => {
     if (showScanner) startScanner();
@@ -471,6 +495,7 @@ const JoinOrCreate = () => {
           <div className="space-y-4 mt-2">
             <div className="relative w-full aspect-square max-w-[300px] mx-auto rounded-2xl overflow-hidden bg-black">
               <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+              <canvas ref={canvasRef} className="hidden" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-48 h-48 border-2 border-primary rounded-2xl relative">
                   <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-lg" />
