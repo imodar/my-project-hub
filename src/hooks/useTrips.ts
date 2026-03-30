@@ -142,7 +142,6 @@ export function useTrips() {
   const deleteDocument = useOfflineMutation<any, any>({
     table: "trip_documents", operation: "DELETE",
     apiFn: async (input) => invoke("delete-document", { id: input.id }),
-    onSuccess: () => refetch(),
   });
 
   return {

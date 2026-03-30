@@ -116,7 +116,6 @@ export function usePlaceLists() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   return {

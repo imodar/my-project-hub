@@ -106,7 +106,6 @@ export function useAlbums() {
       });
       return { data: null, error: response?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   return {

@@ -93,7 +93,6 @@ export function useBudgets() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   const updateExpense = useOfflineMutation<any, any>({
@@ -106,7 +105,6 @@ export function useBudgets() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   const deleteExpense = useOfflineMutation<any, any>({
@@ -118,7 +116,6 @@ export function useBudgets() {
       });
       return { data: null, error: data?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   // Helper: تحديث budget_expenses داخل الكاش optimistically
