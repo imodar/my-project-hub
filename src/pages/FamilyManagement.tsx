@@ -1046,6 +1046,7 @@ const FamilyManagement = () => {
                 playsInline
                 muted
               />
+              <canvas ref={canvasRef} className="hidden" />
               {/* Scan overlay */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-48 h-48 border-2 border-primary rounded-2xl relative">
