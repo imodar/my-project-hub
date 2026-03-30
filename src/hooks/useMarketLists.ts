@@ -59,7 +59,7 @@ export function useMarketLists() {
   const updateList = useOfflineMutation<any, any>({
     table: "market_lists", operation: "UPDATE",
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("update-list", { id, ...updates }); },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const deleteList = useOfflineMutation<any, any>({
