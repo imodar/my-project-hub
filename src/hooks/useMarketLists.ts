@@ -71,7 +71,6 @@ export function useMarketLists() {
   const addItem = useOfflineMutation<any, any>({
     table: "market_items", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-item", { list_id: rest.list_id, name: rest.name, category: rest.category || "أخرى", quantity: rest.quantity || null }); },
-    onSuccess: () => refetch(),
   });
 
   const updateItem = useOfflineMutation<any, any>({
