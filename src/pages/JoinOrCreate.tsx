@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import jsQR from "jsqr";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
