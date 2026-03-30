@@ -386,10 +386,17 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // REGENERATE invite code
+    // REGENERATE invite code (admin only)
     if (action === "regenerate-code") {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+
+      // Verify admin membership
+      const { data: isAdminForCode } = await supabase.rpc("is_family_admin", {
+        _user_id: userId,
+        _family_id: family_id,
+      });
+      if (!isAdminForCode) return json({ error: "غير مصرح" }, 403);
 
       const newCode = await generateUniqueInviteCode(adminClient);
 
@@ -403,10 +410,17 @@ Deno.serve(async (req) => {
       return json({ data: { invite_code: data.invite_code } });
     }
 
-    // GET current invite code
+    // GET current invite code (member only)
     if (action === "get-invite-code") {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+
+      // Verify family membership
+      const { data: isMemberForCode } = await supabase.rpc("is_family_member", {
+        _user_id: userId,
+        _family_id: family_id,
+      });
+      if (!isMemberForCode) return json({ error: "غير مصرح" }, 403);
 
       const { data, error } = await adminClient
         .from("families")

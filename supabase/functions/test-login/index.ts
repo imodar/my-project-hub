@@ -69,14 +69,32 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify test key header to prevent unauthorized access
+    const testKey = Deno.env.get("TEST_LOGIN_KEY");
+    const providedKey = req.headers.get("x-test-key");
+    if (!testKey || providedKey !== testKey) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized — missing or invalid x-test-key header" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { phone } = await req.json();
     const normalizedPhone = normalizePhone(phone);
     const fullPhone = `+${normalizedPhone}`;
 
-    // Create a deterministic email from the phone number
+    // Use secrets for credentials instead of deterministic patterns
+    const testPassword = Deno.env.get("TEST_LOGIN_PASSWORD");
+    if (!testPassword) {
+      return new Response(
+        JSON.stringify({ error: "TEST_LOGIN_PASSWORD secret not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const sanitized = normalizedPhone;
     const email = `user-${sanitized}@ailti.app`;
-    const password = `Ailti!${sanitized}Secure2024`;
+    const password = testPassword;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
