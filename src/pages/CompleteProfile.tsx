@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { appToast } from "@/lib/toast";
+import { db } from "@/lib/db";
 import { Camera, User, Loader2, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -113,6 +114,14 @@ const CompleteProfile = () => {
       // Cache and flag
       localStorage.setItem(`profile_name_${user.id}`, trimmed);
       localStorage.setItem("profile_complete", "true");
+      // Write to Dexie for local-first bootstrap
+      try {
+        await db.profiles.put({
+          id: user.id,
+          name: trimmed,
+          avatar_url: avatarUrl || null,
+        });
+      } catch {}
       await refreshProfile();
       navigate("/", { replace: true });
     } catch {

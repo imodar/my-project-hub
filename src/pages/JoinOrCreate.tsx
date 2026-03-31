@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { appToast } from "@/lib/toast";
+import { db } from "@/lib/db";
 import { ScanLine, Users, ArrowLeft, Loader2, User, Heart, Baby, Crown, ShieldCheck, Clock, X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
@@ -109,11 +110,25 @@ const JoinOrCreate = () => {
         schema: "public",
         table: "family_members",
         filter: `user_id=eq.${session.user.id}`,
-      }, (payload: any) => {
+      }, async (payload: any) => {
         const newStatus = payload.new?.status;
         if (newStatus === "active") {
           setJoinStatus("accepted");
           localStorage.setItem("join_or_create_done", "true");
+          // Write accepted member to Dexie
+          const fid = payload.new?.family_id || pendingJoinFamilyId;
+          if (fid && session?.user?.id) {
+            try {
+              localStorage.setItem("cached_family_id", fid);
+              await db.family_members.put({
+                id: payload.new?.id || crypto.randomUUID(),
+                family_id: fid,
+                user_id: session.user.id,
+                role: payload.new?.role || "member",
+                status: "active",
+              });
+            } catch {}
+          }
           queryClient.invalidateQueries({ queryKey: ["family-id"] });
           setTimeout(() => navigate("/", { replace: true }), 1500);
         }
@@ -139,7 +154,27 @@ const JoinOrCreate = () => {
       if (error || data?.error) {
         appToast.error(data?.error || "فشل إنشاء الأسرة");
       } else {
+        const familyData = data?.data;
         localStorage.setItem("join_or_create_done", "true");
+        // Write bootstrap data to Dexie
+        if (familyData?.family_id && session?.user?.id) {
+          try {
+            localStorage.setItem("cached_family_id", familyData.family_id);
+            await db.families.put({
+              id: familyData.family_id,
+              name: profileName,
+              created_by: session.user.id,
+            });
+            await db.family_members.put({
+              id: familyData.member_id || crypto.randomUUID(),
+              family_id: familyData.family_id,
+              user_id: session.user.id,
+              role: createRole,
+              is_admin: true,
+              status: "active",
+            });
+          } catch {}
+        }
         queryClient.invalidateQueries({ queryKey: ["family-id"] });
         queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
         appToast.success("تم إنشاء الأسرة بنجاح! 🎉");
