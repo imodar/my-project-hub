@@ -140,7 +140,27 @@ const JoinOrCreate = () => {
       if (error || data?.error) {
         appToast.error(data?.error || "فشل إنشاء الأسرة");
       } else {
+        const familyData = data?.data;
         localStorage.setItem("join_or_create_done", "true");
+        // Write bootstrap data to Dexie
+        if (familyData?.family_id && session?.user?.id) {
+          try {
+            localStorage.setItem("cached_family_id", familyData.family_id);
+            await db.families.put({
+              id: familyData.family_id,
+              name: profileName,
+              created_by: session.user.id,
+            });
+            await db.family_members.put({
+              id: familyData.member_id || crypto.randomUUID(),
+              family_id: familyData.family_id,
+              user_id: session.user.id,
+              role: createRole,
+              is_admin: true,
+              status: "active",
+            });
+          } catch {}
+        }
         queryClient.invalidateQueries({ queryKey: ["family-id"] });
         queryClient.invalidateQueries({ queryKey: ["family-members-list"] });
         appToast.success("تم إنشاء الأسرة بنجاح! 🎉");
