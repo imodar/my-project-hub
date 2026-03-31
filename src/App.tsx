@@ -116,6 +116,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   const qc = useQueryClient();
   const warmedFamilyRef = useRef<string | null>(null);
   const [cacheReady, setCacheReady] = useState(false);
+  const allowChildren = cacheReady || (!familyId && !familyLoading);
 
   // Global realtime for cross-device sync
   useFamilyRealtime();
@@ -142,8 +143,12 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
     return () => window.removeEventListener("sync-queue-failed", handler);
   }, []);
 
-  if (!cacheReady) return <FirstSyncOverlay />;
-  return <>{children}</>;
+  return (
+    <>
+      <FirstSyncOverlay />
+      {allowChildren ? children : null}
+    </>
+  );
 };
 
 /** Wraps a page element with a per-route ErrorBoundary */
