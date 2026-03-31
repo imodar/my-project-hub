@@ -97,6 +97,7 @@ const Tasks = () => {
       featureAccess.isStaff ||
       !familyId ||
       isLoading ||
+      isSyncing ||
       hasFamilyList ||
       createdDefaultListRef.current === familyId ||
       createListMutation.isPending
