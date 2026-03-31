@@ -110,7 +110,7 @@ const JoinOrCreate = () => {
         schema: "public",
         table: "family_members",
         filter: `user_id=eq.${session.user.id}`,
-      }, (payload: any) => {
+      }, async (payload: any) => {
         const newStatus = payload.new?.status;
         if (newStatus === "active") {
           setJoinStatus("accepted");
