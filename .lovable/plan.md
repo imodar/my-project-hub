@@ -1,117 +1,257 @@
 
 
-# تحويل شاشة الدخول إلى نظام OTP نظامي — خطة نهائية
+# تحويل التطبيق إلى Local-First حقيقي — خطة محدّثة
 
-## القرار المحسوم: الخيار 3
+## الترتيب الصحيح (8 أولاً)
 
-Edge function تُرجع `token_hash` → Client يستدعي `supabase.auth.verifyOtp()`. هذا هو الـ flow الرسمي لـ Supabase.
+ملاحظتك صحيحة 100%: إذا بنينا طبقة bootstrap تقرأ من Dexie لكن Dexie فارغة من profile/family → نفس المشكلة. لذلك نبدأ بكتابة البيانات أولاً.
 
-```text
-Client                     phone-auth (Edge Function)              DB
-──────                     ──────────────────────────              ──
-1. send-otp(phone)    →    يولّد OTP 6 أرقام                      يخزن hash في otp_codes
-                      ←    { success: true, code }  ← مؤقت للتوست
+---
 
-2. verify-otp         →    يتحقق من hash + صلاحية + attempts       يحذف OTP
-   (phone, code)           يبحث/ينشئ المستخدم
-                           يستدعي admin.generateLink(magiclink)
-                      ←    { token_hash, type: "magiclink" }
+### الخطوة 1 — كتابة bootstrap data في نقاط النجاح
 
-3. Client يستدعي:
-   supabase.auth.verifyOtp({ token_hash, type: "magiclink" })
-   → Session تُنشأ تلقائياً ✓
+**الهدف:** ضمان أن Dexie تحتوي الحد الأدنى بعد أي عملية ناجحة.
+
+**`src/contexts/AuthContext.tsx`** — بعد جلب البروفايل بنجاح:
+```ts
+// داخل networkFetch() بعد الحصول على data.data
+await db.profiles.put({
+  id: userId,
+  name: data.data.name,
+  phone: data.data.phone || null,
+  avatar_url: data.data.avatar_url || null,
+});
 ```
 
-## التغييرات
-
-### 1. Edge Function جديدة: `supabase/functions/phone-auth/index.ts`
-
-**`send-otp`:**
-- Rate limit: max 5 أكواد لنفس الرقم خلال 10 دقائق
-- حذف OTP قديم لنفس الرقم
-- توليد كود 6 أرقام + تخزين SHA-256 hash في `otp_codes`
-- مؤقتاً: إرجاع `code` في الرد (يُحذف عند ربط SMS)
-
-**`verify-otp`:**
-- مطابقة hash(code) مع `otp_codes` + التحقق من expires_at + attempts < 5
-- فشل → زيادة attempts + إرجاع 401
-- نجاح → حذف السطر، ثم:
-
+**`src/pages/CompleteProfile.tsx`** — بعد حفظ البروفايل بنجاح:
 ```ts
-const email = `${normalizedPhone}@phone.ailti.app`;
+await db.profiles.put({
+  id: user.id,
+  name: trimmed,
+  avatar_url: avatarUrl || null,
+});
+```
 
-// ابحث عن المستخدم أو أنشئه
-let user = await findUserByPhone(adminClient, normalizedPhone);
-if (!user) {
-  const { data } = await adminClient.auth.admin.createUser({
-    email,
-    phone: fullPhone,
-    email_confirm: true,
-    phone_confirm: true,
-    user_metadata: { name: "" },
+**`src/pages/JoinOrCreate.tsx`** — بعد إنشاء عائلة بنجاح:
+```ts
+const familyData = data?.data;
+if (familyData?.family_id) {
+  await db.families.put({
+    id: familyData.family_id,
+    name: profileName,
+    created_by: session.user.id,
   });
-  user = data.user;
+  await db.family_members.put({
+    id: familyData.member_id || crypto.randomUUID(),
+    family_id: familyData.family_id,
+    user_id: session.user.id,
+    role: createRole,
+    is_admin: true,
+    status: "active",
+  });
 }
-
-// generateLink → أرجع token_hash للـ client
-const { data: linkData } = await adminClient.auth.admin.generateLink({
-  type: "magiclink",
-  email: user.email,
-});
-
-return { token_hash: linkData.properties.hashed_token, type: "magiclink" };
 ```
 
-### 2. `src/pages/Auth.tsx`
-
-**sendOtp:**
+بعد قبول الانضمام (realtime accepted):
 ```ts
-const res = await supabase.functions.invoke("phone-auth", {
-  body: { action: "send-otp", phone: fullPhone },
-});
-if (res.data?.error) throw new Error(res.data.error);
-if (res.data?.code) {
-  appToast.info(`رمز التحقق: ${res.data.code}`, "مؤقت");
+if (pendingJoinFamilyId) {
+  await db.family_members.put({
+    id: crypto.randomUUID(),
+    family_id: pendingJoinFamilyId,
+    user_id: session.user.id,
+    status: "active",
+  });
 }
-setStep("otp");
-setCountdown(60);
 ```
 
-**verifyOtp:**
+**`src/hooks/useInitialSync.ts`** — بعد fullSync ناجح، البيانات تُكتب تلقائياً بواسطة fullSync (bulkPut) فلا حاجة لتغيير إضافي.
+
+---
+
+### الخطوة 2 — إنشاء `src/lib/localBootstrap.ts`
+
+ملف helper يقرأ Dexie بشكل sync-like ويُرجع حالة الجهاز:
+
 ```ts
-const res = await supabase.functions.invoke("phone-auth", {
-  body: { action: "verify-otp", phone: fullPhone, code },
-});
-if (res.data?.error) throw new Error(res.data.error);
-
-// الخطوة الحاسمة — verifyOtp من client SDK
-const { error } = await supabase.auth.verifyOtp({
-  token_hash: res.data.token_hash,
-  type: "magiclink",
-});
-if (error) throw error;
-appToast.success("تم الدخول بنجاح ✓");
+export async function getLocalBootstrap(): Promise<{
+  hasLocalData: boolean;
+  familyId: string | null;
+  profileName: string | null;
+  isEmptyDevice: boolean;
+}> {
+  // 1. localStorage أسرع
+  const cachedFamilyId = localStorage.getItem("cached_family_id");
+  const cachedName = /* scan profile_name_* keys */;
+  
+  // 2. Dexie fallback
+  const profile = await db.profiles.toCollection().first();
+  const member = await db.family_members.toCollection().first();
+  const familyId = cachedFamilyId || member?.family_id || null;
+  const profileName = cachedName || profile?.name || null;
+  
+  // 3. فحص وجود بيانات فعلية
+  const counts = await Promise.all([
+    db.task_lists.count(),
+    db.market_lists.count(),
+    db.budgets.count(),
+  ]);
+  const hasLocalData = counts.some(c => c > 0) || !!member;
+  
+  return {
+    hasLocalData,
+    familyId,
+    profileName,
+    isEmptyDevice: !familyId && !hasLocalData,
+  };
+}
 ```
 
-- حذف `generatedOtp` state
-- حذف المقارنة المحلية `code !== generatedOtp`
-- حذف `supabase.auth.setSession()` — `verifyOtp` يُنشئ الجلسة تلقائياً
+---
 
-### 3. حذف `test-login`
-- حذف `supabase/functions/test-login/index.ts`
-- في `supabase/config.toml`: حذف `[functions.test-login]` + إضافة `[functions.phone-auth]`
+### الخطوة 3 — تعديل `src/hooks/useFamilyId.ts`
 
-### 4. لا migration مطلوب
-جدول `otp_codes` موجود بالأعمدة المطلوبة: `phone`, `code_hash`, `expires_at`, `attempts`, `verified`.
+الترتيب الجديد:
+1. `localStorage` (فوري، 0ms)
+2. Dexie `family_members` (async لكن محلي)
+3. فقط إذا كلاهما فارغ → `family-management` edge function
+
+```ts
+// إضافة initialData من Dexie
+const [dexieFamilyId, setDexieFamilyId] = useState<string | null>(null);
+
+useEffect(() => {
+  if (cachedId || !user) return;
+  db.family_members
+    .where("user_id").equals(user.id)
+    .first()
+    .then(m => {
+      if (m?.family_id) {
+        setDexieFamilyId(m.family_id);
+        localStorage.setItem("cached_family_id", m.family_id);
+      }
+    })
+    .catch(() => {});
+}, [user, cachedId]);
+
+return {
+  familyId: query.data?.family_id ?? cachedId ?? dexieFamilyId ?? null,
+  isLoading: !cachedId && !dexieFamilyId && query.isLoading && !!user,
+};
+```
+
+---
+
+### الخطوة 4 — تعديل `src/contexts/AuthContext.tsx`
+
+إذا وُجد بروفايل محلي (localStorage أو Dexie) → `profileReady = true` فوراً:
+
+```ts
+// في fetchProfile، قبل أي network call:
+const cachedName = localStorage.getItem(`profile_name_${userId}`);
+if (!cachedName) {
+  // حاول Dexie
+  const localProfile = await db.profiles.get(userId);
+  if (localProfile?.name) {
+    setProfileName(localProfile.name);
+    setProfileReady(true);
+    localStorage.setItem(`profile_name_${userId}`, localProfile.name);
+  }
+}
+// ثم network fetch بالخلفية كالمعتاد
+```
+
+---
+
+### الخطوة 5 — تعديل `src/components/AuthGuard.tsx`
+
+فك حجز الدخول:
+- إذا `cached_family_id` موجود أو Dexie فيها `family_members` → اسمح بالدخول فوراً
+- لا تستدعِ `family-management` إلا إذا الجهاز فارغ محلياً
+- إذا فارغ + لا إنترنت → رسالة واضحة بدل spinner لا نهائي
+
+التعديل الأساسي: جعل `useEffect` الحالي يفحص Dexie أيضاً قبل استدعاء الشبكة:
+```ts
+// قبل استدعاء API:
+const localMember = await db.family_members.toCollection().first();
+if (localMember?.family_id) {
+  localStorage.setItem("cached_family_id", localMember.family_id);
+  localStorage.setItem("join_or_create_done", "true");
+  setFamilyExists(true);
+  setFamilyChecked(true);
+  return;
+}
+// فقط هنا نلجأ للشبكة...
+```
+
+إضافة حالة "لا بيانات ولا إنترنت":
+```ts
+if (!navigator.onLine && !familyExists) {
+  // عرض رسالة: "هذا الجهاز لا يحتوي بيانات، يحتاج اتصال أول مرة"
+}
+```
+
+---
+
+### الخطوة 6 — تعديل `src/hooks/useInitialSync.ts`
+
+القرار يعتمد على Dexie لا على `first_sync_done` وحده:
+
+- إذا Dexie فيها بيانات → لا blocking sync → دخول فوري + sync بالخلفية
+- إذا Dexie فارغة + إنترنت → fullSync مع overlay
+- إذا Dexie فارغة + لا إنترنت → حالة واضحة
+
+```ts
+const localCount = await db.task_lists.count() + await db.market_lists.count();
+if (localCount > 0) {
+  setState("done"); // عندنا بيانات محلية، لا حاجة لـ blocking
+  // background delta sync فقط
+  return;
+}
+// هنا فقط نعمل fullSync...
+```
+
+---
+
+### الخطوة 7 — تعديل `src/components/FirstSyncOverlay.tsx`
+
+- لا يظهر لمجرد غياب `first_sync_done`
+- يظهر فقط إذا Dexie فارغة فعلاً (`isEmptyDevice`)
+- إضافة حالة offline واضحة
+
+---
+
+### الخطوة 8 — تعديل `src/App.tsx` + `src/lib/warmCache.ts`
+
+`WarmCacheProvider` يعمل من `familyId` المحلي (localStorage/Dexie) بدون انتظار الشبكة. إذا `familyId` متاح محلياً → `warmCache` ينطلق فوراً.
+
+---
 
 ## ملخص الملفات
 
 | الملف | التعديل |
 |-------|---------|
-| `supabase/functions/phone-auth/index.ts` | **جديد** |
-| `supabase/functions/test-login/index.ts` | **حذف** |
-| `supabase/config.toml` | حذف test-login + إضافة phone-auth |
-| `src/pages/Auth.tsx` | استدعاء phone-auth + verifyOtp من client |
+| `src/contexts/AuthContext.tsx` | كتابة profile في Dexie + قراءة منها قبل الشبكة |
+| `src/pages/CompleteProfile.tsx` | كتابة profile في Dexie بعد الحفظ |
+| `src/pages/JoinOrCreate.tsx` | كتابة family + member في Dexie بعد create/join |
+| `src/lib/localBootstrap.ts` | **جديد** — helper يقرأ حالة الجهاز من Dexie |
+| `src/hooks/useFamilyId.ts` | إضافة Dexie كمصدر ثانٍ قبل الشبكة |
+| `src/components/AuthGuard.tsx` | فحص Dexie قبل استدعاء family-management |
+| `src/hooks/useInitialSync.ts` | قرار sync مبني على Dexie لا localStorage فقط |
+| `src/components/FirstSyncOverlay.tsx` | يظهر فقط إذا الجهاز فارغ فعلاً |
+| `src/App.tsx` | warmCache ينطلق من familyId المحلي |
+| `src/lib/warmCache.ts` | لا تغيير جوهري، يعمل كما هو |
 
-4 ملفات، لا secrets جديدة، لا migration.
+## المبدأ الأساسي
+
+```text
+المستخدم يفتح التطبيق
+       ↓
+Dexie فيها بيانات؟
+  نعم → التطبيق يفتح فوراً + sync بالخلفية
+  لا  → localStorage فيها family_id؟
+         نعم → التطبيق يفتح + يجلب من API
+         لا  → فيه إنترنت؟
+                نعم → fullSync مع overlay
+                لا  → رسالة "يحتاج اتصال أول مرة"
+```
 
