@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { appToast } from "@/lib/toast";
+import { db } from "@/lib/db";
 import { ScanLine, Users, ArrowLeft, Loader2, User, Heart, Baby, Crown, ShieldCheck, Clock, X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
