@@ -37,6 +37,7 @@ export function useFamilyId() {
 
   // 3. Network — only if no local data
   const hasLocalFamilyId = !!(cachedId || dexieFamilyId);
+  const shouldResolveFromNetwork = !!user && !hasLocalFamilyId;
 
   const query = useQuery({
     queryKey: ["family-id", user?.id],
@@ -68,13 +69,20 @@ export function useFamilyId() {
       }
       return { family_id: fid, pending_family_id: pendingFid };
     },
-    enabled: !!user && !hasLocalFamilyId,
+    enabled: shouldResolveFromNetwork,
     staleTime: 30 * 60 * 1000, // 30 min
   });
+
+  // مهم جدًا لمسار الـ bootstrap:
+  // query.isLoading في React Query قد تكون false لحظة قصيرة بينما الحالة ما زالت pending،
+  // وهذا كان يسمح للواجهة تفتح قبل حسم familyId على جهاز جديد.
+  const isResolvingFamilyId = shouldResolveFromNetwork && (
+    query.isPending || query.fetchStatus === "fetching"
+  );
 
   return {
     familyId: query.data?.family_id ?? cachedId ?? dexieFamilyId ?? null,
     pendingFamilyId: query.data?.pending_family_id ?? null,
-    isLoading: !cachedId && !dexieFamilyId && query.isLoading && !!user,
+    isLoading: isResolvingFamilyId,
   };
 }
