@@ -91,6 +91,7 @@ export function useTaskLists() {
   return {
     lists: lists || [],
     isLoading,
+    isSyncing,
     updateList: {
       ...updateList,
       mutate: (input: any) => updateList.mutate(input),
