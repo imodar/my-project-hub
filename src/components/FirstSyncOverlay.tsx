@@ -6,7 +6,7 @@ import { useInitialSync } from "@/hooks/useInitialSync";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { Progress } from "@/components/ui/progress";
 import { Loader2 } from "lucide-react";
-import { db } from "@/lib/db";
+import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
 
 const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
   const { user } = useAuth();
@@ -16,16 +16,14 @@ const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
   const startedRef = useRef(false);
   const [isEmptyDevice, setIsEmptyDevice] = useState<boolean | null>(null);
 
-  // Check if device actually has data before showing overlay
+   // Check if device actually has meaningful data before showing overlay
   useEffect(() => {
     if (!user || !familyId) return;
-    Promise.all([
-      db.task_lists.count().catch(() => 0),
-      db.market_lists.count().catch(() => 0),
-      db.family_members.count().catch(() => 0),
-    ]).then(([t, m, f]) => {
-      setIsEmptyDevice((t + m + f) === 0);
-    }).catch(() => setIsEmptyDevice(true));
+    getMeaningfulLocalDataState()
+      .then(({ hasMeaningfulLocalData }) => {
+        setIsEmptyDevice(!hasMeaningfulLocalData);
+      })
+      .catch(() => setIsEmptyDevice(true));
   }, [user, familyId]);
 
   useEffect(() => {
@@ -35,12 +33,12 @@ const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
     run(user.id, familyId);
   }, [user, familyId, run, isEmptyDevice]);
 
-  // Only show overlay if device is empty AND sync is happening
-  const visible = isEmptyDevice === true && (state === "new_user" || state === "syncing");
+  // Show overlay immediately on an empty device, not only after state flips from idle
+  const visible = isEmptyDevice === true && state !== "done";
 
-  const message = state === "new_user"
-    ? t.sync.preparingDevice
-    : t.sync.syncingData;
+  const message = state === "syncing"
+    ? t.sync.syncingData
+    : t.sync.preparingDevice;
 
   return (
     <div ref={fwdRef}>

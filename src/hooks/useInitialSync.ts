@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fullSync, type SyncProgress } from "@/lib/fullSync";
-import { db } from "@/lib/db";
+import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
 
 export type SyncState = "idle" | "new_user" | "syncing" | "done";
 
@@ -17,16 +17,10 @@ export function useInitialSync() {
     ranRef.current = true;
 
     try {
-      // Check if device has local data in Dexie
-      const [taskCount, marketCount, budgetCount, memberCount] = await Promise.all([
-        db.task_lists.count().catch(() => 0),
-        db.market_lists.count().catch(() => 0),
-        db.budgets.count().catch(() => 0),
-        db.family_members.count().catch(() => 0),
-      ]);
-      const hasLocalData = (taskCount + marketCount + budgetCount + memberCount) > 0;
+      // Bootstrap rows (profile/family/member) لا تُعتبر بيانات فعلية للجهاز
+      const { hasMeaningfulLocalData } = await getMeaningfulLocalDataState();
 
-      if (hasLocalData) {
+      if (hasMeaningfulLocalData) {
         // Device has local data — no blocking sync needed
         // Mark sync done and do background delta sync
         localStorage.setItem("first_sync_done", "1");
@@ -81,7 +75,7 @@ export function useInitialSync() {
         return;
       }
 
-      // first_sync_done exists but Dexie is empty (cleared cache?)
+      // first_sync_done exists but Dexie has no meaningful data (cleared cache?)
       // Do a delta sync
       if (!navigator.onLine) {
         setState("done");
