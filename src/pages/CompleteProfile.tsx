@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { appToast } from "@/lib/toast";
+import { db } from "@/lib/db";
 import { Camera, User, Loader2, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 
