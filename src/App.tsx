@@ -120,7 +120,8 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   const [initialSyncDone, setInitialSyncDone] = useState(() => !!localStorage.getItem("first_sync_done"));
   const hasResolvedNoFamily = !!user && !familyLoading && !familyId;
   const familyCacheReady = !!familyId && warmedFamilyRef.current === familyId && cacheReady;
-  const allowChildren = !user || hasResolvedNoFamily || familyCacheReady;
+  const familyUiReady = !!familyId && familyCacheReady && initialSyncDone;
+  const allowChildren = !user || hasResolvedNoFamily || familyUiReady;
 
   // Global realtime for cross-device sync
   useFamilyRealtime();

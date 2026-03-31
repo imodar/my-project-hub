@@ -47,7 +47,9 @@ export function useInitialSync() {
         return;
       }
 
-      // Device is empty — need to check cloud
+      // Device is empty — force a blocking full sync.
+      // الاعتماد على فحص سحابي هنا يسبب race بعد OTP وقد يجعل الجهاز الجديد
+      // يُعلَّم خطأً كمكتمل قبل تنزيل أي بيانات فعلية.
       const firstSyncDone = localStorage.getItem("first_sync_done");
 
       if (!firstSyncDone) {
@@ -57,51 +59,21 @@ export function useInitialSync() {
           return;
         }
 
-        try {
-          const { data, error } = await supabase.functions.invoke("account-api", {
-            body: { action: "get-last-updated" },
-          });
-          if (!error && data?.last_updated_at) {
-            setState("new_user");
-            await fullSync(familyId, setProgress);
-            setState("done");
-            return;
-          }
-        } catch {}
-
-        localStorage.setItem("first_sync_done", "1");
-        localStorage.setItem("last_sync_ts", new Date().toISOString());
+        setState("new_user");
+        await fullSync(familyId, setProgress);
         setState("done");
         return;
       }
 
-      // first_sync_done exists but Dexie has no meaningful data (cleared cache?)
-      // Do a delta sync
+      // first_sync_done exists but Dexie has no meaningful data.
+      // هذا يعني Cache مفرغة/ناقصة، لذلك delta sync لا يكفي لإعادة بناء الجهاز.
       if (!navigator.onLine) {
         setState("done");
         return;
       }
 
-      const localTs = localStorage.getItem("last_sync_ts");
-      try {
-        const { data, error } = await supabase.functions.invoke("account-api", {
-          body: { action: "get-last-updated" },
-        });
-        if (!error && data?.last_updated_at) {
-          const cloudTime = new Date(data.last_updated_at).getTime();
-          const localTime = localTs ? new Date(localTs).getTime() : 0;
-          if (cloudTime > localTime) {
-            setState("syncing");
-            await qc.invalidateQueries();
-            await qc.refetchQueries({ type: "active" });
-            localStorage.setItem("last_sync_ts", new Date().toISOString());
-            await new Promise(r => setTimeout(r, 600));
-            setState("done");
-            return;
-          }
-        }
-      } catch {}
-
+      setState("new_user");
+      await fullSync(familyId, setProgress);
       setState("done");
     } catch {
       setState("done");
