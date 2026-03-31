@@ -36,7 +36,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchingRef.current = true;
 
     try {
-      const cached = localStorage.getItem(`profile_name_${userId}`);
+      // 1. localStorage (fastest)
+      let cached = localStorage.getItem(`profile_name_${userId}`);
+
+      // 2. Dexie fallback if no localStorage
+      if (!cached) {
+        try {
+          const localProfile = await db.profiles.get(userId);
+          if (localProfile?.name) {
+            cached = localProfile.name as string;
+            localStorage.setItem(`profile_name_${userId}`, cached);
+          }
+        } catch {}
+      }
+
       if (cached) {
         setProfileName(cached);
         setProfileReady(true);
@@ -54,6 +67,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setProfileName(data.data.name);
             localStorage.setItem(`profile_name_${userId}`, data.data.name);
             localStorage.setItem("profile_complete", "true");
+            // Write to Dexie for local-first bootstrap
+            try {
+              await db.profiles.put({
+                id: userId,
+                name: data.data.name,
+                phone: data.data.phone || null,
+                avatar_url: data.data.avatar_url || null,
+              });
+            } catch {}
             return true;
           }
         } catch {

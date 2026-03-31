@@ -115,6 +115,20 @@ const JoinOrCreate = () => {
         if (newStatus === "active") {
           setJoinStatus("accepted");
           localStorage.setItem("join_or_create_done", "true");
+          // Write accepted member to Dexie
+          const fid = payload.new?.family_id || pendingJoinFamilyId;
+          if (fid && session?.user?.id) {
+            try {
+              localStorage.setItem("cached_family_id", fid);
+              await db.family_members.put({
+                id: payload.new?.id || crypto.randomUUID(),
+                family_id: fid,
+                user_id: session.user.id,
+                role: payload.new?.role || "member",
+                status: "active",
+              });
+            } catch {}
+          }
           queryClient.invalidateQueries({ queryKey: ["family-id"] });
           setTimeout(() => navigate("/", { replace: true }), 1500);
         }

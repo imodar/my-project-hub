@@ -114,6 +114,14 @@ const CompleteProfile = () => {
       // Cache and flag
       localStorage.setItem(`profile_name_${user.id}`, trimmed);
       localStorage.setItem("profile_complete", "true");
+      // Write to Dexie for local-first bootstrap
+      try {
+        await db.profiles.put({
+          id: user.id,
+          name: trimmed,
+          avatar_url: avatarUrl || null,
+        });
+      } catch {}
       await refreshProfile();
       navigate("/", { replace: true });
     } catch {
