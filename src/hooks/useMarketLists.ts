@@ -86,6 +86,7 @@ export function useMarketLists() {
   return {
     lists: normalizedLists,
     isLoading,
+    isSyncing,
     updateList: {
       ...updateList,
       mutate: (input: any) => updateList.mutate(input),
