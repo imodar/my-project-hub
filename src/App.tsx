@@ -8,7 +8,7 @@ import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { UserRoleProvider } from "@/contexts/UserRoleContext";
 import { TrashProvider } from "@/contexts/TrashContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/AuthGuard";
 import ScrollToTop from "@/components/ScrollToTop";
 import OfflineBanner from "@/components/OfflineBanner";
@@ -112,26 +112,65 @@ const queryClient = new QueryClient({
 
 /** Pre-warms React Query cache from IndexedDB on startup + global Realtime */
 const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
   const { familyId, isLoading: familyLoading } = useFamilyId();
   const qc = useQueryClient();
   const warmedFamilyRef = useRef<string | null>(null);
   const [cacheReady, setCacheReady] = useState(false);
-  const allowChildren = cacheReady || (!familyId && !familyLoading);
+  const [initialSyncDone, setInitialSyncDone] = useState(() => !!localStorage.getItem("first_sync_done"));
+  const hasResolvedNoFamily = !!user && !familyLoading && !familyId;
+  const familyCacheReady = !!familyId && warmedFamilyRef.current === familyId && cacheReady;
+  const allowChildren = !user || hasResolvedNoFamily || familyCacheReady;
 
   // Global realtime for cross-device sync
   useFamilyRealtime();
 
   useEffect(() => {
-    if (familyId && warmedFamilyRef.current !== familyId) {
-      // New familyId arrived — need to warm cache (reset ready state if needed)
-      setCacheReady(false);
-      warmedFamilyRef.current = familyId;
-      warmCache(qc, familyId).then(() => setCacheReady(true));
-    } else if (!familyId && !familyLoading) {
-      // No family (public route, new user, etc.) — let through
+    if (!user) {
+      warmedFamilyRef.current = null;
+      setInitialSyncDone(true);
       setCacheReady(true);
+      return;
     }
-  }, [familyId, familyLoading, qc]);
+
+    warmedFamilyRef.current = null;
+    setCacheReady(false);
+    setInitialSyncDone(!!localStorage.getItem("first_sync_done"));
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    if (!familyId) {
+      if (!familyLoading) {
+        setCacheReady(true);
+      }
+      return;
+    }
+
+    if (!initialSyncDone) {
+      setCacheReady(false);
+      return;
+    }
+
+    if (warmedFamilyRef.current === familyId && cacheReady) return;
+
+    let cancelled = false;
+    setCacheReady(false);
+    warmedFamilyRef.current = familyId;
+
+    warmCache(qc, familyId)
+      .then(() => {
+        if (!cancelled) setCacheReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setCacheReady(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, familyId, familyLoading, initialSyncDone, cacheReady, qc]);
 
   // Listen for sync queue failures and notify user
   useEffect(() => {
@@ -145,7 +184,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <>
-      <FirstSyncOverlay />
+      <FirstSyncOverlay onInitialSyncReady={() => setInitialSyncDone(true)} />
       {allowChildren ? children : null}
     </>
   );
