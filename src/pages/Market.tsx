@@ -163,7 +163,7 @@ const Market = () => {
       }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [familyId, featureAccess.isStaff, isLoading, dbLists]);
+  }, [familyId, featureAccess.isStaff, isLoading, isSyncing, dbLists]);
 
   // Auto-select first list when data loads, but don't override a just-created optimistic list
   useEffect(() => {

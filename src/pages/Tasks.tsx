@@ -109,7 +109,7 @@ const Tasks = () => {
       shared_with: [],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [familyId, featureAccess.isStaff, isLoading, dbLists]);
+  }, [familyId, featureAccess.isStaff, isLoading, isSyncing, dbLists]);
 
   const [activeListId, setActiveListId] = useState("");
   const pendingActiveListIdRef = useRef<string | null>(null);
