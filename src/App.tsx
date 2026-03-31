@@ -114,17 +114,20 @@ const queryClient = new QueryClient({
 const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   const { familyId, isLoading: familyLoading } = useFamilyId();
   const qc = useQueryClient();
-  const warmedRef = useRef(false);
+  const warmedFamilyRef = useRef<string | null>(null);
   const [cacheReady, setCacheReady] = useState(false);
 
   // Global realtime for cross-device sync
   useFamilyRealtime();
 
   useEffect(() => {
-    if (familyId && !warmedRef.current) {
-      warmedRef.current = true;
+    if (familyId && warmedFamilyRef.current !== familyId) {
+      // New familyId arrived — need to warm cache (reset ready state if needed)
+      setCacheReady(false);
+      warmedFamilyRef.current = familyId;
       warmCache(qc, familyId).then(() => setCacheReady(true));
     } else if (!familyId && !familyLoading) {
+      // No family (public route, new user, etc.) — let through
       setCacheReady(true);
     }
   }, [familyId, familyLoading, qc]);
