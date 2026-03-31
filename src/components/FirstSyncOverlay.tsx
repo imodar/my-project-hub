@@ -8,15 +8,24 @@ import { Progress } from "@/components/ui/progress";
 import { Loader2 } from "lucide-react";
 import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
 
-const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
+interface FirstSyncOverlayProps {
+  onInitialSyncReady?: () => void;
+}
+
+const FirstSyncOverlay = React.forwardRef<HTMLDivElement, FirstSyncOverlayProps>(({ onInitialSyncReady }, fwdRef) => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { familyId } = useFamilyId();
+  const { familyId, isLoading: familyLoading } = useFamilyId();
   const { state, run, progress } = useInitialSync();
   const startedRef = useRef(false);
   const [isEmptyDevice, setIsEmptyDevice] = useState<boolean | null>(null);
 
-   // Check if device actually has meaningful data before showing overlay
+  useEffect(() => {
+    startedRef.current = false;
+    setIsEmptyDevice(null);
+  }, [user?.id, familyId]);
+
+  // Check if device actually has meaningful data before showing overlay
   useEffect(() => {
     if (!user || !familyId) return;
     getMeaningfulLocalDataState()
@@ -33,8 +42,15 @@ const FirstSyncOverlay = React.forwardRef<HTMLDivElement>((_props, fwdRef) => {
     run(user.id, familyId);
   }, [user, familyId, run, isEmptyDevice]);
 
-  // Show overlay immediately on an empty device, not only after state flips from idle
-  const visible = isEmptyDevice === true && state !== "done";
+  useEffect(() => {
+    if (user && state === "done") {
+      onInitialSyncReady?.();
+    }
+  }, [user, state, onInitialSyncReady]);
+
+  const firstSyncDone = !!localStorage.getItem("first_sync_done");
+  const waitingForInitialCheck = !!user && !firstSyncDone && (familyLoading || (!!familyId && isEmptyDevice === null));
+  const visible = waitingForInitialCheck || (isEmptyDevice === true && state !== "done");
 
   const message = state === "syncing"
     ? t.sync.syncingData
