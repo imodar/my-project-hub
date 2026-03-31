@@ -31,7 +31,7 @@ export function useTaskLists() {
     return { data: sortListsAsc(response?.data || []), error: null };
   }, [familyId]);
 
-  const { data: lists, isLoading, refetch } = useOfflineFirst<any>({
+  const { data: lists, isLoading, isSyncing, refetch } = useOfflineFirst<any>({
     table: "task_lists",
     queryKey: key,
     apiFn,

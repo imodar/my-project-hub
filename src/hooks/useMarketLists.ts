@@ -29,7 +29,7 @@ export function useMarketLists() {
     return { data: normalizeMarketLists(response?.data || [], familyId), error: null };
   }, [familyId]);
 
-  const { data: lists, isLoading, refetch } = useOfflineFirst<any>({
+  const { data: lists, isLoading, isSyncing, refetch } = useOfflineFirst<any>({
     table: "market_lists",
     queryKey: key,
     apiFn,
