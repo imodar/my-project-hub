@@ -57,7 +57,7 @@ const Tasks = () => {
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { familyId } = useFamilyId();
-  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useTaskLists();
+  const { lists: dbLists, isLoading, isSyncing, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useTaskLists();
   const { addToTrash } = useTrash();
   const createdDefaultListRef = useRef<string | null>(null);
 
@@ -97,6 +97,7 @@ const Tasks = () => {
       featureAccess.isStaff ||
       !familyId ||
       isLoading ||
+      isSyncing ||
       hasFamilyList ||
       createdDefaultListRef.current === familyId ||
       createListMutation.isPending
@@ -108,7 +109,7 @@ const Tasks = () => {
       shared_with: [],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [familyId, featureAccess.isStaff, isLoading, dbLists]);
+  }, [familyId, featureAccess.isStaff, isLoading, isSyncing, dbLists]);
 
   const [activeListId, setActiveListId] = useState("");
   const pendingActiveListIdRef = useRef<string | null>(null);

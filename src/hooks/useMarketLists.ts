@@ -29,7 +29,7 @@ export function useMarketLists() {
     return { data: normalizeMarketLists(response?.data || [], familyId), error: null };
   }, [familyId]);
 
-  const { data: lists, isLoading, refetch } = useOfflineFirst<any>({
+  const { data: lists, isLoading, isSyncing, refetch } = useOfflineFirst<any>({
     table: "market_lists",
     queryKey: key,
     apiFn,
@@ -86,6 +86,7 @@ export function useMarketLists() {
   return {
     lists: normalizedLists,
     isLoading,
+    isSyncing,
     updateList: {
       ...updateList,
       mutate: (input: any) => updateList.mutate(input),

@@ -72,7 +72,7 @@ const Market = () => {
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { familyId } = useFamilyId();
   const { addToTrash } = useTrash();
-  const { lists: dbLists, isLoading, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useMarketLists();
+  const { lists: dbLists, isLoading, isSyncing, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useMarketLists();
   const createdDefaultListRef = useRef<string | null>(null);
 
   const lists: MarketList[] = useMemo(() => {
@@ -140,6 +140,7 @@ const Market = () => {
       featureAccess.isStaff ||
       !familyId ||
       isLoading ||
+      isSyncing ||
       hasFamilyList ||
       createdDefaultListRef.current === familyId ||
       createListMutation.isPending
@@ -162,7 +163,7 @@ const Market = () => {
       }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [familyId, featureAccess.isStaff, isLoading, dbLists]);
+  }, [familyId, featureAccess.isStaff, isLoading, isSyncing, dbLists]);
 
   // Auto-select first list when data loads, but don't override a just-created optimistic list
   useEffect(() => {
