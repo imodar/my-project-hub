@@ -109,7 +109,7 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   // ── Documents ──
   document_lists: {
     functionName: "documents-api",
-    actions: { INSERT: "create-list", DELETE: "delete-list" },
+    actions: { INSERT: "create-list", UPDATE: "update-list", DELETE: "delete-list" },
   },
   document_items: {
     functionName: "documents-api",
