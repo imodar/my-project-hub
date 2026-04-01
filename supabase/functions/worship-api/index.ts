@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
       const { child_id, year, month, day } = body;
       if (!validStr(child_id, MAX_CHILD_ID)) return json({ error: "child_id غير صالح" }, 400);
       if (typeof year !== "number" || typeof month !== "number" || typeof day !== "number") return json({ error: "بيانات التاريخ غير صالحة" }, 400);
-      const { error } = await supabase.from("kids_worship_data").delete().eq("child_id", child_id).eq("year", year).eq("month", month).eq("day", day);
+      const { error } = await supabase.from("kids_worship_data").delete().eq("child_id", child_id).eq("year", year).eq("month", month).eq("day", day).eq("user_id", userId);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
     }

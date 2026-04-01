@@ -48,8 +48,11 @@ export function useFamilyRealtime() {
       }
     };
 
-    // Refetch when coming back online
-    const onOnline = () => invalidateAll();
+    // Refetch when coming back online (with jitter to prevent thundering herd)
+    const onOnline = () => {
+      const jitter = Math.random() * 60_000; // 0-60s random delay
+      setTimeout(() => invalidateAll(), jitter);
+    };
 
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("online", onOnline);

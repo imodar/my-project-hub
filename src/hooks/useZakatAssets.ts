@@ -83,7 +83,7 @@ export function useZakatAssets() {
   });
 
   const addZakatPayment = useOfflineMutation<any, any>({
-    table: "zakat_assets", operation: "UPDATE",
+    table: "zakat_history", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
       const { data, error } = await supabase.functions.invoke("zakat-api", {

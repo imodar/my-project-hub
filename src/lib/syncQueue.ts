@@ -247,7 +247,7 @@ const TABLE_LABELS: Record<string, string> = {
   debt_payments: "السدادات", trips: "الرحلات",
   medications: "الأدوية", medication_logs: "سجل الأدوية",
   vehicles: "المركبات", vehicle_maintenance: "صيانة المركبات",
-  zakat_assets: "أصول الزكاة", albums: "الألبومات",
+  zakat_assets: "أصول الزكاة", zakat_history: "سجل دفع الزكاة", albums: "الألبومات",
   album_photos: "الصور", chat_messages: "الرسائل",
   document_lists: "المستندات", document_items: "عناصر المستندات",
   worship_children: "أبناء العبادات", prayer_logs: "سجل الصلاة",
