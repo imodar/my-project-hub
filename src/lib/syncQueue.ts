@@ -173,7 +173,7 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   },
   place_lists: {
     functionName: "places-api",
-    actions: { INSERT: "create-list", DELETE: "delete-list" },
+    actions: { INSERT: "create-list", UPDATE: "update-list", DELETE: "delete-list" },
   },
 
   // ── Worship ──

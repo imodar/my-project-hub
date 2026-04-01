@@ -3,6 +3,7 @@
  * يُستخدم لتحديد هل التطبيق يقدر يفتح فوراً من البيانات المحلية
  */
 import { db } from "./db";
+import { getMeaningfulLocalDataState } from "./meaningfulLocalData";
 
 export interface LocalBootstrapResult {
   hasLocalData: boolean;
@@ -36,16 +37,14 @@ export async function getLocalBootstrap(): Promise<LocalBootstrapResult> {
   let hasLocalData = false;
 
   try {
-    const [profile, member, taskCount, marketCount, budgetCount] = await Promise.all([
+    const [profile, member, meaningful] = await Promise.all([
       db.profiles.toCollection().first(),
       db.family_members.toCollection().first(),
-      db.task_lists.count(),
-      db.market_lists.count(),
-      db.budgets.count(),
+      getMeaningfulLocalDataState(),
     ]);
     dexieProfile = profile;
     dexieMember = member;
-    hasLocalData = (taskCount + marketCount + budgetCount) > 0 || !!member;
+    hasLocalData = meaningful.hasMeaningfulLocalData || !!member;
   } catch {
     // Dexie not available — rely on localStorage only
   }

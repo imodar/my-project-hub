@@ -57,10 +57,10 @@ export function useFamilyRealtime() {
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("online", onOnline);
 
-    // Periodic poll while visible
+    // Periodic poll while visible (with jitter to prevent thundering herd)
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
-        invalidateAll();
+        setTimeout(() => invalidateAll(), Math.random() * 30_000);
       }
     }, POLL_INTERVAL_MS);
 
