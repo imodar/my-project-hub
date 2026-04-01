@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useFamilyId } from "./useFamilyId";
+import { REALTIME_QUERY_KEYS } from "@/lib/resourceRegistry";
 
 /**
  * Smart refetch: replaces the old global Realtime channel.
@@ -11,23 +12,9 @@ import { useFamilyId } from "./useFamilyId";
  *
  * Chat & notifications already have their own targeted Realtime subscriptions
  * (useChat.ts, useNotifications.ts) — those stay as-is.
+ *
+ * Query keys are derived from RESOURCE_REGISTRY — single source of truth.
  */
-
-const QUERY_KEYS_TO_REFETCH = [
-  "task-lists",
-  "market-lists",
-  "calendar-events",
-  "medications",
-  "budgets",
-  "debts",
-  "trips",
-  "vehicles",
-  "document-lists",
-  "albums",
-  "family-members-list",
-  "place-lists",
-  "vaccinations",
-];
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -45,7 +32,7 @@ export function useFamilyRealtime() {
       if (now - lastRefetchRef.current < 30_000) return;
       lastRefetchRef.current = now;
 
-      for (const key of QUERY_KEYS_TO_REFETCH) {
+      for (const key of REALTIME_QUERY_KEYS) {
         qc.invalidateQueries({
           queryKey: [key, familyId],
           exact: false,
