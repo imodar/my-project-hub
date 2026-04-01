@@ -10,41 +10,29 @@
 
 ### 1. Resource Registry الموحّد (`src/lib/resourceRegistry.ts`)
 - مصدر واحد لكل مورد: table, queryKey, familyScoped, warm, fullSync, realtime
+- إضافة `ChildTableConfig` interface لتعريف الجداول الفرعية المتداخلة
+- `childTables` مُعرَّفة لـ 7 parents: trips, market_lists, task_lists, document_lists, debts, budgets, albums
+- `warm: false` لجميع child tables المشتركة في queryKeyPrefix مع الأب (منع clobbering)
 - يُستهلك من warmCache, fullSync, useFamilyRealtime
-- لا drift بين الملفات بعد الآن
 
-### 2. إصلاح Optimistic Create للقوائم
-- `useMarketLists.ts`: إضافة `qc.setQueryData` قبل `createList.mutate/mutateAsync`
+### 2. syncQueue تغطية كاملة (`src/lib/syncQueue.ts`)
+- إضافة 8 جداول ناقصة: vaccinations, worship_children, emergency_contacts, trash_items, will_sections, trip_suggestions, prayer_logs, debt_postponements
+- إضافة labels عربية لجميع الجداول
+- إضافة JWT guard في `processQueue()` — لا يعالج الطابور بدون session
+
+### 3. fullSync يفكك nested data (`src/lib/fullSync.ts`)
+- بعد `bulkPut` للأب، يستخرج الأبناء والأحفاد ويكتبها في Dexie
+- دعم مستويين: child tables + nested grandchildren (مثل trip_activities داخل trip_day_plans)
+
+### 4. إصلاح Optimistic Create للقوائم
+- `useMarketLists.ts`: إضافة `onSuccess` لاستبدال UUID المؤقت بالبيانات الحقيقية
 - `useTaskLists.ts`: نفس الإصلاح
-- `useDocumentLists.ts`: كان يملك `queryKey` أصلاً — ✅
-- `usePlaceLists.ts`: كان يملك `queryKey` أصلاً — ✅
+- لا `queryKey` على createList — الـ wrapper يتكفل بالـ optimistic
 
-### 3. توحيد warmCache/fullSync/useFamilyRealtime من Registry
-- `warmCache.ts`: يقرأ من `WARM_TABLES` و `FAMILY_SCOPED_TABLES`
-- `fullSync.ts`: يقرأ من `FULL_SYNC_STEPS`
-- `useFamilyRealtime.ts`: يقرأ من `REALTIME_QUERY_KEYS`
-
-### 4. إزالة `onSuccess: refetch()` الزائدة
-- `useCalendarEvents.ts`: حذف 3 مواضع
-- `useVehicles.ts`: حذف 6 مواضع (جميع mutations)
-
-### 5. توسيع Realtime Query Keys
-مفاتيح جديدة مُضافة تلقائياً من Registry:
-- `zakat-assets`
-- `will`
-- `worship-children`
-- `trash-items`
-
-### 6. Local Reads للشاشات الخارجية
-- `useMyRole.ts`: إضافة Dexie placeholder من `family_members`
-- `TrashContext.tsx`: كان يملك Dexie reads/writes أصلاً — ✅
-
-### 7. الشاشات التي تبقى Online-First (مقصود)
-- OTP/Auth
-- File uploads
-- Live location
-- Admin analytics
-- invite code generation
+### 5. warmCache لا يكتب child tables فوق parent
+- `trip_day_plans`, `trip_activities`, `trip_expenses`, `trip_packing`, `trip_suggestions`: `warm: false`
+- `document_items`: `warm: false`
+- `album_photos`: `warm: false`
 
 ---
 
@@ -52,12 +40,8 @@
 
 | الملف | التعديل |
 |-------|---------|
-| `src/lib/resourceRegistry.ts` | **جديد** — Registry مركزي |
-| `src/lib/warmCache.ts` | يقرأ من Registry |
-| `src/lib/fullSync.ts` | يقرأ من Registry |
-| `src/hooks/useFamilyRealtime.ts` | يقرأ من Registry |
-| `src/hooks/useMarketLists.ts` | optimistic create |
-| `src/hooks/useTaskLists.ts` | optimistic create |
-| `src/hooks/useCalendarEvents.ts` | حذف onSuccess:refetch |
-| `src/hooks/useVehicles.ts` | حذف onSuccess:refetch |
-| `src/hooks/useMyRole.ts` | Dexie placeholder |
+| `src/lib/resourceRegistry.ts` | ChildTableConfig type + childTables + warm:false للأبناء |
+| `src/lib/syncQueue.ts` | 8 جداول ناقصة + labels + JWT guard |
+| `src/lib/fullSync.ts` | استخراج nested data + persistChildTables |
+| `src/hooks/useMarketLists.ts` | onSuccess لـ createList |
+| `src/hooks/useTaskLists.ts` | onSuccess لـ createList |
