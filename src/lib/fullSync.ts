@@ -1,10 +1,37 @@
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "./db";
 import { FULL_SYNC_STEPS } from "./resourceRegistry";
+import type { ChildTableConfig } from "./resourceRegistry";
 
 export interface SyncProgress {
   current: number; // 0-100
   label: string;
+}
+
+/**
+ * استخراج وحفظ البيانات المتداخلة (children + grandchildren) في Dexie
+ */
+async function persistChildTables(
+  items: any[],
+  childTables: ChildTableConfig[]
+): Promise<void> {
+  for (const child of childTables) {
+    const childItems = items.flatMap((item: any) => item[child.key] || []);
+    if (childItems.length > 0) {
+      const table = (db as any)[child.table];
+      if (table) await table.bulkPut(childItems);
+    }
+    // مستوى ثانٍ (grandchildren)
+    if (child.nested) {
+      for (const grandChild of child.nested) {
+        const gcItems = childItems.flatMap((c: any) => c[grandChild.key] || []);
+        if (gcItems.length > 0) {
+          const gcTable = (db as any)[grandChild.table];
+          if (gcTable) await gcTable.bulkPut(gcItems);
+        }
+      }
+    }
+  }
 }
 
 export async function fullSync(
@@ -25,8 +52,14 @@ export async function fullSync(
 
         const items = response?.data || [];
         if (items.length > 0) {
+          // حفظ الأب
           const table = (db as any)[step.table];
           if (table) await table.bulkPut(items);
+
+          // حفظ الأبناء والأحفاد
+          if (step.childTables && step.childTables.length > 0) {
+            await persistChildTables(items, step.childTables);
+          }
         }
       } catch {
         // فشل جدول واحد لا يوقف الباقي

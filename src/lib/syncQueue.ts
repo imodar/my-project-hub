@@ -380,6 +380,15 @@ export async function addToQueue(
  */
 export async function processQueue(): Promise<void> {
   if (isProcessing || !navigator.onLine) return;
+
+  // لا تعالج الطابور بدون جلسة مصادقة
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+  } catch {
+    return;
+  }
+
   isProcessing = true;
 
   try {
