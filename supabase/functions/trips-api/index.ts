@@ -162,7 +162,9 @@ Deno.serve(async (req) => {
       if (!validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب" }, 400);
       if (notes && typeof notes === "string" && notes.length > MAX_NOTE) return json({ error: "الملاحظات طويلة جداً" }, 400);
-      const { data, error } = await supabase.from("trip_documents").insert({ trip_id, name: sanitize(name, MAX_NAME), type, file_url, file_name, notes: notes ? sanitize(notes, MAX_NOTE) : null }).select().single();
+      const { data: trip } = await supabase.from("trips").select("id").eq("id", trip_id).maybeSingle();
+      if (!trip) return json({ error: "الرحلة غير موجودة بعد، يرجى المحاولة لاحقاً", retry: true }, 409);
+      const { data, error } = await adminClient.from("trip_documents").insert({ trip_id, name: sanitize(name, MAX_NAME), type, file_url, file_name, notes: notes ? sanitize(notes, MAX_NOTE) : null }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
