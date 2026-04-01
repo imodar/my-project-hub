@@ -145,6 +145,10 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
     functionName: "zakat-api",
     actions: { INSERT: "create-asset", UPDATE: "update-asset", DELETE: "delete-asset" },
   },
+  zakat_history: {
+    functionName: "zakat-api",
+    actions: { INSERT: "pay-zakat" },
+  },
 
   // ── Albums ──
   albums: {
