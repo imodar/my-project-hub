@@ -96,6 +96,7 @@ export const RESOURCE_REGISTRY: ResourceEntry[] = [
         { key: "trip_expenses", table: "trip_expenses" },
         { key: "trip_packing", table: "trip_packing" },
         { key: "trip_suggestions", table: "trip_suggestions" },
+        { key: "trip_documents", table: "trip_documents" },
       ],
     } },
   { table: "trip_day_plans", queryKeyPrefix: "trips", familyScoped: false, warm: false, realtime: false, fullSync: null },
