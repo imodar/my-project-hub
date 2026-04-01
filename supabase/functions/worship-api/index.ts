@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
         if (error) return json({ error: error.message }, 400);
         return json({ data });
       } else {
-        const { data, error } = await supabase.from("kids_worship_data").insert({ child_id, year, month, day, items }).select().single();
+        const { data, error } = await supabase.from("kids_worship_data").insert({ child_id, year, month, day, items, user_id: userId }).select().single();
         if (error) return json({ error: error.message }, 400);
         return json({ data });
       }
