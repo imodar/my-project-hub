@@ -50,6 +50,14 @@ export function useTaskLists() {
   const createList = useOfflineMutation<any, any>({
     table: "task_lists", operation: "INSERT",
     apiFn: async (input) => { const { created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family", id: rest.id }); },
+    onSuccess: (data, variables) => {
+      if (!data) return;
+      qc.setQueryData<any[]>(key, (old) =>
+        (old ?? []).map(item =>
+          item.id === variables.id ? { ...item, ...data } : item
+        )
+      );
+    },
   });
 
   const updateList = useOfflineMutation<any, any>({

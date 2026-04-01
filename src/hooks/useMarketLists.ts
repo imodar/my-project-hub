@@ -54,6 +54,14 @@ export function useMarketLists() {
   const createList = useOfflineMutation<any, any>({
     table: "market_lists", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family", use_categories: rest.use_categories ?? true, id: input.id }); },
+    onSuccess: (data, variables) => {
+      if (!data) return;
+      qc.setQueryData<any[]>(key, (old) =>
+        (old ?? []).map(item =>
+          item.id === variables.id ? { ...item, ...data } : item
+        )
+      );
+    },
   });
 
   const updateList = useOfflineMutation<any, any>({

@@ -9,6 +9,7 @@
  */
 import { db, type SyncOperation, type SyncQueueItem } from "./db";
 import { apiClient } from "./api";
+import { supabase } from "@/integrations/supabase/client";
 
 /* ────────────────────────────────────────────
  *  خريطة الجداول → Edge Functions (placeholder)
@@ -180,6 +181,50 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
     functionName: "worship-api",
     actions: { INSERT: "save-worship-data", DELETE: "delete-worship-data" },
   },
+  worship_children: {
+    functionName: "worship-api",
+    actions: { INSERT: "add-child", DELETE: "remove-child" },
+  },
+  prayer_logs: {
+    functionName: "worship-api",
+    actions: { INSERT: "save-prayer-log" },
+  },
+
+  // ── التطعيمات ──
+  vaccinations: {
+    functionName: "health-api",
+    actions: { INSERT: "add-child", UPDATE: "update-child", DELETE: "remove-child" },
+  },
+
+  // ── الطوارئ ──
+  emergency_contacts: {
+    functionName: "settings-api",
+    actions: { INSERT: "add-emergency-contact", DELETE: "delete-emergency-contact" },
+  },
+
+  // ── سلة المحذوفات ──
+  trash_items: {
+    functionName: "trash-api",
+    actions: { INSERT: "move-to-trash", DELETE: "permanent-delete" },
+  },
+
+  // ── الوصية ──
+  will_sections: {
+    functionName: "will-api",
+    actions: { UPDATE: "save-will", DELETE: "delete-will" },
+  },
+
+  // ── الرحلات (إضافات) ──
+  trip_suggestions: {
+    functionName: "trips-api",
+    actions: { INSERT: "add-suggestion", UPDATE: "update-suggestion-status" },
+  },
+
+  // ── الديون (إضافات) ──
+  debt_postponements: {
+    functionName: "debts-api",
+    actions: { INSERT: "add-postponement" },
+  },
 };
 
 /* ────────────────────────────────────────────
@@ -201,6 +246,13 @@ const TABLE_LABELS: Record<string, string> = {
   zakat_assets: "أصول الزكاة", albums: "الألبومات",
   album_photos: "الصور", chat_messages: "الرسائل",
   document_lists: "المستندات", document_items: "عناصر المستندات",
+  worship_children: "أبناء العبادات", prayer_logs: "سجل الصلاة",
+  vaccinations: "التطعيمات", emergency_contacts: "جهات الطوارئ",
+  trash_items: "سلة المحذوفات", will_sections: "الوصية",
+  trip_suggestions: "اقتراحات الرحلات", debt_postponements: "تأجيل الديون",
+  places: "الأماكن", place_lists: "قوائم الأماكن",
+  document_files: "ملفات المستندات", trip_documents: "وثائق الرحلات",
+  trip_day_plans: "خطط الأيام", trip_packing: "حقيبة السفر",
 };
 
 function _notifyFailed(table: string) {
@@ -328,6 +380,15 @@ export async function addToQueue(
  */
 export async function processQueue(): Promise<void> {
   if (isProcessing || !navigator.onLine) return;
+
+  // لا تعالج الطابور بدون جلسة مصادقة
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+  } catch {
+    return;
+  }
+
   isProcessing = true;
 
   try {
