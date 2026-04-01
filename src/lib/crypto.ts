@@ -217,7 +217,7 @@ export async function loadPrivateKeyLocally(
           "jwk",
           req.result,
           { name: "ECDH", namedCurve: "P-256" },
-          true,
+          false,
           ["deriveKey", "deriveBits"]
         );
         resolve(key);

@@ -2540,6 +2540,7 @@ export type Database = {
           id: string
           is_locked: boolean
           password_hash: string | null
+          password_salt: string | null
           sections: Json
           updated_at: string
           user_id: string
@@ -2549,6 +2550,7 @@ export type Database = {
           id?: string
           is_locked?: boolean
           password_hash?: string | null
+          password_salt?: string | null
           sections?: Json
           updated_at?: string
           user_id: string
@@ -2558,6 +2560,7 @@ export type Database = {
           id?: string
           is_locked?: boolean
           password_hash?: string | null
+          password_salt?: string | null
           sections?: Json
           updated_at?: string
           user_id?: string

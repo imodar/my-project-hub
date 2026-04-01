@@ -21,12 +21,36 @@ import { appToast } from "@/lib/toast";
 import { useWill } from "@/hooks/useWill";
 import { supabase } from "@/integrations/supabase/client";
 
-// ── SHA-256 helper ──
+// ── SHA-256 helper (legacy) ──
 async function sha256(message: string): Promise<string> {
   const msgBuffer = new TextEncoder().encode(message);
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ── PBKDF2 helpers ──
+function bufToHex(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+function bufToBase64(buf: Uint8Array): string {
+  return btoa(String.fromCharCode(...buf));
+}
+function base64ToBuf(b64: string): Uint8Array {
+  return new Uint8Array(atob(b64).split("").map(c => c.charCodeAt(0)));
+}
+
+async function hashPasswordPBKDF2(password: string, salt?: Uint8Array): Promise<{ hash: string; salt: string }> {
+  const s = salt || new Uint8Array(crypto.getRandomValues(new Uint8Array(16)));
+  const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: new Uint8Array(s).buffer, iterations: 100000, hash: "SHA-256" }, keyMaterial, 256);
+  return { hash: bufToHex(bits), salt: bufToBase64(s) };
+}
+
+async function verifyPasswordPBKDF2(password: string, storedHash: string, saltB64: string): Promise<boolean> {
+  const salt = base64ToBuf(saltB64);
+  const { hash } = await hashPasswordPBKDF2(password, salt);
+  return hash === storedHash;
 }
 
 // ── Types ──
@@ -100,9 +124,9 @@ const Will = () => {
       appToast.error("كلمة المرور قصيرة جداً", "يجب أن تكون 4 أحرف على الأقل");
       return;
     }
-    const hash = await sha256(createPassword);
+    const { hash, salt } = await hashPasswordPBKDF2(createPassword);
     upsertWill.mutate(
-      { sections: DEFAULT_SECTIONS, password_hash: hash },
+      { sections: DEFAULT_SECTIONS, password_hash: hash, password_salt: salt },
       {
         onSuccess: () => {
           setIsUnlocked(true);
@@ -122,8 +146,16 @@ const Will = () => {
   const handleEnterPassword = async () => {
     if (!enterPassword.trim()) return;
     setEnterError("");
-    const hash = await sha256(enterPassword);
-    if (hash === will?.password_hash) {
+    let valid = false;
+    if (!will?.password_salt) {
+      // Legacy SHA-256 (no salt)
+      const hash = await sha256(enterPassword);
+      valid = hash === will?.password_hash;
+    } else {
+      // PBKDF2 with salt
+      valid = await verifyPasswordPBKDF2(enterPassword, will.password_hash, will.password_salt);
+    }
+    if (valid) {
       haptic.medium();
       setIsUnlocked(true);
       setEnterPassword("");

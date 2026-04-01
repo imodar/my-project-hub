@@ -193,6 +193,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         db.tasbih_sessions.clear(),
         db.kids_worship_data.clear(),
         db.prayer_logs.clear(),
+        db.worship_children.clear(),
+        db.trash_items.clear(),
         db.emergency_contacts.clear(),
         db.family_members.clear(),
         db.families.clear(),
