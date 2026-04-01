@@ -39,7 +39,6 @@ export function useCalendarEvents() {
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
     queryKey: key,
-    onSuccess: () => refetch(),
   });
 
   const updateEvent = useOfflineMutation<any, any>({
