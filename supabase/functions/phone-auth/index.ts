@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
         return json({ error: "رمز التحقق مطلوب (6 أرقام)" }, 400);
       }
 
-      const codeHash = await sha256Hex(code);
+      const codeHash = await hmacHex(code);
 
       // Find matching OTP
       const { data: otpRow, error: otpErr } = await adminClient
