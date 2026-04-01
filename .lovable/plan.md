@@ -1,105 +1,108 @@
 
 
-# الخطة المحدّثة — 4 إصلاحات
+# الخطة الشاملة المحدّثة — 4 إصلاحات نهائية
 
-## ملخص التحقق من المشكلة 3
-
-- **`prayer_logs.child_id`**: UUID يُشير إلى `worship_children.id` — مؤكد من الكود (سطر 61, 82 في worship-api). Policy عبر `worship_children` تعمل.
-- **`kids_worship_data.child_id`**: TEXT — قد يكون UUID من `worship_children` أو `"default"` (سطر 26 في KidsWorship.tsx). لا يوجد عمود `user_id` في الجدول أصلاً.
-
-**النتيجة**: لا يمكن ربط `kids_worship_data` بـ `worship_children` ولا بـ `user_id` بدون migration لإضافة العمود.
-
----
-
-## المشكلة 1 — Zakat payment queue replay
-
-**الإصلاح**: إضافة `zakat_history` في `TABLE_API_MAP` بـ `INSERT: "pay-zakat"` وتغيير `addZakatPayment` ليستخدم `table: "zakat_history"`.
-
-**ملفات**: `src/lib/syncQueue.ts`, `src/hooks/useZakatAssets.ts`
+## ما تم إصلاحه سابقاً (مؤكد)
+- ✅ syncQueue — 8 جداول + JWT guard + labels
+- ✅ resourceRegistry — childTables + warm:false
+- ✅ fullSync — persistChildTables
+- ✅ useMarketLists / useTaskLists — onSuccess
+- ✅ useZakatAssets — table: "zakat_history"
+- ✅ useFamilyRealtime — jitter عند online
+- ✅ worship-api — user_id في get/save/delete
+- ✅ Migration — RLS لـ prayer_logs و kids_worship_data
 
 ---
 
-## المشكلة 2 — useFamilyRealtime online spike
+## الإصلاح 1 — signOut ناقص جدولين
 
-**الإصلاح**: إضافة jitter عشوائي (0-60 ثانية) في `onOnline`:
+`worship_children` و `trash_items` غير موجودين في قائمة `.clear()` بـ `AuthContext.tsx`.
 
+**الإصلاح**: إضافة سطرين بعد سطر 196:
 ```ts
-const onOnline = () => {
-  const jitter = Math.random() * 60_000;
-  setTimeout(() => invalidateAll(), jitter);
-};
+db.worship_children.clear(),
+db.trash_items.clear(),
 ```
 
-**ملف**: `src/hooks/useFamilyRealtime.ts`
+**ملف**: `src/contexts/AuthContext.tsx`
 
 ---
 
-## المشكلة 3 — RLS لـ prayer_logs و kids_worship_data
+## الإصلاح 2 — Private Key extractable
 
-### أ) prayer_logs — ربط بـ worship_children (child_id = UUID مؤكد)
+في `crypto.ts` سطر 220، `loadPrivateKeyLocally` يستورد المفتاح بـ `true` (extractable). أي XSS يستخدم `exportKey` لسرقته.
 
-```sql
--- حذف السياسات القديمة
-DROP POLICY IF EXISTS "Authenticated access prayer logs" ON prayer_logs;
-DROP POLICY IF EXISTS "Authenticated delete prayer logs" ON prayer_logs;
-DROP POLICY IF EXISTS "Authenticated insert prayer logs" ON prayer_logs;
-DROP POLICY IF EXISTS "Authenticated update prayer logs" ON prayer_logs;
-
--- سياسة واحدة: الوصول فقط لأفراد العائلة عبر worship_children
-CREATE POLICY "Family access prayer logs" ON prayer_logs
-  FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM worship_children wc
-      WHERE wc.id = prayer_logs.child_id
-      AND is_family_member(auth.uid(), wc.family_id)
-    )
-  );
+**الإصلاح**: تغيير `true` إلى `false` في سطر 220:
+```ts
+false,  // non-extractable after initial save
 ```
 
-### ب) kids_worship_data — إضافة عمود user_id ثم policy
+`savePrivateKeyLocally` يبقى كما هو (يحتاج export مرة واحدة عند الإنشاء).
 
-الجدول لا يملك `user_id` ولا يمكن ربطه بـ `worship_children` لأن `child_id` قد يكون `"default"`.
+**ملف**: `src/lib/crypto.ts`
+
+---
+
+## الإصلاح 3 — الوصية SHA-256 بدون salt → PBKDF2
+
+### النهج المعتمد (بناءً على ملاحظة المستخدم)
+
+**لا ترقية تلقائية عند الدخول.** بدلاً منه:
+- الوصايا القديمة (بدون `password_salt`) تبقى تعمل بـ SHA-256
+- الوصايا الجديدة تُنشأ بـ PBKDF2
+- الترقية تحدث فقط عندما يغيّر المستخدم كلمة المرور يدوياً
+
+### التغييرات
+
+**`src/pages/Will.tsx`**:
+1. إضافة دالتين `hashPasswordPBKDF2(password, salt?)` و `verifyPasswordPBKDF2(password, hash, salt)`
+2. `handleCreatePassword`: استخدام PBKDF2 دائماً (وصية جديدة) → إرسال `{ password_hash, password_salt }`
+3. `handleEnterPassword`:
+   ```ts
+   if (!will.password_salt) {
+     // نظام قديم — SHA-256
+     const oldHash = await sha256(password);
+     if (oldHash !== will.password_hash) { setEnterError(...); return; }
+   } else {
+     // نظام جديد — PBKDF2
+     const valid = await verifyPasswordPBKDF2(password, will.password_hash, will.password_salt);
+     if (!valid) { setEnterError(...); return; }
+   }
+   setIsUnlocked(true);
+   ```
+   لا ترقية تلقائية. لا مفاجآت.
+
+**`supabase/functions/will-api/index.ts`**:
+- `save-will` action: قبول `password_salt` من body وتخزينه مع `password_hash`
 
 **Migration**:
 ```sql
--- إضافة عمود user_id
-ALTER TABLE kids_worship_data ADD COLUMN user_id uuid;
-
--- حذف السياسات القديمة
-DROP POLICY IF EXISTS "Authenticated access kids worship" ON kids_worship_data;
-DROP POLICY IF EXISTS "Authenticated delete kids worship" ON kids_worship_data;
-DROP POLICY IF EXISTS "Authenticated insert kids worship" ON kids_worship_data;
-DROP POLICY IF EXISTS "Authenticated update kids worship" ON kids_worship_data;
-
--- سياسة: المستخدم يصل لبياناته فقط
-CREATE POLICY "Users access own worship data" ON kids_worship_data
-  FOR ALL TO authenticated
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+ALTER TABLE wills ADD COLUMN IF NOT EXISTS password_salt text;
 ```
-
-**تعديل الكود**: في `worship-api/index.ts`، عند `save-worship-data` و `insert`، إضافة `user_id: userId` للـ insert. عند `get-worship-data`، إضافة `.eq("user_id", userId)` بجانب `child_id`. عند `delete-worship-data`، نفس الشيء.
-
-**ملف**: `supabase/functions/worship-api/index.ts` + migration
 
 ---
 
-## المشكلة 4 — useDocumentLists (تأكيد: لا مشكلة)
+## الإصلاح 4 — Performance indexes
 
-`createList` عنده `queryKey: key` → `useOfflineMutation.onMutate` يعمل optimistic تلقائياً. لا إصلاح مطلوب.
+Migration لتسريع `get_family_last_updated`:
+```sql
+CREATE INDEX IF NOT EXISTS idx_task_lists_family_updated ON task_lists(family_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_market_lists_family_updated ON market_lists(family_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_calendar_events_family_created ON calendar_events(family_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_family_created ON chat_messages(family_id, created_at DESC);
+```
 
 ---
 
 ## ملخص الملفات
 
-| الملف | التغيير |
-|---|---|
-| `src/lib/syncQueue.ts` | إضافة `zakat_history` entry |
-| `src/hooks/useZakatAssets.ts` | تغيير table لـ `addZakatPayment` |
-| `src/hooks/useFamilyRealtime.ts` | إضافة jitter عند online |
-| `supabase/functions/worship-api/index.ts` | إضافة `user_id` في insert/select/delete لـ `kids_worship_data` |
-| Migration | إضافة `user_id` لـ `kids_worship_data` + RLS لكلا الجدولين |
+| # | الملف | التغيير |
+|---|-------|---------|
+| 1 | `src/contexts/AuthContext.tsx` | إضافة `worship_children` و `trash_items` في signOut |
+| 2 | `src/lib/crypto.ts` | تغيير extractable إلى false |
+| 3 | `src/pages/Will.tsx` | PBKDF2 للجديد + SHA-256 backward compat بدون ترقية تلقائية |
+| 4 | `supabase/functions/will-api/index.ts` | قبول password_salt في save-will |
+| 5 | Migration | إضافة `password_salt` + 4 performance indexes |
 
 **5 ملفات + 1 migration**
 
