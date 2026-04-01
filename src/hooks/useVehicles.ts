@@ -81,7 +81,7 @@ export function useVehicles() {
       });
       return { data: null, error: response?.error || error?.message || null };
     },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const addMaintenance = useOfflineMutation<any, any>({
