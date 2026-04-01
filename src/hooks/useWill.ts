@@ -42,6 +42,7 @@ export function useWill() {
           sections: input.sections,
           is_locked: input.is_locked,
           password_hash: input.password_hash,
+          password_salt: input.password_salt,
         },
       });
       if (error) return { data: null, error: error.message };
