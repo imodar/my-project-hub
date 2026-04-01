@@ -52,7 +52,7 @@ export function usePlaceLists() {
       });
       return { data: response?.data ?? null, error: response?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const updateList = useOfflineMutation<Record<string, unknown>, Record<string, unknown>>({

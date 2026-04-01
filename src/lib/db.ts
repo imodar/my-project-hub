@@ -80,6 +80,7 @@ class AppDatabase extends Dexie {
   prayer_logs!: Table;
   worship_children!: Table;
   emergency_contacts!: Table;
+  trash_items!: Table;
 
   // ── جداول المزامنة ──
   sync_queue!: Table<SyncQueueItem, number>;
@@ -170,6 +171,11 @@ class AppDatabase extends Dexie {
 
       // ── بيانات المزامنة ──
       sync_meta: "table",
+    });
+
+    // ── الإصدار 5: إضافة سلة المحذوفات ──
+    this.version(5).stores({
+      trash_items: "id, family_id, type, deleted_at",
     });
   }
 }

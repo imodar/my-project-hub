@@ -5,6 +5,7 @@ import { appToast } from "@/lib/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadImage } from "@/lib/storage";
+import { db } from "@/lib/db";
 
 const isGoogleEmail = (email: string): boolean => {
   const googleDomains = ["gmail.com", "googlemail.com"];
@@ -83,6 +84,10 @@ const Profile = () => {
       setAvatarFile(null);
       // Update localStorage cache
       localStorage.setItem(`profile_name_${user.id}`, name);
+      // Update Dexie for offline
+      try {
+        await db.profiles.put({ id: user.id, name, ...(avatarUrl ? { avatar_url: avatarUrl } : {}) });
+      } catch { /* non-critical */ }
       if (avatarUrl) setAvatar(avatarUrl);
       appToast.success("تم حفظ التغييرات");
     }

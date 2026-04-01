@@ -58,7 +58,7 @@ export function useDebts() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const updateDebt = useOfflineMutation<any, any>({
@@ -70,7 +70,7 @@ export function useDebts() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const deleteDebt = useOfflineMutation<any, any>({
@@ -81,7 +81,7 @@ export function useDebts() {
       });
       return { data: null, error: data?.error || error?.message || null };
     },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const addPayment = useOfflineMutation<any, any>({
@@ -98,7 +98,6 @@ export function useDebts() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   const addPostponement = useOfflineMutation<any, any>({
@@ -110,7 +109,6 @@ export function useDebts() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   return {

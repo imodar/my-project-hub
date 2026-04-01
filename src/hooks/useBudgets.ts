@@ -28,6 +28,10 @@ export function useBudgets() {
     apiFn,
     enabled: !!familyId,
     scopeKey: familyId ?? undefined,
+    filterFn: useCallback(
+      (items: any[]) => items.filter(i => !familyId || i.family_id === familyId),
+      [familyId]
+    ),
   });
 
   const createBudget = useOfflineMutation<any, any>({

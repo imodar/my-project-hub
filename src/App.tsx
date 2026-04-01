@@ -19,6 +19,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { warmCache } from "@/lib/warmCache";
+import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
 import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
 import BottomNav from "@/components/home/BottomNav";
@@ -136,7 +137,19 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
 
     warmedFamilyRef.current = null;
     setCacheReady(false);
-    setInitialSyncDone(!!localStorage.getItem("first_sync_done"));
+
+    const lsFlag = !!localStorage.getItem("first_sync_done");
+    if (lsFlag) {
+      setInitialSyncDone(true);
+    } else {
+      setInitialSyncDone(false);
+      getMeaningfulLocalDataState().then(({ hasMeaningfulLocalData }) => {
+        if (hasMeaningfulLocalData) {
+          localStorage.setItem("first_sync_done", "1");
+          setInitialSyncDone(true);
+        }
+      });
+    }
   }, [user?.id]);
 
   useEffect(() => {
