@@ -401,6 +401,20 @@ export async function processQueue(): Promise<void> {
       .equals("pending")
       .sortBy("created_at");
 
+    // ترتيب: الجداول الأساسية قبل الجداول الفرعية
+    const CHILD_TABLES = new Set([
+      "medication_logs", "budget_expenses", "debt_payments", "debt_postponements",
+      "task_items", "market_items", "document_items", "document_files",
+      "album_photos", "trip_day_plans", "trip_activities", "trip_expenses",
+      "trip_packing", "trip_documents", "trip_suggestions", "places",
+    ]);
+    pendingItems.sort((a, b) => {
+      const aChild = CHILD_TABLES.has(a.table) ? 1 : 0;
+      const bChild = CHILD_TABLES.has(b.table) ? 1 : 0;
+      if (aChild !== bChild) return aChild - bChild;
+      return 0; // keep created_at order within same priority
+    });
+
     if (pendingItems.length === 0) {
       isProcessing = false;
       return;
@@ -429,7 +443,7 @@ export async function processQueue(): Promise<void> {
       }
 
       try {
-        const { error, status } = await apiClient(mapping.functionName, {
+        const { data, error, status } = await apiClient(mapping.functionName, {
           method: "POST",
           body: { action, ...item.data },
         });
@@ -439,6 +453,12 @@ export async function processQueue(): Promise<void> {
           if (status === 401) {
             console.warn(`[SyncQueue] 🔒 خطأ مصادقة (401) — إيقاف معالجة الطابور حتى إعادة تسجيل الدخول`);
             break; // توقف عن معالجة باقي الطابور
+          }
+          // 409 مع retry = تبعية لم تُزامَن بعد — تخطّي بدون زيادة المحاولات
+          const responseData = data as Record<string, unknown> | null;
+          if (status === 409 && responseData?.retry) {
+            console.info(`[SyncQueue] ⏳ تبعية غير جاهزة لـ ${item.table} — تخطّي مؤقتاً`);
+            continue;
           }
           throw new Error(error);
         }
