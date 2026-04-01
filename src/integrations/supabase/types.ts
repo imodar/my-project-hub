@@ -1031,6 +1031,7 @@ export type Database = {
           id: string
           items: Json
           month: number
+          user_id: string | null
           year: number
         }
         Insert: {
@@ -1039,6 +1040,7 @@ export type Database = {
           id?: string
           items?: Json
           month: number
+          user_id?: string | null
           year: number
         }
         Update: {
@@ -1047,6 +1049,7 @@ export type Database = {
           id?: string
           items?: Json
           month?: number
+          user_id?: string | null
           year?: number
         }
         Relationships: []
