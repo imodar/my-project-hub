@@ -401,6 +401,20 @@ export async function processQueue(): Promise<void> {
       .equals("pending")
       .sortBy("created_at");
 
+    // ترتيب: الجداول الأساسية قبل الجداول الفرعية
+    const CHILD_TABLES = new Set([
+      "medication_logs", "budget_expenses", "debt_payments", "debt_postponements",
+      "task_items", "market_items", "document_items", "document_files",
+      "album_photos", "trip_day_plans", "trip_activities", "trip_expenses",
+      "trip_packing", "trip_documents", "trip_suggestions", "places",
+    ]);
+    pendingItems.sort((a, b) => {
+      const aChild = CHILD_TABLES.has(a.table) ? 1 : 0;
+      const bChild = CHILD_TABLES.has(b.table) ? 1 : 0;
+      if (aChild !== bChild) return aChild - bChild;
+      return 0; // keep created_at order within same priority
+    });
+
     if (pendingItems.length === 0) {
       isProcessing = false;
       return;
