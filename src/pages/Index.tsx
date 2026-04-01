@@ -3,7 +3,6 @@ import HeroSection from "@/components/home/HeroSection";
 import IslamicQuickActions from "@/components/home/IslamicQuickActions";
 import FeatureGrid from "@/components/home/FeatureGrid";
 import UpcomingEvents from "@/components/home/UpcomingEvents";
-import DailyTasks from "@/components/home/DailyTasks";
 import PullToRefresh from "@/components/PullToRefresh";
 import SOSButton from "@/components/home/SOSButton";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,7 +11,6 @@ import { preloadCriticalPages } from "@/lib/preloadPages";
 const Index = () => {
   const queryClient = useQueryClient();
 
-  // Preload all page chunks after home renders
   useEffect(() => {
     preloadCriticalPages();
   }, []);
@@ -28,7 +26,6 @@ const Index = () => {
         <IslamicQuickActions />
         <FeatureGrid />
         <UpcomingEvents />
-        <DailyTasks />
       </PullToRefresh>
       <SOSButton />
     </div>
