@@ -81,7 +81,7 @@ export function useZakatAssets() {
       return { data: null, error: data?.error || error?.message || null };
     },
     queryKey: key,
-    onSuccess: () => refetch(),
+  });
   });
 
   const addZakatPayment = useOfflineMutation<any, any>({
