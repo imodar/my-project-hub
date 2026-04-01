@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
 
       // Generate 6-digit code
       const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-      const codeHash = await sha256Hex(otpCode);
+      const codeHash = await hmacHex(otpCode);
 
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
