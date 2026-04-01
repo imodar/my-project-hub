@@ -110,7 +110,7 @@ export function useDebts() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
+    });
   });
 
   return {

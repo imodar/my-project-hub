@@ -81,7 +81,6 @@ export function useZakatAssets() {
     },
     queryKey: key,
   });
-  });
 
   const addZakatPayment = useOfflineMutation<any, any>({
     table: "zakat_assets", operation: "UPDATE",
