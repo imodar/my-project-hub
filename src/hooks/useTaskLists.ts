@@ -101,6 +101,12 @@ export function useTaskLists() {
       mutate: (input: any, options?: any) => {
         const id = input.id || crypto.randomUUID();
         const payload = { created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input, id };
+        // Optimistic: inject into cache immediately
+        qc.setQueryData<any[]>(key, (old) => {
+          if (!old) return [payload];
+          if (old.some((l: any) => l.id === id)) return old;
+          return [...old, payload];
+        });
         if (options?.onSuccess || options?.onError) {
           createList.mutateAsync(payload).then((result) => options?.onSuccess?.(result?.data)).catch((err: any) => options?.onError?.(err));
         } else {
@@ -109,7 +115,13 @@ export function useTaskLists() {
       },
       mutateAsync: async (input: any) => {
         const id = input.id || crypto.randomUUID();
-        return createList.mutateAsync({ created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input, id });
+        const payload = { created_at: new Date().toISOString(), family_id: familyId, task_items: [], ...input, id };
+        qc.setQueryData<any[]>(key, (old) => {
+          if (!old) return [payload];
+          if (old.some((l: any) => l.id === id)) return old;
+          return [...old, payload];
+        });
+        return createList.mutateAsync(payload);
       },
     },
     deleteList: {
