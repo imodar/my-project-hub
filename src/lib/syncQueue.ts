@@ -443,7 +443,7 @@ export async function processQueue(): Promise<void> {
       }
 
       try {
-        const { error, status } = await apiClient(mapping.functionName, {
+        const { data, error, status } = await apiClient(mapping.functionName, {
           method: "POST",
           body: { action, ...item.data },
         });
