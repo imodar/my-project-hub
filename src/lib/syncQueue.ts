@@ -454,10 +454,19 @@ export async function processQueue(): Promise<void> {
             console.warn(`[SyncQueue] 🔒 خطأ مصادقة (401) — إيقاف معالجة الطابور حتى إعادة تسجيل الدخول`);
             break; // توقف عن معالجة باقي الطابور
           }
-          // 409 مع retry = تبعية لم تُزامَن بعد — تخطّي بدون زيادة المحاولات
+          // 409 مع retry = تبعية لم تُزامَن بعد — تخطّي مؤقتاً
+          // لكن إذا مضت ساعة+ فالأب لن يأتي — نعتبرها فاشلة
           const responseData = data as Record<string, unknown> | null;
           if (status === 409 && responseData?.retry) {
-            console.info(`[SyncQueue] ⏳ تبعية غير جاهزة لـ ${item.table} — تخطّي مؤقتاً`);
+            const ageMs = Date.now() - new Date(item.created_at).getTime();
+            const ONE_HOUR = 60 * 60 * 1000;
+            if (ageMs > ONE_HOUR) {
+              console.warn(`[SyncQueue] ⏰ تبعية ${item.table} عمرها > ساعة — تُعتبر فاشلة`);
+              await db.sync_queue.update(item.id!, { status: "failed" as const });
+              _notifyFailed(item.table);
+            } else {
+              console.info(`[SyncQueue] ⏳ تبعية غير جاهزة لـ ${item.table} — تخطّي مؤقتاً`);
+            }
             continue;
           }
           throw new Error(error);
