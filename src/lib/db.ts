@@ -80,6 +80,7 @@ class AppDatabase extends Dexie {
   prayer_logs!: Table;
   worship_children!: Table;
   emergency_contacts!: Table;
+  trash_items!: Table;
 
   // ── جداول المزامنة ──
   sync_queue!: Table<SyncQueueItem, number>;
