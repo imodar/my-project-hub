@@ -1,95 +1,104 @@
+# خطة إصلاح شاملة — 8 نقاط
 
+## 1. syncQueue — إضافة UPDATE لـ 4 جداول قوائم
 
-# الخطة الشاملة المحدّثة — 4 إصلاحات نهائية
+**ملف**: `src/lib/syncQueue.ts`
 
-## ما تم إصلاحه سابقاً (مؤكد)
-- ✅ syncQueue — 8 جداول + JWT guard + labels
-- ✅ resourceRegistry — childTables + warm:false
-- ✅ fullSync — persistChildTables
-- ✅ useMarketLists / useTaskLists — onSuccess
-- ✅ useZakatAssets — table: "zakat_history"
-- ✅ useFamilyRealtime — jitter عند online
-- ✅ worship-api — user_id في get/save/delete
-- ✅ Migration — RLS لـ prayer_logs و kids_worship_data
+إضافة `UPDATE: "update-list"` لـ `task_lists`, `market_lists`, `document_lists`, `place_lists`. حالياً فقط INSERT و DELETE معرّفة — أي تعديل اسم قائمة offline لن يُزامن.
 
 ---
 
-## الإصلاح 1 — signOut ناقص جدولين
+## 2. resourceRegistry — إضافة document_files و trip_documents
 
-`worship_children` و `trash_items` غير موجودين في قائمة `.clear()` بـ `AuthContext.tsx`.
+**ملف**: `src/lib/resourceRegistry.ts`
 
-**الإصلاح**: إضافة سطرين بعد سطر 196:
-```ts
-db.worship_children.clear(),
-db.trash_items.clear(),
-```
-
-**ملف**: `src/contexts/AuthContext.tsx`
+- إضافة `document_files` كـ nested تحت `document_items` (مؤكد: documents-api يرجع `*.document_items(*.document_files(*))`)
+- إضافة `trip_documents` كـ child مباشر لـ trips (مؤكد: trips-api يرجع `trip_documents(*)`)
+- إضافة entries جديدة للجدولين مع `warm: false` و `fullSync: null`
 
 ---
 
-## الإصلاح 2 — Private Key extractable
+## 3. otp_codes — إضافة deny RLS policy
 
-في `crypto.ts` سطر 220، `loadPrivateKeyLocally` يستورد المفتاح بـ `true` (extractable). أي XSS يستخدم `exportKey` لسرقته.
+**ملف**: Migration
 
-**الإصلاح**: تغيير `true` إلى `false` في سطر 220:
-```ts
-false,  // non-extractable after initial save
-```
-
-`savePrivateKeyLocally` يبقى كما هو (يحتاج export مرة واحدة عند الإنشاء).
-
-**ملف**: `src/lib/crypto.ts`
-
----
-
-## الإصلاح 3 — الوصية SHA-256 بدون salt → PBKDF2
-
-### النهج المعتمد (بناءً على ملاحظة المستخدم)
-
-**لا ترقية تلقائية عند الدخول.** بدلاً منه:
-- الوصايا القديمة (بدون `password_salt`) تبقى تعمل بـ SHA-256
-- الوصايا الجديدة تُنشأ بـ PBKDF2
-- الترقية تحدث فقط عندما يغيّر المستخدم كلمة المرور يدوياً
-
-### التغييرات
-
-**`src/pages/Will.tsx`**:
-1. إضافة دالتين `hashPasswordPBKDF2(password, salt?)` و `verifyPasswordPBKDF2(password, hash, salt)`
-2. `handleCreatePassword`: استخدام PBKDF2 دائماً (وصية جديدة) → إرسال `{ password_hash, password_salt }`
-3. `handleEnterPassword`:
-   ```ts
-   if (!will.password_salt) {
-     // نظام قديم — SHA-256
-     const oldHash = await sha256(password);
-     if (oldHash !== will.password_hash) { setEnterError(...); return; }
-   } else {
-     // نظام جديد — PBKDF2
-     const valid = await verifyPasswordPBKDF2(password, will.password_hash, will.password_salt);
-     if (!valid) { setEnterError(...); return; }
-   }
-   setIsUnlocked(true);
-   ```
-   لا ترقية تلقائية. لا مفاجآت.
-
-**`supabase/functions/will-api/index.ts`**:
-- `save-will` action: قبول `password_salt` من body وتخزينه مع `password_hash`
-
-**Migration**:
 ```sql
-ALTER TABLE wills ADD COLUMN IF NOT EXISTS password_salt text;
+CREATE POLICY "No client access" ON otp_codes 
+  FOR ALL TO authenticated, anon USING (false);
+```
+
+الجدول يُدار بـ service_role فقط. هذا يمنع أي محاولة وصول من client.
+
+---
+
+## 4. phone-auth — HMAC بـ OTP_HMAC_SECRET مستقل
+
+**ملف**: `supabase/functions/phone-auth/index.ts`
+
+استبدال `sha256Hex` بـ `hmacHex` تستخدم secret مستقل:
+
+```ts
+async function hmacHex(text: string): Promise<string> {
+  const secret = Deno.env.get("OTP_HMAC_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+```
+
+**لماذا secret مستقل؟**: إذا تغيّر `SUPABASE_SERVICE_ROLE_KEY` (rotation)، الـ OTP hashes المخزونة تصبح غير قابلة للتحقق. بما أن OTP تنتهي خلال 5 دقائق الخطر منخفض، لكن فصل المسؤوليات أنظف.
+
+**Fallback**: إذا `OTP_HMAC_SECRET` غير موجود، يستخدم `SUPABASE_SERVICE_ROLE_KEY` كـ fallback — التطبيق يعمل فوراً بدون إعداد إضافي.
+
+**Secret**: إضافة `OTP_HMAC_SECRET` عبر أداة الـ secrets (قيمة عشوائية 64+ حرف). يمكن إضافته لاحقاً — الـ fallback يضمن عمل التطبيق.
+
+---
+
+## 5. localBootstrap — يعتمد على 3 جداول فقط
+
+**ملف**: `src/lib/localBootstrap.ts`
+
+استبدال العد اليدوي لـ `task_lists + market_lists + budgets` بـ `getMeaningfulLocalDataState()` الموجودة فعلاً والتي تعد كل الجداول.
+
+---
+
+## 6. useFamilyRealtime — polling بدون jitter
+
+**ملف**: `src/hooks/useFamilyRealtime.ts`
+
+إضافة jitter داخل callback الـ setInterval:
+```ts
+const interval = setInterval(() => {
+  if (document.visibilityState === "visible") {
+    setTimeout(() => invalidateAll(), Math.random() * 30_000);
+  }
+}, POLL_INTERVAL_MS);
 ```
 
 ---
 
-## الإصلاح 4 — Performance indexes
+## 7. App.tsx — cacheReady في dependency array
 
-Migration لتسريع `get_family_last_updated`:
-```sql
-CREATE INDEX IF NOT EXISTS idx_task_lists_family_updated ON task_lists(family_id, updated_at DESC);
-CREATE INDEX IF NOT EXISTS idx_market_lists_family_updated ON market_lists(family_id, updated_at DESC);
-CREATE INDEX IF NOT EXISTS idx_calendar_events_family_created ON calendar_events(family_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_chat_messages_family_created ON chat_messages(family_id, created_at DESC);
+**ملف**: `src/App.tsx`
+
+إزالة `cacheReady` من dependency array — هو يُعيَّن داخل الـ effect نفسه، وهذا anti-pattern قد يسبب re-run غير مقصود.
+
+---
+
+## 8. fullSync — إضافة timeout
+
+**ملف**: `src/lib/fullSync.ts`
+
+إضافة timeout 30 ثانية لكل step:
+```ts
+const fetchWithTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
 ```
 
 ---
@@ -98,11 +107,14 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_family_created ON chat_messages(fam
 
 | # | الملف | التغيير |
 |---|-------|---------|
-| 1 | `src/contexts/AuthContext.tsx` | إضافة `worship_children` و `trash_items` في signOut |
-| 2 | `src/lib/crypto.ts` | تغيير extractable إلى false |
-| 3 | `src/pages/Will.tsx` | PBKDF2 للجديد + SHA-256 backward compat بدون ترقية تلقائية |
-| 4 | `supabase/functions/will-api/index.ts` | قبول password_salt في save-will |
-| 5 | Migration | إضافة `password_salt` + 4 performance indexes |
+| 1 | `src/lib/syncQueue.ts` | إضافة `UPDATE: "update-list"` لـ 4 جداول |
+| 2 | `src/lib/resourceRegistry.ts` | إضافة `document_files` nested + `trip_documents` child + 2 entries |
+| 3 | `src/lib/fullSync.ts` | إضافة timeout 30s لكل step |
+| 4 | `src/lib/localBootstrap.ts` | استبدال العد اليدوي بـ `getMeaningfulLocalDataState()` |
+| 5 | `src/hooks/useFamilyRealtime.ts` | إضافة jitter لـ setInterval |
+| 6 | `src/App.tsx` | إزالة `cacheReady` من dependency array |
+| 7 | `supabase/functions/phone-auth/index.ts` | HMAC بـ `OTP_HMAC_SECRET` مع fallback |
+| 8 | Migration | deny policy لـ `otp_codes` |
+| 9 | Secret (اختياري) | إضافة `OTP_HMAC_SECRET` |
 
-**5 ملفات + 1 migration**
-
+**8 ملفات + 1 migration + 1 secret اختياري**
