@@ -181,6 +181,50 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
     functionName: "worship-api",
     actions: { INSERT: "save-worship-data", DELETE: "delete-worship-data" },
   },
+  worship_children: {
+    functionName: "worship-api",
+    actions: { INSERT: "add-child", DELETE: "remove-child" },
+  },
+  prayer_logs: {
+    functionName: "worship-api",
+    actions: { INSERT: "save-prayer-log" },
+  },
+
+  // ── التطعيمات ──
+  vaccinations: {
+    functionName: "health-api",
+    actions: { INSERT: "add-child", UPDATE: "update-child", DELETE: "remove-child" },
+  },
+
+  // ── الطوارئ ──
+  emergency_contacts: {
+    functionName: "settings-api",
+    actions: { INSERT: "add-emergency-contact", DELETE: "delete-emergency-contact" },
+  },
+
+  // ── سلة المحذوفات ──
+  trash_items: {
+    functionName: "trash-api",
+    actions: { INSERT: "move-to-trash", DELETE: "permanent-delete" },
+  },
+
+  // ── الوصية ──
+  will_sections: {
+    functionName: "will-api",
+    actions: { UPDATE: "save-will", DELETE: "delete-will" },
+  },
+
+  // ── الرحلات (إضافات) ──
+  trip_suggestions: {
+    functionName: "trips-api",
+    actions: { INSERT: "add-suggestion", UPDATE: "update-suggestion-status" },
+  },
+
+  // ── الديون (إضافات) ──
+  debt_postponements: {
+    functionName: "debts-api",
+    actions: { INSERT: "add-postponement" },
+  },
 };
 
 /* ────────────────────────────────────────────
