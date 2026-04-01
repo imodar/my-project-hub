@@ -96,7 +96,7 @@ export function useZakatAssets() {
       });
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
-    queryKey: key, onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   return {
