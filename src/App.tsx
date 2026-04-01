@@ -184,7 +184,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, familyId, familyLoading, initialSyncDone, cacheReady, qc]);
+  }, [user?.id, familyId, familyLoading, initialSyncDone, qc]);
 
   // Listen for sync queue failures and notify user
   useEffect(() => {

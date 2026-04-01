@@ -34,6 +34,12 @@ async function persistChildTables(
   }
 }
 
+const fetchWithTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
+
 export async function fullSync(
   familyId: string,
   onProgress: (p: SyncProgress) => void
@@ -46,9 +52,12 @@ export async function fullSync(
   await Promise.allSettled(
     FULL_SYNC_STEPS.map(async (step) => {
       try {
-        const { data: response } = await supabase.functions.invoke(step.fn, {
-          body: { action: step.action, family_id: familyId },
-        });
+        const { data: response } = await fetchWithTimeout(
+          supabase.functions.invoke(step.fn, {
+            body: { action: step.action, family_id: familyId },
+          }),
+          30_000
+        );
 
         const items = response?.data || [];
         if (items.length > 0) {

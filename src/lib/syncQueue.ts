@@ -41,7 +41,7 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   },
   task_lists: {
     functionName: "tasks-api",
-    actions: { INSERT: "create-list", DELETE: "delete-list" },
+    actions: { INSERT: "create-list", UPDATE: "update-list", DELETE: "delete-list" },
   },
 
   // ── Market ──
@@ -51,7 +51,7 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   },
   market_lists: {
     functionName: "market-api",
-    actions: { INSERT: "create-list", DELETE: "delete-list" },
+    actions: { INSERT: "create-list", UPDATE: "update-list", DELETE: "delete-list" },
   },
 
   // ── Calendar ──
@@ -109,7 +109,7 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   // ── Documents ──
   document_lists: {
     functionName: "documents-api",
-    actions: { INSERT: "create-list", DELETE: "delete-list" },
+    actions: { INSERT: "create-list", UPDATE: "update-list", DELETE: "delete-list" },
   },
   document_items: {
     functionName: "documents-api",
@@ -173,7 +173,7 @@ export const TABLE_API_MAP: Record<string, TableApiMapping> = {
   },
   place_lists: {
     functionName: "places-api",
-    actions: { INSERT: "create-list", DELETE: "delete-list" },
+    actions: { INSERT: "create-list", UPDATE: "update-list", DELETE: "delete-list" },
   },
 
   // ── Worship ──

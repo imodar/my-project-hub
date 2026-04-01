@@ -96,6 +96,7 @@ export const RESOURCE_REGISTRY: ResourceEntry[] = [
         { key: "trip_expenses", table: "trip_expenses" },
         { key: "trip_packing", table: "trip_packing" },
         { key: "trip_suggestions", table: "trip_suggestions" },
+        { key: "trip_documents", table: "trip_documents" },
       ],
     } },
   { table: "trip_day_plans", queryKeyPrefix: "trips", familyScoped: false, warm: false, realtime: false, fullSync: null },
@@ -103,13 +104,17 @@ export const RESOURCE_REGISTRY: ResourceEntry[] = [
   { table: "trip_expenses", queryKeyPrefix: "trips", familyScoped: false, warm: false, realtime: false, fullSync: null },
   { table: "trip_packing", queryKeyPrefix: "trips", familyScoped: false, warm: false, realtime: false, fullSync: null },
   { table: "trip_suggestions", queryKeyPrefix: "trips", familyScoped: false, warm: false, realtime: false, fullSync: null },
+  { table: "trip_documents", queryKeyPrefix: "trips", familyScoped: false, warm: false, realtime: false, fullSync: null },
 
   // ── المستندات ──
   { table: "document_lists", queryKeyPrefix: "document-lists", familyScoped: true, warm: true, realtime: true,
     fullSync: { action: "get-lists", fn: "documents-api", label: "الوثائق",
-      childTables: [{ key: "document_items", table: "document_items" }],
+      childTables: [{ key: "document_items", table: "document_items", nested: [
+        { key: "document_files", table: "document_files" },
+      ] }],
     } },
   { table: "document_items", queryKeyPrefix: "document-lists", familyScoped: false, warm: false, realtime: false, fullSync: null },
+  { table: "document_files", queryKeyPrefix: "document-lists", familyScoped: false, warm: false, realtime: false, fullSync: null },
 
   // ── الأماكن ──
   { table: "place_lists", queryKeyPrefix: "place-lists", familyScoped: true, warm: true, realtime: true,
