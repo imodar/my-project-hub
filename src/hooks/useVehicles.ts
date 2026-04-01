@@ -114,7 +114,6 @@ export function useVehicles() {
       });
       return { data: null, error: response?.error || error?.message || null };
     },
-    onSuccess: () => refetch(),
   });
 
   return {
