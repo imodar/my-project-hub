@@ -120,7 +120,9 @@ Deno.serve(async (req) => {
       if (!validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
       if (typeof day_number !== "number" || day_number < 1 || day_number > 365) return json({ error: "رقم اليوم غير صالح" }, 400);
       if (city && typeof city === "string" && city.length > MAX_NAME) return json({ error: "اسم المدينة طويل جداً" }, 400);
-      const { data, error } = await supabase.from("trip_day_plans").insert({ trip_id, day_number, city: city ? sanitize(city, MAX_NAME) : null }).select().single();
+      const { data: trip } = await supabase.from("trips").select("id").eq("id", trip_id).maybeSingle();
+      if (!trip) return json({ error: "الرحلة غير موجودة بعد، يرجى المحاولة لاحقاً", retry: true }, 409);
+      const { data, error } = await adminClient.from("trip_day_plans").insert({ trip_id, day_number, city: city ? sanitize(city, MAX_NAME) : null }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
@@ -162,7 +164,9 @@ Deno.serve(async (req) => {
       if (!validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب" }, 400);
       if (notes && typeof notes === "string" && notes.length > MAX_NOTE) return json({ error: "الملاحظات طويلة جداً" }, 400);
-      const { data, error } = await supabase.from("trip_documents").insert({ trip_id, name: sanitize(name, MAX_NAME), type, file_url, file_name, notes: notes ? sanitize(notes, MAX_NOTE) : null }).select().single();
+      const { data: trip } = await supabase.from("trips").select("id").eq("id", trip_id).maybeSingle();
+      if (!trip) return json({ error: "الرحلة غير موجودة بعد، يرجى المحاولة لاحقاً", retry: true }, 409);
+      const { data, error } = await adminClient.from("trip_documents").insert({ trip_id, name: sanitize(name, MAX_NAME), type, file_url, file_name, notes: notes ? sanitize(notes, MAX_NOTE) : null }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
@@ -179,7 +183,9 @@ Deno.serve(async (req) => {
       const { trip_id, name } = body;
       if (!validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب" }, 400);
-      const { data, error } = await supabase.from("trip_packing").insert({ trip_id, name: sanitize(name, MAX_NAME) }).select().single();
+      const { data: trip } = await supabase.from("trips").select("id").eq("id", trip_id).maybeSingle();
+      if (!trip) return json({ error: "الرحلة غير موجودة بعد، يرجى المحاولة لاحقاً", retry: true }, 409);
+      const { data, error } = await adminClient.from("trip_packing").insert({ trip_id, name: sanitize(name, MAX_NAME) }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
@@ -198,7 +204,9 @@ Deno.serve(async (req) => {
       if (!validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب" }, 400);
       if (amount !== undefined && !validAmount(amount)) return json({ error: "المبلغ غير صالح" }, 400);
-      const { data, error } = await supabase.from("trip_expenses").insert({ trip_id, name: sanitize(name, MAX_NAME), amount }).select().single();
+      const { data: trip } = await supabase.from("trips").select("id").eq("id", trip_id).maybeSingle();
+      if (!trip) return json({ error: "الرحلة غير موجودة بعد، يرجى المحاولة لاحقاً", retry: true }, 409);
+      const { data, error } = await adminClient.from("trip_expenses").insert({ trip_id, name: sanitize(name, MAX_NAME), amount }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
@@ -208,7 +216,9 @@ Deno.serve(async (req) => {
       if (!validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
       if (!validStr(place_name, MAX_NAME)) return json({ error: "اسم المكان مطلوب" }, 400);
       if (reason && typeof reason === "string" && reason.length > MAX_NOTE) return json({ error: "السبب طويل جداً" }, 400);
-      const { data, error } = await supabase.from("trip_suggestions").insert({ trip_id, place_name: sanitize(place_name, MAX_NAME), type, reason: reason ? sanitize(reason, MAX_NOTE) : null, location, suggested_by: userId }).select().single();
+      const { data: trip } = await supabase.from("trips").select("id").eq("id", trip_id).maybeSingle();
+      if (!trip) return json({ error: "الرحلة غير موجودة بعد، يرجى المحاولة لاحقاً", retry: true }, 409);
+      const { data, error } = await adminClient.from("trip_suggestions").insert({ trip_id, place_name: sanitize(place_name, MAX_NAME), type, reason: reason ? sanitize(reason, MAX_NOTE) : null, location, suggested_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
