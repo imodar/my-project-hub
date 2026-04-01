@@ -120,7 +120,9 @@ Deno.serve(async (req) => {
       if (!validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
       if (typeof day_number !== "number" || day_number < 1 || day_number > 365) return json({ error: "رقم اليوم غير صالح" }, 400);
       if (city && typeof city === "string" && city.length > MAX_NAME) return json({ error: "اسم المدينة طويل جداً" }, 400);
-      const { data, error } = await supabase.from("trip_day_plans").insert({ trip_id, day_number, city: city ? sanitize(city, MAX_NAME) : null }).select().single();
+      const { data: trip } = await supabase.from("trips").select("id").eq("id", trip_id).maybeSingle();
+      if (!trip) return json({ error: "الرحلة غير موجودة بعد، يرجى المحاولة لاحقاً", retry: true }, 409);
+      const { data, error } = await adminClient.from("trip_day_plans").insert({ trip_id, day_number, city: city ? sanitize(city, MAX_NAME) : null }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
