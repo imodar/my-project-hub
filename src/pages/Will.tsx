@@ -43,7 +43,7 @@ function base64ToBuf(b64: string): Uint8Array {
 async function hashPasswordPBKDF2(password: string, salt?: Uint8Array): Promise<{ hash: string; salt: string }> {
   const s = salt || crypto.getRandomValues(new Uint8Array(16));
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: s, iterations: 100000, hash: "SHA-256" }, key, 256);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: s as Uint8Array, iterations: 100000, hash: "SHA-256" }, key, 256);
   return { hash: bufToHex(bits), salt: bufToBase64(s) };
 }
 
