@@ -210,7 +210,9 @@ Deno.serve(async (req) => {
       if (!validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
       if (!validStr(place_name, MAX_NAME)) return json({ error: "اسم المكان مطلوب" }, 400);
       if (reason && typeof reason === "string" && reason.length > MAX_NOTE) return json({ error: "السبب طويل جداً" }, 400);
-      const { data, error } = await supabase.from("trip_suggestions").insert({ trip_id, place_name: sanitize(place_name, MAX_NAME), type, reason: reason ? sanitize(reason, MAX_NOTE) : null, location, suggested_by: userId }).select().single();
+      const { data: trip } = await supabase.from("trips").select("id").eq("id", trip_id).maybeSingle();
+      if (!trip) return json({ error: "الرحلة غير موجودة بعد، يرجى المحاولة لاحقاً", retry: true }, 409);
+      const { data, error } = await adminClient.from("trip_suggestions").insert({ trip_id, place_name: sanitize(place_name, MAX_NAME), type, reason: reason ? sanitize(reason, MAX_NOTE) : null, location, suggested_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
