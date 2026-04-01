@@ -37,7 +37,11 @@ export async function apiClient<T = unknown>(
       if (!navigator.onLine) {
         return { data: null, error: "أنت غير متصل بالإنترنت", status: 0 };
       }
-      return { data: null, error: error.message, status: 500 };
+      // Extract status from error message if available (e.g. "Edge Function returned a non-2xx status code")
+      // data may still contain the response body with retry hints
+      const statusMatch = error.message?.match(/(\d{3})/);
+      const httpStatus = statusMatch ? parseInt(statusMatch[1], 10) : 500;
+      return { data: data as T, error: error.message, status: httpStatus };
     }
 
     return { data: data as T, error: null, status: 200 };
