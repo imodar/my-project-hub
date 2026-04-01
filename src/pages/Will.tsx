@@ -124,9 +124,9 @@ const Will = () => {
       appToast.error("كلمة المرور قصيرة جداً", "يجب أن تكون 4 أحرف على الأقل");
       return;
     }
-    const hash = await sha256(createPassword);
+    const { hash, salt } = await hashPasswordPBKDF2(createPassword);
     upsertWill.mutate(
-      { sections: DEFAULT_SECTIONS, password_hash: hash },
+      { sections: DEFAULT_SECTIONS, password_hash: hash, password_salt: salt },
       {
         onSuccess: () => {
           setIsUnlocked(true);
