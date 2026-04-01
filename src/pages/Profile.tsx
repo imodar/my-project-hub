@@ -5,6 +5,7 @@ import { appToast } from "@/lib/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadImage } from "@/lib/storage";
+import { db } from "@/lib/db";
 
 const isGoogleEmail = (email: string): boolean => {
   const googleDomains = ["gmail.com", "googlemail.com"];
