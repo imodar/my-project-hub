@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useCallback } from "react";
+import React, { createContext, useContext, useCallback, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { appToast } from "@/lib/toast";
+import { db } from "@/lib/db";
 
 export interface TrashItem {
   id: string;
@@ -44,11 +45,42 @@ const mapRow = (row: any): TrashItem => ({
   relatedRecords: row.related_records,
 });
 
+/* ── Map TrashItem → Dexie row ── */
+const toDexieRow = (item: TrashItem, familyId: string) => ({
+  id: item.id,
+  family_id: familyId,
+  type: item.type,
+  title: item.title,
+  description: item.description || null,
+  deleted_at: item.deletedAt.toISOString(),
+  user_id: item.deletedBy,
+  is_shared: item.isShared,
+  original_data: item.originalData,
+  related_records: item.relatedRecords,
+});
+
 export const TrashProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
   const qc = useQueryClient();
   const queryKey = ["trash-items", familyId];
+
+  // Local placeholder from Dexie
+  const [localTrash, setLocalTrash] = useState<TrashItem[]>([]);
+  useEffect(() => {
+    if (!familyId) return;
+    let cancelled = false;
+    db.trash_items
+      .where("family_id").equals(familyId)
+      .toArray()
+      .then((rows: any[]) => {
+        if (!cancelled && rows.length > 0) {
+          setLocalTrash(rows.map((r: any) => mapRow(r)));
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [familyId]);
 
   const { data: trashItems = [] } = useQuery({
     queryKey,
@@ -59,10 +91,20 @@ export const TrashProvider = ({ children }: { children: React.ReactNode }) => {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      return (data?.data || []).map(mapRow);
+      const items = (data?.data || []).map(mapRow);
+
+      // Write to Dexie
+      try {
+        const dexieRows = items.map((i: TrashItem) => toDexieRow(i, familyId));
+        await db.trash_items.where("family_id").equals(familyId).delete();
+        if (dexieRows.length > 0) await db.trash_items.bulkPut(dexieRows);
+      } catch { /* non-critical */ }
+
+      return items;
     },
     enabled: !!user && !!familyId,
     staleTime: 2 * 60 * 1000,
+    placeholderData: localTrash.length > 0 ? localTrash : undefined,
   });
 
   const addToTrash = useCallback(
@@ -70,6 +112,23 @@ export const TrashProvider = ({ children }: { children: React.ReactNode }) => {
       if (!user || !familyId) return;
       const now = new Date();
       const permanentDeleteAt = new Date(now.getTime() + EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+      const id = crypto.randomUUID();
+
+      // Write to Dexie optimistically
+      try {
+        db.trash_items.put({
+          id,
+          family_id: familyId,
+          type: item.type,
+          title: item.title,
+          description: item.description || null,
+          deleted_at: now.toISOString(),
+          user_id: item.deletedBy,
+          is_shared: item.isShared,
+          original_data: item.originalData || null,
+          related_records: item.relatedRecords || null,
+        });
+      } catch { /* non-critical */ }
 
       supabase.functions.invoke("trash-api", {
         body: {
@@ -111,6 +170,9 @@ export const TrashProvider = ({ children }: { children: React.ReactNode }) => {
           appToast.success(`تم استعادة "${restoredTitle}"`);
         }
 
+        // Remove from Dexie
+        try { await db.trash_items.delete(id); } catch { /* non-critical */ }
+
         qc.invalidateQueries({ queryKey });
         return item;
       } catch (err: any) {
@@ -123,6 +185,9 @@ export const TrashProvider = ({ children }: { children: React.ReactNode }) => {
 
   const permanentlyDelete = useCallback(
     (id: string) => {
+      // Remove from Dexie
+      try { db.trash_items.delete(id); } catch { /* non-critical */ }
+
       supabase.functions.invoke("trash-api", {
         body: { action: "permanent-delete", id },
       }).then(({ error }) => {

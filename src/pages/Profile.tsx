@@ -84,6 +84,10 @@ const Profile = () => {
       setAvatarFile(null);
       // Update localStorage cache
       localStorage.setItem(`profile_name_${user.id}`, name);
+      // Update Dexie for offline
+      try {
+        await db.profiles.put({ id: user.id, name, ...(avatarUrl ? { avatar_url: avatarUrl } : {}) });
+      } catch { /* non-critical */ }
       if (avatarUrl) setAvatar(avatarUrl);
       appToast.success("تم حفظ التغييرات");
     }

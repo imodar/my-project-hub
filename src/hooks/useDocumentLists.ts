@@ -69,7 +69,7 @@ export function useDocumentLists() {
   const createList = useOfflineMutation<any, any>({
     table: "document_lists", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("create-list", { family_id: familyId, name: rest.name, type: rest.type || "family" }); },
-    onSuccess: () => refetch(),
+    queryKey: key,
   });
 
   const updateList = useOfflineMutation<any, any>({

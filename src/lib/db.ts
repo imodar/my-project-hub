@@ -172,6 +172,11 @@ class AppDatabase extends Dexie {
       // ── بيانات المزامنة ──
       sync_meta: "table",
     });
+
+    // ── الإصدار 5: إضافة سلة المحذوفات ──
+    this.version(5).stores({
+      trash_items: "id, family_id, type, deleted_at",
+    });
   }
 }
 
