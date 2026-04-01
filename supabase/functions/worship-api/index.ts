@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       if (!validStr(child_id, MAX_CHILD_ID)) return json({ error: "child_id غير صالح" }, 400);
       if (typeof year !== "number" || year < 2000 || year > 2100) return json({ error: "السنة غير صالحة" }, 400);
       if (typeof month !== "number" || month < 1 || month > 12) return json({ error: "الشهر غير صالح" }, 400);
-      const { data, error } = await supabase.from("kids_worship_data").select("*").eq("child_id", child_id).eq("year", year).eq("month", month);
+      const { data, error } = await supabase.from("kids_worship_data").select("*").eq("child_id", child_id).eq("year", year).eq("month", month).eq("user_id", userId);
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
