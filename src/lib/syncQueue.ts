@@ -246,6 +246,13 @@ const TABLE_LABELS: Record<string, string> = {
   zakat_assets: "أصول الزكاة", albums: "الألبومات",
   album_photos: "الصور", chat_messages: "الرسائل",
   document_lists: "المستندات", document_items: "عناصر المستندات",
+  worship_children: "أبناء العبادات", prayer_logs: "سجل الصلاة",
+  vaccinations: "التطعيمات", emergency_contacts: "جهات الطوارئ",
+  trash_items: "سلة المحذوفات", will_sections: "الوصية",
+  trip_suggestions: "اقتراحات الرحلات", debt_postponements: "تأجيل الديون",
+  places: "الأماكن", place_lists: "قوائم الأماكن",
+  document_files: "ملفات المستندات", trip_documents: "وثائق الرحلات",
+  trip_day_plans: "خطط الأيام", trip_packing: "حقيبة السفر",
 };
 
 function _notifyFailed(table: string) {
