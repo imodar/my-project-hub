@@ -67,18 +67,23 @@ Deno.serve(async (req) => {
     }
 
     if (action === "save-will") {
-      const { sections, password_hash, is_locked } = body;
+      const { sections, password_hash, password_salt, is_locked } = body;
       if (sections !== undefined && typeof sections !== "object") return json({ error: "البيانات غير صالحة" }, 400);
       if (sections && JSON.stringify(sections).length > MAX_SECTIONS) return json({ error: "حجم البيانات كبير جداً" }, 400);
       if (password_hash && typeof password_hash !== "string") return json({ error: "كلمة المرور غير صالحة" }, 400);
+      if (password_salt !== undefined && typeof password_salt !== "string") return json({ error: "password_salt غير صالح" }, 400);
       if (is_locked !== undefined && typeof is_locked !== "boolean") return json({ error: "is_locked يجب أن يكون true أو false" }, 400);
+      const updatePayload: Record<string, unknown> = { sections, password_hash, is_locked };
+      if (password_salt !== undefined) updatePayload.password_salt = password_salt;
       const { data: existing } = await supabase.from("wills" as any).select("id").eq("user_id", userId).maybeSingle();
       if (existing) {
-        const { data, error } = await supabase.from("wills" as any).update({ sections, password_hash, is_locked }).eq("id", existing.id).select().single();
+        const { data, error } = await supabase.from("wills" as any).update(updatePayload).eq("id", existing.id).select().single();
         if (error) return json({ error: error.message }, 400);
         return json({ data });
       } else {
-        const { data, error } = await supabase.from("wills" as any).insert({ user_id: userId, sections, password_hash, is_locked: is_locked || false }).select().single();
+        const insertPayload: Record<string, unknown> = { user_id: userId, sections, password_hash, is_locked: is_locked || false };
+        if (password_salt !== undefined) insertPayload.password_salt = password_salt;
+        const { data, error } = await supabase.from("wills" as any).insert(insertPayload).select().single();
         if (error) return json({ error: error.message }, 400);
         return json({ data });
       }

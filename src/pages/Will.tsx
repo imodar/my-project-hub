@@ -146,8 +146,16 @@ const Will = () => {
   const handleEnterPassword = async () => {
     if (!enterPassword.trim()) return;
     setEnterError("");
-    const hash = await sha256(enterPassword);
-    if (hash === will?.password_hash) {
+    let valid = false;
+    if (!will?.password_salt) {
+      // Legacy SHA-256 (no salt)
+      const hash = await sha256(enterPassword);
+      valid = hash === will?.password_hash;
+    } else {
+      // PBKDF2 with salt
+      valid = await verifyPasswordPBKDF2(enterPassword, will.password_hash, will.password_salt);
+    }
+    if (valid) {
       haptic.medium();
       setIsUnlocked(true);
       setEnterPassword("");
