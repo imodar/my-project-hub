@@ -99,7 +99,6 @@ export function useDebts() {
       return { data: data?.data ?? null, error: data?.error || error?.message || null };
     },
   });
-  });
 
   const addPostponement = useOfflineMutation<any, any>({
     table: "debt_payments", operation: "INSERT",
