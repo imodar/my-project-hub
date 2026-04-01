@@ -454,6 +454,12 @@ export async function processQueue(): Promise<void> {
             console.warn(`[SyncQueue] 🔒 خطأ مصادقة (401) — إيقاف معالجة الطابور حتى إعادة تسجيل الدخول`);
             break; // توقف عن معالجة باقي الطابور
           }
+          // 409 مع retry = تبعية لم تُزامَن بعد — تخطّي بدون زيادة المحاولات
+          const responseData = data as Record<string, unknown> | null;
+          if (status === 409 && responseData?.retry) {
+            console.info(`[SyncQueue] ⏳ تبعية غير جاهزة لـ ${item.table} — تخطّي مؤقتاً`);
+            continue;
+          }
           throw new Error(error);
         }
 
