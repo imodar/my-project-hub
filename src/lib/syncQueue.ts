@@ -9,6 +9,7 @@
  */
 import { db, type SyncOperation, type SyncQueueItem } from "./db";
 import { apiClient } from "./api";
+import { supabase } from "@/integrations/supabase/client";
 
 /* ────────────────────────────────────────────
  *  خريطة الجداول → Edge Functions (placeholder)
