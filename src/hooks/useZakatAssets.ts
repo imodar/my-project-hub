@@ -70,7 +70,6 @@ export function useZakatAssets() {
     },
     queryKey: key,
   });
-  });
 
   const deleteAsset = useOfflineMutation<any, any>({
     table: "zakat_assets", operation: "DELETE",
