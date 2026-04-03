@@ -21,6 +21,7 @@ import { useFamilyId } from "@/hooks/useFamilyId";
 import { warmCache } from "@/lib/warmCache";
 import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
 import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
+import { usePendingMemberAlert } from "@/hooks/usePendingMemberAlert";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
 import BottomNav from "@/components/home/BottomNav";
 import RoleGuard from "@/components/RoleGuard";
