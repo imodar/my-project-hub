@@ -1,52 +1,37 @@
 
 
-# تقييم الخطة المقترحة
+# إصلاح: فتح drawer طلب الانضمام مرتين
 
-## المشكلة في الخطة الحالية
+## المشكلة
+مصدران يستمعان لنفس الحدث:
+1. `usePendingMemberAlert.ts` (عالمي) → invalidateQueries + navigate
+2. `FamilyManagement.tsx` سطر 206-221 → Realtime channel يعمل refetchMembers مباشرة
 
-الخطة فيها مشكلة نوع (Type mismatch) ستكسر الكود:
+كلاهما يُحدّث `members` → الـ useEffect (سطر ~149) يفتح الـ drawer → يفتح مرتين.
 
-- `pendingDrawerMember` في FamilyManagement نوعه `FamilyMember` (يحتوي `name`, `role`, `isAdmin`, `status`, `avatar`...)
-- `pendingMember` في الـ Context المقترح نوعه `{ id, name, family_id }` فقط
-- الـ Drawer يستخدم `pendingDrawerMember?.name` و properties أخرى من `FamilyMember`
-- عند وصول Realtime event، الـ payload يحتوي فقط على `user_id`, `family_id`, `status` — بدون `name` (الاسم يأتي من جدول `profiles` عبر join في `useFamilyMembers`)
+## الحل
 
-يعني الـ `name: ""` في الخطة لن يتحدث أبداً لأن لا يوجد آلية لتحديثه.
+### ملف واحد: `src/pages/FamilyManagement.tsx`
+حذف الـ Realtime subscription (سطور 206-221) بالكامل:
 
-## الحل الأبسط والأصح
-
-بدل Context معقد، نستخدم **hook بسيط + navigate**:
-
-1. عند وصول عضو pending عبر Realtime → ننقل المشرف لصفحة `/family`
-2. الكود الموجود أصلاً في FamilyManagement (سطر 149-155) يفتح الـ Drawer تلقائياً بعد تحميل الأعضاء
-
-هذا يعمل لأن:
-- الـ `useFamilyMembers` hook يجلب الاسم والدور من الـ API
-- الـ `useEffect` الموجود يكشف الـ pending ويفتح الـ drawer
-- لا حاجة لنقل أي UI أو تغيير types
-
-### ملف جديد: `src/hooks/usePendingMemberAlert.ts`
-
-```text
-- يشترك بـ Realtime على family_members مع filter على family_id
-- عند INSERT بـ status=pending والمستخدم admin:
-  → invalidateQueries لـ family-members-list
-  → إذا المستخدم ليس على /family → navigate("/family")
-  → إذا المستخدم على /family → الـ invalidate وحده كافي (useEffect الموجود يفتح الـ drawer)
+```ts
+// حذف هذا الكود:
+useEffect(() => {
+  if (!familyId) return;
+  const channel = supabase.channel(`family-members-rt-${familyId}`)
+    .on("postgres_changes", { ... })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [familyId, refetchMembers]);
 ```
 
-### تعديل: `src/App.tsx`
-
-- استدعاء `usePendingMemberAlert()` داخل `WarmCacheProvider`
-
----
+الـ `usePendingMemberAlert` العالمي يتكفل بالـ invalidate، والـ useEffect الموجود يفتح الـ drawer تلقائياً.
 
 ## الملفات
 
 | # | الملف | التغيير |
 |---|-------|---------|
-| 1 | `src/hooks/usePendingMemberAlert.ts` | ملف جديد — Realtime + navigate |
-| 2 | `src/App.tsx` | استدعاء الـ hook |
+| 1 | `src/pages/FamilyManagement.tsx` | حذف Realtime subscription المكرر (سطور 206-221) |
 
-**2 ملفات فقط، بدون context، بدون migration، بدون تغيير FamilyManagement**
+**ملف واحد فقط**
 
