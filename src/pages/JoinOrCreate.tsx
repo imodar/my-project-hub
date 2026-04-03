@@ -376,15 +376,14 @@ const JoinOrCreate = () => {
               <p className="text-sm text-muted-foreground mt-1">اطلب الكود من مشرف الأسرة</p>
             </div>
 
-            <div className="flex gap-2" dir="ltr">
-              <input
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                placeholder="أدخل الكود"
-                className="flex-1 px-4 py-3.5 rounded-xl text-center text-base font-bold tracking-widest border border-input bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring"
-                maxLength={8}
-              />
-            </div>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="أدخل الكود"
+              dir="ltr"
+              className="w-full px-4 py-3.5 rounded-xl text-center text-base font-bold tracking-widest border border-input bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring"
+              maxLength={8}
+            />
 
             <button
               onClick={handleJoin}
