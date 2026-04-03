@@ -127,6 +127,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Global realtime for cross-device sync
   useFamilyRealtime();
+  usePendingMemberAlert();
 
   useEffect(() => {
     if (!user) {
