@@ -1,7 +1,6 @@
 import React, { ReactNode } from "react";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import SyncStatus from "@/components/SyncStatus";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface HeaderAction {

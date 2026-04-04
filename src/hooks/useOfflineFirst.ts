@@ -1,15 +1,12 @@
 /**
  * useOfflineFirst — Hook للقراءة مع أولوية البيانات المحلية
  *
- * يقرأ البيانات من React Query cache أولاً (0ms)، ثم IndexedDB، ثم API.
- * React Query cache هو المصدر الوحيد للبيانات — لا يوجد state منفصل.
+ * يعتمد على React Query cache كمصدر وحيد (يتم تعبئته بواسطة warmCache عند الإقلاع).
+ * لا يقرأ من IndexedDB بشكل مباشر — useQuery يجلب من API عند الحاجة.
  */
 import { useQuery, type QueryKey, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { db } from "@/lib/db";
+import { useCallback, useRef } from "react";
 import { syncTable } from "@/lib/syncManager";
-import { projectPendingChanges } from "@/lib/syncQueue";
-import type { Table } from "dexie";
 
 /* ────────────────────────────────────────────
  *  أنواع
@@ -65,41 +62,10 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
     return fn ? fn(items) : items;
   }, []);
 
-  // Check if React Query cache already has data (synchronous — 0ms)
+  // Check React Query cache synchronously (0ms — populated by warmCache)
   const cachedData = qc.getQueryData<T[]>(queryKey);
-  const hasCachedData = cachedData !== undefined;
-  const [initialLoaded, setInitialLoaded] = useState(hasCachedData);
 
-  // Serialize queryKey for stable dependency comparison
-  const queryKeyStr = JSON.stringify(queryKey);
-
-  // Keep loading state in sync with the current query key cache
-  useEffect(() => {
-    setInitialLoaded(hasCachedData);
-  }, [hasCachedData, queryKeyStr]);
-
-  // ── 1. قراءة IndexedDB فقط إذا لم يكن هناك كاش ──
-  useEffect(() => {
-    if (!enabled || hasCachedData) return;
-    let cancelled = false;
-    (async () => {
-      const table = (db as unknown as Record<string, unknown>)[tableName] as Table | undefined;
-      if (!table) {
-        if (!cancelled) setInitialLoaded(true);
-        return;
-      }
-      const items: T[] = await table.toArray();
-      const projected = await projectPendingChanges(tableName, items);
-      const filtered = applyFilter(projected);
-      if (!cancelled) {
-        qc.setQueryData(queryKey, filtered);
-        setInitialLoaded(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [tableName, enabled, hasCachedData, queryKeyStr]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── 2. جلب من API في الخلفية ──
+  // ── جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
     const result = await syncTable<T>(
       tableName,
@@ -117,10 +83,10 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
     enabled,
   });
 
-  // ── 3. مصدر وحيد: React Query cache ──
+  // ── مصدر وحيد: React Query cache ──
   const data = query.data ?? cachedData ?? [];
-  const isLoading = enabled && !hasCachedData && !initialLoaded && query.isLoading;
-  const isSyncing = query.isFetching && (hasCachedData || initialLoaded);
+  const isLoading = enabled && query.isLoading && !cachedData;
+  const isSyncing = query.isFetching && !!cachedData;
 
   return {
     data,

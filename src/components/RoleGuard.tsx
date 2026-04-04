@@ -9,15 +9,9 @@ interface RoleGuardProps {
 const RoleGuard = ({ requireNonStaff, children }: RoleGuardProps) => {
   const { dbRole, isLoading } = useUserRole();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (requireNonStaff && dbRole && ["worker", "maid", "driver"].includes(dbRole)) {
+  // Show children immediately — don't block with spinner
+  // Only redirect once role is confirmed as staff
+  if (requireNonStaff && !isLoading && dbRole && ["worker", "maid", "driver"].includes(dbRole)) {
     return <Navigate to="/" replace />;
   }
 
