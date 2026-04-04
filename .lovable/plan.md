@@ -1,49 +1,70 @@
 
 
-# خطة: تحسين تحميل الصور والملفات الصوتية في الدردشة
+# حذف البيانات والحساب بالكامل
 
-## المشكلة
-- الصور والملفات الصوتية تُخزن في bucket خاص (`chat-media`) ورابطها signed URL بتاريخ انتهاء
-- عند فتح الدردشة من الكاش (IndexedDB)، الروابط قد تكون منتهية الصلاحية → الصورة لا تظهر
-- لا يوجد أي مؤشر تحميل (spinner) أثناء جلب الملفات
-- لا يوجد تخزين محلي للملفات نفسها (blobs)
+## الوضع الحالي
+- يوجد زر "مسح البيانات" في الإعدادات بدون أي `onClick` handler
+- يوجد `account-api` edge function مع action `request-deletion` — لكنها soft delete (30 يوم انتظار)
+- يوجد `account-cleanup` edge function يعمل عبر pg_cron لحذف الحسابات المعلقة
+- المطلوب: حذف فوري وشامل لكل البيانات + الحساب
 
-## الحل
+## الخطة
 
-### 1. إنشاء hook جديد: `useMediaUrl`
-Hook صغير يتعامل مع رابط الوسائط بذكاء:
-- يحاول تحميل الرابط الحالي أولاً
-- إذا فشل (401/403 = رابط منتهي) → يستخرج الـ `path` من الرابط ويجلب signed URL جديد
-- يعرض 3 حالات: `loading` / `ready` / `error`
-- يخزن الـ blob في Cache API (`caches.open("chat-media")`) للمرة القادمة
+### 1. Edge Function جديد: `account-delete-now`
+إضافة action جديد في `account-api` اسمه `delete-account-now` يقوم بـ:
+- حذف جميع بيانات المستخدم من كل الجداول (باستخدام adminClient/service role):
+  - `family_members`, `family_keys` — إزالة العضوية
+  - `task_items`, `market_items` (added_by = userId)
+  - `calendar_events` (added_by = userId)
+  - `budgets`, `budget_expenses`, `debts`, `debt_payments`
+  - `medications`, `medication_logs`
+  - `chat_messages` (sender_id)
+  - `albums`, `album_photos` — حذف الصور من Storage أيضاً
+  - `document_lists`, `document_items`, `document_files` — حذف الملفات من Storage
+  - `places`, `place_lists`
+  - `trips` + جداولها الفرعية
+  - `vehicles`, `vaccinations`, `zakat_assets`, `will_sections`
+  - `tasbih_sessions`, `kids_worship_data`, `prayer_logs`, `worship_children`
+  - `trash_items`, `emergency_contacts`
+  - `notification_tokens`, `scheduled_notifications`
+  - `consent_log`, `data_export_requests`, `account_deletions`
+  - `profiles` — حذف
+  - ملفات الـ avatar من Storage bucket `avatars`
+- فحص إذا كان المشرف الوحيد في عائلة → يرفض الحذف مع رسالة خطأ
+- حذف المستخدم من `auth.users` عبر `adminClient.auth.admin.deleteUser()`
+- إرجاع `{ success: true }` مع progress steps
 
-```text
-المنطق:
-1. تحقق من Cache API أولاً → إذا موجود → أرجع blob URL فوراً
-2. إذا لا → حاول fetch الرابط الحالي
-3. إذا فشل (expired) → استخرج path + اطلب signed URL جديد
-4. خزّن الـ response في Cache API
-5. أرجع blob URL
-```
+### 2. واجهة المستخدم: Bottom Sheet في Settings.tsx
+عند الضغط على "مسح البيانات":
+- يفتح Bottom Sheet يحتوي على:
+  - **أيقونة تحذير كبيرة** حمراء
+  - **عنوان**: "حذف الحساب والبيانات"
+  - **تنبيهات** (3 نقاط):
+    1. سيتم حذف جميع بياناتك نهائياً
+    2. لن تتمكن من استعادة أي بيانات بعد الحذف
+    3. يمكنك إعادة التسجيل لكن بدون بياناتك السابقة
+  - **Checkbox تأكيد**: "أفهم أن هذا الإجراء لا يمكن التراجع عنه"
+  - **حقل إدخال اختياري**: سبب الحذف
+  - **زر أحمر**: "حذف الحساب نهائياً" (معطل حتى يتم تفعيل الـ checkbox)
 
-### 2. تحديث `ImageBubble` في `Chat.tsx`
-- استخدام `useMediaUrl(url)` بدل `src={url}` مباشرة
-- عرض spinner (Loader2) أثناء التحميل
-- عرض أيقونة خطأ إذا فشل الجلب
+- عند الضغط على الزر:
+  - يظهر **شريط تقدم** مع مراحل:
+    1. "جاري حذف البيانات من السيرفر..." (استدعاء Edge Function)
+    2. "جاري مسح البيانات المحلية..." (مسح IndexedDB + localStorage + Cache API)
+    3. "تم الحذف بنجاح"
+  - بعد الانتهاء → `signOut()` → navigate إلى `/auth`
 
-### 3. تحديث `VoicePlayer` في `Chat.tsx`
-- نفس المنطق: استخدام `useMediaUrl(url)` 
-- عرض spinner بدل مشغل الصوت أثناء التحميل
-
-### 4. تحديث الكاش عند جلب رسائل جديدة
-- في `useChat.ts` عند تخزين الرسائل في IndexedDB، نحتفظ أيضاً بالـ `storage_path` (نستخرجه من الرابط) لتسهيل إعادة الجلب لاحقاً
+### 3. ترجمات
+إضافة نصوص عربية وإنجليزية جديدة لكل عناصر الشيت.
 
 ## الملفات
 
 | # | الملف | التغيير |
 |---|-------|---------|
-| 1 | `src/hooks/useMediaUrl.ts` | Hook جديد - Cache API + signed URL refresh |
-| 2 | `src/pages/Chat.tsx` | تحديث ImageBubble + VoicePlayer لاستخدام الـ hook |
+| 1 | `supabase/functions/account-api/index.ts` | إضافة action `delete-account-now` |
+| 2 | `src/pages/Settings.tsx` | Bottom Sheet + progress bar + ربط الزر |
+| 3 | `src/i18n/ar.ts` | ترجمات عربية |
+| 4 | `src/i18n/en.ts` | ترجمات إنجليزية |
 
-**2 ملفات، ملف جديد واحد، بدون migration**
+**4 ملفات، بدون migration جديد** (الحذف يتم عبر service role في Edge Function)
 
