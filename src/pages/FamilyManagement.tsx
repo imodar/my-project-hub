@@ -617,7 +617,7 @@ const FamilyManagement = () => {
               <SwipeableCard
                 key={member.id}
                 actions={canSwipe ? [
-                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleRemoveMember(member.id) },
+                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setRemoveMemberTarget(member) },
                   { icon: <Shield size={16} />, label: memberIsAdmin ? "إلغاء" : "مشرف", color: memberIsAdmin ? "bg-muted-foreground" : "bg-primary", onClick: () => handleToggleAdmin(member.id) },
                 ] : []}
               >
