@@ -124,7 +124,7 @@ const Market = () => {
       lastUpdatedBy: "",
       lastUpdatedAt: "",
     }];
-  }, [dbLists, featureAccess.isStaff]);
+  }, [dbLists, featureAccess.isStaff, FAMILY_MEMBERS]);
   const [activeListId, setActiveListId] = useState("");
   const [activeCategory, setActiveCategory] = useState("الكل");
   const pendingActiveListIdRef = useRef<string | null>(null);

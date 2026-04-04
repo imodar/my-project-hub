@@ -88,7 +88,7 @@ const Tasks = () => {
       return da.localeCompare(db2);
     });
     return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
-  }, [dbLists, featureAccess.isStaff]);
+  }, [dbLists, featureAccess.isStaff, FAMILY_MEMBERS]);
 
   // Auto-create default family list
   useEffect(() => {
