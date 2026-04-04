@@ -79,6 +79,7 @@ const Tasks = () => {
           note: i.note || "",
           priority: (i.priority || "none") as TaskItem["priority"],
           assignedTo: i.assigned_to || "",
+          addedBy: i.added_by ? (FAMILY_MEMBERS.find(m => m.id === i.added_by)?.name || "") : "",
           done: i.done,
         })),
     }));
