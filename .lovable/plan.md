@@ -1,34 +1,68 @@
 
 
-# إصلاح: تذبذب عدد الأعضاء في Bottom Sheet الخريطة
+# إصلاح: تأخر ظهور أفراد العائلة في الخريطة
 
-## السبب
-المنطق الحالي في `Map.tsx` يبدأ من `locations` (السيرفر) ثم يضيف أعضاء من `members` (Dexie/سيرفر). المصدران يحمّلان بتوقيت مختلف → العدد يتغير عدة مرات أثناء التحميل. أيضاً Dexie قد يحتوي سجلات قديمة تسبب أعداد خاطئة.
+## المشكلة
+`useFamilyMembers` يقرأ من Dexie عبر `useEffect` + `useState` → أول render يكون `members = []` → المستخدم يشوف القائمة فاضية لـ 50-100ms قبل ما تمتلئ.
 
 ## الحل
-قلب المنطق: `members` هو المصدر الأساسي للقائمة (يظهر فوراً)، وبيانات `locations` تُدمج فوقه كـ enrichment فقط.
+استبدال `useEffect` + `useState` بـ `useLiveQuery` من Dexie — يعطي البيانات من أول render مباشرة (synchronous-like).
 
-### ملف: `src/pages/Map.tsx` — تعديل `mergedLocations`
+## التغييرات
 
-```text
-المنطق الجديد:
-1. ابدأ من members (المصدر الرئيسي)
-2. لكل member: ابحث عن location مطابقة بالـ user_id
-3. إذا وُجدت → استخدم بيانات الموقع
-4. إذا لم توجد → placeholder (lat:0, lng:0, is_sharing:false)
-5. أضف أي location ليس لها member مقابل (حالة نادرة)
+### ملف: `src/hooks/useFamilyMembers.ts`
+
+**قبل:**
+```typescript
+const [localMembers, setLocalMembers] = useState<FamilyMemberInfo[]>([]);
+
+useEffect(() => {
+  // async Dexie read → setState → re-render
+}, [familyId, user?.id, excludeSelf]);
 ```
 
-هذا يضمن:
-- العدد ثابت من أول render (من Dexie)
-- لا تذبذب عند وصول بيانات الموقع لاحقاً
-- لا تكرار
+**بعد:**
+```typescript
+import { useLiveQuery } from "dexie-react-hooks";
+
+const localMembers = useLiveQuery(async () => {
+  if (!familyId) return [];
+  const members = await db.family_members
+    .where("family_id").equals(familyId)
+    .toArray();
+  if (members.length === 0) return [];
+  
+  const enriched = await Promise.all(
+    members.map(async (m) => {
+      const profile = await db.profiles.get(m.user_id).catch(() => null);
+      return {
+        id: m.user_id,
+        name: profile?.name || ROLE_LABELS[m.role] || "عضو",
+        role: m.role || "member",
+        isAdmin: m.is_admin || false,
+        isCreator: false,
+        roleConfirmed: m.role_confirmed ?? true,
+        status: m.status || "active",
+      } as FamilyMemberInfo;
+    })
+  );
+  
+  if (excludeSelf && user) {
+    return enriched.filter((m) => m.id !== user.id);
+  }
+  return enriched;
+}, [familyId, user?.id, excludeSelf], []);  // [] = default value
+```
+
+- `useLiveQuery` يعيد النتيجة من Dexie فوراً (أو الـ default `[]` في أول frame ثم البيانات الحقيقية).
+- كمان يتابع التغييرات في Dexie تلقائياً (reactive) — لو تحدثت البيانات المحلية، الواجهة تتحدث فوراً.
+- حذف الـ `useState` و `useEffect` بالكامل.
 
 ## الملفات
 
 | # | الملف | التغيير |
 |---|-------|---------|
-| 1 | `src/pages/Map.tsx` | إعادة كتابة `useMemo` للـ merge — members أولاً |
+| 1 | `src/hooks/useFamilyMembers.ts` | استبدال useEffect+useState بـ useLiveQuery |
 
-**ملف واحد فقط**
+**ملف واحد، تغيير بسيط، بدون dependencies جديدة** (dexie-react-hooks موجود أصلاً في المشروع — يُستخدم في SyncStatus.tsx)
 
