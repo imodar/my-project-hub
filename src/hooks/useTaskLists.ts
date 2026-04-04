@@ -140,7 +140,7 @@ export function useTaskLists() {
     addItem: {
       ...addItem,
       mutate: (input: any) => {
-        const newItem = { id: crypto.randomUUID(), created_at: new Date().toISOString(), done: false, ...input };
+        const newItem = { id: crypto.randomUUID(), created_at: new Date().toISOString(), done: false, added_by: user?.id || null, ...input };
         qc.setQueryData<any[]>(key, (old) =>
           (old ?? []).map((list: any) =>
             list.id === newItem.list_id

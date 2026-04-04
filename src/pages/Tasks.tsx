@@ -429,7 +429,9 @@ const Tasks = () => {
               {item.note && (
                 <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
               )}
-              <p className="text-[10px] text-muted-foreground mt-0.5">{item.assignedTo}</p>
+              {item.addedBy && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">{item.addedBy}</p>
+              )}
             </div>
             {item.priority !== "none" && (
               <div className="flex flex-col items-end gap-1">
