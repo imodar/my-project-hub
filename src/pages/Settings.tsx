@@ -42,6 +42,12 @@ const Settings = () => {
   const qc = useQueryClient();
   const [privacySheet, setPrivacySheet] = useState(false);
   const [termsSheet, setTermsSheet] = useState(false);
+  const [deleteSheet, setDeleteSheet] = useState(false);
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteStep, setDeleteStep] = useState<"confirm" | "progress" | "done">("confirm");
+  const [deleteProgress, setDeleteProgress] = useState(0);
+  const [deleteStatusText, setDeleteStatusText] = useState("");
 
   const isAdmin = isDbAdmin;
 
