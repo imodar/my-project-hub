@@ -1,4 +1,5 @@
-import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, Play } from "lucide-react";
+import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, Play, Search } from "lucide-react";
+import GlobalSearch from "@/components/GlobalSearch";
 import QiblaCompass from "./QiblaCompass";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
