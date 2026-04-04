@@ -23,7 +23,8 @@ const Map = () => {
 
   // Merge: all members from local DB + location data from server
   const mergedLocations = useMemo(() => {
-    const locationMap = new Map<string, typeof locations[0]>(locations.map(l => [l.user_id, l]));
+    const locationMap: Record<string, (typeof locations)[0]> = {};
+    for (const l of locations) locationMap[l.user_id] = l;
     const seen = new Set<string>();
 
     const result = locations.map(l => {
