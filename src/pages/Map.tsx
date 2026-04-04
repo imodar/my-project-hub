@@ -1,21 +1,56 @@
-import { useState, Suspense, lazy } from "react";
+import { useState, useMemo, Suspense, lazy } from "react";
 import { MapPin, EyeOff, Settings2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 const FamilyMap = lazy(() => import("@/components/map/FamilyMap"));
 import MemberSheet from "@/components/map/MemberSheet";
 import { useLocationTracking } from "@/hooks/useLocationTracking";
+import { useFamilyMembers } from "@/hooks/useFamilyMembers";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Map = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { t, dir, isRTL } = useLanguage();
   const [updateInterval, setUpdateInterval] = useState(5);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
 
-  const { locations, isSharing, setIsSharing } = useLocationTracking(updateInterval);
+  const { locations, isLoading: isLoadingLocations, isSharing, setIsSharing } = useLocationTracking(updateInterval);
+  const { members } = useFamilyMembers({ excludeSelf: false });
+
+  // Merge: all members from local DB + location data from server
+  const mergedLocations = useMemo(() => {
+    const locationMap = new Map(locations.map(l => [l.user_id, l]));
+    const seen = new Set<string>();
+
+    const result = locations.map(l => {
+      seen.add(l.user_id);
+      return l;
+    });
+
+    // Add members that have no location record yet
+    for (const m of members) {
+      if (!seen.has(m.id)) {
+        result.push({
+          user_id: m.id,
+          lat: 0,
+          lng: 0,
+          accuracy: null,
+          updated_at: "",
+          is_sharing: false,
+          name: m.name,
+          avatar_url: null,
+          role: m.role,
+          isMe: m.id === user?.id,
+        });
+      }
+    }
+
+    return result;
+  }, [locations, members, user?.id]);
   const [isToggling, setIsToggling] = useState(false);
 
   const handleToggleSharing = async () => {
