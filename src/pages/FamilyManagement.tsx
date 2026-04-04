@@ -1172,6 +1172,8 @@ const FamilyManagement = () => {
             </button>
           </div>
         </DrawerContent>
+      </Drawer>
+
       {/* Remove Member Confirmation Drawer */}
       <Drawer open={!!removeMemberTarget} onOpenChange={(open) => { if (!open) setRemoveMemberTarget(null); }}>
         <DrawerContent className="px-4 pb-8" style={{ direction: "rtl" }}>
