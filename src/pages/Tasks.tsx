@@ -27,6 +27,7 @@ interface TaskItem {
   note: string;
   priority: "none" | "high" | "medium" | "low";
   assignedTo: string;
+  addedBy: string;
   done: boolean;
 }
 
