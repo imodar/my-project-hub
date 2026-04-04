@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { ListPageSkeleton } from "@/components/PageSkeletons";
+import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { useZakatAssets } from "@/hooks/useZakatAssets";
 import FAB from "@/components/FAB";
 import {
