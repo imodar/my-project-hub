@@ -1,54 +1,26 @@
 
 
-# تحديث الخطوة 3 — AuthGuard
+# إصلاح تأخير شاشة الدردشة — عرض فوري من الكاش
 
-## الملاحظة
-صحيحة 100%. عرض children لمستخدم جديد بدون عائلة سيسبب "flash" مربك.
+## المشكلة
+عند فتح الدردشة تظهر لعدة ثوانٍ رسائل مضللة ("التشفير غير مفعّل"، "لا توجد رسائل"، "تحميل أقدم") رغم وجود الرسائل محلياً.
 
-## المنطق المحدّث
+## الحل — ملفان فقط
 
-```text
-cached_family_id موجود?
-  ├─ نعم → عرض children فوراً ✅
-  └─ لا →
-       join_or_create_done موجود?
-         ├─ نعم → عرض children + جلب API بالخلفية 🔄
-         └─ لا → Navigate("/join-or-create") مباشرة 🚀
-```
+### 1. `src/hooks/useChat.ts`
+- إضافة `cachedLoaded` state — يبدأ `false`، يصير `true` بعد قراءة IndexedDB
+- في Step 0: إضافة `setCachedLoaded(true)` بعد القراءة (وأيضاً في catch)
+- في Step 1 (initKeys): محاولة `loadFamilyKeyLocally` أولاً — إذا نجح نضبط `familyKey` + `isReady` فوراً قبل أي API call
+- تصدير `cachedLoaded` من الهوك
 
-هذا يغطي 3 حالات:
-1. **مستخدم عادي** (cached_family_id موجود): أسرع مسار، 0ms
-2. **مستخدم مسح الكاش** (join_or_create_done موجود بس الـ ID راح): يعرض UI + يجلب الـ ID بالخلفية
-3. **مستخدم جديد** (لا هذا ولا هذا): redirect فوري بدون أي flash
+### 2. `src/pages/Chat.tsx`
+- **بانر التشفير** (سطر 415-422): يظهر فقط بعد `isReady` (إخفاء "التشفير غير مفعّل")
+- **بانر "جاري تهيئة"** (سطر 425-432): يظهر فقط إذا `!isReady && cachedLoaded && messages.length === 0`
+- **"لا توجد رسائل"** (سطر 433-441): يظهر فقط إذا `isReady && cachedLoaded && messages.length === 0`
+- **"تحميل أقدم"** (سطر 443-453): يظهر فقط إذا `isReady && hasMore && messages.length > 0`
 
-## التأثير على الملفات
-نفس الملف `src/components/AuthGuard.tsx` — المنطق يصير synchronous بالكامل:
-
-```typescript
-const cachedFamilyId = localStorage.getItem("cached_family_id");
-const joinDone = localStorage.getItem("join_or_create_done");
-
-if (cachedFamilyId) {
-  // مسار سريع — عرض children
-} else if (joinDone) {
-  // عرض children + جلب API بالخلفية
-} else {
-  // مستخدم جديد — redirect فوري
-  return <Navigate to="/join-or-create" replace />;
-}
-```
-
-## الخطة الكاملة المحدّثة (7 ملفات)
-
-| # | الملف | التغيير |
-|---|-------|---------|
-| 1 | `src/lib/resourceRegistry.ts` | إضافة `warmPriority` لكل entry |
-| 2 | `src/lib/warmCache.ts` | تقسيم لمرحلتين (critical: 3 جداول → deferred: الباقي) |
-| 3 | `src/hooks/useOfflineFirst.ts` | تبسيط — إزالة IndexedDB read + state، اعتماد على React Query cache |
-| 4 | `src/components/AuthGuard.tsx` | المنطق الثلاثي أعلاه — sync localStorage فقط، بدون Dexie/spinner |
-| 5 | `src/components/RoleGuard.tsx` | عرض children فوراً مع role افتراضي |
-| 6 | `src/components/PageHeader.tsx` | إزالة SyncStatus |
-| 7 | `src/components/SyncStatus.tsx` | polling 15s بدل useLiveQuery (للـ Settings فقط) |
-
-**7 ملفات، بدون migration**
+## النتيجة المتوقعة
+- مستخدم عنده رسائل كاش: تظهر فوراً (0ms)، بانر التشفير يظهر بعد ثانية
+- مستخدم جديد بدون رسائل: يظهر "جاري تهيئة" ثم "لا توجد رسائل"
+- لا يظهر "التشفير غير مفعّل" أبداً للمستخدمين العاديين
 
