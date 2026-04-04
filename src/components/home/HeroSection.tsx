@@ -264,6 +264,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { unreadCount } = useNotifications();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const hijriDate = "٤ شوّال ١٤٤٧";
   const gregorianDate = language === "ar" ? "٢٣ مارس ٢٠٢٦" : "March 23, 2026";
 
