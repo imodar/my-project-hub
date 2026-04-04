@@ -239,21 +239,27 @@ const FamilyManagement = () => {
     setAddStep("invite-method");
   };
 
-  const handleRemoveMember = async (id: string) => {
-    if (!familyId) return;
+  const [removeMemberTarget, setRemoveMemberTarget] = useState<FamilyMember | null>(null);
+  const [removingMember, setRemovingMember] = useState(false);
+
+  const handleRemoveMember = async () => {
+    if (!familyId || !removeMemberTarget) return;
+    setRemovingMember(true);
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "remove-member", family_id: familyId, target_user_id: id },
+        body: { action: "remove-member", family_id: familyId, target_user_id: removeMemberTarget.id },
       });
       if (error || data?.error) {
         appToast.error(data?.error || "فشل حذف العضو");
         return;
       }
       refetchMembers();
-      
+      setRemoveMemberTarget(null);
       appToast.success("تم حذف الفرد من الأسرة");
     } catch {
       appToast.error("حدث خطأ");
+    } finally {
+      setRemovingMember(false);
     }
   };
 
