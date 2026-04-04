@@ -736,7 +736,18 @@ const Vehicle = () => {
     <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
       <PageHeader title="مركباتي" subtitle={cars.length > 0 ? `${cars.length} مركبة` : undefined} />
       {vehiclesLoading ? (
-        <CardPageSkeleton />
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex gap-3">
+            <div className="h-20 flex-1 rounded-2xl bg-muted animate-pulse" />
+            <div className="h-20 flex-1 rounded-2xl bg-muted animate-pulse" />
+          </div>
+          <div className="h-10 rounded-xl bg-muted animate-pulse" />
+          <div className="space-y-3 pt-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        </div>
       ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 
