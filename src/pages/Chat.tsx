@@ -107,22 +107,40 @@ const LocationBubble = ({ lat, lng, isMe }: { lat: number; lng: number; isMe: bo
 
 // ─── Image Bubble ───
 const ImageBubble = ({ url }: { url: string }) => {
+  const { url: mediaUrl, status } = useMediaUrl(url);
   const [fullscreen, setFullscreen] = useState(false);
+
+  if (status === "loading") {
+    return (
+      <div className="rounded-xl bg-muted/50 flex items-center justify-center w-48 h-36">
+        <Loader2 size={24} className="animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (status === "error" || !mediaUrl) {
+    return (
+      <div className="rounded-xl bg-muted/30 border border-border flex flex-col items-center justify-center w-48 h-36 gap-1">
+        <ImageOff size={20} className="text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground">تعذر تحميل الصورة</span>
+      </div>
+    );
+  }
+
   return (
     <>
       <img
-        src={url}
+        src={mediaUrl}
         alt="صورة"
         className="rounded-xl max-w-full max-h-60 object-cover cursor-pointer"
         onClick={() => setFullscreen(true)}
-        loading="lazy"
       />
       {fullscreen && (
         <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center" onClick={() => setFullscreen(false)}>
           <button className="absolute top-4 left-4 text-white z-10" onClick={() => setFullscreen(false)}>
             <X size={28} />
           </button>
-          <img src={url} alt="صورة" className="max-w-[95vw] max-h-[90vh] object-contain" />
+          <img src={mediaUrl} alt="صورة" className="max-w-[95vw] max-h-[90vh] object-contain" />
         </div>
       )}
     </>
