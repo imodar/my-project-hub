@@ -84,6 +84,18 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
         }));
         await db.family_members.bulkPut(dexieMembers);
 
+        // Clean up stale Dexie records not in server response
+        const serverUserIds = new Set(members.map((m: any) => m.user_id));
+        const localRecords = await db.family_members
+          .where("family_id").equals(familyId)
+          .toArray();
+        const staleIds = localRecords
+          .filter((r: any) => !serverUserIds.has(r.user_id))
+          .map((r: any) => r.id);
+        if (staleIds.length > 0) {
+          await db.family_members.bulkDelete(staleIds);
+        }
+
         for (const m of members) {
           if (m.profiles?.name) {
             await db.profiles.put({ id: m.user_id, name: m.profiles.name, avatar_url: m.profiles.avatar_url || null });
