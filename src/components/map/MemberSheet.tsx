@@ -37,7 +37,7 @@ function timeSince(dateStr: string, t: any): string {
   return t.map.daysAgo.replace("{0}", String(Math.floor(hrs / 24)));
 }
 
-export default function MemberSheet({ locations, selectedMemberId, onMemberSelect, isExpanded, setIsExpanded, isTogglingSharing }: MemberSheetProps) {
+export default function MemberSheet({ locations, selectedMemberId, onMemberSelect, isExpanded, setIsExpanded, isTogglingSharing, isLoadingLocations }: MemberSheetProps) {
   const { t, isRTL } = useLanguage();
   const sheetY = useMotionValue(0);
   const maxDrag = -(SHEET_EXPANDED - SHEET_PEEK);
