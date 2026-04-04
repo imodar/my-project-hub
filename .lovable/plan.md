@@ -1,26 +1,42 @@
 
 
-# إصلاح تأخير شاشة الدردشة — عرض فوري من الكاش
+# Fix: Private Storage Buckets Accessible by Any Authenticated User
 
-## المشكلة
-عند فتح الدردشة تظهر لعدة ثوانٍ رسائل مضللة ("التشفير غير مفعّل"، "لا توجد رسائل"، "تحميل أقدم") رغم وجود الرسائل محلياً.
+## Problem
+9 overly-broad storage policies on `album-photos`, `documents`, and `trip-documents` allow any authenticated user to read, upload, and delete files without family membership checks. Because Supabase evaluates PERMISSIVE policies with OR logic, these broad policies override the correctly-scoped "Family members access ..." ALL policies.
 
-## الحل — ملفان فقط
+## Solution
+One migration that drops all 9 broad policies. The existing well-scoped ALL policies already cover SELECT, INSERT, UPDATE, and DELETE with proper `is_family_member()` validation.
 
-### 1. `src/hooks/useChat.ts`
-- إضافة `cachedLoaded` state — يبدأ `false`، يصير `true` بعد قراءة IndexedDB
-- في Step 0: إضافة `setCachedLoaded(true)` بعد القراءة (وأيضاً في catch)
-- في Step 1 (initKeys): محاولة `loadFamilyKeyLocally` أولاً — إذا نجح نضبط `familyKey` + `isReady` فوراً قبل أي API call
-- تصدير `cachedLoaded` من الهوك
+## Migration SQL
 
-### 2. `src/pages/Chat.tsx`
-- **بانر التشفير** (سطر 415-422): يظهر فقط بعد `isReady` (إخفاء "التشفير غير مفعّل")
-- **بانر "جاري تهيئة"** (سطر 425-432): يظهر فقط إذا `!isReady && cachedLoaded && messages.length === 0`
-- **"لا توجد رسائل"** (سطر 433-441): يظهر فقط إذا `isReady && cachedLoaded && messages.length === 0`
-- **"تحميل أقدم"** (سطر 443-453): يظهر فقط إذا `isReady && hasMore && messages.length > 0`
+```sql
+-- Drop overly-broad SELECT policies (no family check)
+DROP POLICY IF EXISTS "Family members can read album photos" ON storage.objects;
+DROP POLICY IF EXISTS "Family members can read documents" ON storage.objects;
+DROP POLICY IF EXISTS "Family members can read trip documents" ON storage.objects;
 
-## النتيجة المتوقعة
-- مستخدم عنده رسائل كاش: تظهر فوراً (0ms)، بانر التشفير يظهر بعد ثانية
-- مستخدم جديد بدون رسائل: يظهر "جاري تهيئة" ثم "لا توجد رسائل"
-- لا يظهر "التشفير غير مفعّل" أبداً للمستخدمين العاديين
+-- Drop overly-broad DELETE policies
+DROP POLICY IF EXISTS "Authenticated can delete album photos" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can delete documents" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can delete trip documents" ON storage.objects;
+
+-- Drop overly-broad INSERT policies
+DROP POLICY IF EXISTS "Authenticated can upload album photos" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can upload documents" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can upload trip documents" ON storage.objects;
+```
+
+## What remains after cleanup
+These correctly-scoped ALL policies stay in place:
+- **"Family members access documents"** — validates `is_family_member(auth.uid(), folder_family_id)`
+- **"Family members access album photos"** — validates family membership + not staff
+- **"Family members access trip documents"** — validates family membership
+
+## Files
+| # | File | Change |
+|---|------|--------|
+| 1 | New migration | Drop 9 broad storage policies |
+
+No code changes needed. Migration only.
 
