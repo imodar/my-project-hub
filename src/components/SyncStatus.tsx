@@ -1,13 +1,10 @@
 /**
  * مؤشر حالة المزامنة — SyncStatus
  *
- * يعرض نقطة ملونة تدل على حالة الاتصال والمزامنة:
- * - 🟢 أخضر: متصل + لا عمليات معلقة
- * - 🟠 برتقالي (متحرك): يتزامن الآن
- * - ⚫ رمادي: غير متصل + عدد العمليات المعلقة
+ * يستخدم polling خفيف بدل useLiveQuery لتقليل الحمل على IndexedDB.
+ * مخصص لصفحة الإعدادات فقط — لا يُعرض في PageHeader.
  */
-import { useState, useEffect, forwardRef } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useState, useEffect, forwardRef, useCallback } from "react";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
@@ -19,28 +16,36 @@ interface SyncStatusProps {
 
 const SyncStatus = forwardRef<HTMLDivElement, SyncStatusProps>(({ showLabel = false, size = "sm", className }, ref) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // مراقبة حالة الاتصال
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
-  // مراقبة عدد العمليات المعلقة في الوقت الحقيقي
-  const pendingCount = useLiveQuery(
-    () => db.sync_queue.where("status").equals("pending").count(),
-    [],
-    0
-  );
+  // Polling بدل useLiveQuery — كل 15 ثانية
+  const checkPending = useCallback(async () => {
+    try {
+      const count = await db.sync_queue.where("status").equals("pending").count();
+      setPendingCount(count);
+    } catch {
+      // silent
+    }
+  }, []);
+
+  useEffect(() => {
+    checkPending();
+    const interval = setInterval(checkPending, 15_000);
+    return () => clearInterval(interval);
+  }, [checkPending]);
 
   // تحديد الحالة عند تغيّر العمليات المعلقة
   useEffect(() => {

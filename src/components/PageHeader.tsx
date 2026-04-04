@@ -1,7 +1,6 @@
 import React, { ReactNode } from "react";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import SyncStatus from "@/components/SyncStatus";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface HeaderAction {
@@ -18,11 +17,11 @@ interface PageHeaderProps {
   actions?: HeaderAction[];
   children?: ReactNode;
   onBack?: () => void;
-  showSyncStatus?: boolean;
+  
 }
 
 const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
-  ({ title, subtitle, actions, children, onBack, showSyncStatus = true }, ref) => {
+  ({ title, subtitle, actions, children, onBack }, ref) => {
     const navigate = useNavigate();
     const { t, isRTL } = useLanguage();
 
@@ -47,7 +46,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
           <h1 className="text-lg font-bold text-white">{title}</h1>
           {subtitle && <p className="text-xs text-white/70">{subtitle}</p>}
         </div>
-        {showSyncStatus && <SyncStatus className="opacity-80" />}
+        
         {actions?.map((action, i) => (
           <button
             key={i}
