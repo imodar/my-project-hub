@@ -536,6 +536,7 @@ export function useChat() {
   return {
     messages,
     isReady,
+    cachedLoaded,
     sendMessage,
     sendMediaMessage,
     retryMessage,
