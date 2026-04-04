@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
       await adminClient.from("otp_codes").delete().eq("id", otpRow.id);
 
       // Find or create user
-      let user = await findUserByPhone(adminClient, normalizedPhone, email);
+      let user = await findUserById(adminClient, fullPhone, email);
 
       if (!user) {
         const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
