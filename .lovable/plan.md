@@ -1,42 +1,44 @@
 
 
-# Fix: Private Storage Buckets Accessible by Any Authenticated User
+# إصلاحان: calendar_events priority + findUserByPhone performance
 
-## Problem
-9 overly-broad storage policies on `album-photos`, `documents`, and `trip-documents` allow any authenticated user to read, upload, and delete files without family membership checks. Because Supabase evaluates PERMISSIVE policies with OR logic, these broad policies override the correctly-scoped "Family members access ..." ALL policies.
+## 1. `src/lib/resourceRegistry.ts`
+تغيير `calendar_events` من `warmPriority: "critical"` إلى `"deferred"`.
 
-## Solution
-One migration that drops all 9 broad policies. The existing well-scoped ALL policies already cover SELECT, INSERT, UPDATE, and DELETE with proper `is_family_member()` validation.
-
-## Migration SQL
+## 2. Migration — إنشاء RPC function
 
 ```sql
--- Drop overly-broad SELECT policies (no family check)
-DROP POLICY IF EXISTS "Family members can read album photos" ON storage.objects;
-DROP POLICY IF EXISTS "Family members can read documents" ON storage.objects;
-DROP POLICY IF EXISTS "Family members can read trip documents" ON storage.objects;
+CREATE OR REPLACE FUNCTION public.find_user_by_phone_or_email(_phone text, _email text)
+RETURNS uuid
+LANGUAGE sql
+STABLE SECURITY DEFINER
+AS $$
+  SELECT id FROM auth.users
+  WHERE phone = _phone OR email = _email
+  LIMIT 1;
+$$;
 
--- Drop overly-broad DELETE policies
-DROP POLICY IF EXISTS "Authenticated can delete album photos" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated can delete documents" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated can delete trip documents" ON storage.objects;
-
--- Drop overly-broad INSERT policies
-DROP POLICY IF EXISTS "Authenticated can upload album photos" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated can upload documents" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated can upload trip documents" ON storage.objects;
+REVOKE ALL ON FUNCTION public.find_user_by_phone_or_email FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.find_user_by_phone_or_email TO service_role;
 ```
 
-## What remains after cleanup
-These correctly-scoped ALL policies stay in place:
-- **"Family members access documents"** — validates `is_family_member(auth.uid(), folder_family_id)`
-- **"Family members access album photos"** — validates family membership + not staff
-- **"Family members access trip documents"** — validates family membership
+بدون `SET search_path` — الدالة تقرأ `auth.users` بالاسم الكامل فلا حاجة لتعريض الـ schema. الصلاحية مقيّدة لـ `service_role` فقط.
 
-## Files
-| # | File | Change |
-|---|------|--------|
-| 1 | New migration | Drop 9 broad storage policies |
+## 3. `supabase/functions/phone-auth/index.ts`
+حذف دالة `findUserByPhone` (الـ pagination loop) واستبدالها بـ:
 
-No code changes needed. Migration only.
+```typescript
+const { data: userId } = await adminClient.rpc('find_user_by_phone_or_email', {
+  _phone: fullPhone,
+  _email: email,
+});
+```
+
+ثم إذا وُجد `userId`: جلب المستخدم بـ `adminClient.auth.admin.getUserById(userId)`.
+
+| # | الملف | التغيير |
+|---|-------|---------|
+| 1 | `src/lib/resourceRegistry.ts` | `calendar_events` → `warmPriority: "deferred"` |
+| 2 | Migration جديد | `find_user_by_phone_or_email` RPC + REVOKE/GRANT |
+| 3 | `supabase/functions/phone-auth/index.ts` | حذف loop، استخدام RPC |
 
