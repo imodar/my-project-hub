@@ -216,6 +216,7 @@ const Chat = () => {
   const {
     messages,
     isReady,
+    cachedLoaded,
     sendMessage,
     sendMediaMessage,
     retryMessage,
