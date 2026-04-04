@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Search, X, ShoppingCart, CheckSquare, Calendar, CreditCard, Plane, FileText, MapPin, Pill, Car, MessageCircle, Image, Users } from "lucide-react";
+import { Search, ArrowRight, ShoppingCart, CheckSquare, Calendar, CreditCard, Plane, FileText, MapPin, Pill, Car, MessageCircle, Image, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppNavigate } from "@/hooks/useAppNavigate";
@@ -16,21 +16,21 @@ interface SearchResult {
   color: string;
 }
 
-const TYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string; color: string; path: string }> = {
-  market_item: { icon: <ShoppingCart size={18} />, label: "سوق", color: "hsl(142 70% 45%)", path: "/market" },
-  market_list: { icon: <ShoppingCart size={18} />, label: "قائمة سوق", color: "hsl(142 70% 45%)", path: "/market" },
-  task_item: { icon: <CheckSquare size={18} />, label: "مهمة", color: "hsl(217 91% 60%)", path: "/tasks" },
-  task_list: { icon: <CheckSquare size={18} />, label: "قائمة مهام", color: "hsl(217 91% 60%)", path: "/tasks" },
-  calendar_event: { icon: <Calendar size={18} />, label: "مناسبة", color: "hsl(280 70% 55%)", path: "/calendar" },
-  budget: { icon: <CreditCard size={18} />, label: "ميزانية", color: "hsl(35 90% 50%)", path: "/budget" },
-  debt: { icon: <CreditCard size={18} />, label: "دين", color: "hsl(0 70% 55%)", path: "/debts" },
-  trip: { icon: <Plane size={18} />, label: "رحلة", color: "hsl(190 80% 45%)", path: "/trips" },
-  document: { icon: <FileText size={18} />, label: "مستند", color: "hsl(25 85% 55%)", path: "/documents" },
-  place: { icon: <MapPin size={18} />, label: "مكان", color: "hsl(340 75% 55%)", path: "/places" },
-  medication: { icon: <Pill size={18} />, label: "دواء", color: "hsl(160 60% 45%)", path: "/medications" },
-  vehicle: { icon: <Car size={18} />, label: "مركبة", color: "hsl(210 50% 50%)", path: "/vehicle" },
-  album: { icon: <Image size={18} />, label: "ألبوم", color: "hsl(300 60% 50%)", path: "/albums" },
-  member: { icon: <Users size={18} />, label: "عضو", color: "hsl(250 60% 55%)", path: "/family" },
+const TYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string; labelEn: string; color: string; path: string }> = {
+  market_item: { icon: <ShoppingCart size={16} />, label: "السوق", labelEn: "Market", color: "hsl(142 70% 45%)", path: "/market" },
+  market_list: { icon: <ShoppingCart size={16} />, label: "السوق", labelEn: "Market", color: "hsl(142 70% 45%)", path: "/market" },
+  task_item: { icon: <CheckSquare size={16} />, label: "المهام", labelEn: "Tasks", color: "hsl(217 91% 60%)", path: "/tasks" },
+  task_list: { icon: <CheckSquare size={16} />, label: "المهام", labelEn: "Tasks", color: "hsl(217 91% 60%)", path: "/tasks" },
+  calendar_event: { icon: <Calendar size={16} />, label: "التقويم", labelEn: "Calendar", color: "hsl(280 70% 55%)", path: "/calendar" },
+  budget: { icon: <CreditCard size={16} />, label: "الميزانية", labelEn: "Budget", color: "hsl(35 90% 50%)", path: "/budget" },
+  debt: { icon: <CreditCard size={16} />, label: "الديون", labelEn: "Debts", color: "hsl(0 70% 55%)", path: "/debts" },
+  trip: { icon: <Plane size={16} />, label: "الرحلات", labelEn: "Trips", color: "hsl(190 80% 45%)", path: "/trips" },
+  document: { icon: <FileText size={16} />, label: "الوثائق", labelEn: "Documents", color: "hsl(25 85% 55%)", path: "/documents" },
+  place: { icon: <MapPin size={16} />, label: "الأماكن", labelEn: "Places", color: "hsl(340 75% 55%)", path: "/places" },
+  medication: { icon: <Pill size={16} />, label: "الأدوية", labelEn: "Medications", color: "hsl(160 60% 45%)", path: "/medications" },
+  vehicle: { icon: <Car size={16} />, label: "المركبات", labelEn: "Vehicles", color: "hsl(210 50% 50%)", path: "/vehicle" },
+  album: { icon: <Image size={16} />, label: "الألبومات", labelEn: "Albums", color: "hsl(300 60% 50%)", path: "/albums" },
+  member: { icon: <Users size={16} />, label: "الأعضاء", labelEn: "Members", color: "hsl(250 60% 55%)", path: "/family" },
 };
 
 const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
@@ -39,6 +39,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useAppNavigate();
+  const { language, isRTL, dir } = useLanguage();
 
   useEffect(() => {
     if (open) {
@@ -57,7 +58,8 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
     const addResult = (id: string, title: string, subtitle: string | undefined, type: string) => {
       const cfg = TYPE_CONFIG[type];
       if (!cfg) return;
-      found.push({ id, title, subtitle, type, typeLabel: cfg.label, icon: cfg.icon, path: cfg.path, color: cfg.color });
+      const label = language === "ar" ? cfg.label : cfg.labelEn;
+      found.push({ id, title, subtitle, type, typeLabel: label, icon: cfg.icon, path: cfg.path, color: cfg.color });
     };
 
     try {
@@ -86,11 +88,9 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
         db.profiles.toArray(),
       ]);
 
-      // Build profile name map
       const profileMap = new Map<string, string>();
       (profiles as any[]).forEach(p => { if (p.name) profileMap.set(p.id, p.name); });
 
-      // Market lists & items
       (marketLists as any[]).forEach(l => {
         if (l.name?.toLowerCase().includes(lq)) addResult(l.id, l.name, undefined, "market_list");
       });
@@ -101,7 +101,6 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
         }
       });
 
-      // Task lists & items
       (taskLists as any[]).forEach(l => {
         if (l.name?.toLowerCase().includes(lq)) addResult(l.id, l.name, undefined, "task_list");
       });
@@ -112,32 +111,27 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
         }
       });
 
-      // Calendar events
       (events as any[]).forEach(e => {
         if (e.title?.toLowerCase().includes(lq)) addResult(e.id, e.title, e.date, "calendar_event");
       });
 
-      // Budgets
       (budgets as any[]).forEach(b => {
         const label = b.label || b.month || "";
         if (label.toLowerCase().includes(lq)) addResult(b.id, label, b.type, "budget");
       });
 
-      // Debts
       (debts as any[]).forEach(d => {
         if (d.person_name?.toLowerCase().includes(lq)) {
-          const dir = d.direction === "owed_to_me" ? "لي" : "عليّ";
+          const dir = d.direction === "owed_to_me" ? (language === "ar" ? "لي" : "owed to me") : (language === "ar" ? "عليّ" : "I owe");
           addResult(d.id, d.person_name, `${d.amount} - ${dir}`, "debt");
         }
       });
 
-      // Trips
       (trips as any[]).forEach(t => {
         if (t.name?.toLowerCase().includes(lq) || t.destination?.toLowerCase().includes(lq))
           addResult(t.id, t.name, t.destination, "trip");
       });
 
-      // Documents
       (docLists as any[]).forEach(l => {
         if (l.name?.toLowerCase().includes(lq)) addResult(l.id, l.name, undefined, "document");
       });
@@ -148,29 +142,24 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
         }
       });
 
-      // Places
       (places as any[]).forEach(p => {
         if (p.name?.toLowerCase().includes(lq) || p.address?.toLowerCase().includes(lq))
           addResult(p.id, p.name, p.address || p.category, "place");
       });
 
-      // Medications
       (medications as any[]).forEach(m => {
         if (m.name?.toLowerCase().includes(lq)) addResult(m.id, m.name, m.member_name, "medication");
       });
 
-      // Vehicles
       (vehicles as any[]).forEach(v => {
         const label = [v.brand, v.model, v.plate].filter(Boolean).join(" ");
         if (label.toLowerCase().includes(lq)) addResult(v.id, label, v.year?.toString(), "vehicle");
       });
 
-      // Albums
       (albums as any[]).forEach(a => {
         if (a.name?.toLowerCase().includes(lq)) addResult(a.id, a.name, undefined, "album");
       });
 
-      // Family members
       (members as any[]).forEach(m => {
         const name = profileMap.get(m.user_id) || "";
         if (name.toLowerCase().includes(lq)) addResult(m.id, name, m.role, "member");
@@ -182,9 +171,8 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
 
     setResults(found.slice(0, 30));
     setLoading(false);
-  }, []);
+  }, [language]);
 
-  // Debounced search
   useEffect(() => {
     const t = setTimeout(() => searchLocal(query), 200);
     return () => clearTimeout(t);
@@ -195,7 +183,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
     navigate(result.path);
   };
 
-  // Group results by type
+  // Group results by typeLabel (category heading)
   const grouped = useMemo(() => {
     const map = new Map<string, SearchResult[]>();
     results.forEach(r => {
@@ -207,128 +195,117 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
 
   if (!open) return null;
 
+  const placeholder = language === "ar" ? "ابحث..." : "Search...";
+  const minCharsMsg = language === "ar" ? "اكتب حرفين على الأقل للبحث" : "Type at least 2 characters";
+  const noResultsMsg = language === "ar" ? "لا توجد نتائج" : "No results found";
+  const tryDiffMsg = language === "ar" ? "جرّب كلمات مختلفة" : "Try different words";
+
   return (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-background/98 backdrop-blur-md"
-        dir="rtl"
+        className="fixed inset-0 z-[100] bg-background"
+        dir={dir}
       >
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border/50">
-          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="ابحث في كل شيء..."
-                className="w-full h-11 pr-10 pl-4 rounded-xl bg-muted/60 border border-border/40 text-foreground placeholder:text-muted-foreground/60 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
-                autoComplete="off"
-                autoCorrect="off"
-              />
-            </div>
+        {/* Search bar — WhatsApp style dark bar */}
+        <div className="sticky top-0 z-10 bg-card border-b border-border">
+          <div className="flex items-center gap-2 px-2 py-2">
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-muted-foreground hover:bg-muted transition-colors"
+              className="p-2 rounded-full text-muted-foreground hover:bg-muted/60 transition-colors shrink-0"
             >
-              <X size={20} />
+              <ArrowRight size={22} className={isRTL ? "" : "rotate-180"} />
             </button>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder={placeholder}
+              className="flex-1 h-10 px-0 bg-transparent text-foreground placeholder:text-muted-foreground/50 text-base focus:outline-none"
+              autoComplete="off"
+              autoCorrect="off"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="p-2 rounded-full text-muted-foreground hover:bg-muted/60 transition-colors shrink-0"
+              >
+                <Search size={18} />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="max-w-2xl mx-auto px-4 pt-2 pb-20 overflow-y-auto" style={{ maxHeight: "calc(100vh - 70px)" }}>
-          {/* Empty state */}
-          {query.length < 2 && (
-            <div className="flex flex-col items-center justify-center pt-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-muted/60 flex items-center justify-center mb-4">
-                <Search size={28} className="text-muted-foreground/40" />
-              </div>
-              <p className="text-muted-foreground/60 text-sm">اكتب حرفين على الأقل للبحث</p>
-              <div className="flex flex-wrap gap-2 mt-6 justify-center">
-                {["سوق", "مهام", "مناسبات", "ديون", "رحلات", "أدوية"].map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => setQuery(tag)}
-                    className="px-3 py-1.5 rounded-lg bg-muted/50 text-xs text-muted-foreground hover:bg-muted transition-colors"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
+        {/* Results area */}
+        <div className="overflow-y-auto" style={{ maxHeight: "calc(100dvh - 56px)" }}>
+
+          {/* Empty — hint */}
+          {query.length < 2 && !loading && (
+            <div className="flex flex-col items-center justify-center pt-28 text-center px-6">
+              <Search size={48} className="text-muted-foreground/20 mb-4" />
+              <p className="text-muted-foreground/50 text-sm">{minCharsMsg}</p>
             </div>
           )}
 
-          {/* Loading */}
+          {/* Loading spinner */}
           {loading && query.length >= 2 && (
-            <div className="flex items-center justify-center pt-16">
+            <div className="flex items-center justify-center pt-20">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           )}
 
           {/* No results */}
           {!loading && query.length >= 2 && results.length === 0 && (
-            <div className="flex flex-col items-center justify-center pt-20 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-muted/40 flex items-center justify-center mb-3">
-                <Search size={24} className="text-muted-foreground/30" />
-              </div>
-              <p className="text-muted-foreground text-sm font-medium">لا توجد نتائج لـ "{query}"</p>
-              <p className="text-muted-foreground/50 text-xs mt-1">جرّب كلمات مختلفة</p>
+            <div className="flex flex-col items-center justify-center pt-28 text-center px-6">
+              <Search size={40} className="text-muted-foreground/20 mb-3" />
+              <p className="text-muted-foreground text-sm font-medium">{noResultsMsg}</p>
+              <p className="text-muted-foreground/40 text-xs mt-1">{tryDiffMsg}</p>
             </div>
           )}
 
-          {/* Results */}
+          {/* Grouped results — WhatsApp style */}
           {!loading && results.length > 0 && (
-            <div className="space-y-4 pb-4">
-              <p className="text-xs text-muted-foreground/60 px-1">{results.length} نتيجة</p>
+            <div>
               {Array.from(grouped.entries()).map(([typeLabel, items]) => (
                 <div key={typeLabel}>
-                  <div className="flex items-center gap-2 px-1 mb-2">
-                    <span
-                      className="w-6 h-6 rounded-md flex items-center justify-center text-white"
-                      style={{ backgroundColor: items[0].color }}
+                  {/* Section header */}
+                  <div className="px-4 pt-4 pb-2">
+                    <p className="text-sm font-semibold text-primary">{typeLabel}</p>
+                  </div>
+
+                  {/* Items */}
+                  {items.map((r, i) => (
+                    <motion.button
+                      key={r.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.015 }}
+                      onClick={() => handleSelect(r)}
+                      className="w-full flex items-center gap-3 px-4 py-3 active:bg-muted/60 transition-colors"
                     >
-                      {items[0].icon}
-                    </span>
-                    <span className="text-xs font-semibold text-muted-foreground">{typeLabel}</span>
-                    <span className="text-[10px] text-muted-foreground/40">({items.length})</span>
-                  </div>
-                  <div className="space-y-1">
-                    {items.map((r, i) => (
-                      <motion.button
-                        key={r.id}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.02 }}
-                        onClick={() => handleSelect(r)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/60 active:bg-muted transition-colors text-right"
+                      {/* Avatar circle */}
+                      <div
+                        className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: r.color + "20", color: r.color }}
                       >
-                        <div
-                          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: r.color + "18", color: r.color }}
-                        >
-                          {r.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{r.title}</p>
-                          {r.subtitle && (
-                            <p className="text-xs text-muted-foreground/60 truncate mt-0.5">{r.subtitle}</p>
-                          )}
-                        </div>
-                        <span
-                          className="text-[10px] px-2 py-0.5 rounded-md shrink-0"
-                          style={{ backgroundColor: r.color + "15", color: r.color }}
-                        >
-                          {r.typeLabel}
-                        </span>
-                      </motion.button>
-                    ))}
-                  </div>
+                        {r.icon}
+                      </div>
+
+                      {/* Text */}
+                      <div className={`flex-1 min-w-0 ${isRTL ? "text-right" : "text-left"}`}>
+                        <p className="text-[15px] font-medium text-foreground truncate leading-tight">{r.title}</p>
+                        {r.subtitle && (
+                          <p className="text-[13px] text-muted-foreground truncate mt-0.5 leading-tight">{r.subtitle}</p>
+                        )}
+                      </div>
+                    </motion.button>
+                  ))}
+
+                  {/* Divider */}
+                  <div className={`h-px bg-border/50 ${isRTL ? "mr-[4.25rem]" : "ml-[4.25rem]"}`} />
                 </div>
               ))}
             </div>
