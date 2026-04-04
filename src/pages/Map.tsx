@@ -26,31 +26,37 @@ const Map = () => {
     const locationMap: Record<string, (typeof locations)[0]> = {};
     for (const l of locations) locationMap[l.user_id] = l;
     const seen = new Set<string>();
+    const result: typeof locations = [];
 
-    // 1. Start from members — stable count from first render
-    const result = members.map(m => {
+    // 1. Start from members — stable count, dedup by user_id
+    for (const m of members) {
+      if (seen.has(m.id)) continue; // skip Dexie duplicates
       seen.add(m.id);
       const loc = locationMap[m.id];
       if (loc) {
-        return { ...loc, name: loc.name || m.name, role: loc.role || m.role };
+        result.push({ ...loc, name: loc.name || m.name, role: loc.role || m.role });
+      } else {
+        result.push({
+          user_id: m.id,
+          lat: 0,
+          lng: 0,
+          accuracy: null,
+          updated_at: "",
+          is_sharing: false,
+          name: m.name,
+          avatar_url: null,
+          role: m.role,
+          isMe: m.id === user?.id,
+        });
       }
-      return {
-        user_id: m.id,
-        lat: 0,
-        lng: 0,
-        accuracy: null,
-        updated_at: "",
-        is_sharing: false,
-        name: m.name,
-        avatar_url: null,
-        role: m.role,
-        isMe: m.id === user?.id,
-      };
-    });
+    }
 
     // 2. Add any location not matched to a member (rare edge case)
     for (const l of locations) {
-      if (!seen.has(l.user_id)) result.push(l);
+      if (!seen.has(l.user_id)) {
+        seen.add(l.user_id);
+        result.push(l);
+      }
     }
 
     return result;
