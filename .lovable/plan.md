@@ -1,70 +1,50 @@
 
 
-# حذف البيانات والحساب بالكامل
+# تحسين حاسبة الزكاة — دعم تعدد العملات
 
-## الوضع الحالي
-- يوجد زر "مسح البيانات" في الإعدادات بدون أي `onClick` handler
-- يوجد `account-api` edge function مع action `request-deletion` — لكنها soft delete (30 يوم انتظار)
-- يوجد `account-cleanup` edge function يعمل عبر pg_cron لحذف الحسابات المعلقة
-- المطلوب: حذف فوري وشامل لكل البيانات + الحساب
+## المشكلة الحالية
+- العملة تُحفظ في DB (`currency`) لكن لا تُقرأ في الـ UI — كل شيء يظهر كـ "ر.س"
+- الملخص يجمع كل الأصول بعملة واحدة وهذا خطأ
+- النصاب يُحسب بالريال فقط
 
-## الخطة
+## الآلية الإسلامية الصحيحة
 
-### 1. Edge Function جديد: `account-delete-now`
-إضافة action جديد في `account-api` اسمه `delete-account-now` يقوم بـ:
-- حذف جميع بيانات المستخدم من كل الجداول (باستخدام adminClient/service role):
-  - `family_members`, `family_keys` — إزالة العضوية
-  - `task_items`, `market_items` (added_by = userId)
-  - `calendar_events` (added_by = userId)
-  - `budgets`, `budget_expenses`, `debts`, `debt_payments`
-  - `medications`, `medication_logs`
-  - `chat_messages` (sender_id)
-  - `albums`, `album_photos` — حذف الصور من Storage أيضاً
-  - `document_lists`, `document_items`, `document_files` — حذف الملفات من Storage
-  - `places`, `place_lists`
-  - `trips` + جداولها الفرعية
-  - `vehicles`, `vaccinations`, `zakat_assets`, `will_sections`
-  - `tasbih_sessions`, `kids_worship_data`, `prayer_logs`, `worship_children`
-  - `trash_items`, `emergency_contacts`
-  - `notification_tokens`, `scheduled_notifications`
-  - `consent_log`, `data_export_requests`, `account_deletions`
-  - `profiles` — حذف
-  - ملفات الـ avatar من Storage bucket `avatars`
-- فحص إذا كان المشرف الوحيد في عائلة → يرفض الحذف مع رسالة خطأ
-- حذف المستخدم من `auth.users` عبر `adminClient.auth.admin.deleteUser()`
-- إرجاع `{ success: true }` مع progress steps
+1. **النصاب**: يُقاس بالذهب (85 جرام عيار 24) — نحوّل قيمته لكل عملة باستخدام أسعار الصرف
+2. **فحص بلوغ النصاب**: نجمع كل الأصول مُحوّلة لعملة موحدة (ريال) ← إذا بلغ المجموع النصاب، تجب الزكاة على الكل
+3. **الزكاة**: 2.5% من قيمة كل أصل **بعملته الأصلية**
+4. **العرض**: نعرض ملخص الزكاة مجمّع حسب العملة
 
-### 2. واجهة المستخدم: Bottom Sheet في Settings.tsx
-عند الضغط على "مسح البيانات":
-- يفتح Bottom Sheet يحتوي على:
-  - **أيقونة تحذير كبيرة** حمراء
-  - **عنوان**: "حذف الحساب والبيانات"
-  - **تنبيهات** (3 نقاط):
-    1. سيتم حذف جميع بياناتك نهائياً
-    2. لن تتمكن من استعادة أي بيانات بعد الحذف
-    3. يمكنك إعادة التسجيل لكن بدون بياناتك السابقة
-  - **Checkbox تأكيد**: "أفهم أن هذا الإجراء لا يمكن التراجع عنه"
-  - **حقل إدخال اختياري**: سبب الحذف
-  - **زر أحمر**: "حذف الحساب نهائياً" (معطل حتى يتم تفعيل الـ checkbox)
+## التغييرات
 
-- عند الضغط على الزر:
-  - يظهر **شريط تقدم** مع مراحل:
-    1. "جاري حذف البيانات من السيرفر..." (استدعاء Edge Function)
-    2. "جاري مسح البيانات المحلية..." (مسح IndexedDB + localStorage + Cache API)
-    3. "تم الحذف بنجاح"
-  - بعد الانتهاء → `signOut()` → navigate إلى `/auth`
+### 1. تحديث `ZakatAsset` interface
+إضافة `currency: string` للنوع، وقراءته من `a.currency` في الـ mapping
 
-### 3. ترجمات
-إضافة نصوص عربية وإنجليزية جديدة لكل عناصر الشيت.
+### 2. جلب أسعار الصرف
+الـ hook `useGoldPrice` يجلب أصلاً `exchangerate-api` — نوسّعه ليُرجع `rates: Record<string, number>` (USD→SAR, EUR→SAR, إلخ) بدلاً من `sarRate` المحلي فقط
+
+### 3. تحديث حسابات القيمة
+- `getAssetValue(asset)` ← يرجع القيمة **بعملة الأصل** (كما هو حالياً للذهب/الفضة، لكن بعملة الأصل لا SAR)
+- دالة جديدة `getAssetValueInSAR(asset)` ← تحوّل لريال للمقارنة بالنصاب
+- `getZakatAmount(asset)` ← 2.5% بعملة الأصل
+
+### 4. تحديث ملخص الزكاة (Summary Cards)
+بدلاً من رقم واحد بالريال:
+- **إجمالي الأصول**: يُعرض كقائمة مصغّرة حسب العملة (مثلاً: `50,000 ر.س + $2,000 + €1,500`)
+- **النصاب**: يبقى بالريال (مرجع ذهب)
+- **الزكاة المستحقة**: تُعرض مفصّلة حسب العملة (مثلاً: `1,250 ر.س + $50 + €37.5`)
+
+### 5. تحديث عرض الأصل الفردي
+- إظهار رمز العملة الصحيح بدل "ر.س" الثابت
+- زكاة كل أصل تظهر بعملته
+
+### 6. حفظ العملة عند الإضافة
+`addAssetMut.mutate(...)` و `updateAssetMut.mutate(...)` ← إرسال `currency: addCurrency`
 
 ## الملفات
 
 | # | الملف | التغيير |
 |---|-------|---------|
-| 1 | `supabase/functions/account-api/index.ts` | إضافة action `delete-account-now` |
-| 2 | `src/pages/Settings.tsx` | Bottom Sheet + progress bar + ربط الزر |
-| 3 | `src/i18n/ar.ts` | ترجمات عربية |
-| 4 | `src/i18n/en.ts` | ترجمات إنجليزية |
+| 1 | `src/pages/Zakat.tsx` | كل التغييرات أعلاه (interface, hook, حسابات, عرض, إرسال currency) |
 
-**4 ملفات، بدون migration جديد** (الحذف يتم عبر service role في Edge Function)
+**ملف واحد فقط، بدون migration** (عمود `currency` موجود أصلاً في `zakat_assets`)
 
