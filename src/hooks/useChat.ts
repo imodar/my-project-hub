@@ -53,6 +53,7 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [familyKey, setFamilyKey] = useState<CryptoKey | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [cachedLoaded, setCachedLoaded] = useState(false);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
