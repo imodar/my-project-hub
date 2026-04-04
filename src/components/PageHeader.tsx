@@ -21,7 +21,7 @@ interface PageHeaderProps {
 }
 
 const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
-  ({ title, subtitle, actions, children, onBack, showSyncStatus = true }, ref) => {
+  ({ title, subtitle, actions, children, onBack }, ref) => {
     const navigate = useNavigate();
     const { t, isRTL } = useLanguage();
 
