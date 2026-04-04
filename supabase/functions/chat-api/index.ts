@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       const { family_id, encrypted_key } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
       if (!validStr(encrypted_key, MAX_KEY)) return json({ error: "encrypted_key مطلوب" }, 400);
-      const { data, error } = await supabase.from("family_keys").upsert({ family_id, user_id: userId, encrypted_key: encrypted_key.slice(0, MAX_KEY) }).select().single();
+      const { data, error } = await supabase.from("family_keys").upsert({ family_id, user_id: userId, encrypted_key: encrypted_key.slice(0, MAX_KEY) }, { onConflict: "family_id,user_id" }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
