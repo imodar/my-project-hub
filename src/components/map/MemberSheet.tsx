@@ -92,7 +92,8 @@ export default function MemberSheet({ locations, selectedMemberId, onMemberSelec
           </div>
         )}
         {locations.map((loc, idx) => {
-          const isOnline = loc.is_sharing && (Date.now() - new Date(loc.updated_at).getTime()) < 10 * 60 * 1000;
+          const hasNoLocation = loc.lat === 0 && loc.lng === 0 && !loc.updated_at;
+          const isOnline = loc.is_sharing && loc.updated_at && (Date.now() - new Date(loc.updated_at).getTime()) < 10 * 60 * 1000;
           return (
             <button
               key={loc.user_id}
