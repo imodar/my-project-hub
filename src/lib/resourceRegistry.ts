@@ -62,7 +62,7 @@ export const RESOURCE_REGISTRY: ResourceEntry[] = [
   { table: "market_items", queryKeyPrefix: "market-lists", familyScoped: false, warm: false, warmPriority: "deferred", realtime: false, fullSync: null },
 
   // ── التقويم ──
-  { table: "calendar_events", queryKeyPrefix: "calendar-events", familyScoped: true, warm: true, warmPriority: "critical", realtime: true,
+  { table: "calendar_events", queryKeyPrefix: "calendar-events", familyScoped: true, warm: true, warmPriority: "deferred", realtime: true,
     fullSync: { action: "get-events", fn: "calendar-api", label: "التقويم" } },
 
   // ── الأدوية ──

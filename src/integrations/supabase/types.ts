@@ -2680,6 +2680,10 @@ export type Database = {
         Args: { _endpoint: string; _max_per_minute?: number; _user_id: string }
         Returns: boolean
       }
+      find_user_by_phone_or_email: {
+        Args: { _email: string; _phone: string }
+        Returns: string
+      }
       get_family_last_updated: { Args: { _family_id: string }; Returns: string }
       get_user_family_id: { Args: { _user_id: string }; Returns: string }
       has_role: {

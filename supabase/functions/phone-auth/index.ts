@@ -54,29 +54,20 @@ async function hmacHex(text: string): Promise<string> {
     .join("");
 }
 
-const findUserByPhone = async (
+const findUserById = async (
   adminClient: ReturnType<typeof createClient>,
-  normalizedPhone: string,
+  fullPhone: string,
   email: string,
 ) => {
-  const perPage = 200;
-  let page = 1;
-  while (true) {
-    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
-    if (error) throw error;
-    const users = (data.users ?? []) as Array<{
-      id: string;
-      email?: string | null;
-      phone?: string | null;
-    }>;
-    const match = users.find((u) => {
-      const uPhone = normalizePhone(u.phone ?? "");
-      return u.email === email || uPhone === normalizedPhone;
-    });
-    if (match) return match;
-    if (users.length < perPage) return null;
-    page += 1;
-  }
+  const { data: userId, error } = await adminClient.rpc("find_user_by_phone_or_email", {
+    _phone: fullPhone,
+    _email: email,
+  });
+  if (error) throw error;
+  if (!userId) return null;
+  const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(userId);
+  if (userErr) throw userErr;
+  return userData?.user ?? null;
 };
 
 // ─── Handler ────────────────────────────────────────────
@@ -194,7 +185,7 @@ Deno.serve(async (req) => {
       await adminClient.from("otp_codes").delete().eq("id", otpRow.id);
 
       // Find or create user
-      let user = await findUserByPhone(adminClient, normalizedPhone, email);
+      let user = await findUserById(adminClient, fullPhone, email);
 
       if (!user) {
         const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
@@ -208,7 +199,7 @@ Deno.serve(async (req) => {
         if (createErr) {
           // Phone might already exist under a different email
           if (createErr.message?.toLowerCase().includes("phone")) {
-            user = await findUserByPhone(adminClient, normalizedPhone, email);
+            user = await findUserById(adminClient, fullPhone, email);
             if (!user) throw createErr;
           } else {
             throw createErr;
