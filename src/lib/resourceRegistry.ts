@@ -29,6 +29,8 @@ export interface ResourceEntry {
   familyScoped: boolean;
   /** هل يُحمّل في warmCache؟ */
   warm: boolean;
+  /** أولوية التسخين: critical = يحجب العرض، deferred = يُحمّل في الخلفية */
+  warmPriority: "critical" | "deferred";
   /** إعدادات fullSync — null = لا يُزامن */
   fullSync: {
     action: string;
