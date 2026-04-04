@@ -175,9 +175,12 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
     setCacheReady(false);
     warmedFamilyRef.current = familyId;
 
-    warmCache(qc, familyId)
+    // المرحلة 1: تسخين الجداول الحرجة (تحجب العرض)
+    warmCacheCritical(qc, familyId)
       .then(() => {
         if (!cancelled) setCacheReady(true);
+        // المرحلة 2: تسخين باقي الجداول في الخلفية
+        warmCacheDeferred(qc, familyId).catch(() => {});
       })
       .catch(() => {
         if (!cancelled) setCacheReady(true);
