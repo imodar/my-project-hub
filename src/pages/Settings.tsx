@@ -165,7 +165,61 @@ const Settings = () => {
       setContacts(prev => prev.filter(c => c.id !== id));
     }
   };
+  const handleDeleteAccount = useCallback(async () => {
+    setDeleteStep("progress");
+    setDeleteProgress(10);
+    setDeleteStatusText(t.settings.deletingServer);
 
+    try {
+      // Step 1: Call edge function to delete server data
+      setDeleteProgress(20);
+      const { data, error } = await supabase.functions.invoke("account-api", {
+        body: { action: "delete-account-now", reason: deleteReason.trim() || null },
+      });
+
+      if (error || data?.error) {
+        const errMsg = data?.error_code === "SOLE_ADMIN"
+          ? t.settings.deleteSoleAdmin
+          : (data?.error || t.settings.deleteError);
+        appToast.error(errMsg);
+        setDeleteStep("confirm");
+        return;
+      }
+
+      setDeleteProgress(60);
+      setDeleteStatusText(t.settings.deletingLocal);
+
+      // Step 2: Clear all local data
+      // Clear IndexedDB
+      const dbs = await window.indexedDB.databases?.() || [];
+      for (const db of dbs) {
+        if (db.name) window.indexedDB.deleteDatabase(db.name);
+      }
+
+      // Clear Cache API
+      if ("caches" in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+
+      // Clear localStorage
+      localStorage.clear();
+
+      setDeleteProgress(90);
+      setDeleteStatusText(t.settings.deleteSuccess);
+      setDeleteStep("done");
+      setDeleteProgress(100);
+
+      // Step 3: Sign out and redirect
+      setTimeout(async () => {
+        try { await signOut(); } catch (_) { /* already deleted */ }
+        navigate("/auth", { replace: true });
+      }, 1500);
+    } catch (err) {
+      appToast.error(t.settings.deleteError);
+      setDeleteStep("confirm");
+    }
+  }, [deleteReason, t, signOut, navigate]);
 
 
 
