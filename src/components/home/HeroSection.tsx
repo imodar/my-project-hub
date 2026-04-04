@@ -1,4 +1,5 @@
-import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, Play } from "lucide-react";
+import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, Play, Search } from "lucide-react";
+import GlobalSearch from "@/components/GlobalSearch";
 import QiblaCompass from "./QiblaCompass";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
@@ -263,6 +264,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { unreadCount } = useNotifications();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const hijriDate = "٤ شوّال ١٤٤٧";
   const gregorianDate = language === "ar" ? "٢٣ مارس ٢٠٢٦" : "March 23, 2026";
 
@@ -381,7 +383,13 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           </button>
           <span className="text-xl font-bold text-primary tracking-tight">{t.appName}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
+          >
+            <Search size={22} />
+          </button>
           <button
             onClick={() => setNotificationsOpen(true)}
             className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
@@ -518,6 +526,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
       <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={currentUser} />
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 });
