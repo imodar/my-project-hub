@@ -152,7 +152,7 @@ const Vaccinations = () => {
       />
 
       {isLoading ? (
-        <ListPageSkeleton />
+        <ListContentSkeleton />
       ) : (
       <div className="px-5 mt-6 space-y-4">
         {children.length === 0 ? (

@@ -1246,7 +1246,7 @@ const Trips = () => {
       <PageHeader title="الرحلات" subtitle="خطط لرحلاتك العائلية والشخصية" />
 
       {tripsLoading ? (
-        <CardPageSkeleton />
+        <CardContentSkeleton />
       ) : (
       <PullToRefresh onRefresh={async () => {}}>
         <div className="px-5 mt-5">

@@ -422,7 +422,7 @@ const Documents = () => {
         </PageHeader>
 
       {docsLoading ? (
-        <ListPageSkeleton />
+        <ListContentSkeleton />
       ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 

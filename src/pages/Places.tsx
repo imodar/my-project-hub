@@ -452,7 +452,7 @@ const Places = () => {
         </PageHeader>
 
       {placesLoading ? (
-        <ListPageSkeleton />
+        <ListContentSkeleton />
       ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 

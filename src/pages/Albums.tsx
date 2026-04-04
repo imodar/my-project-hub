@@ -311,7 +311,7 @@ const Albums = () => {
         <PageHeader title="الألبومات" subtitle="صور العائلة وذكرياتها" onBack={() => navigate(-1)} />
 
       {isLoading ? (
-        <CardPageSkeleton />
+        <CardContentSkeleton />
       ) : (
         <PullToRefresh onRefresh={async () => {
           await albumsQc.invalidateQueries({ queryKey: ["albums"] });

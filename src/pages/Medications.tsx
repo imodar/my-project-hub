@@ -280,7 +280,7 @@ const Medications = () => {
       />
 
       {medsLoading ? (
-        <ListPageSkeleton />
+        <ListContentSkeleton />
       ) : (
       <>
       {/* Due Alert Banner */}

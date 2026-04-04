@@ -544,7 +544,7 @@ const Budget = () => {
       </PageHeader>
 
       {isLoading ? (
-        <CardPageSkeleton />
+        <CardContentSkeleton />
       ) : (
       <PullToRefresh onRefresh={onRefresh}>
         <div className="px-4 mt-4 space-y-3">
