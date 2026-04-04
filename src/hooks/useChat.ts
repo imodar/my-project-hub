@@ -53,6 +53,7 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [familyKey, setFamilyKey] = useState<CryptoKey | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [cachedLoaded, setCachedLoaded] = useState(false);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -86,8 +87,10 @@ export function useChat() {
           }));
           setMessages(mapped);
         }
+        setCachedLoaded(true);
       } catch (e) {
         console.warn("[Chat] Failed to load cached messages:", e);
+        setCachedLoaded(true);
       }
     })();
   }, [user, familyId]);
@@ -533,6 +536,7 @@ export function useChat() {
   return {
     messages,
     isReady,
+    cachedLoaded,
     sendMessage,
     sendMediaMessage,
     retryMessage,
