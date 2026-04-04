@@ -5,7 +5,7 @@ import FAB from "@/components/FAB";
 import SwipeableCard from "@/components/SwipeableCard";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
-import { CardPageSkeleton } from "@/components/PageSkeletons";
+import { CardContentSkeleton } from "@/components/PageSkeletons";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
