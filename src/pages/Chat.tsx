@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Pin, Lock, Smile, Check, CheckCheck, ShieldCheck, Plus, Image, Mic, MapPin, Play, Pause, Square, X, Loader2, AlertCircle, RotateCcw } from "lucide-react";
+import { Send, Pin, Lock, Smile, Check, CheckCheck, ShieldCheck, Plus, Image, Mic, MapPin, Play, Pause, Square, X, Loader2, AlertCircle, RotateCcw, ImageOff } from "lucide-react";
+import { useMediaUrl } from "@/hooks/useMediaUrl";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import { useChat, type ChatMessage } from "@/hooks/useChat";
@@ -20,10 +21,29 @@ const StatusIcon = ({ status }: { status: string }) => {
 
 // ─── Voice Player ───
 const VoicePlayer = ({ url, isMe }: { url: string; isMe: boolean }) => {
+  const { url: mediaUrl, status } = useMediaUrl(url);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center gap-2 min-w-[180px] justify-center py-2">
+        <Loader2 size={18} className="animate-spin text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">جاري تحميل الصوت...</span>
+      </div>
+    );
+  }
+
+  if (status === "error" || !mediaUrl) {
+    return (
+      <div className="flex items-center gap-2 min-w-[180px] justify-center py-2">
+        <AlertCircle size={16} className="text-destructive" />
+        <span className="text-xs text-muted-foreground">تعذر تحميل الصوت</span>
+      </div>
+    );
+  }
 
   const toggle = () => {
     if (!audioRef.current) return;
@@ -39,7 +59,7 @@ const VoicePlayer = ({ url, isMe }: { url: string; isMe: boolean }) => {
     <div className="flex items-center gap-2 min-w-[180px]">
       <audio
         ref={audioRef}
-        src={url}
+        src={mediaUrl}
         onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
         onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
         onEnded={() => { setPlaying(false); setCurrentTime(0); }}
@@ -49,7 +69,6 @@ const VoicePlayer = ({ url, isMe }: { url: string; isMe: boolean }) => {
         {playing ? <Pause size={14} className={isMe ? "text-white" : "text-primary"} /> : <Play size={14} className={isMe ? "text-white" : "text-primary"} />}
       </button>
       <div className="flex-1 flex flex-col gap-1">
-        {/* Waveform bar */}
         <div className={`h-1 rounded-full overflow-hidden ${isMe ? "bg-white/20" : "bg-muted"}`}>
           <div
             className={`h-full rounded-full transition-all ${isMe ? "bg-white/70" : "bg-primary"}`}
@@ -88,22 +107,40 @@ const LocationBubble = ({ lat, lng, isMe }: { lat: number; lng: number; isMe: bo
 
 // ─── Image Bubble ───
 const ImageBubble = ({ url }: { url: string }) => {
+  const { url: mediaUrl, status } = useMediaUrl(url);
   const [fullscreen, setFullscreen] = useState(false);
+
+  if (status === "loading") {
+    return (
+      <div className="rounded-xl bg-muted/50 flex items-center justify-center w-48 h-36">
+        <Loader2 size={24} className="animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (status === "error" || !mediaUrl) {
+    return (
+      <div className="rounded-xl bg-muted/30 border border-border flex flex-col items-center justify-center w-48 h-36 gap-1">
+        <ImageOff size={20} className="text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground">تعذر تحميل الصورة</span>
+      </div>
+    );
+  }
+
   return (
     <>
       <img
-        src={url}
+        src={mediaUrl}
         alt="صورة"
         className="rounded-xl max-w-full max-h-60 object-cover cursor-pointer"
         onClick={() => setFullscreen(true)}
-        loading="lazy"
       />
       {fullscreen && (
         <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center" onClick={() => setFullscreen(false)}>
           <button className="absolute top-4 left-4 text-white z-10" onClick={() => setFullscreen(false)}>
             <X size={28} />
           </button>
-          <img src={url} alt="صورة" className="max-w-[95vw] max-h-[90vh] object-contain" />
+          <img src={mediaUrl} alt="صورة" className="max-w-[95vw] max-h-[90vh] object-contain" />
         </div>
       )}
     </>
