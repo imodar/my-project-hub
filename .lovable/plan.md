@@ -1,50 +1,54 @@
 
 
-# تحسين حاسبة الزكاة — دعم تعدد العملات
+# تحديث الخطوة 3 — AuthGuard
 
-## المشكلة الحالية
-- العملة تُحفظ في DB (`currency`) لكن لا تُقرأ في الـ UI — كل شيء يظهر كـ "ر.س"
-- الملخص يجمع كل الأصول بعملة واحدة وهذا خطأ
-- النصاب يُحسب بالريال فقط
+## الملاحظة
+صحيحة 100%. عرض children لمستخدم جديد بدون عائلة سيسبب "flash" مربك.
 
-## الآلية الإسلامية الصحيحة
+## المنطق المحدّث
 
-1. **النصاب**: يُقاس بالذهب (85 جرام عيار 24) — نحوّل قيمته لكل عملة باستخدام أسعار الصرف
-2. **فحص بلوغ النصاب**: نجمع كل الأصول مُحوّلة لعملة موحدة (ريال) ← إذا بلغ المجموع النصاب، تجب الزكاة على الكل
-3. **الزكاة**: 2.5% من قيمة كل أصل **بعملته الأصلية**
-4. **العرض**: نعرض ملخص الزكاة مجمّع حسب العملة
+```text
+cached_family_id موجود?
+  ├─ نعم → عرض children فوراً ✅
+  └─ لا →
+       join_or_create_done موجود?
+         ├─ نعم → عرض children + جلب API بالخلفية 🔄
+         └─ لا → Navigate("/join-or-create") مباشرة 🚀
+```
 
-## التغييرات
+هذا يغطي 3 حالات:
+1. **مستخدم عادي** (cached_family_id موجود): أسرع مسار، 0ms
+2. **مستخدم مسح الكاش** (join_or_create_done موجود بس الـ ID راح): يعرض UI + يجلب الـ ID بالخلفية
+3. **مستخدم جديد** (لا هذا ولا هذا): redirect فوري بدون أي flash
 
-### 1. تحديث `ZakatAsset` interface
-إضافة `currency: string` للنوع، وقراءته من `a.currency` في الـ mapping
+## التأثير على الملفات
+نفس الملف `src/components/AuthGuard.tsx` — المنطق يصير synchronous بالكامل:
 
-### 2. جلب أسعار الصرف
-الـ hook `useGoldPrice` يجلب أصلاً `exchangerate-api` — نوسّعه ليُرجع `rates: Record<string, number>` (USD→SAR, EUR→SAR, إلخ) بدلاً من `sarRate` المحلي فقط
+```typescript
+const cachedFamilyId = localStorage.getItem("cached_family_id");
+const joinDone = localStorage.getItem("join_or_create_done");
 
-### 3. تحديث حسابات القيمة
-- `getAssetValue(asset)` ← يرجع القيمة **بعملة الأصل** (كما هو حالياً للذهب/الفضة، لكن بعملة الأصل لا SAR)
-- دالة جديدة `getAssetValueInSAR(asset)` ← تحوّل لريال للمقارنة بالنصاب
-- `getZakatAmount(asset)` ← 2.5% بعملة الأصل
+if (cachedFamilyId) {
+  // مسار سريع — عرض children
+} else if (joinDone) {
+  // عرض children + جلب API بالخلفية
+} else {
+  // مستخدم جديد — redirect فوري
+  return <Navigate to="/join-or-create" replace />;
+}
+```
 
-### 4. تحديث ملخص الزكاة (Summary Cards)
-بدلاً من رقم واحد بالريال:
-- **إجمالي الأصول**: يُعرض كقائمة مصغّرة حسب العملة (مثلاً: `50,000 ر.س + $2,000 + €1,500`)
-- **النصاب**: يبقى بالريال (مرجع ذهب)
-- **الزكاة المستحقة**: تُعرض مفصّلة حسب العملة (مثلاً: `1,250 ر.س + $50 + €37.5`)
-
-### 5. تحديث عرض الأصل الفردي
-- إظهار رمز العملة الصحيح بدل "ر.س" الثابت
-- زكاة كل أصل تظهر بعملته
-
-### 6. حفظ العملة عند الإضافة
-`addAssetMut.mutate(...)` و `updateAssetMut.mutate(...)` ← إرسال `currency: addCurrency`
-
-## الملفات
+## الخطة الكاملة المحدّثة (7 ملفات)
 
 | # | الملف | التغيير |
 |---|-------|---------|
-| 1 | `src/pages/Zakat.tsx` | كل التغييرات أعلاه (interface, hook, حسابات, عرض, إرسال currency) |
+| 1 | `src/lib/resourceRegistry.ts` | إضافة `warmPriority` لكل entry |
+| 2 | `src/lib/warmCache.ts` | تقسيم لمرحلتين (critical: 3 جداول → deferred: الباقي) |
+| 3 | `src/hooks/useOfflineFirst.ts` | تبسيط — إزالة IndexedDB read + state، اعتماد على React Query cache |
+| 4 | `src/components/AuthGuard.tsx` | المنطق الثلاثي أعلاه — sync localStorage فقط، بدون Dexie/spinner |
+| 5 | `src/components/RoleGuard.tsx` | عرض children فوراً مع role افتراضي |
+| 6 | `src/components/PageHeader.tsx` | إزالة SyncStatus |
+| 7 | `src/components/SyncStatus.tsx` | polling 15s بدل useLiveQuery (للـ Settings فقط) |
 
-**ملف واحد فقط، بدون migration** (عمود `currency` موجود أصلاً في `zakat_assets`)
+**7 ملفات، بدون migration**
 
