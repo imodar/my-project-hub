@@ -33,7 +33,7 @@ const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
 
   if (upcoming.length === 0) {
     return (
-      <section ref={ref} className="mt-8 px-5">
+      <section ref={ref} className="mt-8 pb-28 px-5">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-extrabold text-foreground tracking-tight">{t.upcomingEvents.title}</h2>
         </div>
