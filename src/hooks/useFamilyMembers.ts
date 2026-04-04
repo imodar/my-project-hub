@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
@@ -19,45 +19,38 @@ export interface FamilyMemberInfo {
 export function useFamilyMembers({ excludeSelf = true } = {}) {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
-  const [localMembers, setLocalMembers] = useState<FamilyMemberInfo[]>([]);
 
-  // Read from Dexie on mount for placeholder data
-  useEffect(() => {
-    if (!familyId) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const members = await db.family_members
-          .where("family_id").equals(familyId)
-          .toArray();
-        if (cancelled || members.length === 0) return;
+  const localMembers = useLiveQuery(
+    async () => {
+      if (!familyId) return [];
+      const members = await db.family_members
+        .where("family_id").equals(familyId)
+        .toArray();
+      if (members.length === 0) return [];
 
-        const enriched = await Promise.all(
-          members.map(async (m: any) => {
-            const profile = await db.profiles.get(m.user_id).catch(() => null);
-            return {
-              id: m.user_id,
-              name: profile?.name || ROLE_LABELS[m.role] || "عضو",
-              role: m.role || "member",
-              isAdmin: m.is_admin || false,
-              isCreator: false,
-              roleConfirmed: m.role_confirmed ?? true,
-              status: m.status || "active",
-            } as FamilyMemberInfo;
-          })
-        );
+      const enriched = await Promise.all(
+        members.map(async (m: any) => {
+          const profile = await db.profiles.get(m.user_id).catch(() => null);
+          return {
+            id: m.user_id,
+            name: profile?.name || ROLE_LABELS[m.role] || "عضو",
+            role: m.role || "member",
+            isAdmin: m.is_admin || false,
+            isCreator: false,
+            roleConfirmed: m.role_confirmed ?? true,
+            status: m.status || "active",
+          } as FamilyMemberInfo;
+        })
+      );
 
-        let filtered = enriched;
-        if (excludeSelf && user) {
-          filtered = filtered.filter((m) => m.id !== user.id);
-        }
-        if (!cancelled) setLocalMembers(filtered);
-      } catch {
-        // Dexie read failed — no placeholder
+      if (excludeSelf && user) {
+        return enriched.filter((m) => m.id !== user.id);
       }
-    })();
-    return () => { cancelled = true; };
-  }, [familyId, user?.id, excludeSelf]);
+      return enriched;
+    },
+    [familyId, user?.id, excludeSelf],
+    [] as FamilyMemberInfo[]
+  );
 
   const query = useQuery({
     queryKey: ["family-members-list", familyId, excludeSelf],
