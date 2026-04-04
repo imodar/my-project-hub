@@ -87,8 +87,10 @@ export function useChat() {
           }));
           setMessages(mapped);
         }
+        setCachedLoaded(true);
       } catch (e) {
         console.warn("[Chat] Failed to load cached messages:", e);
+        setCachedLoaded(true);
       }
     })();
   }, [user, familyId]);
