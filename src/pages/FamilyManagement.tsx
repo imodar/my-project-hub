@@ -1172,6 +1172,38 @@ const FamilyManagement = () => {
             </button>
           </div>
         </DrawerContent>
+      {/* Remove Member Confirmation Drawer */}
+      <Drawer open={!!removeMemberTarget} onOpenChange={(open) => { if (!open) setRemoveMemberTarget(null); }}>
+        <DrawerContent className="px-4 pb-8" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">تأكيد حذف العضو</DrawerTitle>
+          </DrawerHeader>
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+              <Trash2 size={28} className="text-destructive" />
+            </div>
+            <p className="font-bold text-foreground text-base">{removeMemberTarget?.name}</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              هل أنت متأكد من حذف هذا العضو من العائلة؟ لن يتمكن من الوصول لبيانات العائلة بعد الآن.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleRemoveMember}
+              disabled={removingMember}
+              className="w-full py-3 rounded-xl text-sm font-bold text-destructive-foreground bg-destructive disabled:opacity-40 flex items-center justify-center gap-2 transition-colors"
+            >
+              {removingMember ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={16} />}
+              {removingMember ? "جاري الحذف..." : "نعم، حذف العضو"}
+            </button>
+            <button
+              onClick={() => setRemoveMemberTarget(null)}
+              className="w-full py-3 rounded-xl text-sm font-semibold text-foreground bg-muted transition-colors"
+            >
+              إلغاء
+            </button>
+          </div>
+        </DrawerContent>
       </Drawer>
     </div>
   );
