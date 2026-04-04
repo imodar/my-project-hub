@@ -18,7 +18,7 @@ import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 import { useFamilyId } from "@/hooks/useFamilyId";
-import { warmCache } from "@/lib/warmCache";
+import { warmCacheCritical, warmCacheDeferred } from "@/lib/warmCache";
 import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
 import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
 import { usePendingMemberAlert } from "@/hooks/usePendingMemberAlert";

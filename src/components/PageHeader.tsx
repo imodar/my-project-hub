@@ -46,7 +46,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
           <h1 className="text-lg font-bold text-white">{title}</h1>
           {subtitle && <p className="text-xs text-white/70">{subtitle}</p>}
         </div>
-        {showSyncStatus && <SyncStatus className="opacity-80" />}
+        
         {actions?.map((action, i) => (
           <button
             key={i}
