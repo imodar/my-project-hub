@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CardPageSkeleton } from "@/components/PageSkeletons";
+// skeleton is inlined below PageHeader
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useTrash } from "@/contexts/TrashContext";
