@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { ListPageSkeleton } from "@/components/PageSkeletons";
+import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { useZakatAssets } from "@/hooks/useZakatAssets";
 import FAB from "@/components/FAB";
 import {
@@ -341,7 +341,7 @@ const Zakat = () => {
       </PageHeader>
 
       {assetsLoading ? (
-        <ListPageSkeleton />
+        <ListContentSkeleton />
       ) : (
       <PullToRefresh onRefresh={async () => { /* React Query auto-refetches */ }}>
         <div className="px-4 mt-2 space-y-4">

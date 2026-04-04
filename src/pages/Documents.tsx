@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { ListPageSkeleton } from "@/components/PageSkeletons";
+import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDocumentLists } from "@/hooks/useDocumentLists";
 import FAB from "@/components/FAB";
@@ -422,7 +422,7 @@ const Documents = () => {
         </PageHeader>
 
       {docsLoading ? (
-        <ListPageSkeleton />
+        <ListContentSkeleton />
       ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import SwipeableCard from "@/components/SwipeableCard";
 import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare, PersonStanding } from "lucide-react";
-import { ListPageSkeleton } from "@/components/PageSkeletons";
+import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -152,7 +152,7 @@ const Vaccinations = () => {
       />
 
       {isLoading ? (
-        <ListPageSkeleton />
+        <ListContentSkeleton />
       ) : (
       <div className="px-5 mt-6 space-y-4">
         {children.length === 0 ? (

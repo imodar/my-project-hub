@@ -15,26 +15,48 @@ const HeaderShell = () => (
   </div>
 );
 
+/* ─── Content-only skeletons (no header) ─── */
+
+/** List content skeleton (search + tabs + items) — for use below PageHeader */
+export const ListContentSkeleton = () => (
+  <div className="px-4 py-4 space-y-3">
+    <Skeleton className="h-10 rounded-xl" />
+    <div className="flex gap-2 overflow-hidden py-1">
+      {[...Array(4)].map((_, i) => (
+        <Skeleton key={i} className="h-8 w-20 rounded-full shrink-0" />
+      ))}
+    </div>
+    <div className="space-y-2 pt-2">
+      {[...Array(4)].map((_, i) => (
+        <Skeleton key={i} className="h-16 rounded-2xl" />
+      ))}
+    </div>
+  </div>
+);
+
+/** Card content skeleton (summary cards + tab bar + items) — for use below PageHeader */
+export const CardContentSkeleton = () => (
+  <div className="px-4 py-4 space-y-3">
+    <div className="flex gap-3">
+      <Skeleton className="h-20 flex-1 rounded-2xl" />
+      <Skeleton className="h-20 flex-1 rounded-2xl" />
+    </div>
+    <Skeleton className="h-10 rounded-xl" />
+    <div className="space-y-3 pt-2">
+      {[...Array(3)].map((_, i) => (
+        <Skeleton key={i} className="h-24 rounded-2xl" />
+      ))}
+    </div>
+  </div>
+);
+
+/* ─── Full-page skeletons (with header) — for Suspense fallbacks ─── */
+
 /** Skeleton loader for list-based pages (Tasks, Market, Budget, etc.) */
 export const ListPageSkeleton = () => (
   <div dir="rtl">
     <HeaderShell />
-    <div className="px-4 py-4 space-y-3">
-      {/* Search skeleton */}
-      <Skeleton className="h-10 rounded-xl" />
-      {/* Tabs / categories skeleton */}
-      <div className="flex gap-2 overflow-hidden py-1">
-        {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-8 w-20 rounded-full shrink-0" />
-        ))}
-      </div>
-      {/* Card items skeleton */}
-      <div className="space-y-2 pt-2">
-        {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-16 rounded-2xl" />
-        ))}
-      </div>
-    </div>
+    <ListContentSkeleton />
   </div>
 );
 
@@ -72,20 +94,6 @@ export const CalendarPageSkeleton = () => (
 export const CardPageSkeleton = () => (
   <div dir="rtl">
     <HeaderShell />
-    <div className="px-4 py-4 space-y-3">
-    {/* Summary cards skeleton */}
-    <div className="flex gap-3">
-      <Skeleton className="h-20 flex-1 rounded-2xl" />
-      <Skeleton className="h-20 flex-1 rounded-2xl" />
-    </div>
-    {/* Tab bar skeleton */}
-    <Skeleton className="h-10 rounded-xl" />
-    {/* Card items skeleton */}
-    <div className="space-y-3 pt-2">
-      {[...Array(3)].map((_, i) => (
-        <Skeleton key={i} className="h-24 rounded-2xl" />
-      ))}
-    </div>
-    </div>
+    <CardContentSkeleton />
   </div>
 );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { ListPageSkeleton } from "@/components/PageSkeletons";
+import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useMedications } from "@/hooks/useMedications";
 import {
@@ -280,7 +280,7 @@ const Medications = () => {
       />
 
       {medsLoading ? (
-        <ListPageSkeleton />
+        <ListContentSkeleton />
       ) : (
       <>
       {/* Due Alert Banner */}
