@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Check, RefreshCw, CheckCircle, AlertTriangle, Loader2, Database } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Check, RefreshCw, CheckCircle, AlertTriangle, Loader2, Database, AlertOctagon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -40,6 +42,12 @@ const Settings = () => {
   const qc = useQueryClient();
   const [privacySheet, setPrivacySheet] = useState(false);
   const [termsSheet, setTermsSheet] = useState(false);
+  const [deleteSheet, setDeleteSheet] = useState(false);
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteStep, setDeleteStep] = useState<"confirm" | "progress" | "done">("confirm");
+  const [deleteProgress, setDeleteProgress] = useState(0);
+  const [deleteStatusText, setDeleteStatusText] = useState("");
 
   const isAdmin = isDbAdmin;
 
@@ -97,7 +105,7 @@ const Settings = () => {
       title: t.settings.other,
       items: [
         { icon: Archive, label: t.settings.trash, desc: t.settings.trashDesc, onClick: () => navigate("/trash") },
-        { icon: Trash2, label: t.settings.clearData, desc: t.settings.clearDataDesc, danger: true },
+        { icon: Trash2, label: t.settings.deleteAccount, desc: t.settings.deleteAccountDesc, danger: true, onClick: () => { setDeleteSheet(true); setDeleteStep("confirm"); setDeleteConfirmed(false); setDeleteReason(""); setDeleteProgress(0); } },
         { icon: LogOut, label: t.settings.logout, desc: t.settings.logoutDesc, danger: true, onClick: async () => { await signOut(); navigate("/auth", { replace: true }); } },
       ],
     },
@@ -157,7 +165,61 @@ const Settings = () => {
       setContacts(prev => prev.filter(c => c.id !== id));
     }
   };
+  const handleDeleteAccount = useCallback(async () => {
+    setDeleteStep("progress");
+    setDeleteProgress(10);
+    setDeleteStatusText(t.settings.deletingServer);
 
+    try {
+      // Step 1: Call edge function to delete server data
+      setDeleteProgress(20);
+      const { data, error } = await supabase.functions.invoke("account-api", {
+        body: { action: "delete-account-now", reason: deleteReason.trim() || null },
+      });
+
+      if (error || data?.error) {
+        const errMsg = data?.error_code === "SOLE_ADMIN"
+          ? t.settings.deleteSoleAdmin
+          : (data?.error || t.settings.deleteError);
+        appToast.error(errMsg);
+        setDeleteStep("confirm");
+        return;
+      }
+
+      setDeleteProgress(60);
+      setDeleteStatusText(t.settings.deletingLocal);
+
+      // Step 2: Clear all local data
+      // Clear IndexedDB
+      const dbs = await window.indexedDB.databases?.() || [];
+      for (const db of dbs) {
+        if (db.name) window.indexedDB.deleteDatabase(db.name);
+      }
+
+      // Clear Cache API
+      if ("caches" in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+
+      // Clear localStorage
+      localStorage.clear();
+
+      setDeleteProgress(90);
+      setDeleteStatusText(t.settings.deleteSuccess);
+      setDeleteStep("done");
+      setDeleteProgress(100);
+
+      // Step 3: Sign out and redirect
+      setTimeout(async () => {
+        try { await signOut(); } catch (_) { /* already deleted */ }
+        navigate("/auth", { replace: true });
+      }, 1500);
+    } catch (err) {
+      appToast.error(t.settings.deleteError);
+      setDeleteStep("confirm");
+    }
+  }, [deleteReason, t, signOut, navigate]);
 
 
 
@@ -583,6 +645,93 @@ const Settings = () => {
       <LanguageSheet open={langSheet} onOpenChange={setLangSheet} />
       <LegalPageSheet open={privacySheet} onOpenChange={setPrivacySheet} slug="privacy-policy" />
       <LegalPageSheet open={termsSheet} onOpenChange={setTermsSheet} slug="terms-of-service" />
+
+      {/* Delete Account Sheet */}
+      <Sheet open={deleteSheet} onOpenChange={(open) => { if (deleteStep !== "progress") setDeleteSheet(open); }}>
+        <SheetContent side="bottom" className="rounded-t-3xl p-0 border-none" style={{ direction: dir, maxHeight: "85dvh" }}>
+          <div className="flex flex-col overflow-hidden">
+            <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "hsl(0 84% 60% / 0.15)" }}
+                >
+                  <AlertOctagon size={22} className="text-destructive" />
+                </div>
+                <div>
+                  <SheetTitle className={`text-destructive text-lg font-bold ${isRTL ? "text-right" : "text-left"}`}>
+                    {t.settings.deleteAccount}
+                  </SheetTitle>
+                </div>
+              </div>
+            </SheetHeader>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              {deleteStep === "confirm" && (
+                <>
+                  {/* Warnings */}
+                  <div className="space-y-3">
+                    {[t.settings.deleteWarning1, t.settings.deleteWarning2, t.settings.deleteWarning3].map((warning, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-3 p-3 rounded-xl"
+                        style={{ background: "hsl(0 84% 60% / 0.06)", border: "1px solid hsl(0 84% 60% / 0.12)" }}
+                      >
+                        <AlertTriangle size={18} className="text-destructive shrink-0 mt-0.5" />
+                        <p className="text-sm text-foreground">{warning}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Reason */}
+                  <textarea
+                    value={deleteReason}
+                    onChange={e => setDeleteReason(e.target.value)}
+                    placeholder={t.settings.deleteReasonPlaceholder}
+                    className="w-full px-4 py-3 rounded-xl text-sm bg-muted/50 border border-border focus:outline-none focus:ring-2 focus:ring-destructive/30 resize-none"
+                    rows={2}
+                    maxLength={500}
+                  />
+
+                  {/* Confirmation checkbox */}
+                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-muted/30">
+                    <Checkbox
+                      checked={deleteConfirmed}
+                      onCheckedChange={(v) => setDeleteConfirmed(!!v)}
+                      className="border-destructive data-[state=checked]:bg-destructive data-[state=checked]:text-destructive-foreground"
+                    />
+                    <span className="text-sm font-medium text-foreground">{t.settings.deleteConfirmCheck}</span>
+                  </label>
+
+                  {/* Delete button */}
+                  <Button
+                    onClick={handleDeleteAccount}
+                    disabled={!deleteConfirmed}
+                    className="w-full h-12 rounded-xl text-sm font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-40"
+                  >
+                    <Trash2 size={18} className={isRTL ? "ml-2" : "mr-2"} />
+                    {t.settings.deleteAccountBtn}
+                  </Button>
+                </>
+              )}
+
+              {(deleteStep === "progress" || deleteStep === "done") && (
+                <div className="py-8 space-y-6">
+                  <div className="flex flex-col items-center gap-4">
+                    {deleteStep === "progress" ? (
+                      <Loader2 size={40} className="text-destructive animate-spin" />
+                    ) : (
+                      <CheckCircle size={40} className="text-green-500" />
+                    )}
+                    <p className="text-sm font-semibold text-foreground text-center">{deleteStatusText}</p>
+                  </div>
+                  <Progress value={deleteProgress} className="h-2" />
+                </div>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
