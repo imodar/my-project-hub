@@ -17,7 +17,7 @@ interface PageHeaderProps {
   actions?: HeaderAction[];
   children?: ReactNode;
   onBack?: () => void;
-  showSyncStatus?: boolean;
+  
 }
 
 const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
