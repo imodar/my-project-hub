@@ -383,7 +383,13 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           </button>
           <span className="text-xl font-bold text-primary tracking-tight">{t.appName}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
+          >
+            <Search size={22} />
+          </button>
           <button
             onClick={() => setNotificationsOpen(true)}
             className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
