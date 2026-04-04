@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
         if (createErr) {
           // Phone might already exist under a different email
           if (createErr.message?.toLowerCase().includes("phone")) {
-            user = await findUserByPhone(adminClient, normalizedPhone, email);
+            user = await findUserById(adminClient, fullPhone, email);
             if (!user) throw createErr;
           } else {
             throw createErr;
