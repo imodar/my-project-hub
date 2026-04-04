@@ -20,7 +20,7 @@ const UpcomingEvents = React.forwardRef<HTMLElement>((_props, ref) => {
 
   if (isLoading) {
     return (
-      <section ref={ref} className="mt-8 px-5">
+      <section ref={ref} className="mt-8 pb-28 px-5">
         <h2 className="text-lg font-extrabold text-foreground tracking-tight mb-5">{t.upcomingEvents.title}</h2>
         <div className="flex gap-4 overflow-x-auto pb-3 -mx-5 px-5" style={{ scrollbarWidth: "none" }}>
           {[1, 2, 3].map((i) => (
