@@ -526,6 +526,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
       <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={currentUser} />
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 });
