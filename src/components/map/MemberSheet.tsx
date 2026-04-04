@@ -133,6 +133,10 @@ export default function MemberSheet({ locations, selectedMemberId, onMemberSelec
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <Loader2 size={16} className="animate-spin" />
                   </div>
+                ) : hasNoLocation && isLoadingLocations ? (
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Loader2 size={16} className="animate-spin" />
+                  </div>
                 ) : !loc.is_sharing ? (
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <EyeOff size={16} />

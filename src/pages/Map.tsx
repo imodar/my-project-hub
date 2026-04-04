@@ -119,12 +119,13 @@ const Map = () => {
       </div>
 
       <MemberSheet
-        locations={locations}
+        locations={mergedLocations}
         selectedMemberId={selectedMemberId}
         onMemberSelect={setSelectedMemberId}
         isExpanded={isSheetExpanded}
         setIsExpanded={setIsSheetExpanded}
         isTogglingSharing={isToggling}
+        isLoadingLocations={isLoadingLocations}
       />
     </div>
   );
