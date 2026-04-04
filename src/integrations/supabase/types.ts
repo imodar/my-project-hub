@@ -1769,6 +1769,7 @@ export type Database = {
       }
       task_items: {
         Row: {
+          added_by: string | null
           assigned_to: string | null
           created_at: string
           done: boolean
@@ -1782,6 +1783,7 @@ export type Database = {
           repeat_enabled: boolean
         }
         Insert: {
+          added_by?: string | null
           assigned_to?: string | null
           created_at?: string
           done?: boolean
@@ -1795,6 +1797,7 @@ export type Database = {
           repeat_enabled?: boolean
         }
         Update: {
+          added_by?: string | null
           assigned_to?: string | null
           created_at?: string
           done?: boolean

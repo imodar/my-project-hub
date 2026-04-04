@@ -135,7 +135,7 @@ export function useMarketLists() {
     addItem: {
       ...addItem,
       mutate: (input: any) => {
-        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), checked: false, ...input };
+        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), checked: false, added_by: user?.id || null, ...input };
         // Optimistic: inject item into the list's market_items immediately
         qc.setQueryData(key, (old: any[] | undefined) => {
           if (!old) return old;

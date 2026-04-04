@@ -94,7 +94,7 @@ const Market = () => {
           name: i.name,
           category: i.category || "أخرى",
           quantity: i.quantity || "",
-          addedBy: "",
+          addedBy: i.added_by ? (FAMILY_MEMBERS.find(m => m.id === i.added_by)?.name || "") : "",
           checked: i.checked,
         })),
       };
@@ -124,7 +124,7 @@ const Market = () => {
       lastUpdatedBy: "",
       lastUpdatedAt: "",
     }];
-  }, [dbLists, featureAccess.isStaff]);
+  }, [dbLists, featureAccess.isStaff, FAMILY_MEMBERS]);
   const [activeListId, setActiveListId] = useState("");
   const [activeCategory, setActiveCategory] = useState("الكل");
   const pendingActiveListIdRef = useRef<string | null>(null);

@@ -27,6 +27,7 @@ interface TaskItem {
   note: string;
   priority: "none" | "high" | "medium" | "low";
   assignedTo: string;
+  addedBy: string;
   done: boolean;
 }
 
@@ -78,6 +79,7 @@ const Tasks = () => {
           note: i.note || "",
           priority: (i.priority || "none") as TaskItem["priority"],
           assignedTo: i.assigned_to || "",
+          addedBy: i.added_by ? (FAMILY_MEMBERS.find(m => m.id === i.added_by)?.name || "") : "",
           done: i.done,
         })),
     }));
@@ -88,7 +90,7 @@ const Tasks = () => {
       return da.localeCompare(db2);
     });
     return featureAccess.isStaff ? mapped.filter(l => l.type !== "family") : mapped;
-  }, [dbLists, featureAccess.isStaff]);
+  }, [dbLists, featureAccess.isStaff, FAMILY_MEMBERS]);
 
   // Auto-create default family list
   useEffect(() => {
@@ -427,7 +429,9 @@ const Tasks = () => {
               {item.note && (
                 <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
               )}
-              <p className="text-[10px] text-muted-foreground mt-0.5">{item.assignedTo}</p>
+              {item.addedBy && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">{item.addedBy}</p>
+              )}
             </div>
             {item.priority !== "none" && (
               <div className="flex flex-col items-end gap-1">

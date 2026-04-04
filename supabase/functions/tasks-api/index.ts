@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
       if (repeat_days && (!Array.isArray(repeat_days) || repeat_days.length > 7)) return json({ error: "repeat_days غير صالح" }, 400);
       const familyId = await getFamilyIdFromList(list_id);
       if (!familyId || !await verifyFamilyMember(familyId)) return json({ error: "Unauthorized" }, 403);
-      const insertData: Record<string, unknown> = { list_id, name: sanitize(name, MAX_NAME), note: note ? sanitize(note, MAX_NOTE) : null, priority: priority || "none", assigned_to, repeat_enabled: repeat_enabled || false, repeat_days: repeat_days || [] };
+      const insertData: Record<string, unknown> = { list_id, name: sanitize(name, MAX_NAME), note: note ? sanitize(note, MAX_NOTE) : null, priority: priority || "none", assigned_to, repeat_enabled: repeat_enabled || false, repeat_days: repeat_days || [], added_by: userId };
       if (clientId) insertData.id = clientId;
       const { data, error } = await adminClient.from("task_items").insert(insertData).select().single();
       if (error) return json({ error: error.message }, 400);
