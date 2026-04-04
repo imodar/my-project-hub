@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ListPageSkeleton } from "@/components/PageSkeletons";
+import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { usePlaceLists } from "@/hooks/usePlaceLists";
 import FAB from "@/components/FAB";
