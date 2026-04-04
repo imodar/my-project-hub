@@ -105,7 +105,7 @@ const Settings = () => {
       title: t.settings.other,
       items: [
         { icon: Archive, label: t.settings.trash, desc: t.settings.trashDesc, onClick: () => navigate("/trash") },
-        { icon: Trash2, label: t.settings.clearData, desc: t.settings.clearDataDesc, danger: true },
+        { icon: Trash2, label: t.settings.deleteAccount, desc: t.settings.deleteAccountDesc, danger: true, onClick: () => { setDeleteSheet(true); setDeleteStep("confirm"); setDeleteConfirmed(false); setDeleteReason(""); setDeleteProgress(0); } },
         { icon: LogOut, label: t.settings.logout, desc: t.settings.logoutDesc, danger: true, onClick: async () => { await signOut(); navigate("/auth", { replace: true }); } },
       ],
     },
