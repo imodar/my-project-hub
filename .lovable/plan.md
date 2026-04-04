@@ -1,55 +1,49 @@
 
 
-# إضافة اسم الشخص الذي أضاف العنصر — السوق والمهام
+# خطة: تحسين تحميل الصور والملفات الصوتية في الدردشة
 
-## الوضع الحالي
+## المشكلة
+- الصور والملفات الصوتية تُخزن في bucket خاص (`chat-media`) ورابطها signed URL بتاريخ انتهاء
+- عند فتح الدردشة من الكاش (IndexedDB)، الروابط قد تكون منتهية الصلاحية → الصورة لا تظهر
+- لا يوجد أي مؤشر تحميل (spinner) أثناء جلب الملفات
+- لا يوجد تخزين محلي للملفات نفسها (blobs)
 
-| | السوق (market_items) | المهام (task_items) |
-|---|---|---|
-| عمود `added_by` بالداتابيز | موجود (uuid, nullable) | غير موجود |
-| API يحفظ `added_by` | نعم (عند add-item) | لا |
-| API يرجع `added_by` | نعم (ضمن `select("*")`) | لا يوجد عمود |
-| الواجهة تعرضه | لا — `addedBy: ""` دائماً | لا |
+## الحل
 
-## التغييرات المطلوبة
+### 1. إنشاء hook جديد: `useMediaUrl`
+Hook صغير يتعامل مع رابط الوسائط بذكاء:
+- يحاول تحميل الرابط الحالي أولاً
+- إذا فشل (401/403 = رابط منتهي) → يستخرج الـ `path` من الرابط ويجلب signed URL جديد
+- يعرض 3 حالات: `loading` / `ready` / `error`
+- يخزن الـ blob في Cache API (`caches.open("chat-media")`) للمرة القادمة
 
-### 1. Migration — إضافة `added_by` لجدول `task_items`
-```sql
-ALTER TABLE task_items ADD COLUMN added_by uuid;
+```text
+المنطق:
+1. تحقق من Cache API أولاً → إذا موجود → أرجع blob URL فوراً
+2. إذا لا → حاول fetch الرابط الحالي
+3. إذا فشل (expired) → استخرج path + اطلب signed URL جديد
+4. خزّن الـ response في Cache API
+5. أرجع blob URL
 ```
-عمود واحد، nullable، بدون foreign key (نفس نمط market_items).
 
-### 2. Edge Function: `tasks-api/index.ts`
-- **add-item**: حفظ `added_by: userId` عند الإدراج (نفس ما يفعله market-api)
-- **get-lists**: بدون تغيير — `select("*, task_items(*)")` سيرجع العمود الجديد تلقائياً
+### 2. تحديث `ImageBubble` في `Chat.tsx`
+- استخدام `useMediaUrl(url)` بدل `src={url}` مباشرة
+- عرض spinner (Loader2) أثناء التحميل
+- عرض أيقونة خطأ إذا فشل الجلب
 
-### 3. Edge Function: `market-api/index.ts`
-- بدون تغيير — `added_by` يُحفظ ويُرجع أصلاً
+### 3. تحديث `VoicePlayer` في `Chat.tsx`
+- نفس المنطق: استخدام `useMediaUrl(url)` 
+- عرض spinner بدل مشغل الصوت أثناء التحميل
 
-### 4. الواجهة: `src/pages/Market.tsx`
-- في الـ `useMemo` (سطر 92-98): بدل `addedBy: ""` → ابحث عن اسم العضو من `FAMILY_MEMBERS` باستخدام `i.added_by`
-- في `renderItem` (سطر 407): يعرض الاسم أصلاً — سيعمل تلقائياً
-
-### 5. الواجهة: `src/pages/Tasks.tsx`
-- في الـ `useMemo`: أضف حقل `addedByName` لكل item من `i.added_by` مقارنة مع أعضاء العائلة
-- في `renderItem` (سطر 430): أضف سطر يعرض اسم المضيف تحت الملاحظة
-
-### 6. Hook: `useTaskLists.ts`
-- في `addItem.mutate`: أضف `added_by: user?.id` للـ payload المحلي (optimistic)
-
-### 7. Hook: `useMarketLists.ts`
-- في `addItem.mutate`: أضف `added_by: user?.id` للـ payload المحلي (optimistic)
+### 4. تحديث الكاش عند جلب رسائل جديدة
+- في `useChat.ts` عند تخزين الرسائل في IndexedDB، نحتفظ أيضاً بالـ `storage_path` (نستخرجه من الرابط) لتسهيل إعادة الجلب لاحقاً
 
 ## الملفات
 
 | # | الملف | التغيير |
 |---|-------|---------|
-| 1 | Migration | `ALTER TABLE task_items ADD COLUMN added_by uuid` |
-| 2 | `supabase/functions/tasks-api/index.ts` | إضافة `added_by: userId` في add-item |
-| 3 | `src/pages/Market.tsx` | ربط `added_by` باسم العضو من FAMILY_MEMBERS |
-| 4 | `src/pages/Tasks.tsx` | نفس الشيء + عرض الاسم في renderItem |
-| 5 | `src/hooks/useTaskLists.ts` | إضافة `added_by` في optimistic payload |
-| 6 | `src/hooks/useMarketLists.ts` | إضافة `added_by` في optimistic payload |
+| 1 | `src/hooks/useMediaUrl.ts` | Hook جديد - Cache API + signed URL refresh |
+| 2 | `src/pages/Chat.tsx` | تحديث ImageBubble + VoicePlayer لاستخدام الـ hook |
 
-**6 تغييرات، migration واحد**
+**2 ملفات، ملف جديد واحد، بدون migration**
 
