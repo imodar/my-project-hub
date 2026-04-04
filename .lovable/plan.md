@@ -1,68 +1,55 @@
 
 
-# إصلاح: تأخر ظهور أفراد العائلة في الخريطة
+# إضافة اسم الشخص الذي أضاف العنصر — السوق والمهام
 
-## المشكلة
-`useFamilyMembers` يقرأ من Dexie عبر `useEffect` + `useState` → أول render يكون `members = []` → المستخدم يشوف القائمة فاضية لـ 50-100ms قبل ما تمتلئ.
+## الوضع الحالي
 
-## الحل
-استبدال `useEffect` + `useState` بـ `useLiveQuery` من Dexie — يعطي البيانات من أول render مباشرة (synchronous-like).
+| | السوق (market_items) | المهام (task_items) |
+|---|---|---|
+| عمود `added_by` بالداتابيز | موجود (uuid, nullable) | غير موجود |
+| API يحفظ `added_by` | نعم (عند add-item) | لا |
+| API يرجع `added_by` | نعم (ضمن `select("*")`) | لا يوجد عمود |
+| الواجهة تعرضه | لا — `addedBy: ""` دائماً | لا |
 
-## التغييرات
+## التغييرات المطلوبة
 
-### ملف: `src/hooks/useFamilyMembers.ts`
-
-**قبل:**
-```typescript
-const [localMembers, setLocalMembers] = useState<FamilyMemberInfo[]>([]);
-
-useEffect(() => {
-  // async Dexie read → setState → re-render
-}, [familyId, user?.id, excludeSelf]);
+### 1. Migration — إضافة `added_by` لجدول `task_items`
+```sql
+ALTER TABLE task_items ADD COLUMN added_by uuid;
 ```
+عمود واحد، nullable، بدون foreign key (نفس نمط market_items).
 
-**بعد:**
-```typescript
-import { useLiveQuery } from "dexie-react-hooks";
+### 2. Edge Function: `tasks-api/index.ts`
+- **add-item**: حفظ `added_by: userId` عند الإدراج (نفس ما يفعله market-api)
+- **get-lists**: بدون تغيير — `select("*, task_items(*)")` سيرجع العمود الجديد تلقائياً
 
-const localMembers = useLiveQuery(async () => {
-  if (!familyId) return [];
-  const members = await db.family_members
-    .where("family_id").equals(familyId)
-    .toArray();
-  if (members.length === 0) return [];
-  
-  const enriched = await Promise.all(
-    members.map(async (m) => {
-      const profile = await db.profiles.get(m.user_id).catch(() => null);
-      return {
-        id: m.user_id,
-        name: profile?.name || ROLE_LABELS[m.role] || "عضو",
-        role: m.role || "member",
-        isAdmin: m.is_admin || false,
-        isCreator: false,
-        roleConfirmed: m.role_confirmed ?? true,
-        status: m.status || "active",
-      } as FamilyMemberInfo;
-    })
-  );
-  
-  if (excludeSelf && user) {
-    return enriched.filter((m) => m.id !== user.id);
-  }
-  return enriched;
-}, [familyId, user?.id, excludeSelf], []);  // [] = default value
-```
+### 3. Edge Function: `market-api/index.ts`
+- بدون تغيير — `added_by` يُحفظ ويُرجع أصلاً
 
-- `useLiveQuery` يعيد النتيجة من Dexie فوراً (أو الـ default `[]` في أول frame ثم البيانات الحقيقية).
-- كمان يتابع التغييرات في Dexie تلقائياً (reactive) — لو تحدثت البيانات المحلية، الواجهة تتحدث فوراً.
-- حذف الـ `useState` و `useEffect` بالكامل.
+### 4. الواجهة: `src/pages/Market.tsx`
+- في الـ `useMemo` (سطر 92-98): بدل `addedBy: ""` → ابحث عن اسم العضو من `FAMILY_MEMBERS` باستخدام `i.added_by`
+- في `renderItem` (سطر 407): يعرض الاسم أصلاً — سيعمل تلقائياً
+
+### 5. الواجهة: `src/pages/Tasks.tsx`
+- في الـ `useMemo`: أضف حقل `addedByName` لكل item من `i.added_by` مقارنة مع أعضاء العائلة
+- في `renderItem` (سطر 430): أضف سطر يعرض اسم المضيف تحت الملاحظة
+
+### 6. Hook: `useTaskLists.ts`
+- في `addItem.mutate`: أضف `added_by: user?.id` للـ payload المحلي (optimistic)
+
+### 7. Hook: `useMarketLists.ts`
+- في `addItem.mutate`: أضف `added_by: user?.id` للـ payload المحلي (optimistic)
 
 ## الملفات
 
 | # | الملف | التغيير |
 |---|-------|---------|
-| 1 | `src/hooks/useFamilyMembers.ts` | استبدال useEffect+useState بـ useLiveQuery |
+| 1 | Migration | `ALTER TABLE task_items ADD COLUMN added_by uuid` |
+| 2 | `supabase/functions/tasks-api/index.ts` | إضافة `added_by: userId` في add-item |
+| 3 | `src/pages/Market.tsx` | ربط `added_by` باسم العضو من FAMILY_MEMBERS |
+| 4 | `src/pages/Tasks.tsx` | نفس الشيء + عرض الاسم في renderItem |
+| 5 | `src/hooks/useTaskLists.ts` | إضافة `added_by` في optimistic payload |
+| 6 | `src/hooks/useMarketLists.ts` | إضافة `added_by` في optimistic payload |
 
-**ملف واحد، تغيير بسيط، بدون dependencies جديدة** (dexie-react-hooks موجود أصلاً في المشروع — يُستخدم في SyncStatus.tsx)
+**6 تغييرات، migration واحد**
 
