@@ -23,7 +23,7 @@ import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
 import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
 import { usePendingMemberAlert } from "@/hooks/usePendingMemberAlert";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
-import BottomNav from "@/components/home/BottomNav";
+import BottomNav from "@/components/home/BottomNavWhatsApp";
 import RoleGuard from "@/components/RoleGuard";
 
 // ── Retry wrapper for stale chunk recovery ──
