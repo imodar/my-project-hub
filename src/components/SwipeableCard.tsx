@@ -28,19 +28,21 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
   const isOpen = useRef(false);
   const isDragging = useRef(false);
   const isVertical = useRef(false);
+  const pointerType = useRef<"touch" | "mouse" | null>(null);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    startY.current = e.touches[0].clientY;
+  const onDragStart = useCallback((clientX: number, clientY: number, type: "touch" | "mouse") => {
+    startX.current = clientX;
+    startY.current = clientY;
     isDragging.current = true;
     isVertical.current = false;
+    pointerType.current = type;
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+  const onDragMove = useCallback((clientX: number, clientY: number) => {
     if (!isDragging.current) return;
 
-    const dx = e.touches[0].clientX - startX.current;
-    const dy = e.touches[0].clientY - startY.current;
+    const dx = clientX - startX.current;
+    const dy = clientY - startY.current;
 
     // Detect vertical scroll — lock direction early
     if (!isVertical.current && Math.abs(dy) > Math.abs(dx) + 5) {
@@ -56,8 +58,9 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
     offsetRef.current = newOffset;
   }, [ACTION_WIDTH]);
 
-  const handleTouchEnd = useCallback(() => {
+  const onDragEnd = useCallback(() => {
     isDragging.current = false;
+    pointerType.current = null;
     if (isVertical.current) return;
 
     const current = offsetRef.current;
@@ -78,6 +81,38 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
       setOffset(ACTION_WIDTH);
     }
   }, [ACTION_WIDTH, onSwipeOpen]);
+
+  // Touch handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    onDragStart(e.touches[0].clientX, e.touches[0].clientY, "touch");
+  }, [onDragStart]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    onDragMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, [onDragMove]);
+
+  const handleTouchEnd = useCallback(() => {
+    onDragEnd();
+  }, [onDragEnd]);
+
+  // Mouse handlers (desktop)
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Skip if touch already active (avoid double-handling on hybrid devices)
+    if (pointerType.current === "touch") return;
+    e.preventDefault();
+    onDragStart(e.clientX, e.clientY, "mouse");
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      onDragMove(ev.clientX, ev.clientY);
+    };
+    const handleMouseUp = () => {
+      onDragEnd();
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  }, [onDragStart, onDragMove, onDragEnd]);
 
   const close = useCallback(() => {
     setOffset(0);
@@ -115,6 +150,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
         onClick={() => { if (isOpen.current) close(); }}
       >
         {children}
