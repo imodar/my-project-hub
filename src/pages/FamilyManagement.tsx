@@ -239,21 +239,27 @@ const FamilyManagement = () => {
     setAddStep("invite-method");
   };
 
-  const handleRemoveMember = async (id: string) => {
-    if (!familyId) return;
+  const [removeMemberTarget, setRemoveMemberTarget] = useState<FamilyMember | null>(null);
+  const [removingMember, setRemovingMember] = useState(false);
+
+  const handleRemoveMember = async () => {
+    if (!familyId || !removeMemberTarget) return;
+    setRemovingMember(true);
     try {
       const { data, error } = await supabase.functions.invoke("family-management", {
-        body: { action: "remove-member", family_id: familyId, target_user_id: id },
+        body: { action: "remove-member", family_id: familyId, target_user_id: removeMemberTarget.id },
       });
       if (error || data?.error) {
         appToast.error(data?.error || "فشل حذف العضو");
         return;
       }
       refetchMembers();
-      
+      setRemoveMemberTarget(null);
       appToast.success("تم حذف الفرد من الأسرة");
     } catch {
       appToast.error("حدث خطأ");
+    } finally {
+      setRemovingMember(false);
     }
   };
 
@@ -611,7 +617,7 @@ const FamilyManagement = () => {
               <SwipeableCard
                 key={member.id}
                 actions={canSwipe ? [
-                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleRemoveMember(member.id) },
+                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setRemoveMemberTarget(member) },
                   { icon: <Shield size={16} />, label: memberIsAdmin ? "إلغاء" : "مشرف", color: memberIsAdmin ? "bg-muted-foreground" : "bg-primary", onClick: () => handleToggleAdmin(member.id) },
                 ] : []}
               >
@@ -1163,6 +1169,40 @@ const FamilyManagement = () => {
                 ? <Loader2 size={16} className="animate-spin" />
                 : "قبول"
               }
+            </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Remove Member Confirmation Drawer */}
+      <Drawer open={!!removeMemberTarget} onOpenChange={(open) => { if (!open) setRemoveMemberTarget(null); }}>
+        <DrawerContent className="px-4 pb-8" style={{ direction: "rtl" }}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center text-lg">تأكيد حذف العضو</DrawerTitle>
+          </DrawerHeader>
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+              <Trash2 size={28} className="text-destructive" />
+            </div>
+            <p className="font-bold text-foreground text-base">{removeMemberTarget?.name}</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              هل أنت متأكد من حذف هذا العضو من العائلة؟ لن يتمكن من الوصول لبيانات العائلة بعد الآن.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleRemoveMember}
+              disabled={removingMember}
+              className="w-full py-3 rounded-xl text-sm font-bold text-destructive-foreground bg-destructive disabled:opacity-40 flex items-center justify-center gap-2 transition-colors"
+            >
+              {removingMember ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={16} />}
+              {removingMember ? "جاري الحذف..." : "نعم، حذف العضو"}
+            </button>
+            <button
+              onClick={() => setRemoveMemberTarget(null)}
+              className="w-full py-3 rounded-xl text-sm font-semibold text-foreground bg-muted transition-colors"
+            >
+              إلغاء
             </button>
           </div>
         </DrawerContent>
