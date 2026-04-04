@@ -32,7 +32,11 @@ const CASH_CURRENCIES = [
   { code: "KWD", label: "دينار كويتي", symbol: "د.ك" },
 ] as const;
 
-// Using shared SwipeableCard component
+function getCurrencySymbol(code: string): string {
+  const found = CASH_CURRENCIES.find(c => c.code === code);
+  return found ? found.symbol : code;
+}
+
 import SwipeableCard from "@/components/SwipeableCard";
 
 // ── Types ──
@@ -42,11 +46,12 @@ interface ZakatAsset {
   id: string;
   type: AssetType;
   label: string;
-  amount: number; // cash amount or weight in grams
-  karat?: number; // for gold: 18, 21, 24
-  purchaseDate: string; // hijri-approx, stored as ISO
+  amount: number;
+  karat?: number;
+  purchaseDate: string;
   marketValue?: number;
   reminder: boolean;
+  currency: string;
 }
 
 const ASSET_TYPE_META: Record<AssetType, { label: string; icon: string; color: string; bg: string }> = {
@@ -58,13 +63,10 @@ const ASSET_TYPE_META: Record<AssetType, { label: string; icon: string; color: s
 };
 
 const GOLD_KARATS = [24, 22, 21, 18];
-const NISAB_GOLD_GRAMS = 85; // grams of 24k gold
+const NISAB_GOLD_GRAMS = 85;
 const NISAB_SILVER_GRAMS = 595;
 const ZAKAT_RATE = 0.025;
 
-// localStorage helpers removed — using Supabase hooks
-
-// Days until hawl (1 hijri year ≈ 354 days)
 function daysUntilHawl(purchaseDateISO: string): number {
   const purchase = new Date(purchaseDateISO);
   const hawlDate = new Date(purchase.getTime() + 354 * 24 * 60 * 60 * 1000);
@@ -84,25 +86,27 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" });
 }
 
-// ── Gold price hook (gold-api.com free, no key needed) ──
+// ── Gold price + exchange rates hook ──
 const TROY_OZ_TO_GRAMS = 31.1035;
-const USD_TO_SAR = 3.75; // fallback rate
+const USD_TO_SAR_FALLBACK = 3.75;
 
 function useGoldPrice() {
   const [goldPricePerGram, setGoldPricePerGram] = useState<number | null>(null);
   const [silverPricePerGram, setSilverPricePerGram] = useState<number | null>(null);
+  const [rates, setRates] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
 
   useEffect(() => {
-    const cached = localStorage.getItem("zakat_metal_prices");
+    const cached = localStorage.getItem("zakat_metal_prices_v2");
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
         if (Date.now() - parsed.ts < 3600_000) {
           setGoldPricePerGram(parsed.gold);
           setSilverPricePerGram(parsed.silver);
+          setRates(parsed.rates || {});
           setLastUpdated(parsed.ts);
           setLoading(false);
           return;
@@ -110,7 +114,6 @@ function useGoldPrice() {
       } catch {}
     }
 
-    // Fetch gold, silver, and USD→SAR rate in parallel
     Promise.all([
       fetch("https://api.gold-api.com/price/XAU").then(r => r.json()),
       fetch("https://api.gold-api.com/price/XAG").then(r => r.json()),
@@ -118,30 +121,44 @@ function useGoldPrice() {
     ])
       .then(([goldData, silverData, fxData]) => {
         const now = Date.now();
-        const sarRate = fxData?.rates?.SAR || USD_TO_SAR;
+        const fxRates = fxData?.rates || {};
+        const sarRate = fxRates.SAR || USD_TO_SAR_FALLBACK;
 
-        // API returns USD per troy ounce → convert to SAR per gram
+        // gold/silver prices in SAR per gram
         const goldPerGram = (goldData.price / TROY_OZ_TO_GRAMS) * sarRate;
         const silverPerGram = (silverData.price / TROY_OZ_TO_GRAMS) * sarRate;
 
+        // Build rates: currency → SAR (how many SAR per 1 unit of currency)
+        const toSAR: Record<string, number> = { SAR: 1 };
+        if (fxRates.SAR) {
+          for (const [code, rate] of Object.entries(fxRates)) {
+            if (typeof rate === "number" && rate > 0) {
+              toSAR[code] = fxRates.SAR / rate;
+            }
+          }
+        }
+
         setGoldPricePerGram(Math.round(goldPerGram * 100) / 100);
         setSilverPricePerGram(Math.round(silverPerGram * 100) / 100);
+        setRates(toSAR);
         setLastUpdated(now);
-        localStorage.setItem("zakat_metal_prices", JSON.stringify({
+        localStorage.setItem("zakat_metal_prices_v2", JSON.stringify({
           gold: Math.round(goldPerGram * 100) / 100,
           silver: Math.round(silverPerGram * 100) / 100,
+          rates: toSAR,
           ts: now,
         }));
       })
       .catch(() => {
         setGoldPricePerGram(540);
         setSilverPricePerGram(8);
+        setRates({ SAR: 1, USD: USD_TO_SAR_FALLBACK, EUR: 4.1, GBP: 4.7, AED: 1.02, QAR: 1.03, KWD: 12.2 });
         setError(true);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  return { goldPricePerGram, silverPricePerGram, loading, error, lastUpdated };
+  return { goldPricePerGram, silverPricePerGram, rates, loading, error, lastUpdated };
 }
 
 // ── Component ──
@@ -158,6 +175,7 @@ const Zakat = () => {
     purchaseDate: a.purchase_date || "",
     marketValue: undefined,
     reminder: a.reminder || false,
+    currency: a.currency || "SAR",
   })), [dbAssets]);
 
   const [showAdd, setShowAdd] = useState(false);
@@ -175,14 +193,11 @@ const Zakat = () => {
   const [zakatPaidAsset, setZakatPaidAsset] = useState<string | null>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
 
-  const { goldPricePerGram, silverPricePerGram, loading: priceLoading, lastUpdated } = useGoldPrice();
-
-  const updateAssets = useCallback((newAssets: ZakatAsset[]) => {
-    // Updates are handled via individual mutations now
-  }, []);
+  const { goldPricePerGram, silverPricePerGram, rates, loading: priceLoading, lastUpdated } = useGoldPrice();
 
   const handleAdd = () => {
     if (!addAmount || Number(addAmount) <= 0) return;
+    const currencyToSave = (addType === "cash" || addType === "stocks" || addType === "funds") ? addCurrency : "SAR";
     if (editingAssetId) {
       updateAssetMut.mutate({
         id: editingAssetId,
@@ -191,6 +206,7 @@ const Zakat = () => {
         amount: Number(addAmount),
         purchase_date: addDate,
         karat: addType === "gold" ? addKarat : null,
+        currency: currencyToSave,
       });
     } else {
       addAssetMut.mutate({
@@ -200,6 +216,7 @@ const Zakat = () => {
         purchase_date: addDate,
         reminder: true,
         karat: addType === "gold" ? addKarat : null,
+        currency: currencyToSave,
       });
     }
     setShowAdd(false);
@@ -223,37 +240,85 @@ const Zakat = () => {
     haptic.medium();
   };
 
+  // Convert any currency to SAR
+  const toSAR = useCallback((amount: number, currency: string): number => {
+    if (currency === "SAR") return amount;
+    const rate = rates[currency];
+    if (rate) return amount * rate;
+    return amount; // fallback: assume 1:1
+  }, [rates]);
 
-  // Calculate values
-  const getAssetValue = (asset: ZakatAsset): number => {
+  // Get asset value in its own currency
+  const getAssetValue = useCallback((asset: ZakatAsset): number => {
     if (asset.type === "cash" || asset.type === "stocks" || asset.type === "funds") return asset.amount;
     if (asset.type === "gold" && goldPricePerGram) {
       const purity = (asset.karat || 24) / 24;
-      return asset.amount * purity * goldPricePerGram;
+      return asset.amount * purity * goldPricePerGram; // SAR
     }
     if (asset.type === "silver" && silverPricePerGram) {
-      return asset.amount * silverPricePerGram;
+      return asset.amount * silverPricePerGram; // SAR
     }
     return asset.amount;
-  };
+  }, [goldPricePerGram, silverPricePerGram]);
 
-  const getZakatAmount = (asset: ZakatAsset): number => {
+  // Get asset value converted to SAR (for nisab comparison)
+  const getAssetValueInSAR = useCallback((asset: ZakatAsset): number => {
+    const value = getAssetValue(asset);
+    // Gold/silver are already calculated in SAR
+    if (asset.type === "gold" || asset.type === "silver") return value;
+    return toSAR(value, asset.currency);
+  }, [getAssetValue, toSAR]);
+
+  // Zakat = 2.5% in asset's own currency
+  const getZakatAmount = useCallback((asset: ZakatAsset): number => {
     return getAssetValue(asset) * ZAKAT_RATE;
+  }, [getAssetValue]);
+
+  // Currency for display
+  const getAssetDisplayCurrency = (asset: ZakatAsset): string => {
+    if (asset.type === "gold" || asset.type === "silver") return "SAR";
+    return asset.currency;
   };
 
   const getNisabValue = (): number => {
     if (goldPricePerGram) return NISAB_GOLD_GRAMS * goldPricePerGram;
-    return NISAB_GOLD_GRAMS * 310; // fallback
+    return NISAB_GOLD_GRAMS * 310;
   };
 
-  const totalValue = assets.reduce((sum, a) => sum + getAssetValue(a), 0);
-  const totalZakat = assets.reduce((sum, a) => sum + getZakatAmount(a), 0);
+  const totalValueInSAR = assets.reduce((sum, a) => sum + getAssetValueInSAR(a), 0);
   const nisabValue = getNisabValue();
-  const meetsNisab = totalValue >= nisabValue;
+  const meetsNisab = totalValueInSAR >= nisabValue;
 
   // Assets due (hawl passed)
   const assetsDue = assets.filter(a => daysUntilHawl(a.purchaseDate) <= 0);
-  const zakatDue = assetsDue.reduce((sum, a) => sum + getZakatAmount(a), 0);
+
+  // Group totals by currency
+  const totalsByCurrency = useMemo(() => {
+    const map: Record<string, number> = {};
+    assets.forEach(a => {
+      const cur = getAssetDisplayCurrency(a);
+      map[cur] = (map[cur] || 0) + getAssetValue(a);
+    });
+    return map;
+  }, [assets, getAssetValue]);
+
+  const zakatByCurrency = useMemo(() => {
+    const map: Record<string, number> = {};
+    assetsDue.forEach(a => {
+      const cur = getAssetDisplayCurrency(a);
+      map[cur] = (map[cur] || 0) + getZakatAmount(a);
+    });
+    return map;
+  }, [assetsDue, getZakatAmount]);
+
+  // Format multi-currency display
+  const formatMultiCurrency = (byCurrency: Record<string, number>): string => {
+    const entries = Object.entries(byCurrency).filter(([, v]) => v > 0);
+    if (entries.length === 0) return "0";
+    return entries
+      .map(([cur, val]) => `${val.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ${getCurrencySymbol(cur)}`)
+      .join(" + ");
+  };
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
@@ -296,9 +361,19 @@ const Zakat = () => {
                 <Scale size={16} className="text-primary" />
                 <span className="text-xs font-bold text-muted-foreground">إجمالي الأصول</span>
               </div>
-              <p className="text-lg font-extrabold text-foreground">
-                {totalValue.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} <span className="text-xs font-bold text-muted-foreground">ر.س</span>
-              </p>
+              {Object.keys(totalsByCurrency).length <= 1 ? (
+                <p className="text-lg font-extrabold text-foreground">
+                  {totalValueInSAR.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} <span className="text-xs font-bold text-muted-foreground">{getCurrencySymbol(Object.keys(totalsByCurrency)[0] || "SAR")}</span>
+                </p>
+              ) : (
+                <div className="space-y-0.5">
+                  {Object.entries(totalsByCurrency).map(([cur, val]) => (
+                    <p key={cur} className="text-sm font-extrabold text-foreground">
+                      {val.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} <span className="text-[10px] font-bold text-muted-foreground">{getCurrencySymbol(cur)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center gap-1 mt-1.5">
                 {meetsNisab ? (
                   <>
@@ -312,6 +387,11 @@ const Zakat = () => {
                   </>
                 )}
               </div>
+              {Object.keys(totalsByCurrency).length > 1 && (
+                <p className="text-[9px] text-muted-foreground/70 mt-1">
+                  ≈ {totalValueInSAR.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س (للمقارنة بالنصاب)
+                </p>
+              )}
             </div>
 
             <div className="rounded-2xl p-4 bg-background border border-border">
@@ -319,9 +399,19 @@ const Zakat = () => {
                 <Calculator size={16} className="text-emerald-600" />
                 <span className="text-xs font-bold text-muted-foreground">الزكاة المستحقة</span>
               </div>
-              <p className="text-lg font-extrabold text-emerald-600">
-                {zakatDue.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} <span className="text-xs font-bold text-muted-foreground">ر.س</span>
-              </p>
+              {Object.keys(zakatByCurrency).length <= 1 ? (
+                <p className="text-lg font-extrabold text-emerald-600">
+                  {(Object.values(zakatByCurrency)[0] || 0).toLocaleString("ar-SA", { maximumFractionDigits: 0 })} <span className="text-xs font-bold text-muted-foreground">{getCurrencySymbol(Object.keys(zakatByCurrency)[0] || "SAR")}</span>
+                </p>
+              ) : (
+                <div className="space-y-0.5">
+                  {Object.entries(zakatByCurrency).map(([cur, val]) => (
+                    <p key={cur} className="text-sm font-extrabold text-emerald-600">
+                      {val.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} <span className="text-[10px] font-bold text-muted-foreground">{getCurrencySymbol(cur)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
               <p className="text-[10px] text-muted-foreground mt-1.5">
                 {assetsDue.length > 0 ? `${assetsDue.length} أصول حال حولها` : "لا أصول مستحقة حالياً"}
               </p>
@@ -365,6 +455,8 @@ const Zakat = () => {
                   const isDue = days <= 0;
                   const value = getAssetValue(asset);
                   const zakat = getZakatAmount(asset);
+                  const displayCur = getAssetDisplayCurrency(asset);
+                  const curSymbol = getCurrencySymbol(displayCur);
 
                   return (
                     <SwipeableCard
@@ -376,6 +468,7 @@ const Zakat = () => {
                           setAddLabel(asset.label);
                           setAddAmount(String(asset.amount));
                           if (asset.karat) setAddKarat(asset.karat);
+                          setAddCurrency(asset.currency);
                           setAddDate(asset.purchaseDate);
                           setEditingAssetId(asset.id);
                           setShowAdd(true);
@@ -408,12 +501,12 @@ const Zakat = () => {
                                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                   <span>{asset.amount} جرام</span>
                                   {asset.karat && <span>عيار {asset.karat}</span>}
-                                  <span className="font-bold text-foreground">{value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س</span>
+                                  <span className="font-bold text-foreground">{value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} {curSymbol}</span>
                                 </div>
                               )}
                               {(asset.type === "cash" || asset.type === "stocks" || asset.type === "funds") && (
                                 <p className="text-xs text-foreground font-bold">
-                                  {value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
+                                  {value.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} {curSymbol}
                                 </p>
                               )}
                               <p className="text-[10px] text-muted-foreground">
@@ -421,11 +514,11 @@ const Zakat = () => {
                               </p>
                             </div>
 
-                            {/* Hawl progress - SWAPPED: zakat on left, days on right */}
+                            {/* Hawl progress */}
                             <div className="mt-3">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-[10px] font-bold" style={{ color: isDue ? meta.color : "hsl(var(--muted-foreground))" }}>
-                                  زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
+                                  زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} {curSymbol}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">
                                   {isDue ? "✅ حال الحول" : `متبقي ${days} يوم`}
@@ -492,7 +585,7 @@ const Zakat = () => {
               />
             </div>
 
-            {/* Amount */}
+            {/* Amount + Currency */}
             <div>
               <label className="text-xs font-bold text-foreground mb-1.5 block">
                 {addType === "gold" || addType === "silver" ? "الوزن (جرام)" : "المبلغ"}
@@ -506,7 +599,7 @@ const Zakat = () => {
                   className="flex-1 min-w-0 text-right"
                   inputMode="decimal"
                 />
-                {addType === "cash" && (
+                {(addType === "cash" || addType === "stocks" || addType === "funds") && (
                   <select
                     value={addCurrency}
                     onChange={e => setAddCurrency(e.target.value)}
@@ -689,10 +782,11 @@ const Zakat = () => {
               const asset = assets.find(a => a.id === zakatPaidAsset);
               if (!asset) return null;
               const zakat = getZakatAmount(asset);
+              const curSymbol = getCurrencySymbol(getAssetDisplayCurrency(asset));
               return (
                 <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-4 py-3">
                   <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                    {asset.label} — زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} ر.س
+                    {asset.label} — زكاتها: {zakat.toLocaleString("ar-SA", { maximumFractionDigits: 0 })} {curSymbol}
                   </p>
                 </div>
               );
