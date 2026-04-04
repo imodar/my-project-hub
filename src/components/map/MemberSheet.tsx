@@ -21,6 +21,7 @@ interface MemberSheetProps {
   isExpanded: boolean;
   setIsExpanded: (v: boolean) => void;
   isTogglingSharing?: boolean;
+  isLoadingLocations?: boolean;
 }
 
 const SHEET_PEEK = 264;
@@ -36,7 +37,7 @@ function timeSince(dateStr: string, t: any): string {
   return t.map.daysAgo.replace("{0}", String(Math.floor(hrs / 24)));
 }
 
-export default function MemberSheet({ locations, selectedMemberId, onMemberSelect, isExpanded, setIsExpanded, isTogglingSharing }: MemberSheetProps) {
+export default function MemberSheet({ locations, selectedMemberId, onMemberSelect, isExpanded, setIsExpanded, isTogglingSharing, isLoadingLocations }: MemberSheetProps) {
   const { t, isRTL } = useLanguage();
   const sheetY = useMotionValue(0);
   const maxDrag = -(SHEET_EXPANDED - SHEET_PEEK);
@@ -91,7 +92,8 @@ export default function MemberSheet({ locations, selectedMemberId, onMemberSelec
           </div>
         )}
         {locations.map((loc, idx) => {
-          const isOnline = loc.is_sharing && (Date.now() - new Date(loc.updated_at).getTime()) < 10 * 60 * 1000;
+          const hasNoLocation = loc.lat === 0 && loc.lng === 0 && !loc.updated_at;
+          const isOnline = loc.is_sharing && loc.updated_at && (Date.now() - new Date(loc.updated_at).getTime()) < 10 * 60 * 1000;
           return (
             <button
               key={loc.user_id}
@@ -129,6 +131,10 @@ export default function MemberSheet({ locations, selectedMemberId, onMemberSelec
 
               <div className="flex flex-col items-center gap-1 shrink-0">
                 {loc.isMe && isTogglingSharing ? (
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Loader2 size={16} className="animate-spin" />
+                  </div>
+                ) : hasNoLocation && isLoadingLocations ? (
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <Loader2 size={16} className="animate-spin" />
                   </div>
