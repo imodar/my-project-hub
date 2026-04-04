@@ -21,6 +21,7 @@ interface MemberSheetProps {
   isExpanded: boolean;
   setIsExpanded: (v: boolean) => void;
   isTogglingSharing?: boolean;
+  isLoadingLocations?: boolean;
 }
 
 const SHEET_PEEK = 264;
