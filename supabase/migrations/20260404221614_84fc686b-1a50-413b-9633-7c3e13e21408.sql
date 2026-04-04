@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Authenticated can update documents" ON storage.objects;
