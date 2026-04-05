@@ -46,6 +46,20 @@ export interface ChatMessage {
 }
 
 const PAGE_SIZE = 50;
+const MAX_LOCAL_MESSAGES = 200;
+
+async function trimChatMessages(familyId: string) {
+  try {
+    const all = await db.chat_messages
+      .where("family_id").equals(familyId)
+      .sortBy("created_at");
+    if (all.length <= MAX_LOCAL_MESSAGES) return;
+    const toRemove = all.slice(0, all.length - MAX_LOCAL_MESSAGES);
+    await db.chat_messages.bulkDelete(toRemove.map(m => m.id));
+  } catch {
+    // non-critical — ignore cleanup errors
+  }
+}
 
 export function useChat() {
   const { user } = useAuth();
@@ -201,6 +215,7 @@ export function useChat() {
             sender_name_cache: decrypted[i]?.senderName || "",
           }));
           await db.chat_messages.bulkPut(toCache);
+          await trimChatMessages(familyId!);
         } catch (e) {
           console.warn("[Chat] Cache write failed:", e);
         }
