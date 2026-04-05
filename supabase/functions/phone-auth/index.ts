@@ -58,16 +58,24 @@ const findUserById = async (
   adminClient: ReturnType<typeof createClient>,
   fullPhone: string,
   email: string,
+  normalizedPhone: string,
 ) => {
-  const { data: userId, error } = await adminClient.rpc("find_user_by_phone_or_email", {
-    _phone: fullPhone,
-    _email: email,
-  });
-  if (error) throw error;
-  if (!userId) return null;
-  const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(userId);
-  if (userErr) throw userErr;
-  return userData?.user ?? null;
+  // Try multiple phone/email formats to find existing users
+  const phonesAndEmails = [
+    { _phone: fullPhone, _email: email },
+    { _phone: normalizedPhone, _email: `user-${normalizedPhone}@ailti.app` },
+  ];
+
+  for (const params of phonesAndEmails) {
+    const { data: userId, error } = await adminClient.rpc("find_user_by_phone_or_email", params);
+    if (error) throw error;
+    if (userId) {
+      const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(userId);
+      if (userErr) throw userErr;
+      if (userData?.user) return userData.user;
+    }
+  }
+  return null;
 };
 
 // ─── Handler ────────────────────────────────────────────
