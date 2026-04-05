@@ -58,16 +58,24 @@ const findUserById = async (
   adminClient: ReturnType<typeof createClient>,
   fullPhone: string,
   email: string,
+  normalizedPhone: string,
 ) => {
-  const { data: userId, error } = await adminClient.rpc("find_user_by_phone_or_email", {
-    _phone: fullPhone,
-    _email: email,
-  });
-  if (error) throw error;
-  if (!userId) return null;
-  const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(userId);
-  if (userErr) throw userErr;
-  return userData?.user ?? null;
+  // Try multiple phone/email formats to find existing users
+  const phonesAndEmails = [
+    { _phone: fullPhone, _email: email },
+    { _phone: normalizedPhone, _email: `user-${normalizedPhone}@ailti.app` },
+  ];
+
+  for (const params of phonesAndEmails) {
+    const { data: userId, error } = await adminClient.rpc("find_user_by_phone_or_email", params);
+    if (error) throw error;
+    if (userId) {
+      const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(userId);
+      if (userErr) throw userErr;
+      if (userData?.user) return userData.user;
+    }
+  }
+  return null;
 };
 
 // ─── Handler ────────────────────────────────────────────
@@ -185,7 +193,7 @@ Deno.serve(async (req) => {
       await adminClient.from("otp_codes").delete().eq("id", otpRow.id);
 
       // Find or create user
-      let user = await findUserById(adminClient, fullPhone, email);
+      let user = await findUserById(adminClient, fullPhone, email, normalizedPhone);
 
       if (!user) {
         const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
@@ -199,7 +207,7 @@ Deno.serve(async (req) => {
         if (createErr) {
           // Phone might already exist under a different email
           if (createErr.message?.toLowerCase().includes("phone")) {
-            user = await findUserById(adminClient, fullPhone, email);
+            user = await findUserById(adminClient, fullPhone, email, normalizedPhone);
             if (!user) throw createErr;
           } else {
             throw createErr;
