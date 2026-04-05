@@ -193,7 +193,7 @@ Deno.serve(async (req) => {
       await adminClient.from("otp_codes").delete().eq("id", otpRow.id);
 
       // Find or create user
-      let user = await findUserById(adminClient, fullPhone, email);
+      let user = await findUserById(adminClient, fullPhone, email, normalizedPhone);
 
       if (!user) {
         const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
@@ -207,7 +207,7 @@ Deno.serve(async (req) => {
         if (createErr) {
           // Phone might already exist under a different email
           if (createErr.message?.toLowerCase().includes("phone")) {
-            user = await findUserById(adminClient, fullPhone, email);
+            user = await findUserById(adminClient, fullPhone, email, normalizedPhone);
             if (!user) throw createErr;
           } else {
             throw createErr;
