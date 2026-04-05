@@ -521,7 +521,7 @@ const Medications = () => {
                 </Button>
                 <Button
                   className="h-12 gap-2"
-                  onClick={() => { markAsTaken(showDetailSheet.id); }}
+                  onClick={() => { markAsTaken(showDetailSheet.id); setShowDetailSheet(null); }}
                 >
                   <Check className="w-4 h-4" /> أخذته
                 </Button>
