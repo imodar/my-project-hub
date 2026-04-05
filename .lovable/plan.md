@@ -1,44 +1,97 @@
 
 
-# إصلاحان: calendar_events priority + findUserByPhone performance
+# خطة الإصلاحات الخمسة (محدّثة)
 
-## 1. `src/lib/resourceRegistry.ts`
-تغيير `calendar_events` من `warmPriority: "critical"` إلى `"deferred"`.
+الملف القديم `BottomNav.tsx` يبقى كما هو كاحتياط. نعيد تسمية `BottomNavWhatsApp` داخلياً فقط ونحدّث الـ import.
 
-## 2. Migration — إنشاء RPC function
+---
 
-```sql
-CREATE OR REPLACE FUNCTION public.find_user_by_phone_or_email(_phone text, _email text)
-RETURNS uuid
-LANGUAGE sql
-STABLE SECURITY DEFINER
-AS $$
-  SELECT id FROM auth.users
-  WHERE phone = _phone OR email = _email
-  LIMIT 1;
-$$;
+## 1. حذف console.* من Production
+**الملف:** `vite.config.ts`
 
-REVOKE ALL ON FUNCTION public.find_user_by_phone_or_email FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.find_user_by_phone_or_email TO service_role;
+إضافة في الـ config object:
+```ts
+esbuild: {
+  drop: mode === "production" ? ["console", "debugger"] : [],
+},
 ```
 
-بدون `SET search_path` — الدالة تقرأ `auth.users` بالاسم الكامل فلا حاجة لتعريض الـ schema. الصلاحية مقيّدة لـ `service_role` فقط.
+---
 
-## 3. `supabase/functions/phone-auth/index.ts`
-حذف دالة `findUserByPhone` (الـ pagination loop) واستبدالها بـ:
+## 2. إعادة تسمية BottomNavWhatsApp (مع الاحتفاظ بالقديم)
+- **`src/components/home/BottomNavWhatsApp.tsx`**: تغيير `displayName` من `"BottomNavWhatsApp"` إلى `"BottomNav"`
+- **`src/App.tsx`** سطر 26: تغيير الـ import ليكون أوضح:
+```ts
+import BottomNav from "@/components/home/BottomNavWhatsApp";
+// يبقى كما هو — الاسم المُصدَّر هو BottomNav أصلاً
+```
+- **`src/components/home/BottomNav.tsx`**: يبقى كما هو بدون تعديل (احتياط)
 
-```typescript
-const { data: userId } = await adminClient.rpc('find_user_by_phone_or_email', {
-  _phone: fullPhone,
-  _email: email,
-});
+فعلياً التغيير الوحيد هو `displayName` داخل الملف.
+
+---
+
+## 3. chat_messages cleanup — حد 200 رسالة في Dexie
+**الملف:** `src/hooks/useChat.ts`
+
+إضافة دالة بعد تعريف `PAGE_SIZE`:
+```ts
+async function trimChatMessages(familyId: string, limit = 200) {
+  const all = await db.chat_messages
+    .where("family_id").equals(familyId)
+    .sortBy("created_at");
+  if (all.length <= limit) return;
+  const toRemove = all.slice(0, all.length - limit);
+  await db.chat_messages.bulkDelete(toRemove.map(m => m.id));
+}
+```
+تُنادى بعد كل `bulkPut` ناجح للرسائل.
+
+---
+
+## 4. fullSync batching — حد 5 calls متزامنة
+**الملف:** `src/lib/fullSync.ts`
+
+استبدال `Promise.allSettled(FULL_SYNC_STEPS.map(...))` بـ:
+```ts
+const BATCH = 5;
+for (let i = 0; i < FULL_SYNC_STEPS.length; i += BATCH) {
+  const batch = FULL_SYNC_STEPS.slice(i, i + BATCH);
+  await Promise.allSettled(batch.map(async (step) => {
+    // نفس المنطق الحالي بالضبط
+  }));
+}
 ```
 
-ثم إذا وُجد `userId`: جلب المستخدم بـ `adminClient.auth.admin.getUserById(userId)`.
+---
+
+## 5. إضافة Types للهوكس الرئيسية
+**ملف جديد:** `src/types/entities.ts`
+
+تعريف interfaces:
+- `MarketList`, `MarketItem`
+- `TaskList`, `TaskItem`
+- `Debt`, `DebtPayment`, `DebtPostponement`
+
+تحديث 3 ملفات لاستبدال `any`:
+- `src/hooks/useMarketLists.ts`
+- `src/hooks/useTaskLists.ts`
+- `src/hooks/useDebts.ts`
+
+---
+
+## ملخص الملفات
 
 | # | الملف | التغيير |
 |---|-------|---------|
-| 1 | `src/lib/resourceRegistry.ts` | `calendar_events` → `warmPriority: "deferred"` |
-| 2 | Migration جديد | `find_user_by_phone_or_email` RPC + REVOKE/GRANT |
-| 3 | `supabase/functions/phone-auth/index.ts` | حذف loop، استخدام RPC |
+| 1 | `vite.config.ts` | `esbuild.drop` للـ production |
+| 2 | `src/components/home/BottomNavWhatsApp.tsx` | `displayName` فقط |
+| 3 | `src/hooks/useChat.ts` | `trimChatMessages` بعد bulkPut |
+| 4 | `src/lib/fullSync.ts` | batching بـ 5 |
+| 5 | `src/types/entities.ts` | ملف أنواع جديد |
+| 6 | `src/hooks/useMarketLists.ts` | استبدال any بأنواع |
+| 7 | `src/hooks/useTaskLists.ts` | استبدال any بأنواع |
+| 8 | `src/hooks/useDebts.ts` | استبدال any بأنواع |
+
+`BottomNav.tsx` القديم يبقى بدون أي تعديل كاحتياط.
 
