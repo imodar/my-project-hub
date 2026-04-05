@@ -378,7 +378,7 @@ const Chat = () => {
   // Don't block the whole UI — show inline encryption banner instead
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-background" dir="rtl">
       <PageHeader
         title="محادثة العائلة"
         subtitle={`${memberNames.length || 0} أعضاء`}
@@ -536,7 +536,7 @@ const Chat = () => {
 
       {/* Mentions dropdown */}
       {showMentions && memberNames.length > 0 && (
-        <div className="absolute bottom-36 right-4 left-4 max-w-2xl mx-auto bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="absolute bottom-36 right-4 left-4 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
           {memberNames.map((name) => (
             <button
               key={name}
@@ -554,7 +554,7 @@ const Chat = () => {
 
       {/* Input area */}
       <div className="sticky bottom-0 left-0 right-0 z-40 pb-24 bg-gradient-to-t from-background via-background to-transparent pt-2">
-        <div className="max-w-2xl mx-auto px-3">
+        <div className="px-3">
           <div className="flex items-center gap-2 p-2 rounded-2xl bg-card border border-border shadow-lg">
             {isRecording ? (
               <VoiceRecorder

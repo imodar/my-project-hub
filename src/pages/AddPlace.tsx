@@ -82,7 +82,7 @@ const AddPlace = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
+    <div className="min-h-screen bg-background pb-28" dir="rtl">
       <PageHeader title={isEdit ? "تعديل المكان" : "إضافة مكان جديد"} />
 
       <div className="px-4 py-4 space-y-5">
@@ -249,7 +249,7 @@ const AddPlace = () => {
       </div>
 
       {/* Save button */}
-      <div className="px-4 pb-8 pt-2 max-w-2xl mx-auto">
+      <div className="px-4 pb-8 pt-2">
         <Button
           onClick={handleSave}
           disabled={!name.trim()}

@@ -70,7 +70,7 @@ const Tasbih = () => {
 
   return (
     <div
-      className="min-h-screen max-w-2xl mx-auto relative flex flex-col select-none cursor-pointer"
+      className="min-h-screen relative flex flex-col select-none cursor-pointer"
       style={{
         background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 97%) 60%, hsl(155, 30%, 85%) 100%)",
       }}

@@ -271,7 +271,7 @@ const Medications = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
+    <div className="min-h-screen bg-background pb-24">
       <PageHeader
         title="الأدوية والتذكيرات"
         actions={[

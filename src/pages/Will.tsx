@@ -263,7 +263,7 @@ const Will = () => {
   const completedCount = sections.filter((s) => s.completed).length;
 
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto relative pb-32">
+    <div className="min-h-screen bg-background relative pb-32">
       <PageHeader title="الوصية" subtitle="وصيتك الشرعية محفوظة وآمنة" />
 
       {isLoading ? (

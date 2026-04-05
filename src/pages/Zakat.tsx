@@ -321,7 +321,7 @@ const Zakat = () => {
   };
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
+    <div className="min-h-screen bg-background pb-28" dir="rtl">
       <PageHeader title="حاسبة الزكاة" subtitle="احسب زكاتك بدقة" onBack={() => navigate("/")}>
         <div className="flex items-center justify-between mt-2">
           <button
