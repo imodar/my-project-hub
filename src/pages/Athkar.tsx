@@ -251,7 +251,7 @@ const SectionDetail = ({
   // Sequential reading mode
   if (sequentialMode && currentThikr) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background max-w-2xl mx-auto flex flex-col">
         {/* Header */}
         <div
           className="px-4 pt-12 pb-4 rounded-b-3xl"
@@ -331,7 +331,7 @@ const SectionDetail = ({
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28">
       {/* Header */}
       <div
         className="sticky top-0 z-50 px-4 pt-12 pb-4 rounded-b-3xl"
@@ -421,7 +421,7 @@ const Athkar = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28" dir="rtl">
+    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
       {/* Header */}
       <div
         className="sticky top-0 z-50 px-4 pt-12 pb-4 rounded-b-3xl"
