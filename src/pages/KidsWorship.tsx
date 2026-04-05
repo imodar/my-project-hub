@@ -98,7 +98,7 @@ const KidsWorship = () => {
   const activeChild = childList.find(c => c.id === activeChildId);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 max-w-2xl mx-auto pb-28" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 pb-28" dir="rtl">
       {/* Confetti */}
       <AnimatePresence>
         {showConfetti && (

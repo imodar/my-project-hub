@@ -55,7 +55,7 @@ const Trash = () => {
   }, {} as Record<string, TrashItem[]>);
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-background" dir="rtl">
 
       {/* Header */}
       <div className="flex items-center justify-between p-4">

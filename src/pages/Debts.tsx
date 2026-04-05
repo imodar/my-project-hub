@@ -452,7 +452,7 @@ const Debts = () => {
 
 
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto relative pb-32" dir="rtl">
+    <div className="min-h-screen bg-background relative pb-32" dir="rtl">
       <PageHeader title="دفتر الديون" onBack={() => navigate("/")}>
         <div className="mt-4 flex items-stretch">
           <SummaryItem

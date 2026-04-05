@@ -73,7 +73,7 @@ const Map = () => {
   };
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background relative" dir={dir}>
+    <div className="min-h-screen flex flex-col bg-background relative" dir={dir}>
       <PageHeader
         title={t.map.title}
         subtitle={t.map.updateEvery.replace("{0}", String(updateInterval))}

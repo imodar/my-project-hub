@@ -242,7 +242,7 @@ const Albums = () => {
   if (selectedAlbum) {
     const grouped = groupPhotosByDate(selectedAlbum.photos);
     return (
-      <div className="min-h-screen bg-background max-w-2xl mx-auto pb-32" dir="rtl">
+      <div className="min-h-screen bg-background pb-32" dir="rtl">
         <PageHeader
           title={selectedAlbum.name}
           subtitle={`${selectedAlbum.photos.length} صورة`}
@@ -307,7 +307,7 @@ const Albums = () => {
 
   // Main albums grid
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-32" dir="rtl">
+    <div className="min-h-screen bg-background pb-32" dir="rtl">
         <PageHeader title="الألبومات" subtitle="صور العائلة وذكرياتها" onBack={() => navigate(-1)} />
 
       {isLoading ? (

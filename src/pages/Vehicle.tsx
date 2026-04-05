@@ -471,7 +471,7 @@ const Vehicle = () => {
     const lastMaintenance = selectedCar.maintenance.length > 0 ? selectedCar.maintenance[0] : null;
     const lastMileage = lastMaintenance ? lastMaintenance.mileageAtService : selectedCar.mileage;
     return (
-      <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
+      <div className="min-h-screen bg-background pb-24">
         <PageHeader
           title={`${carInfo.name} ${selectedCar.model}`}
           onBack={() => setSelectedCar(null)}
@@ -733,7 +733,7 @@ const Vehicle = () => {
 
   // ─── Cars List View ───
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24">
+    <div className="min-h-screen bg-background pb-24">
       <PageHeader title="مركباتي" subtitle={cars.length > 0 ? `${cars.length} مركبة` : undefined} />
       {vehiclesLoading ? (
         <div className="px-4 py-4 space-y-3">

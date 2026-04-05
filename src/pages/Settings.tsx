@@ -226,7 +226,7 @@ const Settings = () => {
 
   return (
     <div
-      className="min-h-screen max-w-2xl mx-auto flex flex-col pb-28 bg-background"
+      className="min-h-screen flex flex-col pb-28 bg-background"
       dir={dir}
     >
       {/* Header */}

@@ -284,7 +284,7 @@ const Budget = () => {
     const pct = spentPercent(b);
 
     return (
-      <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
+      <div className="min-h-screen bg-background pb-28" dir="rtl">
         <PageHeader
           title={getBudgetTitle(b)}
           subtitle={b.type === "trip" ? "ميزانية رحلة — تُدار تلقائياً" : "تفاصيل الميزانية"}
@@ -536,7 +536,7 @@ const Budget = () => {
 
   // List view
   return (
-    <div className="min-h-screen max-w-2xl mx-auto bg-background pb-28" dir="rtl">
+    <div className="min-h-screen bg-background pb-28" dir="rtl">
       <PageHeader title="الميزانية" subtitle="تخطيط ميزانيتك الشهرية" onBack={() => navigate("/")}>
         <div className="flex items-center gap-1.5 mt-2 px-1 pb-1">
           <span className="text-[10px] text-white/60">🔒 ميزانيتك خاصة ولا يراها أفراد العائلة إلا إذا شاركتها معهم</span>

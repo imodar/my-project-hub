@@ -101,7 +101,7 @@ const ParentDashboard = () => {
     const doneCount = Object.values(dayData).filter(Boolean).length;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 dark:from-background dark:via-background dark:to-background max-w-2xl mx-auto pb-28" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 dark:from-background dark:via-background dark:to-background pb-28" dir="rtl">
         <PageHeader
           title={`تعديل عبادات ${child?.name}`}
           subtitle="وضع الأهل - يمكنك تعديل أي يوم"
@@ -188,7 +188,7 @@ const ParentDashboard = () => {
 
   // Main dashboard view
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 dark:from-background dark:via-background dark:to-background max-w-2xl mx-auto pb-28" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-amber-50 dark:from-background dark:via-background dark:to-background pb-28" dir="rtl">
       <PageHeader
         title="متابعة عبادات الأطفال"
         subtitle="لوحة تحكم الأبوين"

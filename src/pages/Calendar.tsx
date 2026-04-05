@@ -271,7 +271,7 @@ const CalendarPage = () => {
   for (let i = 0; i < calendarCells.length; i += 7) rows.push(calendarCells.slice(i, i + 7).reverse());
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col pb-24 bg-background" dir="rtl">
+    <div className="min-h-screen flex flex-col pb-24 bg-background" dir="rtl">
 
       <PageHeader
         title="تقويم العائلة"

@@ -20,7 +20,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto relative">
+    <div className="min-h-screen bg-background relative">
       <PullToRefresh onRefresh={handleRefresh}>
         <HeroSection />
         <IslamicQuickActions />

@@ -524,7 +524,7 @@ const FamilyManagement = () => {
   const spouseRole = getSpouseRole();
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <div />

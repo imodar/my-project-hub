@@ -389,7 +389,7 @@ const Documents = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-28" dir="rtl">
+    <div className="min-h-screen bg-background pb-28" dir="rtl">
       <PageHeader
           title="الوثائق"
           actions={[

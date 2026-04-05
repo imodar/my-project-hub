@@ -451,7 +451,7 @@ const Trips = () => {
     const packedCount = selectedTrip.packingList.filter((p) => p.packed).length;
 
     return (
-      <div className="min-h-screen bg-background max-w-2xl mx-auto pb-32" dir="rtl">
+      <div className="min-h-screen bg-background pb-32" dir="rtl">
         <PageHeader
           title={selectedTrip.name}
           subtitle={selectedTrip.destination}
@@ -1242,7 +1242,7 @@ const Trips = () => {
 
   // Trip list view
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-32" dir="rtl">
+    <div className="min-h-screen bg-background pb-32" dir="rtl">
       <PageHeader title="الرحلات" subtitle="خطط لرحلاتك العائلية والشخصية" />
 
       {tripsLoading ? (
