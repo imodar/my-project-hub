@@ -146,6 +146,6 @@ const BottomNavWhatsApp = React.forwardRef<HTMLDivElement>((_props, _ref) => {
     </div>
   );
 });
-BottomNavWhatsApp.displayName = "BottomNavWhatsApp";
+BottomNavWhatsApp.displayName = "BottomNav";
 
 export default BottomNavWhatsApp;

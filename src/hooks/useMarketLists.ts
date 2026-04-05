@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
 import { useOfflineMutation } from "./useOfflineMutation";
+import type { MarketList, MarketItem } from "@/types/entities";
 
 function normalizeMarketLists(items: any[], familyId: string | null) {
   if (!familyId) return [];
@@ -29,7 +30,7 @@ export function useMarketLists() {
     return { data: normalizeMarketLists(response?.data || [], familyId), error: null };
   }, [familyId]);
 
-  const { data: lists, isLoading, isSyncing, refetch } = useOfflineFirst<any>({
+  const { data: lists, isLoading, isSyncing, refetch } = useOfflineFirst<MarketList>({
     table: "market_lists",
     queryKey: key,
     apiFn,

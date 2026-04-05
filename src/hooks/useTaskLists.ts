@@ -6,6 +6,7 @@ import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
 import { useOfflineMutation } from "./useOfflineMutation";
 import { appToast } from "@/lib/toast";
+import type { TaskList } from "@/types/entities";
 
 export function useTaskLists() {
   const { user } = useAuth();
@@ -31,7 +32,7 @@ export function useTaskLists() {
     return { data: sortListsAsc(response?.data || []), error: null };
   }, [familyId]);
 
-  const { data: lists, isLoading, isSyncing, refetch } = useOfflineFirst<any>({
+  const { data: lists, isLoading, isSyncing, refetch } = useOfflineFirst<TaskList>({
     table: "task_lists",
     queryKey: key,
     apiFn,
