@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
 import { useOfflineMutation } from "./useOfflineMutation";
+import type { Debt } from "@/types/entities";
 
 export function useDebts() {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export function useDebts() {
     return { data: data?.data || [], error: null };
   }, [user]);
 
-  const { data: debts, isLoading, refetch } = useOfflineFirst<any>({
+  const { data: debts, isLoading, refetch } = useOfflineFirst<Debt>({
     table: "debts",
     queryKey: key,
     apiFn,
