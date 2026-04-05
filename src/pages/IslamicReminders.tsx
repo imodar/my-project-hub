@@ -151,7 +151,7 @@ const IslamicReminders = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24" style={{ direction: "rtl" }}>
+    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-24" style={{ direction: "rtl" }}>
       <PageHeader
         title="التنبيهات الدينية"
         subtitle={`${reminders.filter((r) => enabled[r.id]).length} تنبيه مفعّل من ${reminders.length}`}
