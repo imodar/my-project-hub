@@ -478,6 +478,10 @@ export async function processQueue(): Promise<void> {
         const newRetries = (item.retries || 0) + 1;
         const newStatus = newRetries >= MAX_RETRIES ? "failed" : "pending";
 
+        // Exponential backoff before next retry
+        const delay = Math.min(1000 * Math.pow(2, newRetries), 30000);
+        await new Promise(r => setTimeout(r, delay));
+
         await db.sync_queue.update(item.id!, {
           retries: newRetries,
           status: newStatus as "pending" | "failed",

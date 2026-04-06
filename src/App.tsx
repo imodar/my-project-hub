@@ -41,27 +41,29 @@ function lazyRetry(importFn: () => Promise<any>) {
   );
 }
 
+// ── Eager-loaded core pages (no white flash) ──
+import Index from "./pages/Index";
+import Market from "./pages/Market";
+import Tasks from "./pages/Tasks";
+import Chat from "./pages/Chat";
+import CalendarPage from "./pages/Calendar";
+
 // ── Lazy-loaded pages ──
 const Auth = lazyRetry(() => import("./pages/Auth.tsx"));
 const GetStarted = lazyRetry(() => import("./pages/GetStarted.tsx"));
-const Index = lazyRetry(() => import("./pages/Index.tsx"));
 const Tasbih = lazyRetry(() => import("./pages/Tasbih.tsx"));
 const Settings = lazyRetry(() => import("./pages/Settings.tsx"));
 const NotFound = lazyRetry(() => import("./pages/NotFound.tsx"));
-const Chat = lazyRetry(() => import("./pages/Chat.tsx"));
 const Map = lazyRetry(() => import("./pages/Map.tsx"));
 const Debts = lazyRetry(() => import("./pages/Debts.tsx"));
 const FamilyManagement = lazyRetry(() => import("./pages/FamilyManagement.tsx"));
 const JoinOrCreate = lazyRetry(() => import("./pages/JoinOrCreate.tsx"));
 const CompleteProfile = lazyRetry(() => import("./pages/CompleteProfile.tsx"));
 const Profile = lazyRetry(() => import("./pages/Profile.tsx"));
-const CalendarPage = lazyRetry(() => import("./pages/Calendar.tsx"));
 const Trash = lazyRetry(() => import("./pages/Trash.tsx"));
-const Market = lazyRetry(() => import("./pages/Market.tsx"));
 const Places = lazyRetry(() => import("./pages/Places.tsx"));
 const AddPlace = lazyRetry(() => import("./pages/AddPlace.tsx"));
 const Budget = lazyRetry(() => import("./pages/Budget.tsx"));
-const Tasks = lazyRetry(() => import("./pages/Tasks.tsx"));
 const Documents = lazyRetry(() => import("./pages/Documents.tsx"));
 const Zakat = lazyRetry(() => import("./pages/Zakat.tsx"));
 const Will = lazyRetry(() => import("./pages/Will.tsx"));
@@ -296,7 +298,7 @@ const App = () => (
                     <OfflineBanner />
                     <ScrollToTop />
                     <WarmCacheProvider>
-                      <Suspense fallback={null}>
+                      <Suspense fallback={<div className="min-h-screen bg-background" />}>
                         <AnimatedRoutes />
                       </Suspense>
                       <BottomNav />

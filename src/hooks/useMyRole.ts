@@ -45,7 +45,7 @@ export function useMyRole(): MyRoleResult {
       return data?.data || null;
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000, // Role rarely changes — 1 hour
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: true,
     placeholderData: localRole,
