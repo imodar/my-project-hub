@@ -147,6 +147,7 @@ Deno.serve(async (req) => {
       if (clientId) insertData.id = clientId;
       const { data, error } = await adminClient.from("task_items").insert(insertData).select().single();
       if (error) return json({ error: error.message }, 400);
+      await adminClient.from("task_lists").update({ updated_at: new Date().toISOString() }).eq("id", list_id);
       return json({ data });
     }
 
@@ -166,6 +167,7 @@ Deno.serve(async (req) => {
       if (repeat_days !== undefined) updates.repeat_days = repeat_days;
       const { data, error } = await supabase.from("task_items").update(updates).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
+      if (data?.list_id) await adminClient.from("task_lists").update({ updated_at: new Date().toISOString() }).eq("id", data.list_id);
       return json({ data });
     }
 
@@ -175,14 +177,17 @@ Deno.serve(async (req) => {
       if (typeof done !== "boolean") return json({ error: "done يجب أن يكون true أو false" }, 400);
       const { data, error } = await supabase.from("task_items").update({ done }).eq("id", id).select().single();
       if (error) return json({ error: error.message }, 400);
+      if (data?.list_id) await adminClient.from("task_lists").update({ updated_at: new Date().toISOString() }).eq("id", data.list_id);
       return json({ data });
     }
 
     if (action === "delete-item") {
       const { id } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      const { data: itemToDelete } = await supabase.from("task_items").select("list_id").eq("id", id).maybeSingle();
       const { error } = await supabase.from("task_items").delete().eq("id", id);
       if (error) return json({ error: error.message }, 400);
+      if (itemToDelete?.list_id) await adminClient.from("task_lists").update({ updated_at: new Date().toISOString() }).eq("id", itemToDelete.list_id);
       return json({ success: true });
     }
 
