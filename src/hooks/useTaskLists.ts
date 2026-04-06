@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,7 +41,24 @@ export function useTaskLists() {
     scopeKey: familyId ?? undefined,
   });
 
-  // Realtime handled by useFamilyRealtime — no duplicate channel needed
+  // Realtime: listen to task_lists changes only (tasks-api bumps updated_at on item changes)
+  const lastOwnMutationRef = useRef(0);
+
+  useEffect(() => {
+    if (!familyId) return;
+    const channel = supabase.channel(`tasks-rt-${familyId}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "task_lists",
+        filter: `family_id=eq.${familyId}`,
+      }, () => {
+        if (Date.now() - lastOwnMutationRef.current < 2000) return;
+        qc.invalidateQueries({ queryKey: key });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [familyId]);
 
   const invoke = async (action: string, payload: any) => {
     const { data: response, error } = await supabase.functions.invoke("tasks-api", { body: { action, ...payload } });
@@ -149,6 +166,7 @@ export function useTaskLists() {
               : list
           )
         );
+        lastOwnMutationRef.current = Date.now();
         addItem.mutate(newItem);
       },
       mutateAsync: async (input: any) => addItem.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), done: false, ...input }),
@@ -164,6 +182,7 @@ export function useTaskLists() {
             ),
           }))
         );
+        lastOwnMutationRef.current = Date.now();
         addPending(input.id);
         toggleItem.mutate(input);
         setTimeout(() => removePending(input.id), 2000);
@@ -183,6 +202,7 @@ export function useTaskLists() {
             task_items: (list.task_items || []).filter((item: any) => item.id !== itemId),
           }));
         });
+        lastOwnMutationRef.current = Date.now();
         deleteItem.mutate({ id: itemId });
       },
       mutateAsync: async (itemId: string) => deleteItem.mutateAsync({ id: itemId }),

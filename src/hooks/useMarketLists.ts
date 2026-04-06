@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,7 +45,24 @@ export function useMarketLists() {
   // normalizeMarketLists already applied in apiFn and filterFn — no need to re-apply
   const normalizedLists = lists || [];
 
-  // Realtime handled by useFamilyRealtime — no duplicate channel needed
+  // Realtime: listen to market_lists changes only (market-api bumps updated_at on item changes)
+  const lastOwnMutationRef = useRef(0);
+
+  useEffect(() => {
+    if (!familyId) return;
+    const channel = supabase.channel(`market-rt-${familyId}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "market_lists",
+        filter: `family_id=eq.${familyId}`,
+      }, () => {
+        if (Date.now() - lastOwnMutationRef.current < 2000) return;
+        qc.invalidateQueries({ queryKey: key });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [familyId]);
 
   const invoke = async (action: string, payload: any) => {
     const { data: response, error } = await supabase.functions.invoke("market-api", { body: { action, ...payload } });
@@ -111,6 +128,7 @@ export function useMarketLists() {
           if (old.some((l: any) => l.id === id)) return old;
           return [...old, payload];
         });
+        lastOwnMutationRef.current = Date.now();
         if (options?.onSuccess || options?.onError) {
           createList.mutateAsync(payload).then((result) => options?.onSuccess?.(result?.data)).catch((err: any) => options?.onError?.(err));
         } else {
@@ -146,6 +164,7 @@ export function useMarketLists() {
               : list
           );
         });
+        lastOwnMutationRef.current = Date.now();
         addItem.mutate(item);
       },
       mutateAsync: async (input: any) => addItem.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), checked: false, ...input }),
@@ -163,6 +182,7 @@ export function useMarketLists() {
             ),
           }));
         });
+        lastOwnMutationRef.current = Date.now();
         updateItem.mutate(input);
       },
     },
@@ -176,6 +196,7 @@ export function useMarketLists() {
             market_items: (list.market_items || []).filter((item: any) => item.id !== itemId),
           }));
         });
+        lastOwnMutationRef.current = Date.now();
         deleteItem.mutate({ id: itemId });
       },
       mutateAsync: async (itemId: string) => deleteItem.mutateAsync({ id: itemId }),

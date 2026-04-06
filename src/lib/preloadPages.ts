@@ -4,12 +4,9 @@
  */
 
 const CRITICAL_PAGES = [
-  () => import("@/pages/Market.tsx"),
-  () => import("@/pages/Tasks.tsx"),
-  () => import("@/pages/Chat.tsx"),
+  // Market, Tasks, Chat, Calendar are now eager-loaded — no need to preload
   () => import("@/pages/Map.tsx"),
   () => import("@/pages/Settings.tsx"),
-  () => import("@/pages/Calendar.tsx"),
   () => import("@/pages/Budget.tsx"),
   () => import("@/pages/Documents.tsx"),
   () => import("@/pages/Trips.tsx"),

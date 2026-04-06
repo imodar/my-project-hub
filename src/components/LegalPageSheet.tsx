@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DOMPurify from "dompurify";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -85,7 +86,7 @@ export default function LegalPageSheet({ open, onOpenChange, slug }: LegalPageSh
                   prose-strong:text-foreground prose-strong:font-semibold
                   prose-ul:my-2 prose-ul:list-disc prose-ul:ps-5
                   dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
               />
             )}
           </div>
