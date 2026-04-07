@@ -1,6 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+async function callPhoneAuth(payload: Record<string, string>) {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/phone-auth`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error || `خطأ ${response.status}`);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,29 +71,11 @@ const Auth = () => {
     }
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("phone-auth", {
-        body: { action: "send-otp", phone: fullPhone },
-      });
-
-      // Handle SDK-level errors (non-2xx, network failure, CORS block)
-      if (res.error) {
-        // Try to extract server message from FunctionsHttpError
-        let msg = res.error.message;
-        try {
-          const body = typeof (res.error as any).context?.body === "string"
-            ? JSON.parse((res.error as any).context.body)
-            : null;
-          if (body?.error) msg = body.error;
-        } catch {}
-        throw new Error(msg);
-      }
-
-      // Handle application-level errors returned as 200
-      if (res.data?.error) throw new Error(res.data.error);
+      const data = await callPhoneAuth({ action: "send-otp", phone: fullPhone });
 
       // مؤقت: عرض الكود بتوست (يُحذف عند ربط SMS)
-      if (res.data?.code) {
-        appToast.info(`رمز التحقق: ${res.data.code}`, `تم الإرسال إلى ${fullPhone}`);
+      if (data?.code) {
+        appToast.info(`رمز التحقق: ${data.code}`, `تم الإرسال إلى ${fullPhone}`);
       }
       setStep("otp");
       setCountdown(60);
@@ -88,27 +90,11 @@ const Auth = () => {
     if (code.length < 6) return;
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("phone-auth", {
-        body: { action: "verify-otp", phone: fullPhone, code },
-      });
-
-      // Handle SDK-level errors
-      if (res.error) {
-        let msg = res.error.message;
-        try {
-          const body = typeof (res.error as any).context?.body === "string"
-            ? JSON.parse((res.error as any).context.body)
-            : null;
-          if (body?.error) msg = body.error;
-        } catch {}
-        throw new Error(msg);
-      }
-
-      if (res.data?.error) throw new Error(res.data.error);
+      const data = await callPhoneAuth({ action: "verify-otp", phone: fullPhone, code });
 
       // verifyOtp من client SDK — ينشئ الجلسة تلقائياً
       const { error } = await supabase.auth.verifyOtp({
-        token_hash: res.data.token_hash,
+        token_hash: data.token_hash,
         type: "magiclink",
       });
       if (error) throw error;
