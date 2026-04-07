@@ -91,6 +91,19 @@ const Auth = () => {
       const res = await supabase.functions.invoke("phone-auth", {
         body: { action: "verify-otp", phone: fullPhone, code },
       });
+
+      // Handle SDK-level errors
+      if (res.error) {
+        let msg = res.error.message;
+        try {
+          const body = typeof (res.error as any).context?.body === "string"
+            ? JSON.parse((res.error as any).context.body)
+            : null;
+          if (body?.error) msg = body.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
       if (res.data?.error) throw new Error(res.data.error);
 
       // verifyOtp من client SDK — ينشئ الجلسة تلقائياً
