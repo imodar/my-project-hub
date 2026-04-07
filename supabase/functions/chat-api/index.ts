@@ -6,9 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-let corsHeaders: Record<string, string> = {};
-
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
@@ -22,7 +19,6 @@ function validUuid(v: unknown): v is string { return typeof v === "string" && UU
 function validStr(v: unknown, max: number): v is string { return typeof v === "string" && v.trim().length > 0 && v.length <= max; }
 
 Deno.serve(async (req) => {
-  corsHeaders = corsHeaders;
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {

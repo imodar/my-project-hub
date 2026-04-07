@@ -6,9 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-let corsHeaders: Record<string, string> = {};
-
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
@@ -21,7 +18,6 @@ function validStr(v: unknown, max: number): v is string { return typeof v === "s
 function sanitize(s: string, max: number): string { return s.trim().slice(0, max); }
 
 Deno.serve(async (req) => {
-  corsHeaders = corsHeaders;
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {

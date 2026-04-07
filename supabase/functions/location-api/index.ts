@@ -6,9 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-let corsHeaders: Record<string, string> = {};
-
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
@@ -19,7 +16,6 @@ function validLat(v: unknown): boolean { return typeof v === "number" && v >= -9
 function validLng(v: unknown): boolean { return typeof v === "number" && v >= -180 && v <= 180 && isFinite(v); }
 
 Deno.serve(async (req) => {
-  corsHeaders = corsHeaders;
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

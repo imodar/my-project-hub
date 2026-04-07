@@ -6,9 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-let corsHeaders: Record<string, string> = {};
-
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -18,7 +15,6 @@ function json(data: unknown, status = 200) {
 
 // Called by pg_cron daily at 3:00 AM
 Deno.serve(async (req) => {
-  corsHeaders = corsHeaders;
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
