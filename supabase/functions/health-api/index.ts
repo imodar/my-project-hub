@@ -5,6 +5,8 @@ const PROJECT_ORIGIN_FALLBACKS = [
   "https://id-preview--7571dddb-1161-4f53-9036-32778235da46.lovable.app",
   "https://ailti.lovable.app",
   "https://d0479375-ab8c-4895-86c0-45a5df6d51d8.lovableproject.com",
+  "http://localhost",
+  "capacitor://localhost",
 ];
 
 const ALLOWED_ORIGINS = Array.from(new Set([
@@ -14,7 +16,12 @@ const ALLOWED_ORIGINS = Array.from(new Set([
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") ?? "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : "";
+  let allowed = "";
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    allowed = origin;
+  } else if (origin === "" || origin === "null") {
+    allowed = "capacitor://localhost";
+  }
   return {
     "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",

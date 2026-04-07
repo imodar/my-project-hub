@@ -1,106 +1,84 @@
 
 
-# خطة الإصلاحات الشاملة — محدّثة (3 مراحل + Capacitor)
+# إصلاح CORS لدعم Capacitor APK — 29 Edge Function
 
-كل ما في المراحل 1-3 تم تنفيذه مسبقاً. المتبقي هو تحديث `capacitor.config.ts` + توثيق تعديلات Android النيتف.
+## المشكلة
+كل الـ Edge Functions (29 ملف) تستخدم نفس نمط CORS بقائمة origins ثابتة لا تشمل `http://localhost` و `capacitor://localhost`. عندما يعمل التطبيق كـ APK، الـ WebView يرسل origin مختلف فيُحجب الاستجابة.
 
----
+## الحل
+تحديث موحّد لكل الـ 29 Edge Function بنفس التعديلين:
 
-## ما تم تنفيذه (مكتمل)
-
-- Eager imports للصفحات الخمس الرئيسية
-- Suspense fallback مرئي
-- DOMPurify
-- tasks-api يحدّث `updated_at` عند تغيير items
-- Realtime channels في useMarketLists و useTaskLists
-- Exponential backoff في syncQueue
-- staleTime لـ useMyRole → ساعة
-
----
-
-## المتبقي — تحديث Capacitor config
-
-### الملف: `capacitor.config.ts`
-
-تحديث الـ config ليشمل إعدادات Android و SplashScreen:
+### التعديل 1: إضافة أصول Capacitor لـ `PROJECT_ORIGIN_FALLBACKS`
 
 ```ts
-import type { CapacitorConfig } from '@capacitor/cli';
-
-const config: CapacitorConfig = {
-  appId: 'app.lovable.d0479375ab8c489586c045a5df6d51d8',
-  appName: 'منظم العائلة',
-  webDir: 'dist',
-  server: {
-    url: 'https://d0479375-ab8c-4895-86c0-45a5df6d51d8.lovableproject.com?forceHideBadge=true',
-    cleartext: true,
-  },
-  android: {
-    backgroundColor: '#FFFFFF',
-    captureInput: true,
-  },
-  ios: {
-    contentInset: 'always',
-    backgroundColor: '#FFFFFF',
-    scrollEnabled: false,
-  },
-  plugins: {
-    SplashScreen: {
-      launchShowDuration: 2000,
-      backgroundColor: '#FFFFFF',
-      androidSplashResourceName: 'splash',
-      splashFullScreen: true,
-      splashImmersive: true,
-    },
-  },
-};
-
-export default config;
+const PROJECT_ORIGIN_FALLBACKS = [
+  "https://7571dddb-1161-4f53-9036-32778235da46.lovableproject.com",
+  "https://id-preview--7571dddb-1161-4f53-9036-32778235da46.lovable.app",
+  "https://ailti.lovable.app",
+  "https://d0479375-ab8c-4895-86c0-45a5df6d51d8.lovableproject.com",
+  "http://localhost",
+  "capacitor://localhost",
+];
 ```
 
-### ملاحظة: `appId`
+### التعديل 2: التعامل مع null/empty origin بأمان
 
-الـ `appId` يبقى كما هو (`app.lovable.d0479375...`). إذا كنت تريد تغييره لـ `com.aelati.app`، أخبرني وسأحدّثه — لكن تغيير الـ ID يعني أن أي نسخة منشورة سابقاً ستُعتبر تطبيق مختلف.
-
----
-
-## تعديلات Android النيتف (تُطبَّق محلياً على جهازك)
-
-هذه التعديلات لا يمكن تطبيقها من Lovable لأن مجلد `android/` يُنشأ محلياً بعد `npx cap add android`.
-
-### بعد `npx cap add android`، عدّل:
-
-**الملف:** `android/app/src/main/res/values/styles.xml`
-```xml
-<style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
-    <item name="android:windowBackground">@color/white</item>
-    <item name="android:statusBarColor">@android:color/transparent</item>
-    <item name="android:navigationBarColor">@android:color/transparent</item>
-    <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
-</style>
+```ts
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") ?? "";
+  let allowed = "";
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    allowed = origin;
+  } else if (origin === "" || origin === "null") {
+    allowed = "capacitor://localhost";
+  }
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, ...",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 ```
 
-**الملف:** `android/app/src/main/java/.../MainActivity.java`
-- تأكد أن لا يوجد `SYSTEM_UI_FLAG_IMMERSIVE` أو `SYSTEM_UI_FLAG_HIDE_NAVIGATION`
-- Capacitor الافتراضي لا يضيفها، لكن إذا وجدتها احذفها
+بدل `"*"` الخطير، نرجع `"capacitor://localhost"` — المصدر الوحيد الممكن لـ null origin في بيئتنا.
 
-### الخطوات على جهازك بعد التنفيذ:
-```bash
-git pull
-npm install
-npx cap add android    # إذا لم يُضَف مسبقاً
-npx cap sync android
-# عدّل styles.xml يدوياً
-npx cap run android
-```
+## الملفات المتأثرة (29 ملف)
 
----
+| # | Edge Function |
+|---|--------------|
+| 1 | `account-api` |
+| 2 | `account-cleanup` |
+| 3 | `admin-api` |
+| 4 | `admin-succession` |
+| 5 | `albums-api` |
+| 6 | `auth-management` |
+| 7 | `budget-api` |
+| 8 | `calendar-api` |
+| 9 | `chat-api` |
+| 10 | `debts-api` |
+| 11 | `documents-api` |
+| 12 | `family-management` |
+| 13 | `health-api` |
+| 14 | `location-api` |
+| 15 | `market-api` |
+| 16 | `notification-scheduler` |
+| 17 | `notifications-api` |
+| 18 | `notifications-generator` |
+| 19 | `phone-auth` |
+| 20 | `places-api` |
+| 21 | `settings-api` |
+| 22 | `tasks-api` |
+| 23 | `trash-api` |
+| 24 | `trash-cleanup` |
+| 25 | `trips-api` |
+| 26 | `vehicles-api` |
+| 27 | `will-api` |
+| 28 | `worship-api` |
+| 29 | `zakat-api` |
 
-## ملخص
-
-| التغيير | أين يُطبَّق | من Lovable؟ |
-|---------|------------|------------|
-| `capacitor.config.ts` — android/ios/plugins | المشروع | ✅ نعم |
-| `styles.xml` — شفافية navigation bar | محلي | ❌ يدوي |
-| `MainActivity.java` — حذف immersive flags | محلي | ❌ يدوي |
+## خطة التنفيذ
+1. تحديث كل الـ 29 ملف بالتعديلين أعلاه (نفس النمط بالضبط)
+2. نشر كل الـ Edge Functions دفعة واحدة
+3. اختبار `phone-auth` من الـ preview للتأكد
 
