@@ -1,6 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+async function callPhoneAuth(payload: Record<string, string>) {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/phone-auth`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error || `خطأ ${response.status}`);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
