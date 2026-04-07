@@ -89,8 +89,14 @@ export const TrashProvider = ({ children }: { children: React.ReactNode }) => {
       const { data, error } = await supabase.functions.invoke("trash-api", {
         body: { action: "get-trash", family_id: familyId },
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        console.warn("trash-api fetch error:", error);
+        return localTrash.length > 0 ? localTrash : [];
+      }
+      if (data?.error) {
+        console.warn("trash-api data error:", data.error);
+        return localTrash.length > 0 ? localTrash : [];
+      }
       const items = (data?.data || []).map(mapRow);
 
       // Write to Dexie
