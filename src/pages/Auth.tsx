@@ -71,29 +71,11 @@ const Auth = () => {
     }
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("phone-auth", {
-        body: { action: "send-otp", phone: fullPhone },
-      });
-
-      // Handle SDK-level errors (non-2xx, network failure, CORS block)
-      if (res.error) {
-        // Try to extract server message from FunctionsHttpError
-        let msg = res.error.message;
-        try {
-          const body = typeof (res.error as any).context?.body === "string"
-            ? JSON.parse((res.error as any).context.body)
-            : null;
-          if (body?.error) msg = body.error;
-        } catch {}
-        throw new Error(msg);
-      }
-
-      // Handle application-level errors returned as 200
-      if (res.data?.error) throw new Error(res.data.error);
+      const data = await callPhoneAuth({ action: "send-otp", phone: fullPhone });
 
       // مؤقت: عرض الكود بتوست (يُحذف عند ربط SMS)
-      if (res.data?.code) {
-        appToast.info(`رمز التحقق: ${res.data.code}`, `تم الإرسال إلى ${fullPhone}`);
+      if (data?.code) {
+        appToast.info(`رمز التحقق: ${data.code}`, `تم الإرسال إلى ${fullPhone}`);
       }
       setStep("otp");
       setCountdown(60);
