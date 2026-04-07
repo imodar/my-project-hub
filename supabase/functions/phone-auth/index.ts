@@ -1,35 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
-const PROJECT_ORIGIN_FALLBACKS = [
-  "https://7571dddb-1161-4f53-9036-32778235da46.lovableproject.com",
-  "https://id-preview--7571dddb-1161-4f53-9036-32778235da46.lovable.app",
-  "https://ailti.lovable.app",
-  "https://d0479375-ab8c-4895-86c0-45a5df6d51d8.lovableproject.com",
-  "http://localhost",
-  "capacitor://localhost",
-];
-
-const ALLOWED_ORIGINS = Array.from(new Set([
-  ...(Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean),
-  ...PROJECT_ORIGIN_FALLBACKS,
-]));
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("Origin") ?? "";
-  let allowed = "";
-  if (ALLOWED_ORIGINS.includes(origin)) {
-    allowed = origin;
-  } else if (origin === "" || origin === "null") {
-    allowed = "capacitor://localhost";
-  }
-  return {
-    "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    Vary: "Origin",
-  };
-}
+/* ── CORS: use wildcard as recommended by Supabase docs ──
+   Edge Functions are protected by apikey + JWT, so CORS origin
+   restriction is redundant. The wildcard fixes WebView/Capacitor
+   issues where the Origin header is unpredictable.              */
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -67,7 +47,6 @@ const findUserById = async (
   email: string,
   normalizedPhone: string,
 ) => {
-  // Try multiple phone/email formats to find existing users
   const phonesAndEmails = [
     { _phone: fullPhone, _email: email },
     { _phone: normalizedPhone, _email: `user-${normalizedPhone}@ailti.app` },
@@ -85,10 +64,33 @@ const findUserById = async (
   return null;
 };
 
+// ── Audit logger ──
+async function logOtpAudit(
+  adminClient: ReturnType<typeof createClient>,
+  phone: string,
+  action: string,
+  success: boolean,
+  req: Request,
+  details?: Record<string, unknown>,
+) {
+  try {
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null;
+    const userAgent = req.headers.get("user-agent") || null;
+    await adminClient.from("otp_audit_log").insert({
+      phone,
+      action,
+      success,
+      ip_address: ip,
+      user_agent: userAgent,
+      details: details ?? null,
+    });
+  } catch {
+    // Don't let audit logging break the flow
+  }
+}
+
 // ─── Handler ────────────────────────────────────────────
 Deno.serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
-
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -129,6 +131,7 @@ Deno.serve(async (req) => {
         .gte("created_at", tenMinAgo);
 
       if ((count ?? 0) >= 5) {
+        await logOtpAudit(adminClient, normalizedPhone, "send", false, req, { reason: "rate_limit" });
         return json({ error: "تم تجاوز الحد الأقصى. حاول بعد 10 دقائق" }, 429);
       }
 
@@ -150,6 +153,9 @@ Deno.serve(async (req) => {
       });
 
       if (insertErr) throw insertErr;
+
+      // Log successful send
+      await logOtpAudit(adminClient, normalizedPhone, "send", true, req);
 
       // مؤقت: إرجاع الكود للتوست (يُحذف عند ربط SMS)
       return json({ success: true, code: otpCode });
@@ -193,6 +199,7 @@ Deno.serve(async (req) => {
           }
         }
 
+        await logOtpAudit(adminClient, normalizedPhone, "verify", false, req, { reason: "invalid_code" });
         return json({ error: "رمز التحقق غير صحيح أو منتهي الصلاحية" }, 401);
       }
 
@@ -212,7 +219,6 @@ Deno.serve(async (req) => {
         });
 
         if (createErr) {
-          // Phone might already exist under a different email
           if (createErr.message?.toLowerCase().includes("phone")) {
             user = await findUserById(adminClient, fullPhone, email, normalizedPhone);
             if (!user) throw createErr;
@@ -241,6 +247,9 @@ Deno.serve(async (req) => {
       if (!tokenHash) {
         return json({ error: "فشل إنشاء رمز الجلسة" }, 500);
       }
+
+      // Log successful verify
+      await logOtpAudit(adminClient, normalizedPhone, "verify", true, req, { user_id: user.id });
 
       return json({
         token_hash: tokenHash,

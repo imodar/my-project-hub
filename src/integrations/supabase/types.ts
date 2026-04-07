@@ -1421,6 +1421,39 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          phone: string
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          phone: string
+          success?: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          phone?: string
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           attempts: number
