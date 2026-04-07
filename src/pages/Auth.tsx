@@ -7,47 +7,20 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJh
 
 async function callPhoneAuth(payload: Record<string, string>) {
   const url = `${SUPABASE_URL}/functions/v1/phone-auth`;
-  console.log("[OTP-DEBUG] calling:", url, "payload:", JSON.stringify(payload));
-  console.log("[OTP-DEBUG] env URL:", import.meta.env.VITE_SUPABASE_URL, "env KEY length:", SUPABASE_ANON_KEY?.length);
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify(payload),
-    });
-    console.log("[OTP-DEBUG] response status:", response.status);
-    const data = await response.json();
-    console.log("[OTP-DEBUG] response data:", JSON.stringify(data));
-    if (!response.ok) throw new Error(data?.error || `خطأ ${response.status}`);
-    if (data?.error) throw new Error(data.error);
-    return data;
-  } catch (err: any) {
-    console.error("[OTP-DEBUG] fetch failed:", err?.message, err?.name, err?.stack);
-    // Fallback: try supabase SDK
-    console.log("[OTP-DEBUG] trying supabase.functions.invoke fallback...");
-    try {
-      const res = await supabase.functions.invoke("phone-auth", { body: payload });
-      console.log("[OTP-DEBUG] invoke result:", JSON.stringify({ error: res.error?.message, data: res.data }));
-      if (res.error) {
-        let msg = res.error.message;
-        try {
-          const body = typeof (res.error as any).context?.body === "string"
-            ? JSON.parse((res.error as any).context.body) : null;
-          if (body?.error) msg = body.error;
-        } catch {}
-        throw new Error(msg);
-      }
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data;
-    } catch (fallbackErr: any) {
-      console.error("[OTP-DEBUG] invoke fallback also failed:", fallbackErr?.message);
-      throw fallbackErr;
-    }
-  }
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error || `خطأ ${response.status}`);
+  if (data?.error) throw new Error(data.error);
+  return data;
 }
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
