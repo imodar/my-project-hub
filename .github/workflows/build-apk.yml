@@ -3,11 +3,14 @@ name: Build Android APK
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: # Manual trigger button in GitHub Actions UI
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    # ubuntu-latest already has Android SDK pre-installed — no extra setup needed
 
     steps:
       - name: Checkout code
@@ -20,7 +23,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Build web app
         run: npm run build
@@ -31,25 +34,19 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Capacitor CLI
-        run: npm install -g @capacitor/cli
-
       - name: Add Android platform
-        run: npx cap add android || echo "Android already added"
+        run: ./node_modules/.bin/cap add android
 
-      - name: Sync Capacitor
-        run: npx cap sync android
+      - name: Sync web build into Android project
+        run: ./node_modules/.bin/cap sync android
 
-      - name: Make gradlew executable
+      - name: Make Gradle wrapper executable
         run: chmod +x android/gradlew
 
       - name: Build debug APK
         run: cd android && ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: family-app-debug
