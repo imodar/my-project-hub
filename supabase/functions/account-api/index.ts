@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       }
 
       // 5. Delete all user data from tables (using adminClient to bypass RLS)
-      const deletes: Promise<any>[] = [];
+      const deletes: PromiseLike<any>[] = [];
 
       // Personal tables (user_id based)
       deletes.push(adminClient.from("tasbih_sessions").delete().eq("user_id", userId));
