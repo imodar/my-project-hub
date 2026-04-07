@@ -22,6 +22,7 @@ import { warmCacheCritical, warmCacheDeferred } from "@/lib/warmCache";
 import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
 import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
 import { usePendingMemberAlert } from "@/hooks/usePendingMemberAlert";
+import { useRevenueCat } from "@/hooks/useRevenueCat";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
 import BottomNav from "@/components/home/BottomNavWhatsApp";
 import RoleGuard from "@/components/RoleGuard";
@@ -130,6 +131,8 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   // Global realtime for cross-device sync
   useFamilyRealtime();
   usePendingMemberAlert();
+  // Initialize RevenueCat SDK once user is logged in (native platforms only)
+  useRevenueCat();
 
   useEffect(() => {
     if (!user) {

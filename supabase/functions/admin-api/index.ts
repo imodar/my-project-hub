@@ -243,6 +243,80 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ─── SUBSCRIPTION MANAGEMENT ───
+    if (action === "get-user-subscription") {
+      const { target_user_id } = body;
+      if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
+      const { data, error } = await adminClient
+        .from("profiles")
+        .select("id, name, phone, subscription_plan, subscription_expires_at, revenuecat_customer_id, created_at")
+        .eq("id", target_user_id)
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      const { data: events } = await adminClient
+        .from("subscription_events")
+        .select("*")
+        .eq("user_id", target_user_id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return json({ data: { profile: data, events: events || [] } });
+    }
+
+    if (action === "grant-subscription") {
+      const { target_user_id, plan, expires_at } = body;
+      if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
+      if (!validStr(plan, 20)) return json({ error: "الخطة مطلوبة" }, 400);
+      const validPlans = ["monthly", "yearly", "family"];
+      if (!validPlans.includes(plan)) return json({ error: "خطة غير صالحة" }, 400);
+      const expiresAt = expires_at ? new Date(expires_at).toISOString() : null;
+      const { error } = await adminClient
+        .from("profiles")
+        .update({ subscription_plan: plan, subscription_expires_at: expiresAt })
+        .eq("id", target_user_id);
+      if (error) return json({ error: error.message }, 400);
+      await adminClient.from("subscription_events").insert({
+        user_id: target_user_id,
+        event_type: "admin_grant",
+        plan,
+        amount: 0,
+        currency: "SAR",
+      });
+      await logAudit("grant_subscription", "user", target_user_id, { plan, expires_at: expiresAt });
+      return json({ success: true });
+    }
+
+    if (action === "revoke-subscription") {
+      const { target_user_id } = body;
+      if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
+      const { error } = await adminClient
+        .from("profiles")
+        .update({ subscription_plan: "free", subscription_expires_at: null })
+        .eq("id", target_user_id);
+      if (error) return json({ error: error.message }, 400);
+      await adminClient.from("subscription_events").insert({
+        user_id: target_user_id,
+        event_type: "admin_revoke",
+        plan: "free",
+        amount: 0,
+        currency: "SAR",
+      });
+      await logAudit("revoke_subscription", "user", target_user_id);
+      return json({ success: true });
+    }
+
+    if (action === "sync-revenuecat-customer") {
+      const { target_user_id, revenuecat_customer_id } = body;
+      if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
+      if (!validStr(revenuecat_customer_id, 200)) return json({ error: "revenuecat_customer_id مطلوب" }, 400);
+      const { error } = await adminClient
+        .from("profiles")
+        .update({ revenuecat_customer_id: revenuecat_customer_id.trim() })
+        .eq("id", target_user_id);
+      if (error) return json({ error: error.message }, 400);
+      await logAudit("sync_revenuecat", "user", target_user_id, { revenuecat_customer_id });
+      return json({ success: true });
+    }
+
     if (action === "send-broadcast") {
       const { title, body: notifBody } = body;
       if (!validStr(title, MAX_TITLE)) return json({ error: "العنوان مطلوب (حد أقصى 200)" }, 400);

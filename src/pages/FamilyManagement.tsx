@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { ROLE_LABELS, isParentRole, isStaffRole } from "@/contexts/UserRoleContext";
+import SubscriptionGate from "@/components/SubscriptionGate";
+import UpgradePromptSheet from "@/components/UpgradePromptSheet";
 
 type FamilyRole = "father" | "mother" | "son" | "daughter" | "husband" | "wife" | "worker" | "maid" | "driver";
 
@@ -433,6 +435,8 @@ const FamilyManagement = () => {
 
 
   // Accept pending member
+  const [showUpgradeForAccept, setShowUpgradeForAccept] = useState(false);
+
   const handleAcceptMember = async () => {
     if (!pendingDrawerMember || !pendingRole || !familyId || processingPending) return;
     setProcessingPending(true);
@@ -445,7 +449,10 @@ const FamilyManagement = () => {
           role: pendingRole,
         },
       });
-      if (error || data?.error) {
+      if (data?.code === "NEEDS_SUBSCRIPTION" || data?.error === "subscription_required") {
+        // Blocked by subscription limit — show upgrade prompt
+        setShowUpgradeForAccept(true);
+      } else if (error || data?.error) {
         appToast.error(data?.error || "فشل القبول");
       } else {
         appToast.success(`تم قبول ${pendingDrawerMember.name} 🎉`);
@@ -662,26 +669,44 @@ const FamilyManagement = () => {
                       المؤسس
                     </span>
                   )}
+                  {(member as any).locked && (
+                    <span className="text-[10px] px-2 py-1 rounded-full font-semibold bg-destructive/10 text-destructive flex items-center gap-1">
+                      🔒 مقفول
+                    </span>
+                  )}
                 </div>
               </SwipeableCard>
             );
           })}
         </div>
 
-        {/* Add button — only for admins */}
+        {/* Add button — only for admins, gated by subscription */}
         {isMyAdmin && (
-          <button
-            onClick={() => { setShowAddDialog(true); setAddStep("invite-method"); }}
-            className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-sm font-semibold text-primary transition-colors active:bg-primary/10"
-            style={{
-              background: "hsl(var(--primary) / 0.08)",
-              border: "2px dashed hsl(var(--primary) / 0.3)",
-            }}
-          >
-            <Plus size={18} />
-            دعوة فرد جديد
-          </button>
+          <SubscriptionGate feature="add_member">
+            <button
+              onClick={() => { setShowAddDialog(true); setAddStep("invite-method"); }}
+              className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-sm font-semibold text-primary transition-colors active:bg-primary/10"
+              style={{
+                background: "hsl(var(--primary) / 0.08)",
+                border: "2px dashed hsl(var(--primary) / 0.3)",
+              }}
+            >
+              <Plus size={18} />
+              دعوة فرد جديد
+            </button>
+          </SubscriptionGate>
         )}
+
+        {/* Upgrade prompt when accept-member is blocked by subscription limit */}
+        <UpgradePromptSheet
+          open={showUpgradeForAccept}
+          onClose={() => setShowUpgradeForAccept(false)}
+          feature="add_member"
+          onSuccess={() => {
+            setShowUpgradeForAccept(false);
+            // Re-attempt acceptance after subscription is active
+          }}
+        />
 
 
         {/* Join another family section */}
