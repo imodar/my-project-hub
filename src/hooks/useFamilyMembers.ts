@@ -14,6 +14,7 @@ export interface FamilyMemberInfo {
   isCreator: boolean;
   roleConfirmed: boolean;
   status: string;
+  locked?: boolean; // true when subscription expired and member count > free limit
 }
 
 export function useFamilyMembers({ excludeSelf = true } = {}) {
@@ -52,14 +53,19 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
     [] as FamilyMemberInfo[]
   );
 
+  interface MembersResult {
+    members: FamilyMemberInfo[];
+    subscriptionLocked: boolean;
+  }
+
   const query = useQuery({
     queryKey: ["family-members-list", familyId, excludeSelf],
-    queryFn: async (): Promise<FamilyMemberInfo[]> => {
-      if (!familyId) return [];
+    queryFn: async (): Promise<MembersResult> => {
+      if (!familyId) return { members: [], subscriptionLocked: false };
 
       // Guard against stale calls after logout
       const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session) return [];
+      if (!sessionData?.session) return { members: [], subscriptionLocked: false };
 
       const { data, error } = await supabase.functions.invoke("family-management", {
         body: { action: "get-members", family_id: familyId },
@@ -69,6 +75,7 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
 
       const members = data?.data || [];
       const creatorId = data?.created_by;
+      const subscriptionLocked: boolean = data?.subscription_locked ?? false;
 
       // Write to Dexie for offline use
       try {
@@ -110,19 +117,30 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
         filtered = filtered.filter((m: any) => m.user_id !== user.id);
       }
 
-      return filtered.map((m: any) => ({
-        id: m.user_id,
-        name: m.profiles?.name || ROLE_LABELS[m.role] || "عضو",
-        role: m.role,
-        isAdmin: m.is_admin || false,
-        isCreator: m.user_id === creatorId,
-        roleConfirmed: m.role_confirmed ?? true,
-        status: m.status || "active",
-      }));
+      return {
+        members: filtered.map((m: any) => ({
+          id: m.user_id,
+          name: m.profiles?.name || ROLE_LABELS[m.role] || "عضو",
+          role: m.role,
+          isAdmin: m.is_admin || false,
+          isCreator: m.user_id === creatorId,
+          roleConfirmed: m.role_confirmed ?? true,
+          status: m.status || "active",
+          locked: m.locked || false,
+        })),
+        subscriptionLocked,
+      };
     },
     enabled: !!familyId && !!user,
-    placeholderData: localMembers.length > 0 ? localMembers : undefined,
+    placeholderData: localMembers.length > 0
+      ? { members: localMembers, subscriptionLocked: false }
+      : undefined,
   });
 
-  return { members: query.data || [], isLoading: query.isLoading, refetch: query.refetch };
+  return {
+    members: query.data?.members || [],
+    isLoading: query.isLoading,
+    refetch: query.refetch,
+    subscriptionLocked: query.data?.subscriptionLocked ?? false,
+  };
 }

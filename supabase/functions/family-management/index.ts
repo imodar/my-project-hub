@@ -205,6 +205,41 @@ Deno.serve(async (req) => {
       if (!validUuid(target_user_id)) return json({ error: "target_user_id غير صالح" }, 400);
       if (!validStr(role, 30) || !ALLOWED_ROLES.includes(role)) return json({ error: "دور غير صالح" }, 400);
 
+      // ── Subscription limit check ──
+      // Get max_free_members from system_settings (default: 1)
+      const { data: maxSetting } = await adminClient
+        .from("system_settings")
+        .select("value")
+        .eq("key", "max_free_members")
+        .maybeSingle();
+      const maxFreeMembers = Number(maxSetting?.value ?? 1);
+
+      // Get admin's subscription status
+      const { data: adminProfile } = await adminClient
+        .from("profiles")
+        .select("subscription_plan, subscription_expires_at")
+        .eq("id", userId)
+        .single();
+
+      const isSubscribed =
+        adminProfile?.subscription_plan !== "free" &&
+        adminProfile?.subscription_expires_at !== null &&
+        new Date(adminProfile?.subscription_expires_at) > new Date();
+
+      if (!isSubscribed) {
+        // Count current active members
+        const { count: activeCount } = await adminClient
+          .from("family_members")
+          .select("*", { count: "exact", head: true })
+          .eq("family_id", family_id)
+          .eq("status", "active");
+
+        if ((activeCount ?? 0) >= maxFreeMembers) {
+          return json({ error: "subscription_required", code: "NEEDS_SUBSCRIPTION" }, 403);
+        }
+      }
+      // ── End subscription check ──
+
       // Update member from pending → active with the chosen role
       const { error } = await adminClient.from("family_members")
         .update({ role, status: "active", role_confirmed: true })
@@ -301,12 +336,49 @@ Deno.serve(async (req) => {
         }
       }
 
+      // ── Check if family has locked members due to expired subscription ──
+      let subscriptionLocked = false;
+      let lockedMemberIds: Set<string> = new Set();
+
+      // Fetch admin's subscription (family creator)
+      if (familyData?.created_by) {
+        const { data: creatorProfile } = await adminClient
+          .from("profiles")
+          .select("subscription_plan, subscription_expires_at")
+          .eq("id", familyData.created_by)
+          .single();
+
+        const { data: maxSetting } = await adminClient
+          .from("system_settings")
+          .select("value")
+          .eq("key", "max_free_members")
+          .maybeSingle();
+        const maxFreeMembers = Number(maxSetting?.value ?? 1);
+
+        const isCreatorSubscribed =
+          creatorProfile?.subscription_plan !== "free" &&
+          creatorProfile?.subscription_expires_at !== null &&
+          new Date(creatorProfile?.subscription_expires_at) > new Date();
+
+        const activeMembers = (members || []).filter((m: any) => m.status === "active");
+        if (!isCreatorSubscribed && activeMembers.length > maxFreeMembers) {
+          subscriptionLocked = true;
+          // Lock all active members except the creator themselves
+          for (const m of activeMembers) {
+            if (m.user_id !== familyData.created_by) {
+              lockedMemberIds.add(m.user_id);
+            }
+          }
+        }
+      }
+
       const data = (members || []).map((m: any) => ({
         ...m,
         profiles: profilesMap[m.user_id] || null,
+        locked: lockedMemberIds.has(m.user_id),
       }));
 
-      return json({ data, created_by: familyData?.created_by });
+      return json({ data, created_by: familyData?.created_by, subscription_locked: subscriptionLocked });
     }
 
     // GET my family

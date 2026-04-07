@@ -83,6 +83,14 @@ export function useAdminSecurity() {
   });
 }
 
+export function useAdminUserSubscription(userId: string) {
+  return useQuery({
+    queryKey: ["admin", "user-subscription", userId],
+    queryFn: () => adminCall("get-user-subscription", { target_user_id: userId }),
+    enabled: !!userId && userId.length > 10,
+  });
+}
+
 export function useAdminMutations() {
   const qc = useQueryClient();
 
@@ -116,5 +124,40 @@ export function useAdminMutations() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "notifications"] }),
   });
 
-  return { suspendUser, unsuspendUser, updateSetting, addVersion, sendBroadcast };
+  const grantSubscription = useMutation({
+    mutationFn: (params: { target_user_id: string; plan: string; expires_at?: string }) =>
+      adminCall("grant-subscription", params),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["admin", "subscriptions"] });
+      qc.invalidateQueries({ queryKey: ["admin", "user-subscription", vars.target_user_id] });
+    },
+  });
+
+  const revokeSubscription = useMutation({
+    mutationFn: (params: { target_user_id: string }) =>
+      adminCall("revoke-subscription", params),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["admin", "subscriptions"] });
+      qc.invalidateQueries({ queryKey: ["admin", "user-subscription", vars.target_user_id] });
+    },
+  });
+
+  const syncRevenueCatCustomer = useMutation({
+    mutationFn: (params: { target_user_id: string; revenuecat_customer_id: string }) =>
+      adminCall("sync-revenuecat-customer", params),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["admin", "user-subscription", vars.target_user_id] });
+    },
+  });
+
+  return {
+    suspendUser,
+    unsuspendUser,
+    updateSetting,
+    addVersion,
+    sendBroadcast,
+    grantSubscription,
+    revokeSubscription,
+    syncRevenueCatCustomer,
+  };
 }
