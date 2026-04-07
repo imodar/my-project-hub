@@ -5,21 +5,42 @@ import { supabase } from "@/integrations/supabase/client";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Detect Capacitor native environment
+const isCapacitor = typeof (window as any)?.Capacitor !== 'undefined';
+
 async function callPhoneAuth(payload: Record<string, string>) {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/phone-auth`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY,
-    },
-    body: JSON.stringify(payload),
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error || `خطأ ${response.status}`);
+  if (isCapacitor) {
+    // In Capacitor, use direct fetch to avoid SDK issues with WebView
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/phone-auth`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error || `خطأ ${response.status}`);
+    if (data?.error) throw new Error(data.error);
+    return data;
+  } else {
+    // In web/preview, use Supabase SDK (handles proxy correctly)
+    const res = await supabase.functions.invoke("phone-auth", {
+      body: payload,
+    });
+    if (res.error) {
+      let msg = res.error.message;
+      try {
+        const body = typeof (res.error as any).context?.body === "string"
+          ? JSON.parse((res.error as any).context.body)
+          : null;
+        if (body?.error) msg = body.error;
+      } catch {}
+      throw new Error(msg);
+    }
+    if (res.data?.error) throw new Error(res.data.error);
+    return res.data;
   }
-  if (data?.error) throw new Error(data.error);
-  return data;
 }
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
