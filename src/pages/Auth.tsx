@@ -2,16 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-// Detect Capacitor native environment
-const isCapacitor = typeof (window as any)?.Capacitor !== 'undefined';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ptmhrfovbyvpewfdpejf.supabase.co";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0bWhyZm92Ynl2cGV3ZmRwZWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNjkyNzAsImV4cCI6MjA4OTc0NTI3MH0.0q-1UB9WZhmFCOXudEJ6lCUYW1ZTzC6yRUkftD6tC1Y";
 
 async function callPhoneAuth(payload: Record<string, string>) {
-  if (isCapacitor) {
-    // In Capacitor, use direct fetch to avoid SDK issues with WebView
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/phone-auth`, {
+  const url = `${SUPABASE_URL}/functions/v1/phone-auth`;
+  console.log("[OTP-DEBUG] calling:", url, "payload:", JSON.stringify(payload));
+  console.log("[OTP-DEBUG] env URL:", import.meta.env.VITE_SUPABASE_URL, "env KEY length:", SUPABASE_ANON_KEY?.length);
+
+  try {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -19,27 +19,34 @@ async function callPhoneAuth(payload: Record<string, string>) {
       },
       body: JSON.stringify(payload),
     });
+    console.log("[OTP-DEBUG] response status:", response.status);
     const data = await response.json();
+    console.log("[OTP-DEBUG] response data:", JSON.stringify(data));
     if (!response.ok) throw new Error(data?.error || `خطأ ${response.status}`);
     if (data?.error) throw new Error(data.error);
     return data;
-  } else {
-    // In web/preview, use Supabase SDK (handles proxy correctly)
-    const res = await supabase.functions.invoke("phone-auth", {
-      body: payload,
-    });
-    if (res.error) {
-      let msg = res.error.message;
-      try {
-        const body = typeof (res.error as any).context?.body === "string"
-          ? JSON.parse((res.error as any).context.body)
-          : null;
-        if (body?.error) msg = body.error;
-      } catch {}
-      throw new Error(msg);
+  } catch (err: any) {
+    console.error("[OTP-DEBUG] fetch failed:", err?.message, err?.name, err?.stack);
+    // Fallback: try supabase SDK
+    console.log("[OTP-DEBUG] trying supabase.functions.invoke fallback...");
+    try {
+      const res = await supabase.functions.invoke("phone-auth", { body: payload });
+      console.log("[OTP-DEBUG] invoke result:", JSON.stringify({ error: res.error?.message, data: res.data }));
+      if (res.error) {
+        let msg = res.error.message;
+        try {
+          const body = typeof (res.error as any).context?.body === "string"
+            ? JSON.parse((res.error as any).context.body) : null;
+          if (body?.error) msg = body.error;
+        } catch {}
+        throw new Error(msg);
+      }
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
+    } catch (fallbackErr: any) {
+      console.error("[OTP-DEBUG] invoke fallback also failed:", fallbackErr?.message);
+      throw fallbackErr;
     }
-    if (res.data?.error) throw new Error(res.data.error);
-    return res.data;
   }
 }
 import { useAuth } from "@/contexts/AuthContext";
