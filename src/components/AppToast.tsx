@@ -49,7 +49,7 @@ const ToastCard = ({ item }: { item: AppToastItem }) => {
       dragConstraints={{ top: -60, bottom: 0 }}
       dragElastic={0.3}
       onDragEnd={handleDragEnd}
-      className={`${bg} mx-4 rounded-b-2xl px-5 py-3 flex items-start gap-3 shadow-lg cursor-grab active:cursor-grabbing select-none`}
+      className={`${bg} mx-4 rounded-2xl px-5 py-3 flex items-start gap-3 shadow-lg cursor-grab active:cursor-grabbing select-none`}
       style={{ touchAction: "none" }}
     >
       <Icon className="w-5 h-5 text-white/90 mt-0.5 shrink-0" />
@@ -74,8 +74,8 @@ const AppToast: React.FC = () => {
 
   return createPortal(
     <div
-      className="fixed top-0 inset-x-0 z-[9999] flex flex-col gap-2 pt-[env(safe-area-inset-top)]"
-      style={{ pointerEvents: items.length ? "auto" : "none" }}
+      className="fixed top-0 inset-x-0 z-[9999] flex flex-col gap-3"
+      style={{ pointerEvents: items.length ? "auto" : "none", paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
     >
       <AnimatePresence mode="popLayout">
         {items.map((item) => (
