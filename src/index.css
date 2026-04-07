@@ -87,10 +87,12 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     overscroll-behavior-y: contain;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    /* Safe area: left/right on body, top/bottom handled per-component
+       so sticky positioning stays accurate across all device sizes */
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+    /* Bottom: ensures content doesn't hide under Android nav bar or iOS home indicator */
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   /* Prevent pull-to-refresh on mobile browsers */

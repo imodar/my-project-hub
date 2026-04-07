@@ -4,10 +4,7 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.d0479375ab8c489586c045a5df6d51d8',
   appName: 'منظم العائلة',
   webDir: 'dist',
-  server: {
-    url: 'https://d0479375-ab8c-4895-86c0-45a5df6d51d8.lovableproject.com?forceHideBadge=true',
-    cleartext: true,
-  },
+  // No server.url → Capacitor loads from local dist/ bundle (offline-first, native feel)
   android: {
     backgroundColor: '#FFFFFF',
     captureInput: true,
@@ -19,11 +16,11 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 1500,
       backgroundColor: '#FFFFFF',
       androidSplashResourceName: 'splash',
       splashFullScreen: true,
-      splashImmersive: true,
+      splashImmersive: false,   // false = Android nav bar stays visible after splash
     },
   },
 };
