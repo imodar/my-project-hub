@@ -173,7 +173,7 @@ const GetStarted = () => {
       style={{ transition: "background 0.6s ease" }}
     >
       {/* Story-style progress bars */}
-      <div className="w-full px-4 pt-4 flex gap-1.5 z-20">
+      <div className="w-full px-4 pt-4 flex gap-1.5 z-20" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         {slides.map((_, i) => (
           <div
             key={i}
@@ -200,7 +200,8 @@ const GetStarted = () => {
       {!isLast && (
         <button
           onClick={handleSkip}
-          className="absolute top-10 left-5 text-sm text-muted-foreground/70 z-20 flex items-center gap-1 active:scale-95 transition-transform"
+          className="absolute z-20 flex items-center gap-1 active:scale-95 transition-transform text-sm text-muted-foreground/70 left-5"
+          style={{ top: 'calc(env(safe-area-inset-top) + 1.5rem)' }}
         >
           <ChevronLeft className="h-4 w-4" />
           تخطي
@@ -221,7 +222,7 @@ const GetStarted = () => {
       </div>
 
       {/* Bottom area */}
-      <div className="w-full px-6 pb-10 flex flex-col items-center gap-5">
+      <div className="w-full px-6 flex flex-col items-center gap-5" style={{ paddingBottom: 'max(2.5rem, calc(env(safe-area-inset-bottom) + 1rem))' }}>
         {/* Dot indicators */}
         <div className="flex gap-2">
           {slides.map((_, i) => (
