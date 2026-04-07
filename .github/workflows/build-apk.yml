@@ -34,14 +34,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Capacitor CLI globally
-        run: npm install -g @capacitor/cli
-
       - name: Add Android platform
-        run: npx cap add android
+        run: ./node_modules/.bin/cap add android
 
       - name: Sync web build into Android project
-        run: npx cap sync android
+        run: ./node_modules/.bin/cap sync android
 
       - name: Make Gradle wrapper executable
         run: chmod +x android/gradlew
