@@ -225,7 +225,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
         dir={dir}
       >
         {/* Search bar — WhatsApp style dark bar */}
-        <div className="sticky top-0 z-10 bg-card border-b border-border">
+        <div className="sticky top-0 z-10 bg-card border-b border-border" style={{ paddingTop: "env(safe-area-inset-top)" }}>
           <div className="flex items-center gap-2 px-2 py-2">
             <button
               onClick={onClose}

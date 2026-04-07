@@ -334,7 +334,7 @@ const JoinOrCreate = () => {
   const isParentRole = createRole === "father" || createRole === "mother";
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary via-primary/90 to-primary/70" dir="rtl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       {/* Top branding */}
       <div className="h-[30vh] flex flex-col items-center justify-center px-6">
         <motion.div
