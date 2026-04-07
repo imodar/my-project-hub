@@ -1,4 +1,3 @@
-```yaml
 name: Build Android APK
 
 on:
@@ -56,4 +55,3 @@ jobs:
           name: family-app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
-```
