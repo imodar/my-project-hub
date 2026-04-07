@@ -94,7 +94,7 @@ const Auth = () => {
 
       // verifyOtp من client SDK — ينشئ الجلسة تلقائياً
       const { error } = await supabase.auth.verifyOtp({
-        token_hash: res.data.token_hash,
+        token_hash: data.token_hash,
         type: "magiclink",
       });
       if (error) throw error;
