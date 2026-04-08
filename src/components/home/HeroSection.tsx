@@ -4,7 +4,7 @@ import QiblaCompass from "./QiblaCompass";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import ProfileSheet from "./ProfileSheet";
+import { useNavigate } from "react-router-dom";
 import NotificationsSheet from "@/components/notifications/NotificationsSheet";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -262,7 +262,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { t, language } = useLanguage();
   const { profileName } = useAuth();
   const { unreadCount } = useNotifications();
-  const [profileOpen, setProfileOpen] = useState(false);
+  const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const hijriDate = "٤ شوّال ١٤٤٧";
@@ -375,7 +375,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
       <header className="sticky top-0 z-40 px-5 pb-2 flex justify-between items-center bg-background/95 backdrop-blur-sm" style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setProfileOpen(true)}
+            onClick={() => navigate("/profile")}
             className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-primary/30"
             style={{ background: "hsl(var(--primary) / 0.1)" }}
           >
@@ -524,7 +524,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </motion.div>
       </section>
 
-      <ProfileSheet open={profileOpen} onOpenChange={setProfileOpen} user={currentUser} />
+      
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>

@@ -2,7 +2,7 @@ import type { Translations } from "./ar";
 
 const en: Translations = {
   // App name
-  appName: "Our Family",
+  appName: "Aelati",
 
   // Common
   back: "Back",

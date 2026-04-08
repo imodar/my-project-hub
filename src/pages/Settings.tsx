@@ -227,6 +227,7 @@ const Settings = () => {
   return (
     <div
       className="min-h-screen flex flex-col pb-28 bg-background"
+      style={{ paddingTop: "max(env(safe-area-inset-top), 0px)" }}
       dir={dir}
     >
       {/* Header */}
@@ -242,7 +243,7 @@ const Settings = () => {
         <div />
       </div>
 
-      {/* Settings */}
+      {/* Settings - add bottom padding for nav bar */}
       <div className="flex-1 px-4 pb-8 space-y-6">
 
         {/* Emergency Settings - Admin Only */}
@@ -329,41 +330,26 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Role Display */}
+        {/* Family Management */}
         <div>
-          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">{t.settings.familyRole}</h2>
-          <div
-            className="rounded-2xl overflow-hidden p-4 bg-card shadow-sm"
-          >
-            {roleLoading ? (
-              <div className="flex items-center gap-3">
-                <Skeleton className="w-10 h-10 rounded-xl" />
-                <Skeleton className="h-5 w-24" />
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 px-1">{t.profile.familyManagement}</h2>
+          <div className="rounded-2xl overflow-hidden bg-card shadow-sm">
+            <button
+              onClick={() => navigate("/family")}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 ${isRTL ? "text-right" : "text-left"} transition-colors active:bg-muted/50`}
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "hsl(var(--primary) / 0.1)" }}
+              >
+                <User size={18} className="text-primary" />
               </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: "hsl(var(--primary) / 0.1)" }}
-                >
-                  <User size={20} className="text-primary" />
-                </div>
-                <div className={`flex-1 ${isRTL ? "text-right" : "text-left"}`}>
-                  <p className="text-sm font-bold text-foreground">
-                    {dbRole ? ROLE_LABELS[dbRole] || dbRole : t.settings.roleUnset}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {t.settings.roleSetByAdmin}
-                  </p>
-                </div>
-                <span
-                  className="text-[10px] font-semibold px-2 py-1 rounded-full"
-                  style={{ background: "hsl(var(--primary) / 0.1)", color: "hsl(var(--primary))" }}
-                >
-                  {t.fromDatabase}
-                </span>
+              <div className={`flex-1 ${isRTL ? "text-right" : "text-left"}`}>
+                <p className="text-sm font-semibold text-foreground">{t.profile.familyManagement}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t.profile.familyManagementDesc}</p>
               </div>
-            )}
+              <ChevronRight size={16} className={`text-muted-foreground ${isRTL ? "rotate-180" : ""}`} />
+            </button>
           </div>
         </div>
 

@@ -96,6 +96,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen flex flex-col" style={{
       background: "linear-gradient(180deg, hsl(40, 20%, 97%) 0%, hsl(40, 20%, 95%) 100%)",
+      paddingTop: "max(env(safe-area-inset-top), 0px)",
     }}>
       {/* Header */}
       <div className="flex items-center justify-between p-4">
