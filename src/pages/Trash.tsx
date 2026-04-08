@@ -58,7 +58,7 @@ const Trash = () => {
     <div className="min-h-screen flex flex-col bg-background" dir="rtl">
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4" style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}>
         <div className="flex items-center gap-2">
           <Trash2 size={20} className="text-destructive" />
           <h1 className="text-lg font-bold text-foreground">سلة المحذوفات</h1>
