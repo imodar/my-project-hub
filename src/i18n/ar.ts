@@ -1,6 +1,6 @@
 const ar = {
   // App name
-  appName: "عائلتنا",
+  appName: "عائلتي",
 
   // Common
   back: "رجوع",

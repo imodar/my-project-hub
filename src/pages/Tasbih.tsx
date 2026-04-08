@@ -77,7 +77,7 @@ const Tasbih = () => {
       onClick={handleTap}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 relative z-10">
+      <div className="flex items-center justify-between p-4 relative z-10" style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}>
         <button
           className="flex items-center gap-2 px-3 py-2 rounded-2xl"
           style={{ background: "hsla(0,0%,0%,0.05)" }}
