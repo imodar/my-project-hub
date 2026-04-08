@@ -78,6 +78,7 @@ const Vehicle = lazyRetry(() => import("./pages/Vehicle.tsx"));
 const Vaccinations = lazyRetry(() => import("./pages/Vaccinations.tsx"));
 const Medications = lazyRetry(() => import("./pages/Medications.tsx"));
 const IslamicReminders = lazyRetry(() => import("./pages/IslamicReminders.tsx"));
+const Subscription = lazyRetry(() => import("./pages/Subscription.tsx"));
 
 // Admin Panel (lazy)
 const AdminLayout = lazyRetry(() => import("./pages/admin/AdminLayout"));
@@ -281,6 +282,7 @@ const AnimatedRoutes = () => {
         <Route path="/vaccinations" element={<AuthGuard><R route="vaccinations"><Vaccinations /></R></AuthGuard>} />
         <Route path="/medications" element={<AuthGuard><R route="medications"><Medications /></R></AuthGuard>} />
         <Route path="/islamic-reminders" element={<AuthGuard><R route="islamic-reminders"><IslamicReminders /></R></AuthGuard>} />
+        <Route path="/subscription" element={<AuthGuard><R route="subscription"><Subscription /></R></AuthGuard>} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>
