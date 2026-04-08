@@ -54,7 +54,7 @@ export function useRevenueCat() {
     try {
       const { Purchases } = await import("@revenuecat/purchases-capacitor");
       const result = await Purchases.getOfferings();
-      return result.offerings.current;
+      return (result as any).offerings?.current ?? result.current ?? null;
     } catch {
       return null;
     }
@@ -74,8 +74,8 @@ export function useRevenueCat() {
     setIsPurchasing(true);
     try {
       const { Purchases } = await import("@revenuecat/purchases-capacitor");
-      const offerings = await Purchases.getOfferings();
-      const pkg = offerings?.offerings?.current?.availablePackages?.[0];
+      const offerings: any = await Purchases.getOfferings();
+      const pkg = offerings?.offerings?.current?.availablePackages?.[0] ?? offerings?.current?.availablePackages?.[0];
       if (!pkg) {
         appToast.error("خطأ", "لا توجد باقات متاحة حالياً");
         return false;
@@ -116,7 +116,7 @@ export function useRevenueCat() {
     }
     try {
       const { Purchases } = await import("@revenuecat/purchases-capacitor");
-      await Purchases.showManageSubscriptions();
+      await (Purchases as any).showManageSubscriptions();
     } catch {
       window.open("https://play.google.com/store/account/subscriptions", "_blank");
     }
