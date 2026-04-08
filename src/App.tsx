@@ -25,6 +25,7 @@ import { usePendingMemberAlert } from "@/hooks/usePendingMemberAlert";
 import { useRevenueCat } from "@/hooks/useRevenueCat";
 import { ListPageSkeleton } from "@/components/PageSkeletons";
 import BottomNav from "@/components/home/BottomNavWhatsApp";
+import SOSButton from "@/components/home/SOSButton";
 import RoleGuard from "@/components/RoleGuard";
 
 // ── Retry wrapper for stale chunk recovery ──
@@ -305,6 +306,7 @@ const App = () => (
                         <AnimatedRoutes />
                       </Suspense>
                       <BottomNav />
+                      <SOSButton />
                     </WarmCacheProvider>
                   </BrowserRouter>
                 </TooltipProvider>
