@@ -322,12 +322,12 @@ Deno.serve(async (req) => {
       if (!validStr(title, MAX_TITLE)) return json({ error: "العنوان مطلوب (حد أقصى 200)" }, 400);
       if (notifBody && typeof notifBody === "string" && notifBody.length > MAX_BODY) return json({ error: "المحتوى طويل جداً" }, 400);
       await adminClient.from("notification_log").insert({ title: sanitize(title, MAX_TITLE), body: notifBody ? sanitize(notifBody, MAX_BODY) : null, sent_by: userId, target_type: "broadcast" });
-      await logAudit("send_broadcast", "notification", null, { title });
+      await logAudit("send_broadcast", "notification", undefined, { title });
       return json({ success: true });
     }
 
     return json({ error: "Invalid action" }, 400);
-  } catch (err) {
-    return json({ error: err.message }, 500);
+  } catch (err: any) {
+    return json({ error: err?.message || "Unknown error" }, 500);
   }
 });
