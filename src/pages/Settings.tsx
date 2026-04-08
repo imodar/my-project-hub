@@ -226,12 +226,14 @@ const Settings = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col pb-28 bg-background"
+      className="min-h-screen flex flex-col pb-20 bg-background"
       style={{ paddingTop: "max(env(safe-area-inset-top), 0px)" }}
       dir={dir}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4">
+        <div className="w-16" />
+        <h1 className="text-lg font-bold text-foreground">{t.settings.title}</h1>
         <button
           onClick={() => navigate("/")}
           className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted"
@@ -239,8 +241,6 @@ const Settings = () => {
           {t.back}
           <ChevronRight size={18} className={isRTL ? "" : "rotate-180"} />
         </button>
-        <h1 className="text-lg font-bold text-foreground">{t.settings.title}</h1>
-        <div />
       </div>
 
       {/* Settings - add bottom padding for nav bar */}
