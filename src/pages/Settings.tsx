@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Check, RefreshCw, CheckCircle, AlertTriangle, Loader2, Database, AlertOctagon } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Check, RefreshCw, CheckCircle, AlertTriangle, Loader2, Database, AlertOctagon, Crown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
@@ -104,6 +104,7 @@ const Settings = () => {
     {
       title: t.settings.other,
       items: [
+        { icon: Crown, label: "إدارة الاشتراك", desc: "اشتراكك وتفاصيل خطتك", onClick: () => navigate("/subscription") },
         { icon: Archive, label: t.settings.trash, desc: t.settings.trashDesc, onClick: () => navigate("/trash") },
         { icon: Trash2, label: t.settings.deleteAccount, desc: t.settings.deleteAccountDesc, danger: true, onClick: () => { setDeleteSheet(true); setDeleteStep("confirm"); setDeleteConfirmed(false); setDeleteReason(""); setDeleteProgress(0); } },
         { icon: LogOut, label: t.settings.logout, desc: t.settings.logoutDesc, danger: true, onClick: async () => { await signOut(); navigate("/auth", { replace: true }); } },
@@ -226,12 +227,14 @@ const Settings = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col pb-28 bg-background"
+      className="min-h-screen flex flex-col pb-20 bg-background"
       style={{ paddingTop: "max(env(safe-area-inset-top), 0px)" }}
       dir={dir}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4">
+        <div className="w-16" />
+        <h1 className="text-lg font-bold text-foreground">{t.settings.title}</h1>
         <button
           onClick={() => navigate("/")}
           className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted"
@@ -239,8 +242,6 @@ const Settings = () => {
           {t.back}
           <ChevronRight size={18} className={isRTL ? "" : "rotate-180"} />
         </button>
-        <h1 className="text-lg font-bold text-foreground">{t.settings.title}</h1>
-        <div />
       </div>
 
       {/* Settings - add bottom padding for nav bar */}

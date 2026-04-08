@@ -58,9 +58,16 @@ export default function SubscriptionGate({ children, feature, overlay = false }:
           e.stopPropagation();
           setShowUpgrade(true);
         }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         className="contents"
+        style={{ pointerEvents: "auto" }}
       >
-        {children}
+        <div className="pointer-events-none">
+          {children}
+        </div>
       </div>
       <UpgradePromptSheet open={showUpgrade} onClose={() => setShowUpgrade(false)} feature={feature} />
     </>

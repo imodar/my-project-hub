@@ -534,7 +534,7 @@ const FamilyManagement = () => {
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4" style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}>
-        <div />
+        <div className="w-16" />
         <h1 className="text-lg font-bold text-foreground">إدارة أفراد الأسرة</h1>
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted/50">
           رجوع

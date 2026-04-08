@@ -55,18 +55,16 @@ const Trash = () => {
   }, {} as Record<string, TrashItem[]>);
 
   return (
-    <div className="min-h-screen flex flex-col pb-28 bg-background" dir="rtl">
+    <div className="min-h-screen flex flex-col pb-20 bg-background" dir="rtl">
 
       {/* Header */}
       <div className="flex items-center justify-between p-4" style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}>
-        <div className="flex items-center gap-2">
-          <Trash2 size={20} className="text-destructive" />
-          <h1 className="text-lg font-bold text-foreground">سلة المحذوفات</h1>
-        </div>
+        <div className="w-16" />
+        <h1 className="text-lg font-bold text-foreground">سلة المحذوفات</h1>
         <button onClick={() => navigate("/settings")}
           className="flex items-center gap-1 px-3 py-2 rounded-2xl text-sm font-semibold text-foreground bg-muted">
           رجوع
-          <ChevronRight size={18} className="rotate-180" />
+          <ChevronRight size={18} />
         </button>
       </div>
 
