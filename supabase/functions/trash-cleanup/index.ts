@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     await adminClient.from("trash_items").delete().in("id", ids);
 
     return json({ message: `Cleaned ${ids.length} trash items`, count: ids.length });
-  } catch (err) {
+  } catch (err: any) {
     return json({ error: err.message }, 500);
   }
 });

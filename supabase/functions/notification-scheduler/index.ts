@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       message: `Processed ${scheduledCount} scheduled notifications`,
       scheduledCount,
     });
-  } catch (err) {
+  } catch (err: any) {
     return json({ error: err.message }, 500);
   }
 });

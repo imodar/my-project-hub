@@ -42,7 +42,7 @@ async function hmacHex(text: string): Promise<string> {
 }
 
 const findUserById = async (
-  adminClient: ReturnType<typeof createClient>,
+  adminClient: any,
   fullPhone: string,
   email: string,
   normalizedPhone: string,
@@ -56,7 +56,7 @@ const findUserById = async (
     const { data: userId, error } = await adminClient.rpc("find_user_by_phone_or_email", params);
     if (error) throw error;
     if (userId) {
-      const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(userId);
+      const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(userId as string);
       if (userErr) throw userErr;
       if (userData?.user) return userData.user;
     }
@@ -66,7 +66,7 @@ const findUserById = async (
 
 // ── Audit logger ──
 async function logOtpAudit(
-  adminClient: ReturnType<typeof createClient>,
+  adminClient: any,
   phone: string,
   action: string,
   success: boolean,

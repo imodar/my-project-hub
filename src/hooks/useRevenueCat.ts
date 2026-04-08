@@ -53,8 +53,8 @@ export function useRevenueCat() {
     if (!Capacitor.isNativePlatform() || !rcInitialized) return null;
     try {
       const { Purchases } = await import("@revenuecat/purchases-capacitor");
-      const result = await Purchases.getOfferings();
-      return result.offerings.current;
+      const result = await (Purchases as any).getOfferings();
+      return (result as any).offerings?.current ?? result.current ?? null;
     } catch {
       return null;
     }
@@ -116,7 +116,7 @@ export function useRevenueCat() {
     }
     try {
       const { Purchases } = await import("@revenuecat/purchases-capacitor");
-      await Purchases.showManageSubscriptions();
+      await (Purchases as any).showManageSubscriptions();
     } catch {
       window.open("https://play.google.com/store/account/subscriptions", "_blank");
     }

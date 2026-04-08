@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     }
 
     return json({ error: "Invalid action" }, 400);
-  } catch (err) {
+  } catch (err: any) {
     return json({ error: err.message }, 500);
   }
 });

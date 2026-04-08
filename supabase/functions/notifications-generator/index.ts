@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
       message: `Generated ${inserted} notifications (${notifications.length} candidates)`,
       count: inserted,
     });
-  } catch (err) {
+  } catch (err: any) {
     return json({ error: err.message }, 500);
   }
 });

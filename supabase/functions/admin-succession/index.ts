@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     }
 
     return json({ message: `Transferred admin in ${transferred} families`, count: transferred });
-  } catch (err) {
+  } catch (err: any) {
     return json({ error: err.message }, 500);
   }
 });
