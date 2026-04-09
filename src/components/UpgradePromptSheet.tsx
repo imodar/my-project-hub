@@ -5,7 +5,6 @@ import { CheckCircle, Crown, Users, MessageCircle, FileText, Star } from "lucide
 import { useRevenueCat } from "@/hooks/useRevenueCat";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
-import { appToast } from "@/lib/toast";
 
 interface UpgradePromptSheetProps {
   open: boolean;
@@ -27,7 +26,6 @@ export default function UpgradePromptSheet({ open, onClose, feature, onSuccess }
   const { purchaseYearly, restorePurchases, isPurchasing } = useRevenueCat();
   const { refreshSubscription } = useSubscription();
   const [price, setPrice] = useState<string>("49");
-  const [productId, setProductId] = useState<string>("family_yearly_49sar");
 
   // Fetch configurable price from system_settings
   useEffect(() => {
@@ -35,12 +33,11 @@ export default function UpgradePromptSheet({ open, onClose, feature, onSuccess }
     supabase
       .from("system_settings")
       .select("key, value")
-      .in("key", ["subscription_price_sar", "subscription_product_id"])
+      .in("key", ["subscription_price_sar"])
       .then(({ data }) => {
         if (!data) return;
         for (const row of data) {
           if (row.key === "subscription_price_sar" && row.value) setPrice(String(row.value));
-          if (row.key === "subscription_product_id" && row.value) setProductId(String(row.value).replace(/"/g, ""));
         }
       });
   }, [open]);

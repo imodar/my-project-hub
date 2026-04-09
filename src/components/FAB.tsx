@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 
 interface FABAction {

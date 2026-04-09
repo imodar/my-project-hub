@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react";
@@ -27,10 +27,8 @@ const COLOR_MAP: Record<ToastType, string> = {
 const ToastCard = ({ item }: { item: AppToastItem }) => {
   const Icon = ICON_MAP[item.type];
   const bg = COLOR_MAP[item.type];
-  const startY = useRef(0);
-
   const handleDragEnd = useCallback(
-    (_: any, info: PanInfo) => {
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       if (info.offset.y < -30) {
         appToast.dismiss(item.id);
       }

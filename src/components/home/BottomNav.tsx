@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const SOS_HOLD_DURATION = 3000;
 
-const SOSNavButton = React.forwardRef<HTMLButtonElement, { label: string }>(({ label }, _ref) => {
+const SOSNavButton = React.forwardRef<HTMLButtonElement, { label: string }>(({ label }, ref) => {
   const [holdProgress, setHoldProgress] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -50,6 +50,7 @@ const SOSNavButton = React.forwardRef<HTMLButtonElement, { label: string }>(({ l
       onMouseDown={startHold}
       onMouseUp={cancelHold}
       onMouseLeave={cancelHold}
+      ref={ref}
       className="flex flex-col items-center gap-1 px-3 py-1 -mt-6 select-none touch-none"
     >
       <div className="relative w-12 h-12">
