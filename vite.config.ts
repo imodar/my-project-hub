@@ -16,6 +16,35 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+  build: {
+    // تقليص حجم الـ chunks وتحسين التقسيم
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // فصل المكتبات الثقيلة في chunks منفصلة
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-ui": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-select",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-toast",
+          ],
+          "vendor-query": ["@tanstack/react-query"],
+          "vendor-charts": ["recharts"],
+          "vendor-motion": ["framer-motion"],
+          "vendor-maps": ["leaflet", "react-leaflet"],
+          "vendor-pdf": ["jspdf"],
+          "vendor-dexie": ["dexie"],
+          "vendor-sentry": ["@sentry/react"],
+        },
+      },
+    },
+    // حجم تحذير chunk (1MB)
+    chunkSizeWarningLimit: 1000,
+    // تحسين الـ sourcemaps في الإنتاج
+    sourcemap: mode === "production" ? "hidden" : true,
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),

@@ -21,12 +21,16 @@ export type SyncOperation = "INSERT" | "UPDATE" | "DELETE";
 
 export interface SyncQueueItem {
   id?: number;
+  /** مفتاح فريد لمنع إعادة المعالجة — UUID يُولَّد عند الإضافة */
+  idempotency_key: string;
   table: string;
   operation: SyncOperation;
   data: Record<string, unknown>;
   created_at: string;
   status: SyncStatus;
   retries: number;
+  /** آخر خطأ حدث — لمساعدة المستخدم في فهم السبب */
+  last_error?: string;
 }
 
 export interface SyncMeta {
@@ -34,6 +38,25 @@ export interface SyncMeta {
   table: string;
   /** آخر وقت مزامنة ناجحة (ISO string) */
   last_synced_at: string;
+}
+
+/** تعارض بيانات بين النسخة المحلية والسيرفر */
+export interface ConflictItem {
+  id?: number;
+  /** اسم الجدول */
+  table: string;
+  /** معرّف السجل المتعارض */
+  record_id: string;
+  /** البيانات المحلية (ما غيّره المستخدم) */
+  local_data: Record<string, unknown>;
+  /** البيانات من السيرفر */
+  server_data: Record<string, unknown>;
+  /** وقت اكتشاف التعارض */
+  detected_at: string;
+  /** هل تم الحل */
+  resolved: boolean;
+  /** من اختار المستخدم — "local" أو "server" */
+  resolution?: "local" | "server";
 }
 
 /* ────────────────────────────────────────────
@@ -85,6 +108,8 @@ class AppDatabase extends Dexie {
   // ── جداول المزامنة ──
   sync_queue!: Table<SyncQueueItem, number>;
   sync_meta!: Table<SyncMeta, string>;
+  /** تعارضات البيانات بين المحلي والسيرفر */
+  conflicts!: Table<ConflictItem, number>;
 
   constructor() {
     super("ailti_offline_db");
@@ -167,7 +192,7 @@ class AppDatabase extends Dexie {
       emergency_contacts: "id, family_id",
 
       // ── طابور المزامنة ──
-      sync_queue: "++id, table, status, created_at",
+      sync_queue: "++id, idempotency_key, table, status, created_at",
 
       // ── بيانات المزامنة ──
       sync_meta: "table",
@@ -176,6 +201,12 @@ class AppDatabase extends Dexie {
     // ── الإصدار 5: إضافة سلة المحذوفات ──
     this.version(5).stores({
       trash_items: "id, family_id, type, deleted_at",
+    });
+
+    // ── الإصدار 6: إضافة جدول التعارضات و idempotency_key ──
+    this.version(6).stores({
+      sync_queue: "++id, idempotency_key, table, status, created_at",
+      conflicts: "++id, table, record_id, resolved, detected_at",
     });
   }
 }

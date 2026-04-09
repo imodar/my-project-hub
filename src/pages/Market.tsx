@@ -5,6 +5,7 @@ import { useTrash } from "@/contexts/TrashContext";
 import { useMarketLists } from "@/hooks/useMarketLists";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { appToast } from "@/lib/toast";
+import { useDraftPersistence } from "@/hooks/useDraftPersistence";
 import FAB from "@/components/FAB";
 import SwipeableCard from "@/components/SwipeableCard";
 import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
@@ -202,6 +203,16 @@ const Market = () => {
   const [newItemCategory, setNewItemCategory] = useState("أخرى");
   const [newItemQuantity, setNewItemQuantity] = useState("");
 
+  // Draft persistence للنموذج
+  const marketDraft = useDraftPersistence<{
+    name: string; category: string; quantity: string;
+  }>(`market-add-${activeListId}`);
+
+  // Pagination
+  const PAGE_SIZE = 30;
+  const [visibleUncheckedCount, setVisibleUncheckedCount] = useState(PAGE_SIZE);
+  const [visibleCheckedCount, setVisibleCheckedCount] = useState(PAGE_SIZE);
+
   // New list form
   const [newListName, setNewListName] = useState("");
   const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
@@ -213,6 +224,12 @@ const Market = () => {
 
   const activeList = lists.find((l) => l.id === activeListId);
 
+  // إعادة تعيين الصفحات عند تغيير القائمة أو الفلتر
+  useEffect(() => {
+    setVisibleUncheckedCount(PAGE_SIZE);
+    setVisibleCheckedCount(PAGE_SIZE);
+  }, [activeListId, searchQuery, activeCategory]);
+
   const filteredItems = activeList?.items.filter((item) => {
     const matchesCategory = activeCategory === "الكل" || item.category === activeCategory;
     const matchesSearch = !searchQuery || item.name.includes(searchQuery);
@@ -221,6 +238,9 @@ const Market = () => {
 
   const uncheckedItems = filteredItems.filter((i) => !i.checked);
   const checkedItems = filteredItems.filter((i) => i.checked);
+
+  const visibleUncheckedItems = uncheckedItems.slice(0, visibleUncheckedCount);
+  const visibleCheckedItems = checkedItems.slice(0, visibleCheckedCount);
 
   const totalItems = activeList?.items.length || 0;
   const completedItems = activeList?.items.filter((i) => i.checked).length || 0;
@@ -547,14 +567,31 @@ const Market = () => {
 
       {/* Items list */}
       <div className="px-4 pt-4 space-y-2 pb-4">
-        {uncheckedItems.map((item) => renderItem(item, false))}
+        {visibleUncheckedItems.map((item) => renderItem(item, false))}
+
+        {uncheckedItems.length > visibleUncheckedCount && (
+          <button
+            onClick={() => setVisibleUncheckedCount((n) => n + PAGE_SIZE)}
+            className="w-full py-2.5 text-xs text-primary font-semibold rounded-xl border border-primary/30 hover:bg-primary/5 transition-colors"
+          >
+            تحميل {Math.min(PAGE_SIZE, uncheckedItems.length - visibleUncheckedCount)} منتج إضافي
+          </button>
+        )}
 
         {checkedItems.length > 0 && (
           <div className="pt-3">
             <p className="text-xs text-muted-foreground mb-2 font-medium">✅ تم شراؤها</p>
             <div className="space-y-2">
-              {checkedItems.map((item) => renderItem(item, true))}
+              {visibleCheckedItems.map((item) => renderItem(item, true))}
             </div>
+            {checkedItems.length > visibleCheckedCount && (
+              <button
+                onClick={() => setVisibleCheckedCount((n) => n + PAGE_SIZE)}
+                className="w-full mt-2 py-2 text-xs text-muted-foreground font-medium rounded-xl border border-border hover:bg-muted/50 transition-colors"
+              >
+                تحميل {Math.min(PAGE_SIZE, checkedItems.length - visibleCheckedCount)} إضافية
+              </button>
+            )}
           </div>
         )}
 
@@ -569,7 +606,14 @@ const Market = () => {
       )}
       </PullToRefresh>
 
-      <FAB onClick={() => { haptic.medium(); setShowAddItem(true); }} />
+      <FAB onClick={() => {
+        haptic.medium();
+        const draft = marketDraft.loadDraft();
+        setNewItemName(draft?.name ?? "");
+        setNewItemCategory(draft?.category ?? "أخرى");
+        setNewItemQuantity(draft?.quantity ?? "");
+        setShowAddItem(true);
+      }} />
 
       {/* List Actions Drawer */}
       <Drawer open={showListActions} onOpenChange={setShowListActions}>
@@ -694,6 +738,7 @@ const Market = () => {
 
       {/* Add Item Drawer */}
       <Drawer open={showAddItem} onOpenChange={(open) => {
+        if (!open) marketDraft.clearDraft();
         setShowAddItem(open);
         if (!open) {
           setNewItemName("");
@@ -707,8 +752,8 @@ const Market = () => {
             <DrawerDescription>أضف المنتج مع التصنيف والكمية</DrawerDescription>
           </DrawerHeader>
           <div className="space-y-3 px-4">
-            <Input placeholder="اسم المنتج" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} className="rounded-xl" />
-            <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => setNewItemQuantity(e.target.value)} className="rounded-xl" />
+            <Input placeholder="اسم المنتج" value={newItemName} onChange={(e) => { setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }} className="rounded-xl" />
+            <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }} className="rounded-xl" />
             {activeList?.useCategories && (
             <div>
               <p className="text-xs text-muted-foreground mb-2">التصنيف</p>
@@ -731,8 +776,8 @@ const Market = () => {
             )}
           </div>
           <DrawerFooter className="flex-row gap-2">
-            <Button onClick={addItem} className="flex-1 rounded-xl">إضافة</Button>
-            <Button variant="outline" onClick={() => setShowAddItem(false)} className="flex-1 rounded-xl">إلغاء</Button>
+            <Button onClick={() => { marketDraft.clearDraft(); addItem(); }} className="flex-1 rounded-xl">إضافة</Button>
+            <Button variant="outline" onClick={() => { marketDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-xl">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

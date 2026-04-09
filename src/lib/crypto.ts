@@ -264,6 +264,122 @@ export async function loadFamilyKeyLocally(
   });
 }
 
+// ─── E2EE Key Backup (Passphrase-based) ─────────────────────
+//
+// يتيح للمستخدم تصدير مفتاحه الخاص مشفراً بكلمة مرور.
+// المفتاح المُصدَّر يمكن استيراده على جهاز آخر.
+// السيرفر لا يرى كلمة المرور ولا المفتاح الخاص أبداً.
+
+/**
+ * يشتق مفتاح AES-256-GCM من كلمة مرور المستخدم باستخدام PBKDF2.
+ */
+async function deriveKeyFromPassphrase(
+  passphrase: string,
+  salt: Uint8Array
+): Promise<CryptoKey> {
+  const encoded = new TextEncoder().encode(passphrase);
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoded,
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 200_000, // 200k iterations لأمان أعلى
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+export interface ExportedKeyBackup {
+  /** Salt مشفر بـ base64 */
+  salt: string;
+  /** IV مشفر بـ base64 */
+  iv: string;
+  /** المفتاح الخاص المشفر بـ base64 */
+  encrypted: string;
+  /** إصدار البروتوكول للتحقق المستقبلي */
+  version: 1;
+}
+
+/**
+ * يشفّر المفتاح الخاص بكلمة مرور المستخدم لتصديره كـ backup.
+ * الناتج: كائن JSON يمكن حفظه في Supabase (مشفراً) أو كملف.
+ */
+export async function exportPrivateKeyWithPassphrase(
+  privateKey: CryptoKey,
+  passphrase: string
+): Promise<ExportedKeyBackup> {
+  const salt = crypto.getRandomValues(new Uint8Array(32));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const wrappingKey = await deriveKeyFromPassphrase(passphrase, salt);
+
+  const jwk = await crypto.subtle.exportKey("jwk", privateKey);
+  const encoded = new TextEncoder().encode(JSON.stringify(jwk));
+
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    wrappingKey,
+    encoded
+  );
+
+  return {
+    salt: bufToBase64(salt.buffer),
+    iv: bufToBase64(iv.buffer),
+    encrypted: bufToBase64(encrypted),
+    version: 1,
+  };
+}
+
+/**
+ * يستورد المفتاح الخاص من backup مشفَّر بكلمة مرور.
+ * يُستخدم عند تغيير الجهاز أو إعادة التثبيت.
+ *
+ * @throws Error إذا كانت كلمة المرور خاطئة
+ */
+export async function importPrivateKeyFromBackup(
+  backup: ExportedKeyBackup,
+  passphrase: string
+): Promise<CryptoKey> {
+  if (backup.version !== 1) {
+    throw new Error(`إصدار backup غير مدعوم: ${backup.version}`);
+  }
+
+  const salt = new Uint8Array(base64ToBuf(backup.salt));
+  const iv = base64ToBuf(backup.iv);
+  const encrypted = base64ToBuf(backup.encrypted);
+
+  const wrappingKey = await deriveKeyFromPassphrase(passphrase, salt);
+
+  let decrypted: ArrayBuffer;
+  try {
+    decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      wrappingKey,
+      encrypted
+    );
+  } catch {
+    throw new Error("كلمة المرور غير صحيحة أو الـ backup تالف");
+  }
+
+  const jwk = JSON.parse(new TextDecoder().decode(decrypted));
+  return crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    { name: "ECDH", namedCurve: "P-256" },
+    true,
+    ["deriveKey", "deriveBits"]
+  );
+}
+
 // ─── Helpers ────────────────────────────────────────────
 
 function bufToBase64(buf: ArrayBuffer): string {

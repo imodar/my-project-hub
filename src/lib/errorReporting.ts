@@ -3,6 +3,9 @@
  *
  * Integrates with Sentry when VITE_SENTRY_DSN is set.
  * Falls back to console.error otherwise.
+ *
+ * PRODUCTION REQUIREMENT: VITE_SENTRY_DSN must be set before going to production.
+ * Without it, errors are invisible in production and debugging is impossible.
  */
 import * as Sentry from "@sentry/react";
 
@@ -19,24 +22,49 @@ let sentryInitialized = false;
 
 /**
  * Initialize Sentry. Call once in main.tsx.
- * If VITE_SENTRY_DSN is not set, Sentry stays inactive and reportError falls back to console.
+ *
+ * - In PRODUCTION: logs a critical warning if DSN is missing (errors will be invisible).
+ * - In DEVELOPMENT: silently falls back to console.error.
  */
 export function initSentry(): void {
-  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+  const isProd = import.meta.env.PROD as boolean;
+
   if (!dsn) {
-    console.info("[Sentry] VITE_SENTRY_DSN not set — using console.error fallback");
+    if (isProd) {
+      // CRITICAL: In production, missing Sentry DSN means all errors are invisible.
+      // This warning appears in the browser console — visible to developers in DevTools.
+      console.warn(
+        "%c[PRODUCTION WARNING] VITE_SENTRY_DSN is not configured!\n" +
+        "All runtime errors are invisible. Set VITE_SENTRY_DSN in your deployment environment.\n" +
+        "See: https://docs.sentry.io/platforms/javascript/guides/react/",
+        "color: red; font-weight: bold; font-size: 14px;"
+      );
+    } else {
+      console.info("[Sentry] VITE_SENTRY_DSN not set — using console.error fallback (dev mode)");
+    }
     return;
   }
+
   Sentry.init({
     dsn,
     integrations: [
       Sentry.browserTracingIntegration(),
     ],
-    tracesSampleRate: 0.2,
-    environment: import.meta.env.MODE || "production",
-    enabled: import.meta.env.PROD,
+    tracesSampleRate: isProd ? 0.2 : 1.0,
+    environment: (import.meta.env.MODE as string) || "production",
+    enabled: isProd,
+    // تجاهل الأخطاء الشائعة غير القابلة للإصلاح
+    ignoreErrors: [
+      "ResizeObserver loop limit exceeded",
+      "ResizeObserver loop completed with undelivered notifications",
+      "Non-Error promise rejection captured",
+      /^Loading chunk \d+ failed/,
+      /^Failed to fetch dynamically imported module/,
+    ],
   });
   sentryInitialized = true;
+  console.info("[Sentry] Initialized successfully ✅");
 }
 
 export function reportError(error: unknown, context?: ErrorContext): void {

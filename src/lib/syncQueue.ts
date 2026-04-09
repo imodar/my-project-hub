@@ -340,20 +340,49 @@ export async function projectPendingChanges<T extends { id?: string; created_at?
  * ──────────────────────────────────────────── */
 
 /**
+ * يولّد UUID بسيط بدون مكتبة خارجية.
+ */
+function generateIdempotencyKey(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback بسيط
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+/**
  * تُضيف عملية جديدة لطابور المزامنة.
  * تُستخدم عند عدم توفر اتصال أو فشل إرسال العملية للـ API.
+ *
+ * - تتحقق من وجود عملية متطابقة بنفس idempotency_key لمنع التكرار
  *
  * @param table - اسم الجدول المستهدف
  * @param operation - نوع العملية (INSERT / UPDATE / DELETE)
  * @param data - البيانات المرتبطة بالعملية
+ * @param idempotencyKey - مفتاح فريد اختياري (يُولَّد تلقائياً إذا لم يُوفَّر)
  * @returns معرّف العملية في الطابور
  */
 export async function addToQueue(
   table: string,
   operation: SyncOperation,
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
+  idempotencyKey?: string,
 ): Promise<number> {
+  const key = idempotencyKey ?? generateIdempotencyKey();
+
+  // منع الإضافة المكررة بنفس المفتاح
+  const existing = await db.sync_queue
+    .where("idempotency_key")
+    .equals(key)
+    .first();
+
+  if (existing) {
+    console.info(`[SyncQueue] عملية مكررة للمفتاح ${key} — تم تجاهلها`);
+    return existing.id as number;
+  }
+
   const item: SyncQueueItem = {
+    idempotency_key: key,
     table,
     operation,
     data,
@@ -363,7 +392,7 @@ export async function addToQueue(
   };
 
   const id = await db.sync_queue.add(item);
-  console.info(`[SyncQueue] أُضيفت عملية ${operation} على ${table} (id: ${id})`);
+  console.info(`[SyncQueue] أُضيفت عملية ${operation} على ${table} (id: ${id}, key: ${key})`);
 
   if (navigator.onLine) {
     processQueue();
@@ -477,19 +506,22 @@ export async function processQueue(): Promise<void> {
       } catch (err) {
         const newRetries = (item.retries || 0) + 1;
         const newStatus = newRetries >= MAX_RETRIES ? "failed" : "pending";
+        const lastError = err instanceof Error ? err.message : String(err);
 
-        // Exponential backoff before next retry
-        const delay = Math.min(1000 * Math.pow(2, newRetries), 30000);
-        await new Promise(r => setTimeout(r, delay));
+        // Exponential backoff قبل المحاولة القادمة (فقط إذا لم تصل للحد الأقصى)
+        if (newStatus === "pending") {
+          const delay = Math.min(1000 * Math.pow(2, newRetries), 30_000);
+          await new Promise(r => setTimeout(r, delay));
+        }
 
         await db.sync_queue.update(item.id!, {
           retries: newRetries,
           status: newStatus as "pending" | "failed",
+          last_error: lastError,
         });
 
         console.warn(
-          `[SyncQueue] ❌ فشل ${item.operation} على ${item.table} (محاولة ${newRetries}/${MAX_RETRIES})`,
-          err
+          `[SyncQueue] ❌ فشل ${item.operation} على ${item.table} (محاولة ${newRetries}/${MAX_RETRIES}): ${lastError}`,
         );
 
         if (newStatus === "failed") {
@@ -518,6 +550,55 @@ export async function processQueue(): Promise<void> {
  */
 export async function getPendingCount(): Promise<number> {
   return db.sync_queue.where("status").equals("pending").count();
+}
+
+/**
+ * تُرجع عدد العمليات الفاشلة في الطابور.
+ */
+export async function getFailedCount(): Promise<number> {
+  return db.sync_queue.where("status").equals("failed").count();
+}
+
+/**
+ * تُعيد محاولة العمليات الفاشلة بإعادة تعيينها لـ "pending".
+ * يمكن للمستخدم استدعاؤها يدوياً من واجهة الإعدادات.
+ */
+export async function retryFailedItems(): Promise<number> {
+  const failedItems = await db.sync_queue
+    .where("status")
+    .equals("failed")
+    .toArray();
+
+  if (failedItems.length === 0) return 0;
+
+  await db.sync_queue
+    .where("status")
+    .equals("failed")
+    .modify({ status: "pending", retries: 0, last_error: undefined });
+
+  console.info(`[SyncQueue] 🔄 إعادة محاولة ${failedItems.length} عملية فاشلة...`);
+
+  if (navigator.onLine) {
+    processQueue();
+  }
+
+  return failedItems.length;
+}
+
+/**
+ * تُرجع ملخصاً لحالة الطابور.
+ */
+export async function getQueueSummary(): Promise<{
+  pending: number;
+  failed: number;
+  synced: number;
+}> {
+  const [pending, failed, synced] = await Promise.all([
+    db.sync_queue.where("status").equals("pending").count(),
+    db.sync_queue.where("status").equals("failed").count(),
+    db.sync_queue.where("status").equals("synced").count(),
+  ]);
+  return { pending, failed, synced };
 }
 
 /* ────────────────────────────────────────────

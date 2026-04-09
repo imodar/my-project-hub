@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
-import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Check, RefreshCw, CheckCircle, AlertTriangle, Loader2, Database, AlertOctagon, Crown } from "lucide-react";
+import { ChevronRight, Bell, Moon, Globe, Info, Shield, Trash2, BookOpen, Archive, ShieldAlert, Phone, UserX, Volume2, MapPin, Lock, User, Check, RefreshCw, CheckCircle, AlertTriangle, Loader2, Database, AlertOctagon, Crown, KeyRound } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +18,7 @@ import { useFamilyId } from "@/hooks/useFamilyId";
 import { appToast } from "@/lib/toast";
 import LanguageSheet from "@/components/LanguageSheet";
 import LegalPageSheet from "@/components/LegalPageSheet";
+import KeyBackupDialog from "@/components/KeyBackupDialog";
 
 const Settings = () => {
   const { signOut, user } = useAuth();
@@ -42,6 +43,7 @@ const Settings = () => {
   const qc = useQueryClient();
   const [privacySheet, setPrivacySheet] = useState(false);
   const [termsSheet, setTermsSheet] = useState(false);
+  const [keyBackupOpen, setKeyBackupOpen] = useState(false);
   const [deleteSheet, setDeleteSheet] = useState(false);
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
@@ -99,6 +101,7 @@ const Settings = () => {
         { icon: Info, label: t.settings.about, desc: t.settings.version },
         { icon: Shield, label: t.settings.privacy, desc: "", onClick: () => setPrivacySheet(true) },
         { icon: Shield, label: t.settings.terms, desc: "", onClick: () => setTermsSheet(true) },
+        { icon: KeyRound, label: "نسخ احتياطي للتشفير", desc: "تصدير أو استيراد مفتاح المحادثات المشفرة", onClick: () => setKeyBackupOpen(true) },
       ],
     },
     {
@@ -719,6 +722,8 @@ const Settings = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      <KeyBackupDialog open={keyBackupOpen} onOpenChange={setKeyBackupOpen} />
     </div>
   );
 };

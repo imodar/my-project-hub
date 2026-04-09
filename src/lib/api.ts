@@ -1,5 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * إصدار التطبيق — يُرسَل مع كل طلب API.
+ * يسمح للـ Edge Functions بالتحقق من الحد الأدنى المدعوم
+ * وإرجاع 426 Upgrade Required عند الحاجة.
+ */
+export const APP_VERSION = (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "1.0.0";
+
 interface ApiOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   body?: Record<string, unknown>;
@@ -14,7 +21,12 @@ interface ApiResponse<T = unknown> {
 
 /**
  * Unified API client for Supabase Edge Functions.
- * Automatically includes JWT and handles errors/retries.
+ *
+ * - Automatically includes JWT auth header
+ * - Sends X-App-Version for API versioning
+ * - Handles offline detection
+ * - Extracts HTTP status from Supabase error messages
+ * - Returns app_update_required error for status 426
  */
 export async function apiClient<T = unknown>(
   functionName: string,
@@ -22,25 +34,32 @@ export async function apiClient<T = unknown>(
 ): Promise<ApiResponse<T>> {
   const { method = "POST", body, headers } = options;
 
+  // بدون اتصال — أرجع مباشرة
+  if (!navigator.onLine) {
+    return { data: null, error: "أنت غير متصل بالإنترنت", status: 0 };
+  }
+
   try {
     const { data, error } = await supabase.functions.invoke(functionName, {
       method,
       body: body ? JSON.stringify(body) : undefined,
       headers: {
         "Content-Type": "application/json",
+        "X-App-Version": APP_VERSION,
         ...headers,
       },
     });
 
     if (error) {
-      // Retry once on network error
-      if (!navigator.onLine) {
-        return { data: null, error: "أنت غير متصل بالإنترنت", status: 0 };
-      }
-      // Extract status from error message if available (e.g. "Edge Function returned a non-2xx status code")
-      // data may still contain the response body with retry hints
       const statusMatch = error.message?.match(/(\d{3})/);
       const httpStatus = statusMatch ? parseInt(statusMatch[1], 10) : 500;
+
+      // 426 = الـ API يطلب تحديث التطبيق
+      if (httpStatus === 426) {
+        window.dispatchEvent(new CustomEvent("app-update-required"));
+        return { data: null, error: "app_update_required", status: 426 };
+      }
+
       return { data: data as T, error: error.message, status: httpStatus };
     }
 
