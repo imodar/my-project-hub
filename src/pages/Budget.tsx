@@ -101,7 +101,7 @@ const BudgetCard = ({ b, onSelect, remaining, spentPercent }: {
             )}
             {shared && (
               <span className="text-[9px] text-primary/70 flex items-center gap-0.5">
-                <Users size={10} /> مع {b.sharedWith.join("، ")}
+                <Users size={10} /> مشترك مع {b.sharedWith.length} {b.sharedWith.length === 1 ? "عضو" : "أعضاء"}
               </span>
             )}
           </div>
@@ -162,7 +162,7 @@ const Budget = () => {
   const [expenseName, setExpenseName] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
   const [editIncomeVal, setEditIncomeVal] = useState("");
-  const [shareNames, setShareNames] = useState<string[]>([]);
+  const [shareIds, setShareIds] = useState<string[]>([]);
   const [editExpenseName, setEditExpenseName] = useState("");
   const [editExpenseAmount, setEditExpenseAmount] = useState("");
   const [expenseDate, setExpenseDate] = useState<Date | undefined>(undefined);
@@ -187,7 +187,7 @@ const Budget = () => {
         type: "month",
         month: monthStr,
         income: parseFloat(newIncome),
-        shared_with: [...shareNames],
+        shared_with: [...shareIds],
       });
     } else {
       if (!projectLabel.trim()) return;
@@ -196,14 +196,14 @@ const Budget = () => {
         month: `project-${Date.now()}`,
         label: projectLabel.trim(),
         income: parseFloat(newIncome),
-        shared_with: [...shareNames],
+        shared_with: [...shareIds],
       });
     }
 
     setShowAddMonth(false);
     setNewIncome("");
     setProjectLabel("");
-    setShareNames([]);
+    setShareIds([]);
   };
 
   const handleAddExpense = () => {
@@ -262,12 +262,12 @@ const Budget = () => {
       id: showEditBudget.id,
       income: parseFloat(newIncome),
       label: showEditBudget.type === "project" ? projectLabel.trim() || showEditBudget.label : showEditBudget.label,
-      shared_with: [...shareNames],
+      shared_with: [...shareIds],
     });
     setShowEditBudget(null);
     setNewIncome("");
     setProjectLabel("");
-    setShareNames([]);
+    setShareIds([]);
   };
 
   const onRefresh = useCallback(() => new Promise<void>(r => setTimeout(r, 600)), []);
@@ -587,7 +587,7 @@ const Budget = () => {
                           setShowEditBudget(b);
                           setNewIncome(b.income.toString());
                           setProjectLabel(b.label || "");
-                          setShareNames([...b.sharedWith]);
+                          setShareIds([...b.sharedWith]);
                         }},
                       ]}
                     >
@@ -614,7 +614,7 @@ const Budget = () => {
                           setShowEditBudget(b);
                           setNewIncome(b.income.toString());
                           setProjectLabel(b.label || "");
-                          setShareNames([...b.sharedWith]);
+                          setShareIds([...b.sharedWith]);
                         }},
                       ]}
                     >
@@ -636,7 +636,7 @@ const Budget = () => {
         setNewYear(String(new Date().getFullYear()));
         setProjectLabel("");
         setNewIncome("");
-        setShareNames([]);
+        setShareIds([]);
         setShowAddMonth(true);
       }} />
 
@@ -740,22 +740,22 @@ const Budget = () => {
                     key={member.id}
                     type="button"
                     onClick={() =>
-                      setShareNames((prev) =>
-                        prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
+                      setShareIds((prev) =>
+                        prev.includes(member.id) ? prev.filter((id) => id !== member.id) : [...prev, member.id]
                       )
                     }
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                      shareNames.includes(member.name)
+                      shareIds.includes(member.id)
                         ? "border-primary bg-primary/10"
                         : "border-border bg-card"
                     }`}
                   >
                     <span className="font-medium text-foreground">{member.name}</span>
-                    {shareNames.includes(member.name) && <Check size={14} className="text-primary" />}
+                    {shareIds.includes(member.id) && <Check size={14} className="text-primary" />}
                   </button>
                 ))}
               </div>
-              {shareNames.length === 0 && (
+              {shareIds.length === 0 && (
                 <p className="text-[10px] text-muted-foreground/60 mt-2">🔒 ستبقى خاصة بك فقط</p>
               )}
             </div>
@@ -816,18 +816,18 @@ const Budget = () => {
                     key={member.id}
                     type="button"
                     onClick={() =>
-                      setShareNames((prev) =>
-                        prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
+                      setShareIds((prev) =>
+                        prev.includes(member.id) ? prev.filter((id) => id !== member.id) : [...prev, member.id]
                       )
                     }
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                      shareNames.includes(member.name)
+                      shareIds.includes(member.id)
                         ? "border-primary bg-primary/10"
                         : "border-border bg-card"
                     }`}
                   >
                     <span className="font-medium text-foreground">{member.name}</span>
-                    {shareNames.includes(member.name) && <Check size={14} className="text-primary" />}
+                    {shareIds.includes(member.id) && <Check size={14} className="text-primary" />}
                   </button>
                 ))}
               </div>
