@@ -5,8 +5,9 @@
  * لا يقرأ من IndexedDB بشكل مباشر — useQuery يجلب من API عند الحاجة.
  */
 import { useQuery, type QueryKey, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { syncTable } from "@/lib/syncManager";
+import { db } from "@/lib/db";
 
 /* ────────────────────────────────────────────
  *  أنواع
@@ -65,6 +66,24 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
   // Check React Query cache synchronously (0ms — populated by warmCache)
   const cachedData = qc.getQueryData<T[]>(queryKey);
 
+  // ── Dexie direct fallback — حارس لحالات edge case عندما يكون الـ cache فارغاً ──
+  // يُقرأ مرة واحدة على mount فقط إذا كان الـ cache لا يزال فارغاً
+  const [dexieFallback, setDexieFallback] = useState<T[] | undefined>(undefined);
+  useEffect(() => {
+    if (cachedData || !enabled) return;
+    const tbl = (db as Record<string, unknown>)[tableName] as
+      | { toArray: () => Promise<unknown[]> }
+      | undefined;
+    if (!tbl) return;
+    tbl.toArray().then((rows) => {
+      const filtered = filterFnRef.current
+        ? filterFnRef.current(rows as T[])
+        : (rows as T[]);
+      if (filtered.length > 0) setDexieFallback(filtered);
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- يعمل مرة واحدة على mount
+  }, []);
+
   // ── جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
     const result = await syncTable<T>(
@@ -83,10 +102,10 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
     enabled,
   });
 
-  // ── مصدر وحيد: React Query cache ──
-  const data = query.data ?? cachedData ?? [];
-  const isLoading = enabled && query.isLoading && !cachedData;
-  const isSyncing = query.isFetching && !!cachedData;
+  // ── مصدر البيانات: cache → dexie fallback → فارغ ──
+  const data = query.data ?? cachedData ?? dexieFallback ?? [];
+  const isLoading = enabled && query.isLoading && !cachedData && !dexieFallback;
+  const isSyncing = query.isFetching && !!(cachedData ?? dexieFallback);
 
   return {
     data,

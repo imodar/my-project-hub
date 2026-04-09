@@ -7,6 +7,7 @@
 import { db } from "./db";
 import type { Table } from "dexie";
 import { projectPendingChanges } from "./syncQueue";
+import { isConflicting, saveConflict, type RecordWithTimestamp } from "./conflictResolver";
 
 /* ────────────────────────────────────────────
  *  مزامنة جدول واحد
@@ -48,9 +49,19 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
   // Delta sync (since was provided): only upsert new/updated records, don't delete old ones
   // Full sync (no since): replace all — remove stale local records not in API response
   if (lastSyncedAt && data.length >= 0) {
-    // Delta: just upsert returned records
+    // Delta: فحص التعارضات قبل الكتابة
     if (data.length > 0) {
-      await table.bulkPut(data);
+      const toWrite: T[] = [];
+      for (const serverRecord of data as RecordWithTimestamp[]) {
+        const localRecord = (await table.get(serverRecord.id)) as RecordWithTimestamp | undefined;
+        if (localRecord && isConflicting(localRecord, serverRecord, lastSyncedAt)) {
+          // حفظ التعارض وتخطي الكتابة — يبقى الـ local كما هو حتى يختار المستخدم
+          await saveConflict(tableName, localRecord, serverRecord);
+        } else {
+          toWrite.push(serverRecord as T);
+        }
+      }
+      if (toWrite.length > 0) await table.bulkPut(toWrite);
     }
   } else {
     // Full sync: remove stale records then upsert

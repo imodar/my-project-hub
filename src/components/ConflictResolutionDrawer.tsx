@@ -119,6 +119,7 @@ export default function ConflictResolutionDrawer() {
 
     const handler = () => {
       loadConflicts();
+      setOpen(true); // فتح تلقائي عند اكتشاف تعارض جديد
     };
 
     window.addEventListener("data-conflict-detected", handler);
