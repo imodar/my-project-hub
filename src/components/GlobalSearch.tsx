@@ -62,6 +62,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
       found.push({ id, title, subtitle, type, typeLabel: label, icon: cfg.icon, path: cfg.path, color: cfg.color });
     };
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     try {
       const [
         marketLists, marketItems, taskLists, taskItems,
@@ -167,6 +168,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
     } catch (e) {
       console.error("Search error:", e);
     }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     setResults(found.slice(0, 30));
     setLoading(false);
