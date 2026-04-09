@@ -29,6 +29,7 @@ import SOSButton from "@/components/home/SOSButton";
 import RoleGuard from "@/components/RoleGuard";
 import ServiceWorkerUpdatePrompt from "@/components/ServiceWorkerUpdatePrompt";
 import ConflictResolutionDrawer from "@/components/ConflictResolutionDrawer";
+import AppUpdateBanner from "@/components/AppUpdateBanner";
 import { useStorageQuota } from "@/hooks/useStorageQuota";
 
 // ── Retry wrapper for stale chunk recovery ──
@@ -320,6 +321,7 @@ const App = () => (
                 <TooltipProvider>
                   <AppToast />
                   <BrowserRouter>
+                    <AppUpdateBanner />
                     <OfflineBanner />
                     <ServiceWorkerUpdatePrompt />
                     <ConflictResolutionDrawer />

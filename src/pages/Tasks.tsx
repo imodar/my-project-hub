@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useTaskLists } from "@/hooks/useTaskLists";
 import { useTrash } from "@/contexts/TrashContext";
+import { useDraftPersistence } from "@/hooks/useDraftPersistence";
 import FAB from "@/components/FAB";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical } from "lucide-react";
 import SwipeableCard from "@/components/SwipeableCard";
@@ -152,6 +153,17 @@ const Tasks = () => {
   const [newItemPriority, setNewItemPriority] = useState<TaskItem["priority"]>("none");
   const [newItemAssignedTo, setNewItemAssignedTo] = useState("");
 
+  // Draft persistence للنموذج
+  const taskDraft = useDraftPersistence<{
+    name: string; note: string;
+    priority: TaskItem["priority"]; assignedTo: string;
+  }>(`task-add-${activeListId}`);
+
+  // Pagination
+  const PAGE_SIZE = 30;
+  const [visiblePendingCount, setVisiblePendingCount] = useState(PAGE_SIZE);
+  const [visibleDoneCount, setVisibleDoneCount] = useState(PAGE_SIZE);
+
   // New list form
   const [newListName, setNewListName] = useState("");
   const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
@@ -171,12 +183,21 @@ const Tasks = () => {
 
   const activeList = lists.find((l) => l.id === activeListId);
 
+  // إعادة تعيين الصفحات عند تغيير القائمة أو البحث
+  useEffect(() => {
+    setVisiblePendingCount(PAGE_SIZE);
+    setVisibleDoneCount(PAGE_SIZE);
+  }, [activeListId, searchQuery]);
+
   const filteredItems = activeList?.items.filter((item) => {
     return !searchQuery || item.name.includes(searchQuery) || item.note.includes(searchQuery);
   }) || [];
 
   const pendingItems = filteredItems.filter((i) => !i.done);
   const doneItems = filteredItems.filter((i) => i.done);
+
+  const visiblePendingItems = pendingItems.slice(0, visiblePendingCount);
+  const visibleDoneItems = doneItems.slice(0, visibleDoneCount);
 
   const totalItems = activeList?.items.length || 0;
   const completedItems = activeList?.items.filter((i) => i.done).length || 0;
@@ -528,14 +549,31 @@ const Tasks = () => {
 
         {/* Items list */}
         <div className="px-4 pt-4 space-y-2 pb-4">
-          {pendingItems.map((item) => renderItem(item, false))}
+          {visiblePendingItems.map((item) => renderItem(item, false))}
+
+          {pendingItems.length > visiblePendingCount && (
+            <button
+              onClick={() => setVisiblePendingCount((n) => n + PAGE_SIZE)}
+              className="w-full py-2.5 text-xs text-primary font-semibold rounded-xl border border-primary/30 hover:bg-primary/5 transition-colors"
+            >
+              تحميل {Math.min(PAGE_SIZE, pendingItems.length - visiblePendingCount)} مهمة إضافية
+            </button>
+          )}
 
           {doneItems.length > 0 && (
             <div className="pt-3">
               <p className="text-xs text-muted-foreground mb-2 font-medium">✅ مكتملة</p>
               <div className="space-y-2">
-                {doneItems.map((item) => renderItem(item, true))}
+                {visibleDoneItems.map((item) => renderItem(item, true))}
               </div>
+              {doneItems.length > visibleDoneCount && (
+                <button
+                  onClick={() => setVisibleDoneCount((n) => n + PAGE_SIZE)}
+                  className="w-full mt-2 py-2 text-xs text-muted-foreground font-medium rounded-xl border border-border hover:bg-muted/50 transition-colors"
+                >
+                  تحميل {Math.min(PAGE_SIZE, doneItems.length - visibleDoneCount)} مكتملة إضافية
+                </button>
+              )}
             </div>
           )}
 
@@ -548,7 +586,16 @@ const Tasks = () => {
         </div>
         </PullToRefresh>
 
-        <FAB onClick={() => { haptic.medium(); setNewItemName(""); setNewItemNote(""); setNewItemPriority("none"); setNewItemAssignedTo(""); setShowAddItem(true); }} />
+        <FAB onClick={() => {
+          haptic.medium();
+          // تحميل المسودة إن وجدت
+          const draft = taskDraft.loadDraft();
+          setNewItemName(draft?.name ?? "");
+          setNewItemNote(draft?.note ?? "");
+          setNewItemPriority(draft?.priority ?? "none");
+          setNewItemAssignedTo(draft?.assignedTo ?? "");
+          setShowAddItem(true);
+        }} />
 
         {/* List Actions Drawer */}
         <Drawer open={showListActions} onOpenChange={setShowListActions}>
@@ -678,15 +725,18 @@ const Tasks = () => {
         </Drawer>
 
         {/* Add Item Drawer */}
-        <Drawer open={showAddItem} onOpenChange={setShowAddItem}>
+        <Drawer open={showAddItem} onOpenChange={(open) => {
+          if (!open) taskDraft.clearDraft();
+          setShowAddItem(open);
+        }}>
           <DrawerContent dir="rtl">
             <DrawerHeader className="text-right">
               <DrawerTitle>إضافة مهمة جديدة</DrawerTitle>
               <DrawerDescription>أضف مهمة مع الأولوية والتكليف</DrawerDescription>
             </DrawerHeader>
             <div className="space-y-3 px-4">
-              <Input placeholder="اسم المهمة" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} className="rounded-xl" />
-              <Input placeholder="ملاحظة (اختياري)" value={newItemNote} onChange={(e) => setNewItemNote(e.target.value)} className="rounded-xl" />
+              <Input placeholder="اسم المهمة" value={newItemName} onChange={(e) => { setNewItemName(e.target.value); taskDraft.saveDraft({ name: e.target.value, note: newItemNote, priority: newItemPriority, assignedTo: newItemAssignedTo }); }} className="rounded-xl" />
+              <Input placeholder="ملاحظة (اختياري)" value={newItemNote} onChange={(e) => { setNewItemNote(e.target.value); taskDraft.saveDraft({ name: newItemName, note: e.target.value, priority: newItemPriority, assignedTo: newItemAssignedTo }); }} className="rounded-xl" />
               <div>
                 <p className="text-xs text-muted-foreground mb-2">الأولوية</p>
                 <div className="flex gap-2">
@@ -726,8 +776,8 @@ const Tasks = () => {
               )}
             </div>
             <DrawerFooter className="flex-row gap-2">
-              <Button onClick={addItem} className="flex-1 rounded-xl">إضافة</Button>
-              <Button variant="outline" onClick={() => setShowAddItem(false)} className="flex-1 rounded-xl">إلغاء</Button>
+              <Button onClick={() => { taskDraft.clearDraft(); addItem(); }} className="flex-1 rounded-xl">إضافة</Button>
+              <Button variant="outline" onClick={() => { taskDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-xl">إلغاء</Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>

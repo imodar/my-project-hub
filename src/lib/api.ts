@@ -56,6 +56,7 @@ export async function apiClient<T = unknown>(
 
       // 426 = الـ API يطلب تحديث التطبيق
       if (httpStatus === 426) {
+        window.dispatchEvent(new CustomEvent("app-update-required"));
         return { data: null, error: "app_update_required", status: 426 };
       }
 
