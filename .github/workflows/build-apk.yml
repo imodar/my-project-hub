@@ -40,15 +40,14 @@ jobs:
       - name: Fix Kotlin/JVM target for RevenueCat
         run: |
           sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '2.0.21'/" android/build.gradle
-          # Insert compileOptions and kotlinOptions after the compileSdk line
+          # Add compileOptions to app/build.gradle
           sed -i '/compileSdk/a \
               compileOptions {\
                   sourceCompatibility JavaVersion.VERSION_21\
                   targetCompatibility JavaVersion.VERSION_21\
-              }\
-              kotlinOptions {\
-                  jvmTarget = "21"\
               }' android/app/build.gradle
+          # Set Kotlin JVM target via gradle.properties (works with Kotlin 2.0+)
+          echo "kotlin.jvm.target=21" >> android/gradle.properties
 
       - name: Sync web build into Android project
         run: ./node_modules/.bin/cap sync android
