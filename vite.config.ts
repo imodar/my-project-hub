@@ -20,23 +20,35 @@ export default defineConfig(({ mode }) => ({
     // تقليص حجم الـ chunks وتحسين التقسيم
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks(id: string) {
           // فصل المكتبات الثقيلة في chunks منفصلة
-          "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-ui": [
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-select",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-toast",
-          ],
-          "vendor-query": ["@tanstack/react-query"],
-          "vendor-charts": ["recharts"],
-          "vendor-motion": ["framer-motion"],
-          "vendor-maps": ["leaflet", "react-leaflet"],
-          "vendor-pdf": ["jspdf"],
-          "vendor-dexie": ["dexie"],
-          "vendor-sentry": ["@sentry/react"],
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/react-router-dom")) {
+            return "vendor-react";
+          }
+          if (id.includes("node_modules/@radix-ui/")) {
+            return "vendor-ui";
+          }
+          if (id.includes("node_modules/@tanstack/react-query")) {
+            return "vendor-query";
+          }
+          if (id.includes("node_modules/recharts")) {
+            return "vendor-charts";
+          }
+          if (id.includes("node_modules/framer-motion")) {
+            return "vendor-motion";
+          }
+          if (id.includes("node_modules/leaflet") || id.includes("node_modules/react-leaflet")) {
+            return "vendor-maps";
+          }
+          if (id.includes("node_modules/jspdf")) {
+            return "vendor-pdf";
+          }
+          if (id.includes("node_modules/dexie")) {
+            return "vendor-dexie";
+          }
+          if (id.includes("node_modules/@sentry/")) {
+            return "vendor-sentry";
+          }
         },
       },
     },
