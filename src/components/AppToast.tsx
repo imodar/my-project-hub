@@ -27,10 +27,8 @@ const COLOR_MAP: Record<ToastType, string> = {
 const ToastCard = ({ item }: { item: AppToastItem }) => {
   const Icon = ICON_MAP[item.type];
   const bg = COLOR_MAP[item.type];
-  const startY = useRef(0);
-
   const handleDragEnd = useCallback(
-    (_: any, info: PanInfo) => {
+    (_event: React.PointerEvent, info: PanInfo) => {
       if (info.offset.y < -30) {
         appToast.dismiss(item.id);
       }

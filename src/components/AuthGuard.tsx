@@ -34,7 +34,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           if (!cancelled) { setBgFamilyFound(true); setBgFetchDone(true); }
           return;
         }
-      } catch {}
+      } catch { /* silent — IndexedDB may be unavailable */ }
 
       // Try API
       if (navigator.onLine) {
@@ -52,10 +52,10 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
                 user_id: session.user.id,
                 status: "active",
               });
-            } catch {}
+            } catch { /* silent — IndexedDB may be unavailable */ }
             setBgFamilyFound(true);
           }
-        } catch {}
+        } catch { /* silent — IndexedDB may be unavailable */ }
       }
 
       if (!cancelled) setBgFetchDone(true);
