@@ -27,6 +27,8 @@ import { ListPageSkeleton } from "@/components/PageSkeletons";
 import BottomNav from "@/components/home/BottomNavWhatsApp";
 import SOSButton from "@/components/home/SOSButton";
 import RoleGuard from "@/components/RoleGuard";
+import ServiceWorkerUpdatePrompt from "@/components/ServiceWorkerUpdatePrompt";
+import { useStorageQuota } from "@/hooks/useStorageQuota";
 
 // ── Retry wrapper for stale chunk recovery ──
 function lazyRetry(importFn: () => Promise<any>) {
@@ -116,6 +118,22 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+/** تحذير حصة التخزين الحرجة */
+const StorageQuotaGuard = () => {
+  const { isCritical, usagePercent, usageMB, quotaMB } = useStorageQuota(5 * 60_000);
+
+  useEffect(() => {
+    if (isCritical) {
+      appToast.error(
+        "مساحة التخزين شبه ممتلئة",
+        `تم استخدام ${usageMB}MB من ${quotaMB}MB (${usagePercent}%). احذف بعض البيانات القديمة.`
+      );
+    }
+  }, [isCritical, usagePercent, usageMB, quotaMB]);
+
+  return null;
+};
 
 /** Pre-warms React Query cache from IndexedDB on startup + global Realtime */
 const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
@@ -302,6 +320,8 @@ const App = () => (
                   <AppToast />
                   <BrowserRouter>
                     <OfflineBanner />
+                    <ServiceWorkerUpdatePrompt />
+                    <StorageQuotaGuard />
                     <ScrollToTop />
                     <WarmCacheProvider>
                       <Suspense fallback={<div className="min-h-screen bg-background" />}>

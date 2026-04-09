@@ -1,0 +1,43 @@
+/*
+  # Security Headers — تُطبَّق على جميع الصفحات
+  # مناسب لـ Netlify / Cloudflare Pages / Vercel
+
+  # منع تضمين التطبيق في iframe من مواقع أخرى
+  X-Frame-Options: DENY
+
+  # منع MIME type sniffing
+  X-Content-Type-Options: nosniff
+
+  # Referrer Policy
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # منع المتصفح من تخمين نوع المحتوى
+  X-XSS-Protection: 1; mode=block
+
+  # سياسة الأمان للمحتوى (CSP)
+  # TODO: شدّد هذه القيم حسب الـ domains المستخدمة فعلياً
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.aladhan.com https://api.open-meteo.com https://o*.ingest.sentry.io; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+  # Permissions Policy — تقييد الوصول للـ APIs الحساسة
+  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()
+
+  # HTTPS فقط (HSTS)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/manifest.webmanifest
+  Cache-Control: public, max-age=86400
