@@ -31,18 +31,45 @@ const DrawerContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   const contentRef = React.useRef<HTMLDivElement>(null);
 
-  // Fix: when virtual keyboard closes, force the drawer to recalculate its position
   React.useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+
+    // Fix for virtual keyboard on Android (Capacitor WebView):
+    // Two listeners handle both resize modes (adjustResize + adjustPan).
+
+    // Mode 1 — adjustResize: window.innerHeight changes when keyboard opens/closes.
+    const onWindowResize = () => {
+      el.style.maxHeight = `${Math.floor(window.innerHeight * 0.9)}px`;
+    };
+
+    // Mode 2 — adjustPan: window.innerHeight stays fixed, visualViewport shrinks.
     const vv = window.visualViewport;
-    if (!vv) return;
-    const onResize = () => {
-      // Scroll to top to reset any keyboard-induced offset
+    const onViewportChange = vv
+      ? () => {
+          const keyboardHeight = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
+          el.style.bottom = `${keyboardHeight}px`;
+          el.style.maxHeight = `${Math.floor(vv.height * 0.9)}px`;
+        }
+      : null;
+
+    window.addEventListener("resize", onWindowResize, { passive: true });
+    if (vv && onViewportChange) {
+      vv.addEventListener("resize", onViewportChange, { passive: true });
+      vv.addEventListener("scroll", onViewportChange, { passive: true });
+    }
+
+    return () => {
+      window.removeEventListener("resize", onWindowResize);
+      if (vv && onViewportChange) {
+        vv.removeEventListener("resize", onViewportChange);
+        vv.removeEventListener("scroll", onViewportChange);
+      }
       if (contentRef.current) {
-        contentRef.current.style.transform = "";
+        contentRef.current.style.bottom = "";
+        contentRef.current.style.maxHeight = "";
       }
     };
-    vv.addEventListener("resize", onResize);
-    return () => vv.removeEventListener("resize", onResize);
   }, []);
 
   return (
@@ -55,7 +82,7 @@ const DrawerContent = React.forwardRef<
           else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
         }}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[85dvh] flex-col rounded-t-[10px] border bg-background",
+          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[90svh] flex-col rounded-t-[10px] border bg-background",
           className,
         )}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -73,7 +100,7 @@ const DrawerHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("grid gap-1.5 p-4 text-right", className)} {...props} />
+  <div ref={ref} className={cn("grid gap-1.5 p-4 text-right shrink-0", className)} {...props} />
 ));
 DrawerHeader.displayName = "DrawerHeader";
 
@@ -81,7 +108,7 @@ const DrawerFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("mt-auto flex flex-col gap-2 p-4", className)} {...props} />
+  <div ref={ref} className={cn("mt-auto flex flex-col gap-2 p-4 shrink-0", className)} {...props} />
 ));
 DrawerFooter.displayName = "DrawerFooter";
 
