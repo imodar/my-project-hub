@@ -40,7 +40,8 @@ jobs:
       - name: Fix Kotlin/JVM target for RevenueCat
         run: |
           sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '2.0.21'/" android/build.gradle
-          sed -i '/android {/a \
+          # Insert compileOptions and kotlinOptions after the compileSdk line
+          sed -i '/compileSdk/a \
               compileOptions {\
                   sourceCompatibility JavaVersion.VERSION_21\
                   targetCompatibility JavaVersion.VERSION_21\
