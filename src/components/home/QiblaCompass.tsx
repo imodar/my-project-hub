@@ -5,6 +5,13 @@ const KAABA_LAT = 21.4225;
 const KAABA_LNG = 39.8262;
 const toRad = (deg: number) => (deg * Math.PI) / 180;
 
+interface DeviceOrientationEventWithCompass extends DeviceOrientationEvent {
+  webkitCompassHeading?: number;
+}
+type DeviceOrientationEventStatic = typeof DeviceOrientationEvent & {
+  requestPermission?: () => Promise<PermissionState>;
+};
+
 const calculateQiblaAngle = (lat: number, lng: number): number => {
   const phiK = toRad(KAABA_LAT);
   const lambdaK = toRad(KAABA_LNG);
@@ -12,7 +19,7 @@ const calculateQiblaAngle = (lat: number, lng: number): number => {
   const lambda = toRad(lng);
   const num = Math.sin(lambdaK - lambda);
   const den = Math.cos(phi) * Math.tan(phiK) - Math.sin(phi) * Math.cos(lambdaK - lambda);
-  let qibla = (Math.atan2(num, den) * 180) / Math.PI;
+  const qibla = (Math.atan2(num, den) * 180) / Math.PI;
   return (qibla + 360) % 360;
 };
 
@@ -38,7 +45,7 @@ const QiblaCompass = React.forwardRef<HTMLDivElement>((_props, ref) => {
   }, []);
 
   const handleOrientation = useCallback((e: DeviceOrientationEvent) => {
-    const compassHeading = (e as any).webkitCompassHeading ?? (e.alpha != null ? (360 - e.alpha) % 360 : null);
+    const compassHeading = (e as DeviceOrientationEventWithCompass).webkitCompassHeading ?? (e.alpha != null ? (360 - e.alpha) % 360 : null);
     if (compassHeading != null) {
       setHeading(compassHeading);
       setHasPermission(true);
@@ -46,14 +53,15 @@ const QiblaCompass = React.forwardRef<HTMLDivElement>((_props, ref) => {
   }, []);
 
   const requestPermission = useCallback(async () => {
-    if (typeof (DeviceOrientationEvent as any).requestPermission === "function") {
+    const DOE = DeviceOrientationEvent as DeviceOrientationEventStatic;
+    if (typeof DOE.requestPermission === "function") {
       try {
-        const perm = await (DeviceOrientationEvent as any).requestPermission();
+        const perm = await DOE.requestPermission();
         if (perm === "granted") {
           window.addEventListener("deviceorientation", handleOrientation, true);
           setHasPermission(true);
         }
-      } catch {}
+      } catch { /* permission denied */ }
     } else {
       window.addEventListener("deviceorientation", handleOrientation, true);
       setHasPermission(true);
@@ -61,7 +69,7 @@ const QiblaCompass = React.forwardRef<HTMLDivElement>((_props, ref) => {
   }, [handleOrientation]);
 
   useEffect(() => {
-    if (typeof (DeviceOrientationEvent as any).requestPermission !== "function") {
+    if (typeof (DeviceOrientationEvent as DeviceOrientationEventStatic).requestPermission !== "function") {
       window.addEventListener("deviceorientation", handleOrientation, true);
       const timer = setTimeout(() => {
         if (hasPermission === null) setHasPermission(false);

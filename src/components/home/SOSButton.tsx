@@ -45,7 +45,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
     }).then(({ data, error }) => {
       if (!error && data?.data) {
         setFamilyMembers(
-          data.data.map((m: any) => ({ id: m.user_id, name: m.name || "بدون اسم" }))
+          data.data.map((m: { user_id: string; name?: string }) => ({ id: m.user_id, name: m.name || "بدون اسم" }))
         );
       }
     });

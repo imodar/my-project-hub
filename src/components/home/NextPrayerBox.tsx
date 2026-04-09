@@ -95,7 +95,7 @@ const getCachedTimes = (): PrayerTimes | null => {
 const setCachedTimes = (times: PrayerTimes) => {
   try {
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ...times, _cachedAt: new Date().toISOString() }));
-  } catch {}
+  } catch { /* ignore */ }
 };
 
 export const usePrayerTimes = () => {

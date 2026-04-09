@@ -327,7 +327,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             );
             const reverseData = await reverseRes.json();
             cityName = reverseData.address?.city || reverseData.address?.town || reverseData.address?.suburb || reverseData.address?.state || "موقعك";
-          } catch {}
+          } catch { /* ignore reverse geocoding failure */ }
 
           const weatherCode = data.current?.weather_code || 0;
           let description = "صافي";
@@ -348,7 +348,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             lastUpdated: new Date(),
           };
           setWeather(weatherData);
-          try { sessionStorage.setItem("weather_cache", JSON.stringify(weatherData)); } catch {}
+          try { sessionStorage.setItem("weather_cache", JSON.stringify(weatherData)); } catch { /* ignore */ }
         } catch (e) {
           console.error("Weather fetch failed:", e);
         }
