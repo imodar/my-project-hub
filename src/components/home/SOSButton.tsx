@@ -6,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  ShieldAlert, X, Phone, MapPin, Plus, Trash2,
+  X, Phone, MapPin, Plus, Trash2,
   Radio, PhoneCall, MessageSquare, Check, AlertTriangle
 } from "lucide-react";
 import { appToast } from "@/lib/toast";
-import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,11 +23,9 @@ interface EmergencyContact {
 type SOSPhase = "idle" | "holding" | "countdown" | "active";
 
 const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
-  const { user } = useAuth();
   const { familyId } = useFamilyId();
   const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string }[]>([]);
   const [phase, setPhase] = useState<SOSPhase>("idle");
-  const [holdProgress, setHoldProgress] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [activeSeconds, setActiveSeconds] = useState(0);
   const [settingsDrawer, setSettingsDrawer] = useState(false);
@@ -84,87 +81,6 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
     };
   }, []);
 
-  // Hold-to-activate (3 seconds)
-  const startHold = useCallback(() => {
-    if (phase === "active") return;
-    setPhase("holding");
-    setHoldProgress(0);
-    let progress = 0;
-    holdTimer.current = setInterval(() => {
-      progress += 100 / 30;
-      setHoldProgress(Math.min(progress, 100));
-      if (progress >= 100) {
-        if (holdTimer.current) clearInterval(holdTimer.current);
-        startCountdown();
-      }
-    }, 100);
-  }, [phase]);
-
-  const cancelHold = useCallback(() => {
-    if (phase === "holding") {
-      if (holdTimer.current) clearInterval(holdTimer.current);
-      setPhase("idle");
-      setHoldProgress(0);
-    }
-  }, [phase]);
-
-  // Triple-tap activation
-  const handleTap = useCallback(() => {
-    if (phase === "active") {
-      setCancelDrawer(true);
-      return;
-    }
-    if (phase !== "idle") return;
-
-    tapCount.current += 1;
-    if (tapTimer.current) clearTimeout(tapTimer.current);
-
-    if (tapCount.current >= 3) {
-      tapCount.current = 0;
-      startCountdown();
-    } else {
-      tapTimer.current = setTimeout(() => {
-        tapCount.current = 0;
-      }, 600);
-    }
-  }, [phase]);
-
-  // Countdown phase
-  const startCountdown = useCallback(() => {
-    setPhase("countdown");
-    setCountdown(3);
-    let count = 3;
-    countdownTimer.current = setInterval(() => {
-      count -= 1;
-      setCountdown(count);
-      if (count <= 0) {
-        if (countdownTimer.current) clearInterval(countdownTimer.current);
-        activateSOS();
-      }
-    }, 1000);
-  }, []);
-
-  // Listen for nav bar SOS trigger
-  useEffect(() => {
-    const handler = () => {
-      if (phase === "active") {
-        setCancelDrawer(true);
-      } else if (phase === "idle") {
-        startCountdown();
-      }
-    };
-    window.addEventListener("trigger-sos", handler);
-    return () => window.removeEventListener("trigger-sos", handler);
-  }, [phase, startCountdown]);
-
-  const cancelCountdown = useCallback(() => {
-    if (countdownTimer.current) clearInterval(countdownTimer.current);
-    setPhase("idle");
-    setCountdown(3);
-    setHoldProgress(0);
-    appToast.info("تم إلغاء التنبيه");
-  }, []);
-
   // Active SOS — sends real notification to family
   const activateSOS = useCallback(async () => {
     setPhase("active");
@@ -172,7 +88,8 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
     // Alert sound
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const W = window as typeof window & { webkitAudioContext?: typeof AudioContext };
+      const audioCtx = new (W.AudioContext || W.webkitAudioContext!)();
       const playBeep = (freq: number, start: number) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -186,7 +103,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
       playBeep(880, 0);
       playBeep(1100, 0.3);
       playBeep(880, 0.6);
-    } catch {}
+    } catch { /* audio not supported */ }
 
     // Send real SOS alert via notifications-api
     if (familyId) {
@@ -210,11 +127,45 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
     }, 1000);
   }, [familyId]);
 
+  // Countdown phase
+  const startCountdown = useCallback(() => {
+    setPhase("countdown");
+    setCountdown(3);
+    let count = 3;
+    countdownTimer.current = setInterval(() => {
+      count -= 1;
+      setCountdown(count);
+      if (count <= 0) {
+        if (countdownTimer.current) clearInterval(countdownTimer.current);
+        activateSOS();
+      }
+    }, 1000);
+  }, [activateSOS]);
+
+  // Listen for nav bar SOS trigger
+  useEffect(() => {
+    const handler = () => {
+      if (phase === "active") {
+        setCancelDrawer(true);
+      } else if (phase === "idle") {
+        startCountdown();
+      }
+    };
+    window.addEventListener("trigger-sos", handler);
+    return () => window.removeEventListener("trigger-sos", handler);
+  }, [phase, startCountdown]);
+
+  const cancelCountdown = useCallback(() => {
+    if (countdownTimer.current) clearInterval(countdownTimer.current);
+    setPhase("idle");
+    setCountdown(3);
+    appToast.info("تم إلغاء التنبيه");
+  }, []);
+
   const handleCancelSOS = useCallback(async () => {
     if (activeTimer.current) clearInterval(activeTimer.current);
     setPhase("idle");
     setActiveSeconds(0);
-    setHoldProgress(0);
     setCancelDrawer(false);
     const reason = cancelReason.trim() || "بخير";
 
@@ -224,7 +175,7 @@ const SOSButton = React.forwardRef<HTMLDivElement>((_props, ref) => {
         await supabase.functions.invoke("notifications-api", {
           body: { action: "cancel-sos-alert", family_id: familyId },
         });
-      } catch {}
+      } catch { /* non-critical */ }
     }
 
     appToast.success(`تم إلغاء التنبيه — "${reason}"`);

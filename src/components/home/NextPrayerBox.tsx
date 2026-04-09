@@ -98,7 +98,7 @@ const setCachedTimes = (times: PrayerTimes) => {
   } catch { /* ignore */ }
 };
 
-export const usePrayerTimes = () => {
+const usePrayerTimes = () => {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(getCachedTimes);
   const [nextPrayer, setNextPrayer] = useState<NextPrayerInfo | null>(null);
   const [loading, setLoading] = useState(!getCachedTimes());

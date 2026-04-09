@@ -27,7 +27,7 @@ interface MemberSheetProps {
 const SHEET_PEEK = 264;
 const SHEET_EXPANDED = 480;
 
-function timeSince(dateStr: string, t: any): string {
+function timeSince(dateStr: string, t: { map: { now: string; minutesAgo: string; hoursAgo: string; daysAgo: string } }): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return t.map.now;
@@ -44,7 +44,7 @@ export default function MemberSheet({ locations, selectedMemberId, onMemberSelec
 
   const ROLE_LABELS = t.roles as Record<string, string>;
 
-  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+  const handleDragEnd = useCallback((_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.y < -50) {
       animate(sheetY, maxDrag, { type: "spring", damping: 30, stiffness: 300 });
       setIsExpanded(true);
