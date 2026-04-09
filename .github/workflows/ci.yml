@@ -89,6 +89,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
 
     steps:
       - name: Checkout code
@@ -157,7 +158,7 @@ jobs:
 
       # ── بناء Release AAB (إذا توفر keystore) ──
       - name: Build Release AAB
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: env.HAS_KEYSTORE == 'true'
         run: cd android && ./gradlew bundleRelease --no-daemon
         env:
           ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -173,7 +174,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Release AAB
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: env.HAS_KEYSTORE == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: family-app-release
