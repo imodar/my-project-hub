@@ -37,6 +37,18 @@ jobs:
       - name: Add Android platform
         run: ./node_modules/.bin/cap add android
 
+      - name: Fix Kotlin/JVM target for RevenueCat
+        run: |
+          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '2.0.21'/" android/build.gradle
+          sed -i '/android {/a \
+              compileOptions {\
+                  sourceCompatibility JavaVersion.VERSION_21\
+                  targetCompatibility JavaVersion.VERSION_21\
+              }\
+              kotlinOptions {\
+                  jvmTarget = "21"\
+              }' android/app/build.gradle
+
       - name: Sync web build into Android project
         run: ./node_modules/.bin/cap sync android
 
