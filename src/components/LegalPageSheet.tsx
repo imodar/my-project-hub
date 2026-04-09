@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ar as arLocale } from "date-fns/locale";
+import type { Tables } from "@/integrations/supabase/types";
 
 interface LegalPageSheetProps {
   open: boolean;
@@ -15,14 +16,14 @@ interface LegalPageSheetProps {
 
 export default function LegalPageSheet({ open, onOpenChange, slug }: LegalPageSheetProps) {
   const { language, dir, isRTL } = useLanguage();
-  const [page, setPage] = useState<any>(null);
+  const [page, setPage] = useState<Tables<"legal_pages"> | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
     supabase
-      .from("legal_pages" as any)
+      .from("legal_pages")
       .select("*")
       .eq("slug", slug)
       .maybeSingle()

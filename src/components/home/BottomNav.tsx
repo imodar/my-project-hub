@@ -101,12 +101,14 @@ const SOSNavButton = React.forwardRef<HTMLButtonElement, { label: string }>(({ l
 });
 SOSNavButton.displayName = "SOSNavButton";
 
-const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
+interface NavItem { icon: React.ElementType; label: string; path: string; isSOS?: boolean }
+
+const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { icon: Home, label: t.nav.home, path: "/" },
     { icon: Map, label: t.nav.map, path: "/map" },
     { icon: ShieldAlert, label: t.nav.emergency, path: "", isSOS: true },
@@ -122,7 +124,7 @@ const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-around px-4 py-2 mx-4 mb-3 rounded-2xl bg-background/92 backdrop-blur-xl border border-border shadow-lg">
           {navItems.map((item) => {
-            if ((item as any).isSOS) {
+            if (item.isSOS) {
               return <SOSNavButton key={item.label} label={item.label} />;
             }
 
@@ -161,7 +163,7 @@ const BottomNav = React.forwardRef<HTMLDivElement>((_props, _ref) => {
       </div>
     </div>
   );
-});
+};
 BottomNav.displayName = "BottomNav";
 
 export default BottomNav;

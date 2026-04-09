@@ -1,7 +1,7 @@
-import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, Play, Search } from "lucide-react";
+import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, Search } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import QiblaCompass from "./QiblaCompass";
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +21,7 @@ interface WeatherData {
   lastUpdated: Date;
 }
 
-const getGreeting = (hour: number, t: any) => {
+const getGreeting = (hour: number, t: { hero: { goodMorning: string; goodEvening: string } }) => {
   if (hour >= 5 && hour < 18) return t.hero.goodMorning;
   return t.hero.goodEvening;
 };
@@ -297,11 +297,6 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
     return () => clearInterval(timer);
   }, [demoActive]);
 
-  const startDemo = useCallback(() => {
-    setDemoIndex(0);
-    setDemoActive(true);
-  }, []);
-
   useEffect(() => {
     try {
       const cached = sessionStorage.getItem("weather_cache");
@@ -313,7 +308,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           return;
         }
       }
-    } catch {}
+    } catch { /* ignore cached parse error */ }
 
     navigator.geolocation?.getCurrentPosition(
       async (pos) => {
