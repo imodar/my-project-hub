@@ -90,6 +90,8 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
       - name: Checkout code
@@ -100,6 +102,18 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Install Android SDK components
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | $SDKMANAGER --licenses 2>/dev/null || true
+          $SDKMANAGER "platforms;android-35" "build-tools;35.0.0" "platform-tools" 2>/dev/null || true
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
@@ -112,12 +126,6 @@ jobs:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_APP_VERSION: ${{ github.ref_name }}-${{ github.sha }}
 
-      - name: Setup Java 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: "21"
-          distribution: "temurin"
-
       - name: Add Android platform
         run: ./node_modules/.bin/cap add android
 
@@ -127,6 +135,10 @@ jobs:
           from pathlib import Path
 
           rc_gradle = Path("node_modules/@revenuecat/purchases-capacitor/android/build.gradle")
+          if not rc_gradle.exists():
+              print("RevenueCat gradle not found, skipping")
+              raise SystemExit(0)
+
           text = rc_gradle.read_text()
           old = (
               "    compileOptions {\n"
@@ -143,15 +155,15 @@ jobs:
               "        jvmTarget = '17'\n"
               "    }\n"
               "}")
-          if old in text:
+          if old not in text:
+              print("Warning: RevenueCat pattern not found, skipping")
+          else:
               rc_gradle.write_text(text.replace(old, new, 1))
+              print("RevenueCat Kotlin fix applied")
           PY
 
       - name: Sync web build into Android project
         run: ./node_modules/.bin/cap sync android
-
-      - name: Accept Android SDK licenses
-        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Make Gradle wrapper executable
         run: chmod +x android/gradlew
