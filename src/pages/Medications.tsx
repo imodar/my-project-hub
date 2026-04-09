@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import EmptyState from "@/components/EmptyState";
 import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useMedications } from "@/hooks/useMedications";
@@ -317,16 +318,12 @@ const Medications = () => {
       {/* Medications List */}
       <div className="px-5 mt-6 space-y-3">
         {activeMedications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <Pill className="w-10 h-10 text-primary" />
-            </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">لا يوجد أدوية</h3>
-            <p className="text-sm text-muted-foreground mb-6">أضف دواء لمتابعة مواعيده وتلقي التذكيرات</p>
-            <Button onClick={openAddDrawer} className="gap-2">
-              <Plus className="w-4 h-4" />إضافة دواء
-            </Button>
-          </div>
+          <EmptyState
+            icon={Pill}
+            title="لا يوجد أدوية"
+            description="أضف دواء لمتابعة مواعيده وتلقي التذكيرات"
+            action={{ label: "إضافة دواء", onClick: openAddDrawer }}
+          />
         ) : (
           activeMedications.map((med) => {
             const isDue = isMedicationDue(med);

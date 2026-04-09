@@ -8,6 +8,7 @@ import { appToast } from "@/lib/toast";
 import { useDraftPersistence } from "@/hooks/useDraftPersistence";
 import FAB from "@/components/FAB";
 import SwipeableCard from "@/components/SwipeableCard";
+import EmptyState from "@/components/EmptyState";
 import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -596,10 +597,11 @@ const Market = () => {
         )}
 
         {filteredItems.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <ShoppingCart size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">لا توجد أغراض</p>
-          </div>
+          <EmptyState
+            icon={ShoppingCart}
+            title="لا توجد أغراض"
+            description="اضغط + في الأسفل لإضافة أول غرض"
+          />
         )}
       </div>
       </>

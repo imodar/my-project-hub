@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import FAB from "@/components/FAB";
+import EmptyState from "@/components/EmptyState";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -263,18 +264,12 @@ const Albums = () => {
         )}
 
         {selectedAlbum.photos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-8">
-            <div
-              className="w-20 h-20 rounded-3xl flex items-center justify-center mb-4"
-              style={{ background: "hsl(var(--muted))" }}
-            >
-              <Image size={32} className="text-muted-foreground" />
-            </div>
-            <p className="text-muted-foreground text-sm font-bold mb-1">لا توجد صور</p>
-            <p className="text-muted-foreground/60 text-xs text-center">
-              أضف صوراً لهذا الألبوم
-            </p>
-          </div>
+          <EmptyState
+            icon={Image}
+            title="لا توجد صور"
+            description="أضف صوراً لهذا الألبوم"
+            action={{ label: "إضافة صورة", onClick: handleAddPhoto }}
+          />
         ) : (
           <div className="px-4 mt-5 space-y-6">
             {grouped.map(([date, photos]) => (
@@ -326,18 +321,12 @@ const Albums = () => {
               visibleAlbums = visibleAlbums.filter((a) => !a.linkedTripId);
             }
             return visibleAlbums.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 px-8">
-              <div
-                className="w-20 h-20 rounded-3xl flex items-center justify-center mb-4"
-                style={{ background: "hsl(var(--muted))" }}
-              >
-                <Image size={32} className="text-muted-foreground" />
-              </div>
-              <p className="text-muted-foreground text-sm font-bold mb-1">لا توجد ألبومات</p>
-              <p className="text-muted-foreground/60 text-xs text-center">
-                أنشئ ألبوماً جديداً لحفظ ذكريات عائلتك
-              </p>
-            </div>
+            <EmptyState
+              icon={Image}
+              title="لا توجد ألبومات"
+              description="أنشئ ألبوماً لحفظ ذكريات عائلتك"
+              action={{ label: "ألبوم جديد", onClick: () => setShowCreate(true) }}
+            />
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {visibleAlbums.map((album, i) => (

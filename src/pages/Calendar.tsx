@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useMemo } from "react";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import FAB from "@/components/FAB";
 import PullToRefresh from "@/components/PullToRefresh";
+import EmptyState from "@/components/EmptyState";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
@@ -332,7 +333,12 @@ const CalendarPage = () => {
 
         <div className="space-y-3">
           {allUpcoming.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-8">لا توجد مناسبات قادمة</p>
+            <EmptyState
+              icon={CalendarIcon}
+              title="لا توجد مناسبات قادمة"
+              description="أضف مناسبة لتبقى على اطلاع دائم"
+              action={{ label: "إضافة مناسبة", onClick: () => { setSelectedDay(todayStr); setShowAddDialog(true); } }}
+            />
           )}
 
           {allUpcoming.map((ev) => {

@@ -5,6 +5,7 @@ import { useTaskLists } from "@/hooks/useTaskLists";
 import { useTrash } from "@/contexts/TrashContext";
 import { useDraftPersistence } from "@/hooks/useDraftPersistence";
 import FAB from "@/components/FAB";
+import EmptyState from "@/components/EmptyState";
 import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical } from "lucide-react";
 import SwipeableCard from "@/components/SwipeableCard";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -578,10 +579,11 @@ const Tasks = () => {
           )}
 
           {filteredItems.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <ListChecks size={40} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">لا توجد مهام</p>
-            </div>
+            <EmptyState
+              icon={ListChecks}
+              title="لا توجد مهام"
+              description="اضغط + في الأسفل لإضافة أول مهمة"
+            />
           )}
         </div>
         </PullToRefresh>

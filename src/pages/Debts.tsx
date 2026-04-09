@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import FAB from "@/components/FAB";
+import EmptyState from "@/components/EmptyState";
 import { Plus, Check, Clock, AlertTriangle, CreditCard, ChevronDown, ChevronUp, X, Coins, Trash2, Pencil, CircleCheckBig, HandCoins, CalendarClock, Bell, BellOff, History } from "lucide-react";
 import { CardContentSkeleton } from "@/components/PageSkeletons";
 import { useNavigate } from "react-router-dom";
@@ -636,10 +637,12 @@ const Debts = () => {
         })}
 
         {activeDebts.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <CreditCard size={48} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">لا توجد ديون حالياً</p>
-          </div>
+          <EmptyState
+            icon={CreditCard}
+            title="لا توجد ديون حالياً"
+            description="سجّل الديون لتتابعها وتتذكر مواعيد السداد"
+            action={{ label: "إضافة دين", onClick: () => setShowAddForm(true) }}
+          />
         )}
 
         {archivedDebts.length > 0 && (

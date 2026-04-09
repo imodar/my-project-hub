@@ -4,6 +4,7 @@ import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { usePlaceLists } from "@/hooks/usePlaceLists";
 import FAB from "@/components/FAB";
+import EmptyState from "@/components/EmptyState";
 import { Plus, MapPin, Users, Lock, Share2, Trash2, MoreVertical, Pencil, Check, Star, RotateCcw, SlidersHorizontal, Baby, DollarSign, Phone, Link2, ExternalLink } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import PageHeader from "@/components/PageHeader";
@@ -504,10 +505,11 @@ const Places = () => {
           )}
 
           {filteredPlaces.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <MapPin size={40} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">لا توجد أماكن</p>
-            </div>
+            <EmptyState
+              icon={MapPin}
+              title="لا توجد أماكن"
+              description="اضغط + في الأسفل لإضافة مكان"
+            />
           )}
         </div>
 

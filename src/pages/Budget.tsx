@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import FAB from "@/components/FAB";
 import SwipeableCard from "@/components/SwipeableCard";
+import EmptyState from "@/components/EmptyState";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { Plus, Trash2, Wallet, TrendingDown, TrendingUp, DollarSign, CalendarDays, FolderOpen, Users, Check, Pencil, Plane, CalendarIcon } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -549,11 +550,13 @@ const Budget = () => {
       <PullToRefresh onRefresh={onRefresh}>
         <div className="px-4 mt-4 space-y-3">
           {budgets.length === 0 ? (
-            <div className="rounded-2xl bg-card border border-border p-12 text-center mt-8">
-              <Wallet size={48} className="mx-auto mb-3 text-muted-foreground/30" />
-              <p className="text-base font-semibold text-foreground">لا توجد ميزانيات</p>
-              <p className="text-sm text-muted-foreground mt-1">اضغط + لإضافة ميزانية جديدة</p>
-            </div>
+            <EmptyState
+              icon={Wallet}
+              title="لا توجد ميزانيات"
+              description="أنشئ ميزانية لتتابع مصاريف عائلتك"
+              action={{ label: "إضافة ميزانية", onClick: () => setShowAddMonth(true) }}
+              className="mt-4"
+            />
           ) : (
             <>
               {/* Trip Budgets */}

@@ -6,6 +6,7 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDocumentLists } from "@/hooks/useDocumentLists";
 import FAB from "@/components/FAB";
 import SwipeableCard from "@/components/SwipeableCard";
+import EmptyState from "@/components/EmptyState";
 import {
   Plus, Search, FolderLock, Users, Lock, Share2, Trash2, Pencil,
   MoreVertical, Check, FileText, Image, File, Bell, Calendar,
@@ -497,10 +498,11 @@ const Documents = () => {
           {filteredItems.map((item) => renderItem(item))}
 
           {filteredItems.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <FolderLock size={40} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">لا توجد وثائق</p>
-            </div>
+            <EmptyState
+              icon={FolderLock}
+              title="لا توجد وثائق"
+              description="اضغط + في الأسفل لإضافة وثيقة"
+            />
           )}
         </div>
 
