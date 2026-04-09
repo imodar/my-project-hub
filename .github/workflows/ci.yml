@@ -150,6 +150,9 @@ jobs:
       - name: Sync web build into Android project
         run: ./node_modules/.bin/cap sync android
 
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       - name: Make Gradle wrapper executable
         run: chmod +x android/gradlew
 
