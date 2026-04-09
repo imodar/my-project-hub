@@ -44,19 +44,21 @@ jobs:
 
           rc_gradle = Path("node_modules/@revenuecat/purchases-capacitor/android/build.gradle")
           text = rc_gradle.read_text()
-          old = """    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-}"""
-          new = """    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = '17'
-    }
-}"""
+          old = (
+              "    compileOptions {\n"
+              "        sourceCompatibility JavaVersion.VERSION_17\n"
+              "        targetCompatibility JavaVersion.VERSION_17\n"
+              "    }\n"
+              "}")
+          new = (
+              "    compileOptions {\n"
+              "        sourceCompatibility JavaVersion.VERSION_17\n"
+              "        targetCompatibility JavaVersion.VERSION_17\n"
+              "    }\n"
+              "    kotlinOptions {\n"
+              "        jvmTarget = '17'\n"
+              "    }\n"
+              "}")
 
           if old not in text:
               raise SystemExit("Expected RevenueCat Android compileOptions block not found")
