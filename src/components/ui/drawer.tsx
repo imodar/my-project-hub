@@ -31,18 +31,26 @@ const DrawerContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   const contentRef = React.useRef<HTMLDivElement>(null);
 
-  // Fix: when virtual keyboard closes, force the drawer to recalculate its position
+  // Fix: when virtual keyboard opens/closes, keep the drawer fully visible
   React.useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
+
     const onResize = () => {
-      // Scroll to top to reset any keyboard-induced offset
-      if (contentRef.current) {
-        contentRef.current.style.transform = "";
-      }
+      if (!contentRef.current) return;
+      // Reset any transform vaul applied during drag or keyboard interaction
+      contentRef.current.style.transform = "";
+      // How much of the bottom is covered (keyboard height)
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      contentRef.current.style.bottom = `${keyboardHeight}px`;
     };
+
     vv.addEventListener("resize", onResize);
-    return () => vv.removeEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    return () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onResize);
+    };
   }, []);
 
   return (
