@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Search, ArrowRight, ShoppingCart, CheckSquare, Calendar, CreditCard, Plane, FileText, MapPin, Pill, Car, MessageCircle, Image, Users } from "lucide-react";
+import { Search, ArrowRight, ShoppingCart, CheckSquare, Calendar, CreditCard, Plane, FileText, MapPin, Pill, Car, Image, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppNavigate } from "@/hooks/useAppNavigate";
@@ -63,25 +63,10 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
     };
 
     try {
-      // Debug: log table counts
-      const counts = await Promise.all([
-        db.market_lists.count(),
-        db.market_items.count(),
-        db.task_lists.count(),
-        db.task_items.count(),
-        db.calendar_events.count(),
-        db.debts.count(),
-      ]);
-      console.log("[GlobalSearch] Table counts:", {
-        market_lists: counts[0], market_items: counts[1],
-        task_lists: counts[2], task_items: counts[3],
-        calendar_events: counts[4], debts: counts[5],
-      });
-
       const [
         marketLists, marketItems, taskLists, taskItems,
         events, budgets, debts, trips,
-        docLists, docItems, placeLists, places,
+        docLists, docItems, places,
         medications, vehicles, albums, members, profiles
       ] = await Promise.all([
         db.market_lists.toArray(),
@@ -94,7 +79,6 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
         db.trips.toArray(),
         db.document_lists.toArray(),
         db.document_items.toArray(),
-        db.place_lists.toArray(),
         db.places.toArray(),
         db.medications.toArray(),
         db.vehicles.toArray(),

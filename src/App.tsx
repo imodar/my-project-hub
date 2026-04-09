@@ -178,6 +178,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: re-run only when user identity changes, not on every user object re-render
   }, [user?.id]);
 
   useEffect(() => {
@@ -215,6 +216,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- cacheReady intentionally omitted (would cause loop); user.id used as proxy for user identity
   }, [user?.id, familyId, familyLoading, initialSyncDone, qc]);
 
   // Listen for sync queue failures and notify user
