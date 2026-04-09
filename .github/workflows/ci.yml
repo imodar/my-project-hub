@@ -157,7 +157,7 @@ jobs:
 
       # ── بناء Release AAB (إذا توفر keystore) ──
       - name: Build Release AAB
-        if: secrets.ANDROID_KEYSTORE_BASE64 != ''
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         run: cd android && ./gradlew bundleRelease --no-daemon
         env:
           ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -173,7 +173,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Release AAB
-        if: secrets.ANDROID_KEYSTORE_BASE64 != ''
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: family-app-release
