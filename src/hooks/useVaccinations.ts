@@ -139,6 +139,19 @@ export function useVaccinations() {
     queryKey: key, onSuccess: () => refetch(),
   });
 
+  const removeChild = useOfflineMutation<any, any>({
+    table: "vaccinations", operation: "DELETE",
+    apiFn: async (input) => {
+      const local = await db.vaccinations.get(input.id);
+      if (!local?.is_shared) return { data: null, error: null };
+      const { data: response, error } = await supabase.functions.invoke("health-api", {
+        body: { action: "delete-child", id: input.id },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
+    },
+    queryKey: key, onSuccess: () => refetch(),
+  });
+
   // تبديل حالة مشاركة سجل الطفل
   const setSharing = useOfflineMutation<any, any>({
     table: "vaccinations", operation: "UPDATE",
@@ -217,6 +230,10 @@ export function useVaccinations() {
         });
         saveVaccineNote.mutate({ id: input.childId, ...input });
       },
+    },
+    removeChild: (childId: string) => {
+      qc.setQueryData<any[]>(key, (old) => old?.filter((c: any) => c.id !== childId) ?? old);
+      removeChild.mutate({ id: childId });
     },
     /** تفعيل/إلغاء مشاركة سجل لقاحات طفل مع العائلة */
     setSharing: {

@@ -35,40 +35,17 @@ const DrawerContent = React.forwardRef<
     const el = contentRef.current;
     if (!el) return;
 
-    // Fix for virtual keyboard on Android (Capacitor WebView):
-    // Two listeners handle both resize modes (adjustResize + adjustPan).
-
-    // Mode 1 — adjustResize: window.innerHeight changes when keyboard opens/closes.
+    // With windowSoftInputMode="adjustResize" (capacitor.config.ts),
+    // window.innerHeight shrinks when the keyboard opens, so we only need
+    // to update maxHeight. We never touch `bottom` — Vaul controls that.
     const onWindowResize = () => {
       el.style.maxHeight = `${Math.floor(window.innerHeight * 0.9)}px`;
     };
 
-    // Mode 2 — adjustPan: window.innerHeight stays fixed, visualViewport shrinks.
-    const vv = window.visualViewport;
-    const onViewportChange = vv
-      ? () => {
-          const keyboardHeight = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
-          el.style.bottom = `${keyboardHeight}px`;
-          el.style.maxHeight = `${Math.floor(vv.height * 0.9)}px`;
-        }
-      : null;
-
     window.addEventListener("resize", onWindowResize, { passive: true });
-    if (vv && onViewportChange) {
-      vv.addEventListener("resize", onViewportChange, { passive: true });
-      vv.addEventListener("scroll", onViewportChange, { passive: true });
-    }
-
     return () => {
       window.removeEventListener("resize", onWindowResize);
-      if (vv && onViewportChange) {
-        vv.removeEventListener("resize", onViewportChange);
-        vv.removeEventListener("scroll", onViewportChange);
-      }
-      if (contentRef.current) {
-        contentRef.current.style.bottom = "";
-        contentRef.current.style.maxHeight = "";
-      }
+      if (contentRef.current) contentRef.current.style.maxHeight = "";
     };
   }, []);
 
@@ -82,7 +59,7 @@ const DrawerContent = React.forwardRef<
           else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
         }}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[90svh] flex-col rounded-t-[10px] border bg-background",
+          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[90dvh] flex-col rounded-t-[10px] border bg-background",
           className,
         )}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}

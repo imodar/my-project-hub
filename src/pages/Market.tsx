@@ -751,7 +751,7 @@ const Market = () => {
             <DrawerTitle>إضافة منتج جديد</DrawerTitle>
             <DrawerDescription>أضف المنتج مع التصنيف والكمية</DrawerDescription>
           </DrawerHeader>
-          <div className="space-y-3 px-4">
+          <div className="flex-1 overflow-y-auto space-y-3 px-4">
             <Input placeholder="اسم المنتج" value={newItemName} onChange={(e) => { setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }} className="rounded-xl" />
             <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }} className="rounded-xl" />
             {activeList?.useCategories && (

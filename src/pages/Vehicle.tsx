@@ -45,53 +45,53 @@ interface CarData {
   createdAt: string;
 }
 
-// ─── Car Logos (SVG URLs) ───
+// ─── Car Logos (local SVG assets) ───
 const CAR_LOGOS: Record<string, string> = {
-  toyota: "https://www.carlogos.org/car-logos/toyota-logo-2020-europe.png",
-  honda: "https://www.carlogos.org/car-logos/honda-logo-2000.png",
-  nissan: "https://www.carlogos.org/car-logos/nissan-logo-2020.png",
-  hyundai: "https://www.carlogos.org/car-logos/hyundai-logo-2011.png",
-  kia: "https://www.carlogos.org/car-logos/kia-logo-2021.png",
-  bmw: "https://www.carlogos.org/car-logos/bmw-logo-2020.png",
-  mercedes: "https://www.carlogos.org/car-logos/mercedes-benz-logo-2011.png",
-  audi: "https://www.carlogos.org/car-logos/audi-logo-2016.png",
-  lexus: "https://www.carlogos.org/car-logos/lexus-logo-2013.png",
-  ford: "https://www.carlogos.org/car-logos/ford-logo-2017.png",
-  chevrolet: "https://www.carlogos.org/car-logos/chevrolet-logo-2013.png",
-  volkswagen: "https://www.carlogos.org/car-logos/volkswagen-logo-2019.png",
-  mazda: "https://www.carlogos.org/car-logos/mazda-logo-2018.png",
-  subaru: "https://www.carlogos.org/car-logos/subaru-logo-2019.png",
-  porsche: "https://www.carlogos.org/car-logos/porsche-logo-2014.png",
-  landrover: "https://www.carlogos.org/car-logos/land-rover-logo-2020.png",
-  jeep: "https://www.carlogos.org/car-logos/jeep-logo-2017.png",
-  gmc: "https://www.carlogos.org/car-logos/gmc-logo-2014.png",
-  dodge: "https://www.carlogos.org/car-logos/dodge-logo-2010.png",
-  mitsubishi: "https://www.carlogos.org/car-logos/mitsubishi-logo-2020.png",
-  infiniti: "https://www.carlogos.org/car-logos/infiniti-logo-2020.png",
-  acura: "https://www.carlogos.org/car-logos/acura-logo-2020.png",
-  volvo: "https://www.carlogos.org/car-logos/volvo-logo-2014.png",
-  jaguar: "https://www.carlogos.org/car-logos/jaguar-logo-2012.png",
-  maserati: "https://www.carlogos.org/car-logos/maserati-logo-2020.png",
-  bentley: "https://www.carlogos.org/car-logos/bentley-logo-2002.png",
-  rollsroyce: "https://www.carlogos.org/car-logos/rolls-royce-logo-2020.png",
-  ferrari: "https://www.carlogos.org/car-logos/ferrari-logo-2002.png",
-  lamborghini: "https://www.carlogos.org/car-logos/lamborghini-logo-1998.png",
-  tesla: "https://www.carlogos.org/car-logos/tesla-logo-2007.png",
-  genesis: "https://www.carlogos.org/car-logos/genesis-logo-2015.png",
-  cadillac: "https://www.carlogos.org/car-logos/cadillac-logo-2014.png",
-  lincoln: "https://www.carlogos.org/car-logos/lincoln-logo-2019.png",
-  peugeot: "https://www.carlogos.org/car-logos/peugeot-logo-2010.png",
-  renault: "https://www.carlogos.org/car-logos/renault-logo-2021.png",
-  fiat: "https://www.carlogos.org/car-logos/fiat-logo-2006.png",
-  suzuki: "https://www.carlogos.org/car-logos/suzuki-logo-2019.png",
-  isuzu: "https://www.carlogos.org/car-logos/isuzu-logo-2022.png",
-  chery: "https://www.carlogos.org/car-logos/chery-logo-2013.png",
-  geely: "https://www.carlogos.org/car-logos/geely-logo-2019.png",
-  haval: "https://www.carlogos.org/car-logos/haval-logo-2020.png",
-  mg: "https://www.carlogos.org/car-logos/mg-logo-2021.png",
-  gac: "https://www.carlogos.org/car-logos/gac-logo-2020.png",
-  changan: "https://www.carlogos.org/car-logos/changan-logo-2020.png",
-  byd: "https://www.carlogos.org/car-logos/byd-logo-2021.png",
+  toyota:      "/car-logos/toyota.svg",
+  honda:       "/car-logos/honda.svg",
+  nissan:      "/car-logos/nissan.svg",
+  hyundai:     "/car-logos/hyundai.svg",
+  kia:         "/car-logos/kia.svg",
+  bmw:         "/car-logos/bmw.svg",
+  mercedes:    "/car-logos/mercedes.svg",
+  audi:        "/car-logos/audi.svg",
+  lexus:       "/car-logos/lexus.svg",
+  ford:        "/car-logos/ford.svg",
+  chevrolet:   "/car-logos/chevrolet.svg",
+  volkswagen:  "/car-logos/volkswagen.svg",
+  mazda:       "/car-logos/mazda.svg",
+  subaru:      "/car-logos/subaru.svg",
+  porsche:     "/car-logos/porsche.svg",
+  landrover:   "/car-logos/landrover.svg",
+  jeep:        "/car-logos/jeep.svg",
+  gmc:         "/car-logos/gmc.svg",
+  dodge:       "/car-logos/dodge.svg",
+  mitsubishi:  "/car-logos/mitsubishi.svg",
+  infiniti:    "/car-logos/infiniti.svg",
+  acura:       "/car-logos/acura.svg",
+  volvo:       "/car-logos/volvo.svg",
+  jaguar:      "/car-logos/jaguar.svg",
+  maserati:    "/car-logos/maserati.svg",
+  bentley:     "/car-logos/bentley.svg",
+  rollsroyce:  "/car-logos/rollsroyce.svg",
+  ferrari:     "/car-logos/ferrari.svg",
+  lamborghini: "/car-logos/lamborghini.svg",
+  tesla:       "/car-logos/tesla.svg",
+  genesis:     "/car-logos/genesis.svg",
+  cadillac:    "/car-logos/cadillac.svg",
+  lincoln:     "/car-logos/lincoln.svg",
+  peugeot:     "/car-logos/peugeot.svg",
+  renault:     "/car-logos/renault.svg",
+  fiat:        "/car-logos/fiat.svg",
+  suzuki:      "/car-logos/suzuki.svg",
+  isuzu:       "/car-logos/isuzu.svg",
+  chery:       "/car-logos/chery.svg",
+  geely:       "/car-logos/geely.svg",
+  haval:       "/car-logos/haval.svg",
+  mg:          "/car-logos/mg.svg",
+  gac:         "/car-logos/gac.svg",
+  changan:     "/car-logos/changan.svg",
+  byd:         "/car-logos/byd.svg",
 };
 
 // ─── Constants ───
@@ -611,7 +611,7 @@ const Vehicle = () => {
             <DrawerHeader>
               <DrawerTitle>{editMaintenanceRecord ? "تعديل سجل الصيانة" : "إضافة سجل صيانة"}</DrawerTitle>
             </DrawerHeader>
-            <div className="px-4 pb-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="px-4 pb-4 space-y-4 flex-1 overflow-y-auto">
               <div className="space-y-2">
                 <Label className="text-right block">نوع الصيانة</Label>
                 <div className="grid grid-cols-3 gap-2">
@@ -833,7 +833,7 @@ const Vehicle = () => {
             <DrawerHeader>
               <DrawerTitle>إضافة مركبة جديدة</DrawerTitle>
             </DrawerHeader>
-            <div className="px-4 pb-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="px-4 pb-4 space-y-4 flex-1 overflow-y-auto">
               {/* Manufacturer with search */}
               <div className="space-y-2">
                 <Label className="text-right block">الشركة المصنعة *</Label>
@@ -967,7 +967,7 @@ const Vehicle = () => {
             <DrawerHeader>
               <DrawerTitle>تعديل المركبة</DrawerTitle>
             </DrawerHeader>
-            <div className="px-4 pb-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="px-4 pb-4 space-y-4 flex-1 overflow-y-auto">
               {/* Manufacturer with search */}
               <div className="space-y-2">
                 <Label className="text-right block">الشركة المصنعة *</Label>

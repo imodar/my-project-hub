@@ -1,0 +1,5 @@
+<svg viewBox="0 0 140 80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="140" height="80" fill="white"/>
+  <ellipse cx="70" cy="40" rx="65" ry="35" fill="#003478"/>
+  <text x="70" y="53" text-anchor="middle" font-family="Ford Oval,Georgia,serif" font-size="34" font-style="italic" font-weight="bold" fill="white">Ford</text>
+</svg>

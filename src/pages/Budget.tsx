@@ -379,7 +379,7 @@ const Budget = () => {
               <DrawerTitle>إضافة بند مصروف</DrawerTitle>
               <DrawerDescription>أضف بند جديد سيتم خصمه من الميزانية</DrawerDescription>
             </DrawerHeader>
-            <div className="px-4 space-y-3">
+            <div className="flex-1 overflow-y-auto px-4 space-y-3">
               <Input
                 placeholder="اسم البند (مثال: إيجار، فواتير...)"
                 value={expenseName}
@@ -422,10 +422,11 @@ const Budget = () => {
                 </Popover>
               </div>
             </div>
-            <DrawerFooter>
-              <Button onClick={handleAddExpense} disabled={!expenseName.trim() || !expenseAmount}>
+            <DrawerFooter className="flex-row gap-2">
+              <Button onClick={handleAddExpense} disabled={!expenseName.trim() || !expenseAmount} className="flex-1">
                 إضافة
               </Button>
+              <Button variant="outline" onClick={() => setShowAddExpense(false)} className="flex-1">إلغاء</Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
@@ -647,7 +648,7 @@ const Budget = () => {
             <DrawerTitle>إضافة ميزانية جديدة</DrawerTitle>
             <DrawerDescription>اختر نوع الميزانية وحدد المبلغ الوارد</DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 space-y-4">
+          <div className="flex-1 overflow-y-auto px-4 space-y-4">
             {/* Type Selection */}
             <div className="flex gap-2">
               <button
@@ -761,13 +762,15 @@ const Budget = () => {
             </div>
             )}
           </div>
-          <DrawerFooter>
+          <DrawerFooter className="flex-row gap-2">
             <Button
               onClick={handleAddBudget}
               disabled={!newIncome || (budgetType === "project" && !projectLabel.trim())}
+              className="flex-1"
             >
               إضافة
             </Button>
+            <Button variant="outline" onClick={() => setShowAddMonth(false)} className="flex-1">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import SwipeableCard from "@/components/SwipeableCard";
-import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare, PersonStanding } from "lucide-react";
+import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare, PersonStanding, Trash2 } from "lucide-react";
 import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import PageHeader from "@/components/PageHeader";
 import {
   Child,
@@ -30,6 +34,7 @@ const Vaccinations = () => {
     isLoading,
     addChild,
     updateChild,
+    removeChild,
     toggleVaccine,
     updateReminderSettings,
     saveVaccineNote: saveVaccineNoteMutation,
@@ -49,6 +54,7 @@ const Vaccinations = () => {
   const [newBirthDate, setNewBirthDate] = useState("");
 
   const [openChildCardId, setOpenChildCardId] = useState<string | null>(null);
+  const [deleteConfirmChild, setDeleteConfirmChild] = useState<Child | null>(null);
 
   // Keep selectedChild in sync with data
   const resolvedSelected = selectedChild ? children.find((c: Child) => c.id === selectedChild.id) || selectedChild : null;
@@ -189,6 +195,12 @@ const Vaccinations = () => {
                     label: "تذكير",
                     color: "bg-amber-500",
                     onClick: () => openReminderFromSwipe(child),
+                  },
+                  {
+                    icon: <Trash2 size={16} />,
+                    label: "حذف",
+                    color: "bg-red-500",
+                    onClick: () => setDeleteConfirmChild(child),
                   },
                 ]}
                 onSwipeOpen={() => setOpenChildCardId(child.id)}
@@ -481,6 +493,33 @@ const Vaccinations = () => {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Delete Child Confirmation */}
+      <AlertDialog open={!!deleteConfirmChild} onOpenChange={(open) => { if (!open) setDeleteConfirmChild(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف {deleteConfirmChild?.name}؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم حذف جميع بيانات اللقاحات الخاصة بـ {deleteConfirmChild?.name}. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600"
+              onClick={() => {
+                if (deleteConfirmChild) {
+                  removeChild(deleteConfirmChild.id);
+                  if (selectedChild?.id === deleteConfirmChild.id) setSelectedChild(null);
+                  setDeleteConfirmChild(null);
+                }
+              }}
+            >
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -140,6 +140,7 @@ const Documents = () => {
   const [newExpiryDate, setNewExpiryDate] = useState("");
   const [newReminderEnabled, setNewReminderEnabled] = useState(false);
   const [newFiles, setNewFiles] = useState<DocFile[]>([]);
+  const isPickingFileRef = useRef(false);
 
   // New list form
   const [newListName, setNewListName] = useState("");
@@ -713,7 +714,10 @@ const Documents = () => {
         </Drawer>
 
         {/* Add Item Drawer */}
-        <Drawer open={showAddItem} onOpenChange={setShowAddItem}>
+        <Drawer open={showAddItem} onOpenChange={(open) => {
+          if (!open && isPickingFileRef.current) return;
+          setShowAddItem(open);
+        }}>
           <DrawerContent dir="rtl">
             <DrawerHeader className="text-right">
               <DrawerTitle>إضافة مستند جديد</DrawerTitle>
@@ -746,7 +750,12 @@ const Documents = () => {
                     accept="image/*,.pdf"
                     multiple
                     className="hidden"
-                    onChange={(e) => handleFileUpload(e, "new")}
+                    onClick={() => { isPickingFileRef.current = true; }}
+                    onChange={(e) => {
+                      isPickingFileRef.current = false;
+                      handleFileUpload(e, "new");
+                    }}
+                    onBlur={() => { setTimeout(() => { isPickingFileRef.current = false; }, 1500); }}
                   />
                 </label>
                 {newFiles.length > 0 && (
