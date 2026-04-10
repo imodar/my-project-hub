@@ -46,9 +46,6 @@ jobs:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_APP_VERSION: ${{ github.ref_name }}-${{ github.sha }}
 
-      - name: Add Android platform
-        run: ./node_modules/.bin/cap add android
-
       - name: Fix RevenueCat Kotlin target compatibility
         run: |
           python3 - <<'PY'
