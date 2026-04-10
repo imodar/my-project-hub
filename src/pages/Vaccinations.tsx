@@ -247,7 +247,7 @@ const Vaccinations = () => {
           <DrawerHeader>
             <DrawerTitle className="text-center">إضافة طفل جديد</DrawerTitle>
           </DrawerHeader>
-          <div className="space-y-5 px-5 pb-8">
+          <div className="space-y-5 px-5" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
             <div className="space-y-2">
               <Label className="text-right block">اسم الطفل</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="أدخل اسم الطفل" className="text-right" />
@@ -276,7 +276,7 @@ const Vaccinations = () => {
           <DrawerHeader>
             <DrawerTitle className="text-center">تعديل بيانات الطفل</DrawerTitle>
           </DrawerHeader>
-          <div className="space-y-5 px-5 pb-8">
+          <div className="space-y-5 px-5" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
             <div className="space-y-2">
               <Label className="text-right block">اسم الطفل</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="أدخل اسم الطفل" className="text-right" />
@@ -308,7 +308,7 @@ const Vaccinations = () => {
             </DrawerTitle>
           </DrawerHeader>
           {reminderChild && (
-            <div className="space-y-4 px-5 pb-8">
+            <div className="space-y-4 px-5" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
               <p className="text-sm text-muted-foreground text-right">سيتم تذكيرك بجميع لقاحات {reminderChild.name} المستحقة</p>
               {[
                 { key: "beforeDay" as const, label: "قبل يوم واحد" },
@@ -465,7 +465,7 @@ const Vaccinations = () => {
           <DrawerHeader>
             <DrawerTitle className="text-center">ملاحظة على اللقاح</DrawerTitle>
           </DrawerHeader>
-          <div className="space-y-4 px-5 pb-8">
+          <div className="space-y-4 px-5" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
             <Textarea
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
