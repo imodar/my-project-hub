@@ -40,7 +40,7 @@ const FAB = ({ onClick, actions, icon, show = true }: FABProps) => {
         />
       )}
 
-      <div className="fixed z-50 flex flex-col items-center gap-2" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)", left: "16px" }}>
+      <div className="fixed z-50 flex flex-col items-center gap-2" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", left: "16px" }}>
         {open && actions && (
           <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
             {actions.map((action, i) => (

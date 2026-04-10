@@ -378,7 +378,7 @@ const Auth = () => {
           <DrawerHeader>
             <DrawerTitle className="text-right">اختر الدولة</DrawerTitle>
           </DrawerHeader>
-          <div className="flex-1 overflow-y-auto pb-4">
+          <div className="flex-1 overflow-y-auto" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
             {COUNTRIES.map((c) => (
               <button
                 key={c.code}

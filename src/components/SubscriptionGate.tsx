@@ -63,10 +63,9 @@ export default function SubscriptionGate({ children, feature, overlay = false }:
           e.stopPropagation();
           setShowUpgrade(true);
         }}
-        className="contents"
-        style={{ pointerEvents: "auto" }}
+        style={{ pointerEvents: "auto", display: "block", width: "100%" }}
       >
-        <div className="pointer-events-none">
+        <div className="pointer-events-none select-none">
           {children}
         </div>
       </div>

@@ -1209,10 +1209,10 @@ const Trips = () => {
                 {familyMembers.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {familyMembers.map((m) => {
-                      const selected = tripParticipants.includes(m.name);
+                      const selected = tripParticipants.includes(m.id);
                       return (
                         <button key={m.id} type="button"
-                          onClick={() => setTripParticipants((prev) => selected ? prev.filter((n) => n !== m.name) : [...prev, m.name])}
+                          onClick={() => setTripParticipants((prev) => selected ? prev.filter((id) => id !== m.id) : [...prev, m.id])}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95"
                           style={{
                             background: selected ? "hsl(var(--primary))" : "hsl(var(--muted))",
@@ -1357,10 +1357,10 @@ const Trips = () => {
               {familyMembers.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {familyMembers.map((m) => {
-                    const selected = tripParticipants.includes(m.name);
+                    const selected = tripParticipants.includes(m.id);
                     return (
                       <button key={m.id} type="button"
-                        onClick={() => setTripParticipants((prev) => selected ? prev.filter((n) => n !== m.name) : [...prev, m.name])}
+                        onClick={() => setTripParticipants((prev) => selected ? prev.filter((id) => id !== m.id) : [...prev, m.id])}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95"
                         style={{
                           background: selected ? "hsl(var(--primary))" : "hsl(var(--muted))",

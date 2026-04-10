@@ -790,7 +790,7 @@ const Market = () => {
             <DrawerTitle>إنشاء قائمة جديدة</DrawerTitle>
             <DrawerDescription>أنشئ قائمة تسوق جديدة</DrawerDescription>
           </DrawerHeader>
-          <div className="space-y-3 px-4">
+          <div className="space-y-3 px-4" data-vaul-no-drag>
             <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
             <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
               <div className="flex-1">
@@ -807,24 +807,24 @@ const Market = () => {
                     key={member.id}
                     onClick={() =>
                       setNewListShareMembers((prev) =>
-                        prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
+                        prev.includes(member.id) ? prev.filter((id) => id !== member.id) : [...prev, member.id]
                       )
                     }
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                      newListShareMembers.includes(member.name)
+                      newListShareMembers.includes(member.id)
                         ? "border-primary bg-primary/10"
                         : "border-border bg-card"
                     }`}
                   >
                     <span className="font-medium text-foreground">{member.name}</span>
-                    {newListShareMembers.includes(member.name) && <Check size={14} className="text-primary" />}
+                    {newListShareMembers.includes(member.id) && <Check size={14} className="text-primary" />}
                   </button>
                 ))}
               </div>
             </div>
           </div>
           <DrawerFooter className="flex-row gap-2">
-            <Button onClick={addList} className="flex-1 rounded-xl">إنشاء</Button>
+            <Button onClick={addList} disabled={!newListName.trim()} className="flex-1 rounded-xl">إنشاء</Button>
             <Button variant="outline" onClick={() => setShowAddList(false)} className="flex-1 rounded-xl">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
@@ -840,17 +840,18 @@ const Market = () => {
           <div className="space-y-2 px-4">
             {FAMILY_MEMBERS.map((member) => (
               <button
-                key={member.id}                onClick={() =>
+                key={member.id}
+                onClick={() =>
                   setSelectedShareMembers((prev) =>
-                    prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
+                    prev.includes(member.id) ? prev.filter((id) => id !== member.id) : [...prev, member.id]
                   )
                 }
                 className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-all ${
-                  selectedShareMembers.includes(member.name) ? "border-primary bg-primary/10" : "border-border bg-card"
+                  selectedShareMembers.includes(member.id) ? "border-primary bg-primary/10" : "border-border bg-card"
                 }`}
               >
                 <span className="font-medium text-foreground">{member.name}</span>
-                {selectedShareMembers.includes(member.name) && <Check size={16} className="text-primary" />}
+                {selectedShareMembers.includes(member.id) && <Check size={16} className="text-primary" />}
               </button>
             ))}
           </div>

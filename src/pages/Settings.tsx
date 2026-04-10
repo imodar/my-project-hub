@@ -456,7 +456,7 @@ const Settings = () => {
 
       {/* Emergency Settings Sheet */}
       <Sheet open={emergencySheetOpen} onOpenChange={setEmergencySheetOpen}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0 border-none" style={{ direction: dir }}>
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0 border-none" style={{ direction: dir, paddingBottom: "env(safe-area-inset-bottom)" }}>
           <div className="h-full flex flex-col overflow-hidden">
             <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
               <div className="flex items-center gap-3">

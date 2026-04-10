@@ -677,8 +677,8 @@ const Documents = () => {
         </AlertDialog>
 
         {/* Edit Item Drawer */}
-        <Drawer open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
-          <DrawerContent dir="rtl">
+        <Drawer open={!!editTarget} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; if (!open) setEditTarget(null); }}>
+          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
             <DrawerHeader className="text-right">
               <DrawerTitle>تعديل المستند</DrawerTitle>
               <DrawerDescription>عدّل تفاصيل المستند</DrawerDescription>
@@ -702,7 +702,10 @@ const Documents = () => {
               )}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">إضافة مرفقات</p>
-                <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors">
+                <label
+                  className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
+                  onPointerDown={() => { isPickingFileRef.current = true; }}
+                >
                   <Plus size={16} />
                   رفع صورة أو PDF
                   <input
@@ -710,7 +713,7 @@ const Documents = () => {
                     accept="image/*,.pdf"
                     multiple
                     className="hidden"
-                    onChange={(e) => handleFileUpload(e, "existing")}
+                    onChange={(e) => { isPickingFileRef.current = false; handleFileUpload(e, "existing"); }}
                   />
                 </label>
               </div>
@@ -727,7 +730,7 @@ const Documents = () => {
           if (!open && isPickingFileRef.current) return;
           setShowAddItem(open);
         }}>
-          <DrawerContent dir="rtl">
+          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
             <DrawerHeader className="text-right">
               <DrawerTitle>إضافة مستند جديد</DrawerTitle>
               <DrawerDescription>أضف وثيقة مع التصنيف والمرفقات</DrawerDescription>

@@ -14,6 +14,7 @@ import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from "@/components/ui/drawer";
 import { haptic } from "@/lib/haptics";
+import { appToast } from "@/lib/toast";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { Calendar } from "@/components/ui/calendar";
@@ -182,7 +183,10 @@ const Budget = () => {
 
     if (budgetType === "month") {
       const monthStr = `${newYear}-${String(parseInt(newMonthIdx) + 1).padStart(2, "0")}`;
-      if (budgets.some(b => b.month === monthStr && b.type === "month")) return;
+      if (budgets.some(b => b.month === monthStr && b.type === "month")) {
+        appToast.error("يوجد ميزانية لهذا الشهر مسبقاً");
+        return;
+      }
       createBudget.mutate({
         type: "month",
         month: monthStr,
