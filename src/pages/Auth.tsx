@@ -196,6 +196,9 @@ const Auth = () => {
                   placeholder="5XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ""))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && phone.replace(/\D/g, "").length >= 9) sendOtp();
+                  }}
                   className="pl-[5.5rem] text-left h-14 rounded-xl bg-secondary/50 border-border/50 text-base"
                   maxLength={10}
                   autoFocus

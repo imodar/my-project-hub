@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
 import { useOfflineMutation } from "./useOfflineMutation";
+import { db } from "@/lib/db";
 import type { Child, ReminderSettings } from "@/data/vaccinationData";
 
 export function useVaccinations() {
@@ -13,8 +14,14 @@ export function useVaccinations() {
   const qc = useQueryClient();
   const key = ["vaccinations", familyId];
 
+  // جلب البيانات من السيرفر فقط إذا وُجد طفل واحد على الأقل مشارَك
   const apiFn = useCallback(async () => {
     if (!familyId) return { data: [], error: null };
+
+    // فحص محلي: هل يوجد أي سجل مشارَك؟
+    const sharedCount = await db.vaccinations.where("is_shared").equals(1).count();
+    if (sharedCount === 0) return { data: [], error: null };
+
     const { data: response, error } = await supabase.functions.invoke("health-api", {
       body: { action: "get-children", family_id: familyId },
     });
@@ -61,6 +68,7 @@ export function useVaccinations() {
   const addChild = useOfflineMutation<any, any>({
     table: "vaccinations", operation: "INSERT",
     apiFn: async (input) => {
+      if (!input.is_shared) return { data: null, error: null };
       const { id, created_at, ...rest } = input;
       const { data: response, error } = await supabase.functions.invoke("health-api", {
         body: { action: "add-child", family_id: familyId, name: rest.name, gender: rest.gender, birth_date: rest.birthDate },
@@ -73,6 +81,8 @@ export function useVaccinations() {
   const updateChild = useOfflineMutation<any, any>({
     table: "vaccinations", operation: "UPDATE",
     apiFn: async (input) => {
+      const local = await db.vaccinations.get(input.id);
+      if (!local?.is_shared) return { data: null, error: null };
       const { id, ...rest } = input;
       const updates: any = {};
       if (rest.name !== undefined) updates.name = rest.name;
@@ -89,6 +99,8 @@ export function useVaccinations() {
   const toggleVaccine = useOfflineMutation<any, any>({
     table: "vaccinations", operation: "UPDATE",
     apiFn: async (input) => {
+      const local = await db.vaccinations.get(input.childId);
+      if (!local?.is_shared) return { data: null, error: null };
       const { childId, vaccineId, completed } = input;
       const isCompleted = completed.includes(vaccineId);
       const { data: response, error } = await supabase.functions.invoke("health-api", {
@@ -102,6 +114,8 @@ export function useVaccinations() {
   const updateReminderSettings = useOfflineMutation<any, any>({
     table: "vaccinations", operation: "UPDATE",
     apiFn: async (input) => {
+      const local = await db.vaccinations.get(input.id);
+      if (!local?.is_shared) return { data: null, error: null };
       const { childId, settings } = input;
       const { data: response, error } = await supabase.functions.invoke("health-api", {
         body: { action: "update-reminder-settings", child_id: childId, settings },
@@ -114,6 +128,8 @@ export function useVaccinations() {
   const saveVaccineNote = useOfflineMutation<any, any>({
     table: "vaccinations", operation: "UPDATE",
     apiFn: async (input) => {
+      const local = await db.vaccinations.get(input.id);
+      if (!local?.is_shared) return { data: null, error: null };
       const { childId, vaccineId, note } = input;
       const { data: response, error } = await supabase.functions.invoke("health-api", {
         body: { action: "add-vaccine-note", child_id: childId, vaccine_id: vaccineId, note: note.trim() },
@@ -123,15 +139,47 @@ export function useVaccinations() {
     queryKey: key, onSuccess: () => refetch(),
   });
 
+  // تبديل حالة مشاركة سجل الطفل
+  const setSharing = useOfflineMutation<any, any>({
+    table: "vaccinations", operation: "UPDATE",
+    apiFn: async (input) => {
+      if (!input.is_shared) return { data: null, error: null };
+      // عند تفعيل المشاركة: أرسل البيانات للسيرفر لأول مرة
+      const { data: response, error } = await supabase.functions.invoke("health-api", {
+        body: { action: "add-child", family_id: familyId, name: input.name, gender: input.gender, birth_date: input.birthDate, child_id: input.id },
+      });
+      return { data: response?.data ?? null, error: response?.error || error?.message || null };
+    },
+    queryKey: key,
+  });
+
   return {
     children: children || [],
     isLoading,
     addChild: {
       ...addChild,
-      mutate: (input: { name: string; gender: string; birthDate: string }) =>
-        addChild.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), completedVaccines: [], vaccineNotes: [], reminderSettings: { beforeDay: true, beforeWeek: true, beforeMonth: true }, ...input }),
-      mutateAsync: async (input: { name: string; gender: string; birthDate: string }) =>
-        addChild.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), completedVaccines: [], vaccineNotes: [], reminderSettings: { beforeDay: true, beforeWeek: true, beforeMonth: true }, ...input }),
+      mutate: (input: { name: string; gender: string; birthDate: string; is_shared?: boolean }) =>
+        addChild.mutate({
+          id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+          family_id: familyId,
+          is_shared: false,
+          completedVaccines: [],
+          vaccineNotes: [],
+          reminderSettings: { beforeDay: true, beforeWeek: true, beforeMonth: true },
+          ...input,
+        }),
+      mutateAsync: async (input: { name: string; gender: string; birthDate: string; is_shared?: boolean }) =>
+        addChild.mutateAsync({
+          id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+          family_id: familyId,
+          is_shared: false,
+          completedVaccines: [],
+          vaccineNotes: [],
+          reminderSettings: { beforeDay: true, beforeWeek: true, beforeMonth: true },
+          ...input,
+        }),
     },
     updateChild: {
       ...updateChild,
@@ -168,6 +216,15 @@ export function useVaccinations() {
           return { ...c, vaccineNotes: [...existing, { vaccineId: input.vaccineId, note: input.note.trim() }] };
         });
         saveVaccineNote.mutate({ id: input.childId, ...input });
+      },
+    },
+    /** تفعيل/إلغاء مشاركة سجل لقاحات طفل مع العائلة */
+    setSharing: {
+      ...setSharing,
+      mutate: (childId: string, isShared: boolean) => {
+        optimisticChildUpdate(childId, (c) => ({ ...c, is_shared: isShared }));
+        const child = (children || []).find((c: any) => c.id === childId);
+        setSharing.mutate({ id: childId, is_shared: isShared, ...child });
       },
     },
   };

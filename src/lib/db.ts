@@ -104,6 +104,7 @@ class AppDatabase extends Dexie {
   worship_children!: Table;
   emergency_contacts!: Table;
   trash_items!: Table;
+  member_locations!: Table;
 
   // ── جداول المزامنة ──
   sync_queue!: Table<SyncQueueItem, number>;
@@ -207,6 +208,19 @@ class AppDatabase extends Dexie {
     this.version(6).stores({
       sync_queue: "++id, idempotency_key, table, status, created_at",
       conflicts: "++id, table, record_id, resolved, detected_at",
+    });
+
+    // ── الإصدار 7: إضافة is_shared + كاش مواقع الخريطة ──
+    this.version(7).stores({
+      market_lists:    "id, family_id, created_by, is_shared",
+      task_lists:      "id, family_id, created_by, is_shared",
+      budgets:         "id, family_id, month, type, is_shared",
+      trips:           "id, family_id, is_shared",
+      document_lists:  "id, family_id, created_by, is_shared",
+      place_lists:     "id, family_id, is_shared",
+      vehicles:        "id, family_id, is_shared",
+      vaccinations:    "id, family_id, is_shared",
+      member_locations: "user_id, family_id, updated_at",
     });
   }
 }
