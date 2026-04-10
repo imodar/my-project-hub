@@ -631,9 +631,9 @@ const Tasks = () => {
             <DrawerHeader>
               <DrawerTitle className="text-center font-black">حذف المهمة</DrawerTitle>
             </DrawerHeader>
-            <div className="px-5 pb-6 space-y-4" dir="rtl">
-              <p className="text-center text-sm text-muted-foreground">
-                هل أنت متأكد من حذف "{deleteTarget?.name}"؟
+            <div className="px-5 space-y-4" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }} dir="rtl">
+              <p className="text-right text-sm text-muted-foreground break-words">
+                هل أنت متأكد من حذف "<span className="font-medium text-foreground">{deleteTarget?.name}</span>"؟
               </p>
               <div className="flex gap-2">
                 <button onClick={confirmDelete} className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
@@ -703,9 +703,10 @@ const Tasks = () => {
                   <div className="flex flex-wrap gap-2">
                     {FAMILY_MEMBERS.map((member) => (
                       <button
-                        key={member.id}                        onClick={() => setEditAssignedTo(member.name)}
+                        key={member.id}
+                        onClick={() => setEditAssignedTo(editAssignedTo === member.id ? "" : member.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
-                          editAssignedTo === member.name
+                          editAssignedTo === member.id
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border bg-card text-foreground"
                         }`}
@@ -761,9 +762,10 @@ const Tasks = () => {
                   <div className="flex flex-wrap gap-2">
                     {FAMILY_MEMBERS.map((member) => (
                       <button
-                        key={member.id}                        onClick={() => setNewItemAssignedTo(member.name)}
+                        key={member.id}
+                        onClick={() => setNewItemAssignedTo(newItemAssignedTo === member.id ? "" : member.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
-                          newItemAssignedTo === member.name
+                          newItemAssignedTo === member.id
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border bg-card text-foreground"
                         }`}

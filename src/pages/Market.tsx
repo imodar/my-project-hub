@@ -20,10 +20,6 @@ import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from "@/components/ui/drawer";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { haptic } from "@/lib/haptics";
@@ -276,7 +272,8 @@ const Market = () => {
   }, [editTarget, editName, editQuantity, editCategory, updateItemMutation]);
 
   const addItem = useCallback(() => {
-    if (!newItemName.trim() || !activeList) return;
+    if (!newItemName.trim()) { appToast.error("أدخل اسم المنتج"); return; }
+    if (!activeList) { appToast.error("اختر قائمة أولاً"); return; }
 
     if (!familyId || activeList.id === DEFAULT_FAMILY_LIST_ID) {
       appToast.error(familyId ? "جارٍ تجهيز القائمة العائلية" : "يجب الانضمام لعائلة أولاً");
@@ -644,22 +641,26 @@ const Market = () => {
       </Drawer>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>حذف المنتج</AlertDialogTitle>
-            <AlertDialogDescription>
-              هل أنت متأكد من حذف "{deleteTarget?.name}"؟
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row gap-2">
-            <AlertDialogAction onClick={confirmDelete} className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
-              حذف
-            </AlertDialogAction>
-            <AlertDialogCancel className="flex-1 rounded-xl">إلغاء</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Drawer open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DrawerContent onClick={(e) => e.stopPropagation()}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center font-black">حذف المنتج</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-5 space-y-4" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }} dir="rtl">
+            <p className="text-right text-sm text-muted-foreground break-words">
+              هل أنت متأكد من حذف "<span className="font-medium text-foreground">{deleteTarget?.name}</span>"؟
+            </p>
+            <div className="flex gap-2">
+              <button onClick={confirmDelete} className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                حذف
+              </button>
+              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-3 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* Delete List Confirmation */}
       <Drawer open={!!deleteListTarget} onOpenChange={(open) => !open && setDeleteListTarget(null)}>

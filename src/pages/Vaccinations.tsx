@@ -10,11 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "@/components/ui/drawer";
 import PageHeader from "@/components/PageHeader";
 import {
   Child,
@@ -495,18 +491,16 @@ const Vaccinations = () => {
       </Drawer>
 
       {/* Delete Child Confirmation */}
-      <AlertDialog open={!!deleteConfirmChild} onOpenChange={(open) => { if (!open) setDeleteConfirmChild(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>حذف {deleteConfirmChild?.name}؟</AlertDialogTitle>
-            <AlertDialogDescription>
-              سيتم حذف جميع بيانات اللقاحات الخاصة بـ {deleteConfirmChild?.name}. لا يمكن التراجع عن هذا الإجراء.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-500 hover:bg-red-600"
+      <Drawer open={!!deleteConfirmChild} onOpenChange={(open) => { if (!open) setDeleteConfirmChild(null); }}>
+        <DrawerContent onClick={(e) => e.stopPropagation()}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center font-black">حذف {deleteConfirmChild?.name}؟</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-5 pb-2 text-right text-sm text-muted-foreground break-words">
+            سيتم حذف جميع بيانات اللقاحات الخاصة بـ <span className="font-medium text-foreground">{deleteConfirmChild?.name}</span>. لا يمكن التراجع عن هذا الإجراء.
+          </div>
+          <DrawerFooter className="flex-row gap-2">
+            <button
               onClick={() => {
                 if (deleteConfirmChild) {
                   removeChild(deleteConfirmChild.id);
@@ -514,12 +508,19 @@ const Vaccinations = () => {
                   setDeleteConfirmChild(null);
                 }
               }}
+              className="flex-1 py-3 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-colors"
             >
               حذف
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </button>
+            <button
+              onClick={() => setDeleteConfirmChild(null)}
+              className="flex-1 py-3 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors"
+            >
+              إلغاء
+            </button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

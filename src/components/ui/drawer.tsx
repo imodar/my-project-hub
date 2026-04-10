@@ -28,49 +28,22 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => {
-  const contentRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    const el = contentRef.current;
-    if (!el) return;
-
-    // With windowSoftInputMode="adjustResize" (capacitor.config.ts),
-    // window.innerHeight shrinks when the keyboard opens, so we only need
-    // to update maxHeight. We never touch `bottom` — Vaul controls that.
-    const onWindowResize = () => {
-      el.style.maxHeight = `${Math.floor(window.innerHeight * 0.9)}px`;
-    };
-
-    window.addEventListener("resize", onWindowResize, { passive: true });
-    return () => {
-      window.removeEventListener("resize", onWindowResize);
-      if (contentRef.current) contentRef.current.style.maxHeight = "";
-    };
-  }, []);
-
-  return (
-    <DrawerPortal>
-      <DrawerOverlay />
-      <DrawerPrimitive.Content
-        ref={(node) => {
-          (contentRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-          if (typeof ref === "function") ref(node);
-          else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-        }}
-        className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[90dvh] flex-col rounded-t-[10px] border bg-background transition-[max-height] duration-150 ease-out",
-          className,
-        )}
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        {...props}
-      >
-        <div className="mx-auto mt-4 h-2 w-[100px] shrink-0 rounded-full bg-muted" />
-        {children}
-      </DrawerPrimitive.Content>
-    </DrawerPortal>
-  );
-});
+>(({ className, children, ...props }, ref) => (
+  <DrawerPortal>
+    <DrawerOverlay />
+    <DrawerPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[90dvh] flex-col rounded-t-[10px] border bg-background transition-[max-height] duration-150 ease-out",
+        className,
+      )}
+      {...props}
+    >
+      <div className="mx-auto mt-4 h-2 w-[100px] shrink-0 rounded-full bg-muted" />
+      {children}
+    </DrawerPrimitive.Content>
+  </DrawerPortal>
+));
 DrawerContent.displayName = "DrawerContent";
 
 const DrawerHeader = React.forwardRef<
@@ -83,9 +56,14 @@ DrawerHeader.displayName = "DrawerHeader";
 
 const DrawerFooter = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("mt-auto flex flex-col gap-2 p-4 shrink-0", className)} {...props} />
+  React.HTMLAttributes<HTMLDivElement> & { style?: React.CSSProperties }
+>(({ className, style, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("mt-auto flex flex-col gap-2 p-4 shrink-0", className)}
+    style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))", ...style }}
+    {...props}
+  />
 ));
 DrawerFooter.displayName = "DrawerFooter";
 

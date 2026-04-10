@@ -10,7 +10,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   Plus, Plane, MapPin, Calendar, Clock, DollarSign, Users, ChevronLeft,
@@ -1245,96 +1245,87 @@ const Trips = () => {
     <div className="min-h-screen bg-background pb-32" dir="rtl">
       <PageHeader title="الرحلات" subtitle="خطط لرحلاتك العائلية والشخصية" />
 
+      {/* Sticky tabs — always visible under header */}
+      <div className="sticky top-0 z-10 bg-background px-5 pt-3 pb-2 border-b border-border/40">
+        <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
+          <TabsList className="w-full grid grid-cols-2 rounded-xl h-11 bg-muted">
+            <TabsTrigger value="family" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
+              <Users size={14} className="ml-1" /> رحلات عائلية
+            </TabsTrigger>
+            <TabsTrigger value="personal" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
+              <Plane size={14} className="ml-1" /> رحلات شخصية
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       {tripsLoading ? (
         <CardContentSkeleton />
       ) : (
       <PullToRefresh onRefresh={async () => {}}>
-        <div className="px-5 mt-5">
-          <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
-            <TabsList className="w-full grid grid-cols-2 rounded-xl h-11 bg-muted">
-              <TabsTrigger value="family" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
-                <Users size={14} className="ml-1" /> رحلات عائلية
-              </TabsTrigger>
-              <TabsTrigger value="personal" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
-                <Plane size={14} className="ml-1" /> رحلات شخصية
-              </TabsTrigger>
-            </TabsList>
+        <div className="px-5 mt-4 space-y-3">
+          {filteredTrips.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              <Plane size={48} className="mx-auto mb-4 opacity-30" />
+              <p className="text-sm font-medium">لا رحلات {activeTab === "family" ? "عائلية" : "شخصية"} بعد</p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => { resetTripForm(); setNewTripDrawer(true); }}>
+                <Plus size={14} /> أنشئ رحلة
+              </Button>
+            </div>
+          )}
 
-            <TabsContent value={activeTab} className="mt-4 space-y-3">
-              {!selectedTrip && tripsLoading ? (
-                <div className="px-4 py-4 space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />
-                  ))}
-                </div>
-              ) : (
-                <>
-                  {filteredTrips.length === 0 && (
-                    <div className="text-center py-16 text-muted-foreground">
-                      <Plane size={48} className="mx-auto mb-4 opacity-30" />
-                      <p className="text-sm font-medium">لا رحلات {activeTab === "family" ? "عائلية" : "شخصية"} بعد</p>
-                      <Button variant="outline" size="sm" className="mt-4" onClick={() => { resetTripForm(); setNewTripDrawer(true); }}>
-                        <Plus size={14} /> أنشئ رحلة
-                      </Button>
+          {filteredTrips.map((trip) => {
+            const costs = getTripCosts(trip);
+            return (
+              <SwipeableCard
+                key={trip.id}
+                actions={[
+                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => { setDeleteTarget(trip.id); setDeleteDrawer(true); } },
+                  { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditTrip(trip) },
+                ]}
+                onSwipeOpen={() => setOpenTripCardId(trip.id)}
+              >
+                <button
+                  onClick={() => {
+                    if (openTripCardId === trip.id) {
+                      setOpenTripCardId(null);
+                      return;
+                    }
+                    handleSelectTrip(trip);
+                  }}
+                  className="w-full text-right p-4 bg-muted active:bg-muted/80 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-foreground">{trip.name}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <MapPin size={11} /> {trip.destination}
+                      </p>
+                      {trip.startDate && (
+                        <p className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "hsl(145 45% 35%)" }}>
+                          <Calendar size={11} />
+                          {format(new Date(trip.startDate), "d MMM", { locale: ar })}
+                          {trip.endDate && ` — ${format(new Date(trip.endDate), "d MMM", { locale: ar })}`}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-left shrink-0">
+                      <p className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>{trip.budget > 0 ? trip.budget.toLocaleString() : ""}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{trip.days.length} أيام</p>
+                    </div>
+                  </div>
+                  {trip.participants.length > 0 && (
+                    <div className="flex items-center gap-1 mt-2">
+                      <Users size={11} className="text-muted-foreground" />
+                      <span className="text-[11px] text-muted-foreground">{trip.participants.join(" · ")}</span>
                     </div>
                   )}
-
-                  {filteredTrips.map((trip) => {
-                    const costs = getTripCosts(trip);
-                    return (
-                      <SwipeableCard
-                        key={trip.id}
-                        actions={[
-                          { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => { setDeleteTarget(trip.id); setDeleteDrawer(true); } },
-                          { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditTrip(trip) },
-                        ]}
-                        onSwipeOpen={() => setOpenTripCardId(trip.id)}
-                      >
-                        <button
-                          onClick={() => {
-                            if (openTripCardId === trip.id) {
-                              setOpenTripCardId(null);
-                              return;
-                            }
-                            handleSelectTrip(trip);
-                          }}
-                          className="w-full text-right p-4 bg-muted active:bg-muted/80 transition-colors"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                                <h3 className="text-sm font-bold text-foreground">{trip.name}</h3>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                <MapPin size={11} /> {trip.destination}
-                              </p>
-                              {trip.startDate && (
-                                <p className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "hsl(145 45% 35%)" }}>
-                                  <Calendar size={11} />
-                                  {format(new Date(trip.startDate), "d MMM", { locale: ar })}
-                                  {trip.endDate && ` — ${format(new Date(trip.endDate), "d MMM", { locale: ar })}`}
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-left shrink-0">
-                              <p className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>{trip.budget > 0 ? trip.budget.toLocaleString() : ""}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">{trip.days.length} أيام</p>
-                            </div>
-                          </div>
-                          {trip.participants.length > 0 && (
-                            <div className="flex items-center gap-1 mt-2">
-                              <Users size={11} className="text-muted-foreground" />
-                              <span className="text-[11px] text-muted-foreground">{trip.participants.join(" · ")}</span>
-                            </div>
-                          )}
-                        </button>
-                      </SwipeableCard>
-                    );
-                  })}
-                </>
-              )}
-            </TabsContent>
-          </Tabs>
+                </button>
+              </SwipeableCard>
+            );
+          })}
         </div>
       </PullToRefresh>
       )}
