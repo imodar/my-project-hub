@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 const Drawer = React.forwardRef<
   HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Root> & { shouldScaleBackground?: boolean }
->(({ shouldScaleBackground = true, ...props }, _ref) => (
-  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
+>(({ shouldScaleBackground = true, repositionInputs = false, ...props }, _ref) => (
+  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} repositionInputs={repositionInputs} {...props} />
 ));
 Drawer.displayName = "Drawer";
 
