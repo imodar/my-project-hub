@@ -40,7 +40,19 @@ const DrawerContent = React.forwardRef<
       {...props}
     >
       <div className="mx-auto mt-4 h-2 w-[100px] shrink-0 rounded-full bg-muted" />
-      {children}
+      {/* data-vaul-no-drag: prevents Vaul from treating keyboard/IME touch events as drag gestures */}
+      {/* onKeyDown: prevents Space from accidentally triggering focused buttons inside the drawer */}
+      <div
+        data-vaul-no-drag
+        className="flex flex-col flex-1 min-h-0"
+        onKeyDown={(e) => {
+          if (e.key === " " && e.target instanceof HTMLElement && e.target.tagName === "BUTTON") {
+            e.preventDefault();
+          }
+        }}
+      >
+        {children}
+      </div>
     </DrawerPrimitive.Content>
   </DrawerPortal>
 ));
