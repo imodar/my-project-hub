@@ -198,6 +198,9 @@ const Market = () => {
   const [newItemName, setNewItemName] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("أخرى");
   const [newItemQuantity, setNewItemQuantity] = useState("");
+  // Ref to read actual DOM value when Android IME composition hasn't committed to React state yet
+  const newItemNameRef = useRef("");
+  const newListNameRef = useRef("");
 
   // Draft persistence للنموذج
   const marketDraft = useDraftPersistence<{
@@ -272,7 +275,9 @@ const Market = () => {
   }, [editTarget, editName, editQuantity, editCategory, updateItemMutation]);
 
   const addItem = useCallback(() => {
-    if (!newItemName.trim()) { appToast.error("أدخل اسم المنتج"); return; }
+    // Read from ref first — handles Android IME composition where React state lags behind DOM
+    const name = (newItemNameRef.current || newItemName).trim();
+    if (!name) { appToast.error("أدخل اسم المنتج"); return; }
     if (!activeList) { appToast.error("اختر قائمة أولاً"); return; }
 
     if (!familyId || activeList.id === DEFAULT_FAMILY_LIST_ID) {
@@ -281,7 +286,8 @@ const Market = () => {
     }
 
     haptic.medium();
-    addItemMutation.mutate({ list_id: activeList.id, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || undefined });
+    addItemMutation.mutate({ list_id: activeList.id, name, category: newItemCategory, quantity: newItemQuantity.trim() || undefined });
+    newItemNameRef.current = "";
     setNewItemName("");
     setNewItemQuantity("");
     setNewItemCategory("أخرى");
@@ -289,7 +295,9 @@ const Market = () => {
   }, [activeList, newItemName, newItemCategory, newItemQuantity, addItemMutation, familyId]);
 
   const addList = useCallback(() => {
-    if (!newListName.trim()) return;
+    // Read from ref first — handles Android IME composition where React state lags behind DOM
+    const name = (newListNameRef.current || newListName).trim();
+    if (!name) { appToast.error("أدخل اسم القائمة"); return; }
     if (!familyId) {
       appToast.error("يجب الانضمام لعائلة أولاً");
       return;
@@ -301,7 +309,7 @@ const Market = () => {
     const autoType = newListShareMembers.length > 0 ? "family" : "personal";
     createListMutation.mutate(
       {
-        name: newListName.trim(),
+        name,
         type: autoType,
         shared_with: newListShareMembers,
         use_categories: newListUseCategories,
@@ -316,6 +324,7 @@ const Market = () => {
         },
       }
     );
+    newListNameRef.current = "";
     setNewListName("");
     setNewListShareMembers([]);
     setNewListUseCategories(false);
@@ -753,7 +762,10 @@ const Market = () => {
             <DrawerDescription>أضف المنتج مع التصنيف والكمية</DrawerDescription>
           </DrawerHeader>
           <div className="flex-1 overflow-y-auto space-y-3 px-4">
-            <Input placeholder="اسم المنتج" value={newItemName} onChange={(e) => { setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }} className="rounded-xl" />
+            <Input placeholder="اسم المنتج" value={newItemName}
+              onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }}
+              onCompositionEnd={(e) => { const v = (e.target as HTMLInputElement).value; newItemNameRef.current = v; setNewItemName(v); }}
+              className="rounded-xl" />
             <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }} className="rounded-xl" />
             {activeList?.useCategories && (
             <div>
@@ -791,7 +803,10 @@ const Market = () => {
             <DrawerDescription>أنشئ قائمة تسوق جديدة</DrawerDescription>
           </DrawerHeader>
           <div className="space-y-3 px-4" data-vaul-no-drag>
-            <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
+            <Input placeholder="اسم القائمة" value={newListName}
+              onChange={(e) => { newListNameRef.current = e.target.value; setNewListName(e.target.value); }}
+              onCompositionEnd={(e) => { const v = (e.target as HTMLInputElement).value; newListNameRef.current = v; setNewListName(v); }}
+              className="rounded-xl" />
             <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">إظهار فئات التسوق الافتراضية</p>
@@ -824,7 +839,7 @@ const Market = () => {
             </div>
           </div>
           <DrawerFooter className="flex-row gap-2">
-            <Button onClick={addList} disabled={!newListName.trim()} className="flex-1 rounded-xl">إنشاء</Button>
+            <Button onClick={addList} className="flex-1 rounded-xl">إنشاء</Button>
             <Button variant="outline" onClick={() => setShowAddList(false)} className="flex-1 rounded-xl">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
