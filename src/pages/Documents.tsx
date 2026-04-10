@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ListContentSkeleton } from "@/components/PageSkeletons";
@@ -141,6 +141,15 @@ const Documents = () => {
   const [newReminderEnabled, setNewReminderEnabled] = useState(false);
   const [newFiles, setNewFiles] = useState<DocFile[]>([]);
   const isPickingFileRef = useRef(false);
+
+  // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
+  useEffect(() => {
+    const onWindowFocus = () => {
+      setTimeout(() => { isPickingFileRef.current = false; }, 800);
+    };
+    window.addEventListener("focus", onWindowFocus);
+    return () => window.removeEventListener("focus", onWindowFocus);
+  }, []);
 
   // New list form
   const [newListName, setNewListName] = useState("");
@@ -742,7 +751,10 @@ const Documents = () => {
               )}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">المرفقات</p>
-                <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors">
+                <label
+                  className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
+                  onPointerDown={() => { isPickingFileRef.current = true; }}
+                >
                   <Plus size={16} />
                   رفع صورة أو PDF
                   <input
@@ -750,12 +762,10 @@ const Documents = () => {
                     accept="image/*,.pdf"
                     multiple
                     className="hidden"
-                    onClick={() => { isPickingFileRef.current = true; }}
                     onChange={(e) => {
                       isPickingFileRef.current = false;
                       handleFileUpload(e, "new");
                     }}
-                    onBlur={() => { setTimeout(() => { isPickingFileRef.current = false; }, 1500); }}
                   />
                 </label>
                 {newFiles.length > 0 && (

@@ -409,7 +409,7 @@ const Chat = () => {
 
       {/* Messages */}
       <div
-        className="flex-1 overflow-y-auto px-3 py-4 space-y-1"
+        className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-28"
         style={{ backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--muted) / 0.5), transparent 70%)" }}
       >
         {/* Encryption notice — only after key is confirmed */}
@@ -553,7 +553,7 @@ const Chat = () => {
       )}
 
       {/* Input area */}
-      <div className="sticky bottom-0 left-0 right-0 z-40 pb-24 bg-gradient-to-t from-background via-background to-transparent pt-2">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-background via-background to-transparent pt-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}>
         <div className="px-3">
           <div className="flex items-center gap-2 p-2 rounded-2xl bg-card border border-border shadow-lg">
             {isRecording ? (

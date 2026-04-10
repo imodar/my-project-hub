@@ -61,6 +61,7 @@ export default function SubscriptionGate({ children, feature, overlay = false }:
         onTouchEnd={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          setShowUpgrade(true);
         }}
         className="contents"
         style={{ pointerEvents: "auto" }}

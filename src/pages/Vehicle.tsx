@@ -47,51 +47,51 @@ interface CarData {
 
 // ─── Car Logos (local SVG assets) ───
 const CAR_LOGOS: Record<string, string> = {
-  toyota:      "/car-logos/toyota.svg",
-  honda:       "/car-logos/honda.svg",
-  nissan:      "/car-logos/nissan.svg",
-  hyundai:     "/car-logos/hyundai.svg",
-  kia:         "/car-logos/kia.svg",
-  bmw:         "/car-logos/bmw.svg",
-  mercedes:    "/car-logos/mercedes.svg",
-  audi:        "/car-logos/audi.svg",
-  lexus:       "/car-logos/lexus.svg",
-  ford:        "/car-logos/ford.svg",
-  chevrolet:   "/car-logos/chevrolet.svg",
-  volkswagen:  "/car-logos/volkswagen.svg",
-  mazda:       "/car-logos/mazda.svg",
-  subaru:      "/car-logos/subaru.svg",
-  porsche:     "/car-logos/porsche.svg",
-  landrover:   "/car-logos/landrover.svg",
-  jeep:        "/car-logos/jeep.svg",
-  gmc:         "/car-logos/gmc.svg",
-  dodge:       "/car-logos/dodge.svg",
-  mitsubishi:  "/car-logos/mitsubishi.svg",
-  infiniti:    "/car-logos/infiniti.svg",
-  acura:       "/car-logos/acura.svg",
-  volvo:       "/car-logos/volvo.svg",
-  jaguar:      "/car-logos/jaguar.svg",
-  maserati:    "/car-logos/maserati.svg",
-  bentley:     "/car-logos/bentley.svg",
-  rollsroyce:  "/car-logos/rollsroyce.svg",
-  ferrari:     "/car-logos/ferrari.svg",
-  lamborghini: "/car-logos/lamborghini.svg",
-  tesla:       "/car-logos/tesla.svg",
-  genesis:     "/car-logos/genesis.svg",
-  cadillac:    "/car-logos/cadillac.svg",
-  lincoln:     "/car-logos/lincoln.svg",
-  peugeot:     "/car-logos/peugeot.svg",
-  renault:     "/car-logos/renault.svg",
-  fiat:        "/car-logos/fiat.svg",
-  suzuki:      "/car-logos/suzuki.svg",
-  isuzu:       "/car-logos/isuzu.svg",
-  chery:       "/car-logos/chery.svg",
-  geely:       "/car-logos/geely.svg",
-  haval:       "/car-logos/haval.svg",
-  mg:          "/car-logos/mg.svg",
+  toyota:      "/car-logos/toyota.png",
+  honda:       "/car-logos/honda.png",
+  nissan:      "/car-logos/nissan.png",
+  hyundai:     "/car-logos/hyundai.png",
+  kia:         "/car-logos/kia.png",
+  bmw:         "/car-logos/bmw.png",
+  mercedes:    "/car-logos/mercedes.png",
+  audi:        "/car-logos/audi.png",
+  lexus:       "/car-logos/lexus.png",
+  ford:        "/car-logos/ford.png",
+  chevrolet:   "/car-logos/chevrolet.png",
+  volkswagen:  "/car-logos/volkswagen.png",
+  mazda:       "/car-logos/mazda.png",
+  subaru:      "/car-logos/subaru.png",
+  porsche:     "/car-logos/porsche.png",
+  landrover:   "/car-logos/landrover.png",
+  jeep:        "/car-logos/jeep.png",
+  gmc:         "/car-logos/gmc.png",
+  dodge:       "/car-logos/dodge.png",
+  mitsubishi:  "/car-logos/mitsubishi.png",
+  infiniti:    "/car-logos/infiniti.png",
+  acura:       "/car-logos/acura.png",
+  volvo:       "/car-logos/volvo.png",
+  jaguar:      "/car-logos/jaguar.png",
+  maserati:    "/car-logos/maserati.png",
+  bentley:     "/car-logos/bentley.png",
+  rollsroyce:  "/car-logos/rollsroyce.png",
+  ferrari:     "/car-logos/ferrari.png",
+  lamborghini: "/car-logos/lamborghini.png",
+  tesla:       "/car-logos/tesla.png",
+  genesis:     "/car-logos/genesis.png",
+  cadillac:    "/car-logos/cadillac.png",
+  lincoln:     "/car-logos/lincoln.png",
+  peugeot:     "/car-logos/peugeot.png",
+  renault:     "/car-logos/renault.png",
+  fiat:        "/car-logos/fiat.png",
+  suzuki:      "/car-logos/suzuki.png",
+  isuzu:       "/car-logos/isuzu.png",
+  chery:       "/car-logos/chery.png",
+  geely:       "/car-logos/geely.png",
+  haval:       "/car-logos/haval.png",
+  mg:          "/car-logos/mg.png",
   gac:         "/car-logos/gac.svg",
-  changan:     "/car-logos/changan.svg",
-  byd:         "/car-logos/byd.svg",
+  changan:     "/car-logos/changan.png",
+  byd:         "/car-logos/byd.png",
 };
 
 // ─── Constants ───
@@ -645,13 +645,13 @@ const Vehicle = () => {
 
               <div className="space-y-2">
                 <Label className="text-right block">الممشى عند الصيانة ({selectedCar.mileageUnit === "km" ? "كم" : "ميل"})</Label>
-                <Input type="number" value={maintMileage} onChange={e => setMaintMileage(e.target.value)}
+                <Input type="text" inputMode="numeric" pattern="\d*" value={maintMileage} onChange={e => setMaintMileage(e.target.value)}
                   placeholder={selectedCar.mileage.toLocaleString()} className="text-right" />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-right block">التغيير القادم عند ({selectedCar.mileageUnit === "km" ? "كم" : "ميل"})</Label>
-                <Input type="number" value={maintNextMileage} onChange={e => setMaintNextMileage(e.target.value)}
+                <Input type="text" inputMode="numeric" pattern="\d*" value={maintNextMileage} onChange={e => setMaintNextMileage(e.target.value)}
                   placeholder="مثال: 50000" className="text-right" />
               </div>
 
@@ -878,8 +878,8 @@ const Vehicle = () => {
                 </div>
                 <div className="space-y-2 w-28 shrink-0">
                   <Label className="text-right block">السنة *</Label>
-                  <Input type="number" value={newYear} onChange={e => setNewYear(e.target.value)}
-                    placeholder="2024" className="text-right" min={1900} max={maxYear} />
+                  <Input type="text" inputMode="numeric" pattern="\d*" value={newYear} onChange={e => setNewYear(e.target.value)}
+                    placeholder="2024" className="text-right" />
                 </div>
               </div>
 
@@ -887,8 +887,8 @@ const Vehicle = () => {
               <div className="space-y-2">
                 <Label className="text-right block">الممشى (اختياري)</Label>
                 <div className="flex gap-3">
-                  <Input type="number" value={newMileage} onChange={e => setNewMileage(e.target.value)}
-                    placeholder="0" className="text-right flex-1" min={0} />
+                  <Input type="text" inputMode="numeric" pattern="\d*" value={newMileage} onChange={e => setNewMileage(e.target.value)}
+                    placeholder="0" className="text-right flex-1" />
                   <Select value={newMileageUnit} onValueChange={v => setNewMileageUnit(v as "km" | "mi")}>
                     <SelectTrigger className="w-28 shrink-0 text-right" dir="rtl">
                       <SelectValue />
@@ -1009,8 +1009,8 @@ const Vehicle = () => {
                 </div>
                 <div className="space-y-2 w-28 shrink-0">
                   <Label className="text-right block">السنة *</Label>
-                  <Input type="number" value={newYear} onChange={e => setNewYear(e.target.value)}
-                    placeholder="2024" className="text-right" min={1900} max={maxYear} />
+                  <Input type="text" inputMode="numeric" pattern="\d*" value={newYear} onChange={e => setNewYear(e.target.value)}
+                    placeholder="2024" className="text-right" />
                 </div>
               </div>
 
@@ -1018,8 +1018,8 @@ const Vehicle = () => {
               <div className="space-y-2">
                 <Label className="text-right block">الممشى</Label>
                 <div className="flex gap-3">
-                  <Input type="number" value={newMileage} onChange={e => setNewMileage(e.target.value)}
-                    placeholder="0" className="text-right flex-1" min={0} />
+                  <Input type="text" inputMode="numeric" pattern="\d*" value={newMileage} onChange={e => setNewMileage(e.target.value)}
+                    placeholder="0" className="text-right flex-1" />
                   <Select value={newMileageUnit} onValueChange={v => setNewMileageUnit(v as "km" | "mi")}>
                     <SelectTrigger className="w-28 shrink-0 text-right" dir="rtl">
                       <SelectValue />

@@ -59,7 +59,7 @@ const DrawerContent = React.forwardRef<
           else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
         }}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[90dvh] flex-col rounded-t-[10px] border bg-background",
+          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[90dvh] flex-col rounded-t-[10px] border bg-background transition-[max-height] duration-150 ease-out",
           className,
         )}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}

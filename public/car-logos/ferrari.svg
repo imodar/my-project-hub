@@ -1,8 +1,0 @@
-<svg viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg">
-  <rect width="60" height="100" fill="white"/>
-  <polygon points="5,5 55,5 55,85 30,95 5,85" fill="#CC0000" stroke="#1A1A1A" stroke-width="2"/>
-  <rect x="10" y="10" width="40" height="6" fill="#009246"/>
-  <rect x="10" y="16" width="40" height="6" fill="white"/>
-  <rect x="10" y="22" width="40" height="6" fill="#CE2B37"/>
-  <text x="30" y="72" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="18" font-weight="900" fill="#C8A028">SF</text>
-</svg>
