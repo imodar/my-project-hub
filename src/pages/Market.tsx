@@ -176,6 +176,7 @@ const Market = () => {
     }
   }, [lists, activeListId]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -455,6 +456,10 @@ const Market = () => {
               }]
             : []),
           {
+            icon: <Search size={20} className="text-white" />,
+            onClick: () => { haptic.light(); setShowSearch(s => !s); if (showSearch) setSearchQuery(""); },
+          },
+          {
             icon: <Plus size={20} className="text-white" />,
             onClick: () => setShowAddList(true),
           },
@@ -529,6 +534,7 @@ const Market = () => {
       )}
 
       {/* Search */}
+      {showSearch && (
       <div className="px-4 pt-3">
         <div className="relative">
           <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -538,9 +544,11 @@ const Market = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pr-9 bg-card border-border rounded-xl text-sm"
+            autoFocus
           />
         </div>
       </div>
+      )}
 
       {/* Category filters - show based on list's useCategories setting */}
       {activeList?.useCategories && (
