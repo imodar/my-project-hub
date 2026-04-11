@@ -10,7 +10,6 @@ interface TaskRow {
   done?: boolean;
   note?: string | null;
   listName?: string;
-  [key: string]: unknown;
 }
 
 const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
@@ -19,11 +18,11 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
   const { t } = useLanguage();
 
   const allTasks = (taskLists || []).flatMap((list) =>
-    (list.task_items || []).map((item: TaskRow) => ({
+    (list.task_items || []).map((item: any) => ({
       ...item,
       listName: list.name,
     }))
-  );
+  ) as TaskRow[];
 
   const displayTasks = allTasks
     .sort((a: TaskRow, b: TaskRow) => Number(a.done) - Number(b.done))
