@@ -24,11 +24,11 @@ export default function AppUpdateBanner() {
     if ("caches" in window) {
       caches.keys().then((names) => {
         Promise.all(names.map((n) => caches.delete(n))).finally(() => {
-          window.location.reload();
+          (window as any).location.reload();
         });
       });
     } else {
-      window.location.reload();
+      (window as any).location.reload();
     }
   };
 
