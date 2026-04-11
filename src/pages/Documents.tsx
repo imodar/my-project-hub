@@ -30,6 +30,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { haptic } from "@/lib/haptics";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { appToast } from "@/lib/toast";
 
 type DocCategory = "identity" | "medical" | "vehicles" | "home" | "passport" | "other";
 
@@ -84,6 +86,7 @@ const Documents = () => {
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { lists: dbDocLists, isLoading: docsLoading, createList: createDocListMut, deleteList: deleteDocListMut, addItem: addDocItemMut, updateItem: updateDocItemMut, deleteItem: deleteDocItemMut, updateList: updateDocListMut } = useDocumentLists();
+  const { familyId } = useFamilyId();
 
   const lists: DocList[] = useMemo(() => {
     const mapped = (dbDocLists || []).map((l: any) => ({
@@ -222,31 +225,38 @@ const Documents = () => {
         ? `${(file.size / 1024).toFixed(0)} KB`
         : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage with familyId prefix for RLS
       const fileId = crypto.randomUUID();
       const ext = file.name.split(".").pop() || "bin";
-      const storagePath = `${fileId}.${ext}`;
+      if (!familyId) {
+        appToast.error("لا يمكن رفع الملف بدون عائلة");
+        return;
+      }
+      const storagePath = `${familyId}/${fileId}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(storagePath, file, { contentType: file.type, upsert: false });
 
-      let url: string;
       if (uploadError) {
-        // Fallback to base64 if storage upload fails
-        const reader = new FileReader();
-        const base64Url = await new Promise<string>((resolve) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
-        url = base64Url;
-      } else {
-        // Get public URL (documents bucket is private, use signed URL)
-        const { data: signedData } = await supabase.storage
-          .from("documents")
-          .createSignedUrl(storagePath, 60 * 60 * 24 * 365); // 1 year
-        url = signedData?.signedUrl || storagePath;
+        console.error("[Documents] Upload failed:", uploadError);
+        appToast.error("فشل رفع الملف إلى التخزين السحابي");
+        return;
       }
+
+      // Cache blob locally for offline access
+      try {
+        if ("caches" in window) {
+          const cache = await caches.open("documents-cache-v1");
+          await cache.put(storagePath, new Response(file));
+        }
+      } catch {}
+
+      // Get signed URL for display
+      const { data: signedData } = await supabase.storage
+        .from("documents")
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+      const url = signedData?.signedUrl || storagePath;
 
       const docFile: DocFile = {
         id: fileId,
