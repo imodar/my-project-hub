@@ -85,7 +85,17 @@ const Documents = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
-  const { lists: dbDocLists, isLoading: docsLoading, createList: createDocListMut, deleteList: deleteDocListMut, addItem: addDocItemMut, updateItem: updateDocItemMut, deleteItem: deleteDocItemMut, updateList: updateDocListMut } = useDocumentLists();
+  const {
+    lists: dbDocLists,
+    isLoading: docsLoading,
+    createList: createDocListMut,
+    deleteList: deleteDocListMut,
+    addItem: addDocItemMut,
+    addFile: addDocFileMut,
+    updateItem: updateDocItemMut,
+    deleteItem: deleteDocItemMut,
+    updateList: updateDocListMut,
+  } = useDocumentLists();
   const { familyId } = useFamilyId();
 
   const lists: DocList[] = useMemo(() => {
@@ -144,15 +154,43 @@ const Documents = () => {
   const [newReminderEnabled, setNewReminderEnabled] = useState(false);
   const [newFiles, setNewFiles] = useState<DocFile[]>([]);
   const isPickingFileRef = useRef(false);
+  const pickerResetTimeoutRef = useRef<number | null>(null);
+  const newFileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+
+  const clearPickerLockTimeout = useCallback(() => {
+    if (pickerResetTimeoutRef.current !== null) {
+      window.clearTimeout(pickerResetTimeoutRef.current);
+      pickerResetTimeoutRef.current = null;
+    }
+  }, []);
+
+  const schedulePickerUnlock = useCallback((delay = 2000) => {
+    clearPickerLockTimeout();
+    pickerResetTimeoutRef.current = window.setTimeout(() => {
+      isPickingFileRef.current = false;
+      pickerResetTimeoutRef.current = null;
+    }, delay);
+  }, [clearPickerLockTimeout]);
+
+  const triggerFilePicker = useCallback((target: "new" | "existing") => {
+    isPickingFileRef.current = true;
+    schedulePickerUnlock(10000);
+    const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
+    input?.click();
+  }, [schedulePickerUnlock]);
 
   // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
   useEffect(() => {
     const onWindowFocus = () => {
-      setTimeout(() => { isPickingFileRef.current = false; }, 2000);
+      schedulePickerUnlock(2000);
     };
     window.addEventListener("focus", onWindowFocus);
-    return () => window.removeEventListener("focus", onWindowFocus);
-  }, []);
+    return () => {
+      window.removeEventListener("focus", onWindowFocus);
+      clearPickerLockTimeout();
+    };
+  }, [clearPickerLockTimeout, schedulePickerUnlock]);
 
   // New list form
   const [newListName, setNewListName] = useState("");
@@ -216,6 +254,7 @@ const Documents = () => {
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, target: "new" | "existing") => {
     const files = e.target.files;
     if (!files) return;
+
     Array.from(files).forEach(async (file) => {
       const isImage = file.type.startsWith("image/");
       const isPdf = file.type === "application/pdf";
@@ -268,10 +307,26 @@ const Documents = () => {
       };
       if (target === "new") {
         setNewFiles((prev) => [...prev, docFile]);
+        return;
       }
+
+      if (!editTarget) {
+        appToast.error("تعذّر تحديد المستند لإرفاق الملف");
+        return;
+      }
+
+      setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
+      addDocFileMut.mutate({
+        document_id: editTarget.id,
+        name: file.name,
+        file_url: url,
+        type: isImage ? "image" : "pdf",
+        size: file.size,
+      });
     });
+
     e.target.value = "";
-  }, [editTarget, activeListId, familyId]);
+  }, [addDocFileMut, editTarget, familyId]);
 
   const addItem = useCallback(() => {
     if (!newName.trim() || !activeListId) return;
@@ -712,20 +767,40 @@ const Documents = () => {
               )}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">إضافة مرفقات</p>
-                <label
+                <button
+                  type="button"
                   className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
-                  onPointerDown={() => { isPickingFileRef.current = true; }}
+                  onClick={() => triggerFilePicker("existing")}
                 >
                   <Plus size={16} />
                   رفع صورة أو PDF
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => { isPickingFileRef.current = false; handleFileUpload(e, "existing"); }}
-                  />
-                </label>
+                </button>
+                <input
+                  ref={editFileInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    handleFileUpload(e, "existing");
+                    schedulePickerUnlock(2000);
+                  }}
+                />
+                {editTarget?.files.length ? (
+                  <div className="space-y-1.5 mt-2">
+                    {editTarget.files.map((file) => (
+                      <div key={file.id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
+                        {file.type === "image" ? (
+                          <Image size={14} className="text-blue-500" />
+                        ) : (
+                          <FileText size={14} className="text-red-500" />
+                        )}
+                        <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{file.size}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
             <DrawerFooter className="flex-row gap-2">
@@ -764,23 +839,25 @@ const Documents = () => {
               )}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">المرفقات</p>
-                <label
+                <button
+                  type="button"
                   className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
-                  onPointerDown={() => { isPickingFileRef.current = true; }}
+                  onClick={() => triggerFilePicker("new")}
                 >
                   <Plus size={16} />
                   رفع صورة أو PDF
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      isPickingFileRef.current = false;
-                      handleFileUpload(e, "new");
-                    }}
-                  />
-                </label>
+                </button>
+                <input
+                  ref={newFileInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    handleFileUpload(e, "new");
+                    schedulePickerUnlock(2000);
+                  }}
+                />
                 {newFiles.length > 0 && (
                   <div className="space-y-1.5 mt-2">
                     {newFiles.map((file) => (
