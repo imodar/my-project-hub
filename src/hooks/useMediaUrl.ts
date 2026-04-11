@@ -1,23 +1,26 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const CACHE_NAME = "chat-media-v1";
+type SupportedBucket = "chat-media" | "documents" | "album-photos" | "trip-documents";
+
+function getCacheName(bucket: SupportedBucket) {
+  return `${bucket}-cache-v1`;
+}
 
 /**
- * Extract the storage path from a Supabase signed URL.
- * Signed URLs look like:
- *   https://<ref>.supabase.co/storage/v1/object/sign/chat-media/<familyId>/<fileId>.jpg?token=...
- * We want: <familyId>/<fileId>.jpg
+ * Extract the storage path from a Supabase signed URL for a given bucket.
  */
-function extractStoragePath(url: string): string | null {
+function extractStoragePath(url: string, bucket: SupportedBucket): string | null {
   try {
     const u = new URL(url);
-    // Pattern: /storage/v1/object/sign/<bucket>/<path...>
-    const match = u.pathname.match(/\/storage\/v1\/object\/sign\/chat-media\/(.+)/);
-    if (match) return match[1];
-    // Also handle /storage/v1/object/public/chat-media/<path>
-    const match2 = u.pathname.match(/\/storage\/v1\/object\/public\/chat-media\/(.+)/);
-    if (match2) return match2[1];
+    const signMatch = u.pathname.match(
+      new RegExp(`/storage/v1/object/sign/${bucket}/(.+)`)
+    );
+    if (signMatch) return signMatch[1];
+    const pubMatch = u.pathname.match(
+      new RegExp(`/storage/v1/object/public/${bucket}/(.+)`)
+    );
+    if (pubMatch) return pubMatch[1];
     return null;
   } catch {
     return null;
@@ -29,7 +32,16 @@ type MediaState = {
   status: "loading" | "ready" | "error";
 };
 
-export function useMediaUrl(originalUrl: string | undefined): MediaState {
+interface UseMediaUrlOptions {
+  bucket?: SupportedBucket;
+}
+
+export function useMediaUrl(
+  originalUrl: string | undefined,
+  options?: UseMediaUrlOptions
+): MediaState {
+  const bucket = options?.bucket ?? "chat-media";
+
   const [state, setState] = useState<MediaState>(() => {
     if (!originalUrl) return { url: null, status: "error" };
     return { url: null, status: "loading" };
@@ -42,13 +54,14 @@ export function useMediaUrl(originalUrl: string | undefined): MediaState {
     }
 
     let cancelled = false;
+    const cacheName = getCacheName(bucket);
 
     (async () => {
       try {
         // 1. Check Cache API first
         if ("caches" in window) {
-          const cache = await caches.open(CACHE_NAME);
-          const storagePath = extractStoragePath(originalUrl);
+          const cache = await caches.open(cacheName);
+          const storagePath = extractStoragePath(originalUrl, bucket);
           if (storagePath) {
             const cached = await cache.match(storagePath);
             if (cached) {
@@ -69,22 +82,21 @@ export function useMediaUrl(originalUrl: string | undefined): MediaState {
           if (!cancelled) {
             setState({ url: URL.createObjectURL(blob), status: "ready" });
           }
-          // Cache it
-          cacheBlob(originalUrl, blob);
+          cacheBlob(originalUrl, blob, bucket);
           return;
         }
 
-        // 3. If 401/403 (expired), refresh the signed URL
+        // 3. If expired, refresh the signed URL
         if (resp.status === 400 || resp.status === 401 || resp.status === 403) {
-          const storagePath = extractStoragePath(originalUrl);
+          const storagePath = extractStoragePath(originalUrl, bucket);
           if (!storagePath) {
             if (!cancelled) setState({ url: null, status: "error" });
             return;
           }
 
           const { data: signed, error } = await supabase.storage
-            .from("chat-media")
-            .createSignedUrl(storagePath, 60 * 60 * 24 * 7); // 7 days
+            .from(bucket)
+            .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
 
           if (error || !signed?.signedUrl) {
             if (!cancelled) setState({ url: null, status: "error" });
@@ -101,11 +113,10 @@ export function useMediaUrl(originalUrl: string | undefined): MediaState {
           if (!cancelled) {
             setState({ url: URL.createObjectURL(blob), status: "ready" });
           }
-          cacheBlob(originalUrl, blob);
+          cacheBlob(originalUrl, blob, bucket);
           return;
         }
 
-        // Other error
         if (!cancelled) setState({ url: null, status: "error" });
       } catch (err) {
         console.warn("[useMediaUrl] Error:", err);
@@ -116,17 +127,17 @@ export function useMediaUrl(originalUrl: string | undefined): MediaState {
     return () => {
       cancelled = true;
     };
-  }, [originalUrl]);
+  }, [originalUrl, bucket]);
 
   return state;
 }
 
-async function cacheBlob(originalUrl: string, blob: Blob) {
+async function cacheBlob(originalUrl: string, blob: Blob, bucket: SupportedBucket) {
   try {
     if (!("caches" in window)) return;
-    const storagePath = extractStoragePath(originalUrl);
+    const storagePath = extractStoragePath(originalUrl, bucket);
     if (!storagePath) return;
-    const cache = await caches.open(CACHE_NAME);
+    const cache = await caches.open(getCacheName(bucket));
     await cache.put(storagePath, new Response(blob));
   } catch {
     // Silently fail cache write
