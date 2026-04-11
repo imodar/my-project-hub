@@ -67,6 +67,14 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
 
   // ── جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
+    if (!apiFn) {
+      // Local-only mode: read from Dexie directly
+      const { db } = await import("@/lib/db");
+      const tableObj = (db as any)[tableName];
+      if (!tableObj) return [];
+      const all = await tableObj.toArray();
+      return applyFilter(all);
+    }
     const result = await syncTable<T>(
       tableName,
       (lastSyncedAt) => apiFn(lastSyncedAt),

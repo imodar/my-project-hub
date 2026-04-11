@@ -288,7 +288,7 @@ async function deriveKeyFromPassphrase(
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt,
+      salt: salt as unknown as BufferSource,
       iterations: 200_000, // 200k iterations لأمان أعلى
       hash: "SHA-256",
     },

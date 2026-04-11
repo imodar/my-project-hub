@@ -8,7 +8,7 @@ interface TaskRow {
   id: string;
   name?: string;
   done?: boolean;
-  note?: string;
+  note?: string | null;
   listName?: string;
   [key: string]: unknown;
 }

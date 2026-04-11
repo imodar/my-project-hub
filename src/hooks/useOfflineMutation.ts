@@ -124,6 +124,10 @@ export function useOfflineMutation<
       }
 
       // ── 4. إرسال للـ API ──
+      if (!apiFn) {
+        // Local-only mode — no API call, already saved to Dexie + queue
+        return { data: null, queued: false };
+      }
       try {
         const { data, error } = await apiFn(variables);
 
