@@ -74,6 +74,6 @@ Deno.serve(async (req) => {
 
     return json({ message: `Transferred admin in ${transferred} families`, count: transferred });
   } catch (err) {
-    return json({ error: err.message }, 500);
+    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }
 });
