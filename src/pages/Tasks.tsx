@@ -132,6 +132,7 @@ const Tasks = () => {
     }
   }, [lists, activeListId]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [taskTab, setTaskTab] = useState<"all" | "mine">("all");
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
@@ -498,6 +499,10 @@ const Tasks = () => {
                 }]
               : []),
             {
+              icon: <Search size={20} className="text-white" />,
+              onClick: () => { haptic.light(); setShowSearch(s => !s); if (showSearch) setSearchQuery(""); },
+            },
+            {
               icon: <Plus size={20} className="text-white" />,
               onClick: () => setShowAddList(true),
             },
@@ -526,19 +531,29 @@ const Tasks = () => {
         </PageHeader>
 
         <PullToRefresh onRefresh={handleRefresh}>
-        {/* Search + Stats */}
-        {activeList && (
-          <div className="px-4 pt-3 space-y-2">
+        {/* Search */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-out ${showSearch ? "max-h-16 opacity-100" : "max-h-0 opacity-0"}`}
+        >
+          <div className="px-4 pt-3 pb-1">
             <div className="relative">
               <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
+                ref={(el) => { if (el && showSearch) el.focus(); }}
                 placeholder="ابحث في المهام..."
                 aria-label="بحث في المهام"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onBlur={() => { setShowSearch(false); setSearchQuery(""); }}
                 className="pr-9 bg-card border-border rounded-xl text-sm"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        {activeList && (
+          <div className="px-4 pt-2">
             <div className="flex items-center gap-3 text-xs text-muted-foreground pb-1">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-primary" />
