@@ -41,6 +41,7 @@ interface DocFile {
   type: "image" | "pdf";
   url: string; // base64 or object URL
   size: string;
+  rawSize?: number; // raw bytes, needed for add-file API
   addedAt: string;
 }
 
@@ -153,6 +154,7 @@ const Documents = () => {
   const [newExpiryDate, setNewExpiryDate] = useState("");
   const [newReminderEnabled, setNewReminderEnabled] = useState(false);
   const [newFiles, setNewFiles] = useState<DocFile[]>([]);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const isPickingFileRef = useRef(false);
   const pickerResetTimeoutRef = useRef<number | null>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
@@ -251,14 +253,16 @@ const Documents = () => {
     setEditTarget(null);
   }, [editTarget, editName, editCategory, editNote, editExpiryDate, editReminderEnabled, updateDocItemMut]);
 
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, target: "new" | "existing") => {
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, target: "new" | "existing") => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    Array.from(files).forEach(async (file) => {
+    setIsUploadingFile(true);
+
+    for (const file of Array.from(files)) {
       const isImage = file.type.startsWith("image/");
       const isPdf = file.type === "application/pdf";
-      if (!isImage && !isPdf) return;
+      if (!isImage && !isPdf) continue;
 
       const sizeLabel = file.size < 1024 * 1024
         ? `${(file.size / 1024).toFixed(0)} KB`
@@ -269,7 +273,7 @@ const Documents = () => {
       const ext = file.name.split(".").pop() || "bin";
       if (!familyId) {
         appToast.error("لا يمكن رفع الملف بدون عائلة");
-        return;
+        continue;
       }
       const storagePath = `${familyId}/${fileId}.${ext}`;
 
@@ -280,7 +284,7 @@ const Documents = () => {
       if (uploadError) {
         console.error("[Documents] Upload failed:", uploadError);
         appToast.error("فشل رفع الملف إلى التخزين السحابي");
-        return;
+        continue;
       }
 
       // Cache blob locally for offline access
@@ -303,16 +307,18 @@ const Documents = () => {
         type: isImage ? "image" : "pdf",
         url,
         size: sizeLabel,
+        rawSize: file.size,
         addedAt: new Date().toISOString(),
       };
+
       if (target === "new") {
         setNewFiles((prev) => [...prev, docFile]);
-        return;
+        continue;
       }
 
       if (!editTarget) {
         appToast.error("تعذّر تحديد المستند لإرفاق الملف");
-        return;
+        continue;
       }
 
       setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
@@ -323,23 +329,47 @@ const Documents = () => {
         type: isImage ? "image" : "pdf",
         size: file.size,
       });
-    });
+    }
 
     e.target.value = "";
+    setIsUploadingFile(false);
   }, [addDocFileMut, editTarget, familyId]);
 
-  const addItem = useCallback(() => {
+  const addItem = useCallback(async () => {
     if (!newName.trim() || !activeListId) return;
     haptic.medium();
-    addDocItemMut.mutate({
+
+    // Capture values before clearing state
+    const filesToAttach = [...newFiles];
+    const itemPayload = {
       list_id: activeListId, name: newName.trim(), category: newCategory,
       note: newNote.trim(), expiry_date: newExpiryDate || undefined,
       reminder_enabled: newReminderEnabled,
-    });
+    };
+
+    // Optimistically reset form and close drawer
     setNewName(""); setNewNote(""); setNewCategory("identity");
     setNewExpiryDate(""); setNewReminderEnabled(false); setNewFiles([]);
     setShowAddItem(false);
-  }, [activeListId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, addDocItemMut]);
+
+    try {
+      const result = await addDocItemMut.mutateAsync(itemPayload);
+      const documentId = (result as any)?.data?.id;
+      if (documentId && filesToAttach.length > 0) {
+        for (const file of filesToAttach) {
+          addDocFileMut.mutate({
+            document_id: documentId,
+            name: file.name,
+            file_url: file.url,
+            type: file.type,
+            size: file.rawSize ?? 0,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[Documents] Failed to add document:", err);
+    }
+  }, [activeListId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, newFiles, addDocItemMut, addDocFileMut]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
@@ -882,7 +912,9 @@ const Documents = () => {
               </div>
             </div>
             <DrawerFooter className="flex-row gap-2">
-              <Button onClick={addItem} className="flex-1 rounded-xl">إضافة</Button>
+              <Button onClick={addItem} disabled={isUploadingFile} className="flex-1 rounded-xl">
+                {isUploadingFile ? "جاري الرفع..." : "إضافة"}
+              </Button>
               <Button variant="outline" onClick={() => setShowAddItem(false)} className="flex-1 rounded-xl">إلغاء</Button>
             </DrawerFooter>
           </DrawerContent>
