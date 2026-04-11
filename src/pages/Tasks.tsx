@@ -780,7 +780,10 @@ const Tasks = () => {
               <DrawerDescription>أضف مهمة مع الأولوية والتكليف</DrawerDescription>
             </DrawerHeader>
             <div className="space-y-3 px-4">
-              <Input placeholder="اسم المهمة" value={newItemName} onChange={(e) => { setNewItemName(e.target.value); taskDraft.saveDraft({ name: e.target.value, note: newItemNote, priority: newItemPriority, assignedTo: newItemAssignedTo }); }} className="rounded-xl" />
+              <Input placeholder="اسم المهمة" value={newItemName}
+                onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); taskDraft.saveDraft({ name: e.target.value, note: newItemNote, priority: newItemPriority, assignedTo: newItemAssignedTo }); }}
+                onInput={(e) => { newItemNameRef.current = (e.target as HTMLInputElement).value; }}
+                className="rounded-xl" />
               <Input placeholder="ملاحظة (اختياري)" value={newItemNote} onChange={(e) => { setNewItemNote(e.target.value); taskDraft.saveDraft({ name: newItemName, note: e.target.value, priority: newItemPriority, assignedTo: newItemAssignedTo }); }} className="rounded-xl" />
               <div>
                 <p className="text-xs text-muted-foreground mb-2">الأولوية</p>
@@ -836,7 +839,10 @@ const Tasks = () => {
               <DrawerDescription>أنشئ قائمة مهام جديدة</DrawerDescription>
             </DrawerHeader>
             <div className="space-y-3 px-4">
-              <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
+              <Input placeholder="اسم القائمة" value={newListName}
+                onChange={(e) => { newListNameRef.current = e.target.value; setNewListName(e.target.value); }}
+                onInput={(e) => { newListNameRef.current = (e.target as HTMLInputElement).value; }}
+                className="rounded-xl" />
               <div>
                 <p className="text-xs text-muted-foreground mb-2">مشاركة مع (اختياري)</p>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
