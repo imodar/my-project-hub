@@ -153,6 +153,7 @@ const Tasks = () => {
 
   // New item form
   const [newItemName, setNewItemName] = useState("");
+  const newItemNameRef = useRef("");
   const [newItemNote, setNewItemNote] = useState("");
   const [newItemPriority, setNewItemPriority] = useState<TaskItem["priority"]>("none");
   const [newItemAssignedTo, setNewItemAssignedTo] = useState("");
@@ -170,6 +171,7 @@ const Tasks = () => {
 
   // New list form
   const [newListName, setNewListName] = useState("");
+  const newListNameRef = useRef("");
   const [newListShareMembers, setNewListShareMembers] = useState<string[]>([]);
 
   // Share form
@@ -311,15 +313,17 @@ const Tasks = () => {
   }, [editTarget, editName, editNote, editPriority, editAssignedTo, updateItemMutation]);
 
   const addItem = useCallback(() => {
-    if (!newItemName.trim() || !activeListId) return;
+    const name = (newItemNameRef.current || newItemName).trim();
+    if (!name || !activeListId) return;
     haptic.medium();
     addItemMutation.mutate({
       list_id: activeListId,
-      name: newItemName.trim(),
+      name,
       note: newItemNote.trim(),
       priority: newItemPriority,
       assigned_to: newItemAssignedTo || null,
     });
+    newItemNameRef.current = "";
     setNewItemName("");
     setNewItemNote("");
     setNewItemPriority("none");
@@ -328,7 +332,8 @@ const Tasks = () => {
   }, [activeListId, newItemName, newItemNote, newItemPriority, newItemAssignedTo, addItemMutation]);
 
   const addList = useCallback(() => {
-    if (!newListName.trim()) return;
+    const name = (newListNameRef.current || newListName).trim();
+    if (!name) return;
     haptic.medium();
     const newId = crypto.randomUUID();
     pendingActiveListIdRef.current = newId;
@@ -336,7 +341,7 @@ const Tasks = () => {
     const autoType = newListShareMembers.length > 0 ? "family" : "personal";
     createListMutation.mutate(
       {
-        name: newListName.trim(),
+        name,
         type: autoType,
         shared_with: newListShareMembers,
         id: newId,
@@ -350,6 +355,7 @@ const Tasks = () => {
         },
       }
     );
+    newListNameRef.current = "";
     setNewListName("");
     setNewListShareMembers([]);
     setShowAddList(false);

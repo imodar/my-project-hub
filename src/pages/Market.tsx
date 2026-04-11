@@ -775,7 +775,7 @@ const Market = () => {
           <div className="flex-1 overflow-y-auto space-y-3 px-4">
             <Input placeholder="اسم المنتج" value={newItemName}
               onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }}
-              onCompositionEnd={(e) => { const v = (e.target as HTMLInputElement).value; newItemNameRef.current = v; setNewItemName(v); }}
+              onInput={(e) => { const v = (e.target as HTMLInputElement).value; newItemNameRef.current = v; }}
               className="rounded-xl" />
             <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }} className="rounded-xl" />
             {activeList?.useCategories && (
@@ -816,7 +816,7 @@ const Market = () => {
           <div className="space-y-3 px-4" data-vaul-no-drag>
             <Input placeholder="اسم القائمة" value={newListName}
               onChange={(e) => { newListNameRef.current = e.target.value; setNewListName(e.target.value); }}
-              onCompositionEnd={(e) => { const v = (e.target as HTMLInputElement).value; newListNameRef.current = v; setNewListName(v); }}
+              onInput={(e) => { const v = (e.target as HTMLInputElement).value; newListNameRef.current = v; }}
               className="rounded-xl" />
             <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
               <div className="flex-1">
