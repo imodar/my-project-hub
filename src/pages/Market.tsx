@@ -537,7 +537,7 @@ const Market = () => {
       <div
         className={`overflow-hidden transition-all duration-300 ease-out ${showSearch ? "max-h-16 opacity-100" : "max-h-0 opacity-0"}`}
       >
-        <div className="px-4 pt-3">
+        <div className="px-4 pt-3 pb-1">
           <div className="relative">
             <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
