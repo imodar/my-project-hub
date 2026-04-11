@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect, useLayoutEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useTrash } from "@/contexts/TrashContext";
@@ -534,21 +534,24 @@ const Market = () => {
       )}
 
       {/* Search */}
-      {showSearch && (
-      <div className="px-4 pt-3">
-        <div className="relative">
-          <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-           <Input
-            placeholder="ابحث في القائمة..."
-            aria-label="بحث في القائمة"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-9 bg-card border-border rounded-xl text-sm"
-            autoFocus
-          />
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-out ${showSearch ? "max-h-16 opacity-100" : "max-h-0 opacity-0"}`}
+      >
+        <div className="px-4 pt-3">
+          <div className="relative">
+            <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              ref={(el) => { if (el && showSearch) el.focus(); }}
+              placeholder="ابحث في القائمة..."
+              aria-label="بحث في القائمة"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onBlur={() => { setShowSearch(false); setSearchQuery(""); }}
+              className="pr-9 bg-card border-border rounded-xl text-sm"
+            />
+          </div>
         </div>
       </div>
-      )}
 
       {/* Category filters - show based on list's useCategories setting */}
       {activeList?.useCategories && (
