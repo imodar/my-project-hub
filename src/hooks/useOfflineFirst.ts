@@ -18,7 +18,7 @@ export interface UseOfflineFirstOptions<T> {
   /** مفتاح React Query */
   queryKey: QueryKey;
   /** دالة جلب البيانات من API — تستقبل اختيارياً lastSyncedAt لدعم Delta Sync */
-  apiFn: (since?: string | null) => Promise<{ data: T[] | null; error: string | null }>;
+  apiFn?: (since?: string | null) => Promise<{ data: T[] | null; error: string | null }>;
   /** مدة صلاحية الكاش — افتراضي: 10 دقائق */
   staleTime?: number;
   /** فلترة إضافية على البيانات المحلية */
@@ -67,6 +67,14 @@ export function useOfflineFirst<T extends { id: string; created_at?: string }>({
 
   // ── جلب من API في الخلفية ──
   const fetchAndSync = useCallback(async (): Promise<T[]> => {
+    if (!apiFn) {
+      // Local-only mode: read from Dexie directly
+      const { db } = await import("@/lib/db");
+      const tableObj = (db as any)[tableName];
+      if (!tableObj) return [];
+      const all = await tableObj.toArray();
+      return applyFilter(all);
+    }
     const result = await syncTable<T>(
       tableName,
       (lastSyncedAt) => apiFn(lastSyncedAt),

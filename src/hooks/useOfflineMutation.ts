@@ -21,7 +21,7 @@ export interface UseOfflineMutationOptions<TData, TVariables> {
   /** نوع العملية */
   operation: SyncOperation;
   /** دالة إرسال البيانات للـ API */
-  apiFn: (data: TVariables) => Promise<{ data: TData | null; error: string | null }>;
+  apiFn?: (data: TVariables) => Promise<{ data: TData | null; error: string | null }>;
   /** مفتاح React Query لإعادة الجلب بعد النجاح */
   queryKey?: QueryKey;
   /** callback بعد النجاح */
@@ -124,6 +124,10 @@ export function useOfflineMutation<
       }
 
       // ── 4. إرسال للـ API ──
+      if (!apiFn) {
+        // Local-only mode — no API call, already saved to Dexie + queue
+        return { data: null, queued: false };
+      }
       try {
         const { data, error } = await apiFn(variables);
 
