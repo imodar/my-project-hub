@@ -62,6 +62,6 @@ Deno.serve(async (req) => {
 
     return json({ message: `Cleaned ${cleaned} accounts`, count: cleaned });
   } catch (err) {
-    return json({ error: err.message }, 500);
+    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }
 });

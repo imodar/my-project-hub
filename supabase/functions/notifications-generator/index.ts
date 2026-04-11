@@ -256,6 +256,6 @@ Deno.serve(async (req) => {
       count: inserted,
     });
   } catch (err) {
-    return json({ error: err.message }, 500);
+    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }
 });

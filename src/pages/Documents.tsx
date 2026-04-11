@@ -155,10 +155,16 @@ const Documents = () => {
   const [newReminderEnabled, setNewReminderEnabled] = useState(false);
   const [newFiles, setNewFiles] = useState<DocFile[]>([]);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [isPickerLocked, setIsPickerLocked] = useState(false);
   const isPickingFileRef = useRef(false);
   const pickerResetTimeoutRef = useRef<number | null>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+
+  const setPickerLock = useCallback((locked: boolean) => {
+    isPickingFileRef.current = locked;
+    setIsPickerLocked(locked);
+  }, []);
 
   const clearPickerLockTimeout = useCallback(() => {
     if (pickerResetTimeoutRef.current !== null) {
@@ -170,22 +176,28 @@ const Documents = () => {
   const schedulePickerUnlock = useCallback((delay = 2000) => {
     clearPickerLockTimeout();
     pickerResetTimeoutRef.current = window.setTimeout(() => {
-      isPickingFileRef.current = false;
+      setPickerLock(false);
       pickerResetTimeoutRef.current = null;
     }, delay);
-  }, [clearPickerLockTimeout]);
+  }, [clearPickerLockTimeout, setPickerLock]);
 
   const triggerFilePicker = useCallback((target: "new" | "existing") => {
-    isPickingFileRef.current = true;
+    setPickerLock(true);
     schedulePickerUnlock(10000);
     const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
+    if (!input) {
+      setPickerLock(false);
+      return;
+    }
     input?.click();
-  }, [schedulePickerUnlock]);
+  }, [schedulePickerUnlock, setPickerLock]);
 
   // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
   useEffect(() => {
     const onWindowFocus = () => {
-      schedulePickerUnlock(2000);
+      if (isPickingFileRef.current) {
+        schedulePickerUnlock(2000);
+      }
     };
     window.addEventListener("focus", onWindowFocus);
     return () => {
@@ -255,85 +267,90 @@ const Documents = () => {
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, target: "new" | "existing") => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setIsUploadingFile(true);
-
-    for (const file of Array.from(files)) {
-      const isImage = file.type.startsWith("image/");
-      const isPdf = file.type === "application/pdf";
-      if (!isImage && !isPdf) continue;
-
-      const sizeLabel = file.size < 1024 * 1024
-        ? `${(file.size / 1024).toFixed(0)} KB`
-        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-
-      // Upload to Supabase Storage with familyId prefix for RLS
-      const fileId = crypto.randomUUID();
-      const ext = file.name.split(".").pop() || "bin";
-      if (!familyId) {
-        appToast.error("لا يمكن رفع الملف بدون عائلة");
-        continue;
-      }
-      const storagePath = `${familyId}/${fileId}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("documents")
-        .upload(storagePath, file, { contentType: file.type, upsert: false });
-
-      if (uploadError) {
-        console.error("[Documents] Upload failed:", uploadError);
-        appToast.error("فشل رفع الملف إلى التخزين السحابي");
-        continue;
-      }
-
-      // Cache blob locally for offline access
-      try {
-        if ("caches" in window) {
-          const cache = await caches.open("documents-cache-v1");
-          await cache.put(storagePath, new Response(file));
-        }
-      } catch {}
-
-      // Get signed URL for display
-      const { data: signedData } = await supabase.storage
-        .from("documents")
-        .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-      const url = signedData?.signedUrl || storagePath;
-
-      const docFile: DocFile = {
-        id: fileId,
-        name: file.name,
-        type: isImage ? "image" : "pdf",
-        url,
-        size: sizeLabel,
-        rawSize: file.size,
-        addedAt: new Date().toISOString(),
-      };
-
-      if (target === "new") {
-        setNewFiles((prev) => [...prev, docFile]);
-        continue;
-      }
-
-      if (!editTarget) {
-        appToast.error("تعذّر تحديد المستند لإرفاق الملف");
-        continue;
-      }
-
-      setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
-      addDocFileMut.mutate({
-        document_id: editTarget.id,
-        name: file.name,
-        file_url: url,
-        type: isImage ? "image" : "pdf",
-        size: file.size,
-      });
+    if (!files || files.length === 0) {
+      schedulePickerUnlock(300);
+      return;
     }
 
-    e.target.value = "";
-    setIsUploadingFile(false);
-  }, [addDocFileMut, editTarget, familyId]);
+    setIsUploadingFile(true);
+    try {
+      for (const file of Array.from(files)) {
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf";
+        if (!isImage && !isPdf) continue;
+
+        const sizeLabel = file.size < 1024 * 1024
+          ? `${(file.size / 1024).toFixed(0)} KB`
+          : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+
+        // Upload to Supabase Storage with familyId prefix for RLS
+        const fileId = crypto.randomUUID();
+        const ext = file.name.split(".").pop() || "bin";
+        if (!familyId) {
+          appToast.error("لا يمكن رفع الملف بدون عائلة");
+          continue;
+        }
+        const storagePath = `${familyId}/${fileId}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("documents")
+          .upload(storagePath, file, { contentType: file.type, upsert: false });
+
+        if (uploadError) {
+          console.error("[Documents] Upload failed:", uploadError);
+          appToast.error("فشل رفع الملف إلى التخزين السحابي");
+          continue;
+        }
+
+        // Cache blob locally for offline access
+        try {
+          if ("caches" in window) {
+            const cache = await caches.open("documents-cache-v1");
+            await cache.put(storagePath, new Response(file));
+          }
+        } catch {}
+
+        // Get signed URL for display
+        const { data: signedData } = await supabase.storage
+          .from("documents")
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+        const url = signedData?.signedUrl || storagePath;
+
+        const docFile: DocFile = {
+          id: fileId,
+          name: file.name,
+          type: isImage ? "image" : "pdf",
+          url,
+          size: sizeLabel,
+          rawSize: file.size,
+          addedAt: new Date().toISOString(),
+        };
+
+        if (target === "new") {
+          setNewFiles((prev) => [...prev, docFile]);
+          continue;
+        }
+
+        if (!editTarget) {
+          appToast.error("تعذّر تحديد المستند لإرفاق الملف");
+          continue;
+        }
+
+        setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
+        addDocFileMut.mutate({
+          document_id: editTarget.id,
+          name: file.name,
+          file_url: url,
+          type: isImage ? "image" : "pdf",
+          size: file.size,
+        });
+      }
+    } finally {
+      e.target.value = "";
+      setIsUploadingFile(false);
+      schedulePickerUnlock(600);
+    }
+  }, [addDocFileMut, editTarget, familyId, schedulePickerUnlock]);
 
   const addItem = useCallback(async () => {
     if (!newName.trim() || !activeListId) return;
@@ -772,7 +789,7 @@ const Documents = () => {
         </AlertDialog>
 
         {/* Edit Item Drawer */}
-        <Drawer open={!!editTarget} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; if (!open) setEditTarget(null); }}>
+        <Drawer dismissible={!isPickerLocked} open={!!editTarget} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; if (!open) setEditTarget(null); }}>
           <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }} onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
             <DrawerHeader className="text-right">
               <DrawerTitle>تعديل المستند</DrawerTitle>
@@ -812,8 +829,7 @@ const Documents = () => {
                   multiple
                   className="hidden"
                   onChange={(e) => {
-                    handleFileUpload(e, "existing");
-                    schedulePickerUnlock(2000);
+                    void handleFileUpload(e, "existing");
                   }}
                 />
                 {editTarget?.files.length ? (
@@ -841,7 +857,7 @@ const Documents = () => {
         </Drawer>
 
         {/* Add Item Drawer */}
-        <Drawer open={showAddItem} onOpenChange={(open) => {
+        <Drawer dismissible={!isPickerLocked} open={showAddItem} onOpenChange={(open) => {
           if (!open && isPickingFileRef.current) return;
           setShowAddItem(open);
         }}>
@@ -884,8 +900,7 @@ const Documents = () => {
                   multiple
                   className="hidden"
                   onChange={(e) => {
-                    handleFileUpload(e, "new");
-                    schedulePickerUnlock(2000);
+                    void handleFileUpload(e, "new");
                   }}
                 />
                 {newFiles.length > 0 && (
