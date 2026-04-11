@@ -1,33 +1,64 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyId } from "./useFamilyId";
 import { useOfflineFirst } from "./useOfflineFirst";
 import { useOfflineMutation } from "./useOfflineMutation";
+import { db } from "@/lib/db";
 import type { Debt } from "@/types/entities";
 
+/**
+ * الديون محلية 100% — لا اتصال بالسيرفر للقراءة.
+ * عند أول تشغيل (Dexie فارغ) يتم استيراد البيانات من السيرفر مرة واحدة فقط.
+ * البيانات تبقى في Supabase كـ backup ولا تُحذف.
+ */
 export function useDebts() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
   const qc = useQueryClient();
   const key = ["debts", familyId];
+  const migratedRef = useRef(false);
 
-  const apiFn = useCallback(async () => {
-    if (!user) return { data: [], error: null };
-    const { data, error } = await supabase.functions.invoke("debts-api", {
-      body: { action: "get-debts" },
-    });
-    if (error) return { data: [], error: error.message };
-    if (data?.error) return { data: [], error: data.error };
-    return { data: data?.data || [], error: null };
-  }, [user]);
+  // استيراد أولي من السيرفر إذا كان Dexie فارغاً
+  useEffect(() => {
+    if (!user || !familyId || migratedRef.current) return;
+    migratedRef.current = true;
 
-  const { data: debts, isLoading, refetch } = useOfflineFirst<Debt>({
+    (async () => {
+      const existing = await db.debts.where("family_id").equals(familyId).count();
+      if (existing > 0) return; // بيانات موجودة محلياً — لا حاجة للاستيراد
+
+      try {
+        const { data, error } = await supabase.functions.invoke("debts-api", {
+          body: { action: "get-debts" },
+        });
+        if (error || data?.error) return;
+        const records: any[] = data?.data || [];
+        if (records.length > 0) {
+          await db.debts.bulkPut(records);
+          // استيراد المدفوعات والتأجيلات المرتبطة
+          const payments = records.flatMap((d: any) => d.debt_payments || []);
+          const postponements = records.flatMap((d: any) => d.debt_postponements || []);
+          if (payments.length > 0) await db.debt_payments.bulkPut(payments);
+          // debt_postponements مخزّنة داخل سجل الدين نفسه
+          qc.invalidateQueries({ queryKey: key });
+        }
+      } catch {
+        // فشل الاستيراد — سيُعاد عند الفتح التالي
+      }
+    })();
+  }, [user, familyId]);
+
+  // قراءة من Dexie فقط — بدون apiFn
+  const { data: debts, isLoading } = useOfflineFirst<Debt>({
     table: "debts",
     queryKey: key,
-    apiFn,
     enabled: !!user && !!familyId,
+    filterFn: useCallback(
+      (items: any[]) => items.filter((d: any) => d.family_id === familyId || d.user_id === user?.id),
+      [familyId, user?.id]
+    ),
     scopeKey: familyId ?? undefined,
   });
 
@@ -44,80 +75,52 @@ export function useDebts() {
     [qc, key]
   );
 
+  // كل mutation تكتب في Dexie فقط — بدون apiFn
   const addDebt = useOfflineMutation<any, any>({
     table: "debts", operation: "INSERT",
-    apiFn: async (input) => {
-      const { id, created_at, ...rest } = input;
-      const { data, error } = await supabase.functions.invoke("debts-api", {
-        body: {
-          action: "create-debt", family_id: familyId,
-          person_name: rest.person_name, amount: rest.amount, currency: rest.currency || "SAR",
-          direction: rest.direction, date: rest.date, due_date: rest.due_date,
-          note: rest.note || "", payment_details: rest.payment_details || null,
-          has_reminder: rest.has_reminder || false,
-        },
-      });
-      return { data: data?.data ?? null, error: data?.error || error?.message || null };
-    },
     queryKey: key,
   });
 
   const updateDebt = useOfflineMutation<any, any>({
     table: "debts", operation: "UPDATE",
-    apiFn: async (input) => {
-      const { id, ...updates } = input;
-      const { data, error } = await supabase.functions.invoke("debts-api", {
-        body: { action: "update-debt", id, ...updates },
-      });
-      return { data: data?.data ?? null, error: data?.error || error?.message || null };
-    },
     queryKey: key,
   });
 
   const deleteDebt = useOfflineMutation<any, any>({
     table: "debts", operation: "DELETE",
-    apiFn: async (input) => {
-      const { data, error } = await supabase.functions.invoke("debts-api", {
-        body: { action: "delete-debt", id: input.id },
-      });
-      return { data: null, error: data?.error || error?.message || null };
-    },
     queryKey: key,
   });
 
   const addPayment = useOfflineMutation<any, any>({
     table: "debt_payments", operation: "INSERT",
-    apiFn: async (input) => {
-      const { id, created_at, ...rest } = input;
-      const { data, error } = await supabase.functions.invoke("debts-api", {
-        body: {
-          action: "add-payment", debt_id: rest.debt_id, amount: rest.amount,
-          currency: rest.currency || "SAR", type: rest.type || "cash",
-          item_description: rest.item_description, date: rest.date,
-          payment_details: rest.payment_details || null,
-        },
-      });
-      return { data: data?.data ?? null, error: data?.error || error?.message || null };
-    },
   });
 
   const addPostponement = useOfflineMutation<any, any>({
     table: "debt_payments", operation: "INSERT",
-    apiFn: async (input) => {
-      const { id, created_at, ...rest } = input;
-      const { data, error } = await supabase.functions.invoke("debts-api", {
-        body: { action: "add-postponement", debt_id: rest.debt_id, new_date: rest.new_date, reason: rest.reason },
-      });
-      return { data: data?.data ?? null, error: data?.error || error?.message || null };
-    },
   });
 
   return {
     debts: debts || [], isLoading,
     addDebt: {
       ...addDebt,
-      mutate: (input: any) => addDebt.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), user_id: user?.id, family_id: familyId, debt_payments: [], debt_postponements: [], ...input }),
-      mutateAsync: async (input: any) => addDebt.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), user_id: user?.id, family_id: familyId, debt_payments: [], debt_postponements: [], ...input }),
+      mutate: (input: any) => addDebt.mutate({
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        user_id: user?.id,
+        family_id: familyId,
+        debt_payments: [],
+        debt_postponements: [],
+        ...input,
+      }),
+      mutateAsync: async (input: any) => addDebt.mutateAsync({
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        user_id: user?.id,
+        family_id: familyId,
+        debt_payments: [],
+        debt_postponements: [],
+        ...input,
+      }),
     },
     updateDebt,
     deleteDebt: {

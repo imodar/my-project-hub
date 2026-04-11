@@ -83,12 +83,14 @@ const SOSNavButton = ({ label }: { label: string }) => {
   );
 };
 
-const BottomNavWhatsApp = React.forwardRef<HTMLDivElement>((_props, _ref) => {
+interface NavItem { icon: React.ElementType; label: string; path: string; isSOS?: boolean }
+
+const BottomNavWhatsApp = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { icon: Home, label: t.nav.home, path: "/" },
     { icon: Map, label: t.nav.map, path: "/map" },
     { icon: ShieldAlert, label: t.nav.emergency, path: "", isSOS: true },
@@ -103,7 +105,7 @@ const BottomNavWhatsApp = React.forwardRef<HTMLDivElement>((_props, _ref) => {
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="flex items-end justify-around max-w-2xl mx-auto">
         {navItems.map((item) => {
-          if ((item as any).isSOS) {
+          if (item.isSOS) {
             return <SOSNavButton key="sos" label={item.label} />;
           }
 
@@ -145,7 +147,7 @@ const BottomNavWhatsApp = React.forwardRef<HTMLDivElement>((_props, _ref) => {
       </div>
     </div>
   );
-});
+};
 BottomNavWhatsApp.displayName = "BottomNav";
 
 export default BottomNavWhatsApp;

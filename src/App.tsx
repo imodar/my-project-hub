@@ -18,12 +18,13 @@ import PageTransition from "@/components/PageTransition";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 import { useFamilyId } from "@/hooks/useFamilyId";
+import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { warmCacheCritical, warmCacheDeferred } from "@/lib/warmCache";
 import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
 import { useFamilyRealtime } from "@/hooks/useFamilyRealtime";
 import { usePendingMemberAlert } from "@/hooks/usePendingMemberAlert";
 import { useRevenueCat } from "@/hooks/useRevenueCat";
-import { ListPageSkeleton } from "@/components/PageSkeletons";
 import BottomNav from "@/components/home/BottomNavWhatsApp";
 import SOSButton from "@/components/home/SOSButton";
 import RoleGuard from "@/components/RoleGuard";
@@ -33,7 +34,7 @@ import AppUpdateBanner from "@/components/AppUpdateBanner";
 import { useStorageQuota } from "@/hooks/useStorageQuota";
 
 // ── Retry wrapper for stale chunk recovery ──
-function lazyRetry(importFn: () => Promise<any>) {
+function lazyRetry(importFn: () => Promise<{ default: React.ComponentType }>) {
   return React.lazy(() =>
     importFn().catch(() => {
       // Stale chunk — reload once to get fresh assets
@@ -153,6 +154,8 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
   // Global realtime for cross-device sync
   useFamilyRealtime();
   usePendingMemberAlert();
+  useAndroidBackButton();
+  usePushNotifications();
   // Initialize RevenueCat SDK once user is logged in (native platforms only)
   useRevenueCat();
 
@@ -179,7 +182,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
     }
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -216,7 +219,7 @@ const WarmCacheProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, familyId, familyLoading, initialSyncDone, qc]);
+  }, [user, familyId, familyLoading, initialSyncDone, qc, cacheReady]);
 
   // Listen for sync queue failures and notify user
   useEffect(() => {

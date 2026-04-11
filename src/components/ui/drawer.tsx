@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 const Drawer = React.forwardRef<
   HTMLDivElement,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Root> & { shouldScaleBackground?: boolean }
->(({ shouldScaleBackground = true, ...props }, _ref) => (
-  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
+>(({ shouldScaleBackground = true, repositionInputs = false, ...props }, _ref) => (
+  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} repositionInputs={repositionInputs} {...props} />
 ));
 Drawer.displayName = "Drawer";
 
@@ -28,60 +28,54 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => {
-  const contentRef = React.useRef<HTMLDivElement>(null);
-
-  // Fix: when virtual keyboard closes, force the drawer to recalculate its position
-  React.useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const onResize = () => {
-      // Scroll to top to reset any keyboard-induced offset
-      if (contentRef.current) {
-        contentRef.current.style.transform = "";
-      }
-    };
-    vv.addEventListener("resize", onResize);
-    return () => vv.removeEventListener("resize", onResize);
-  }, []);
-
-  return (
-    <DrawerPortal>
-      <DrawerOverlay />
-      <DrawerPrimitive.Content
-        ref={(node) => {
-          (contentRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-          if (typeof ref === "function") ref(node);
-          else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+>(({ className, children, ...props }, ref) => (
+  <DrawerPortal>
+    <DrawerOverlay />
+    <DrawerPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[90dvh] flex-col rounded-t-[10px] border bg-background transition-[max-height] duration-150 ease-out",
+        className,
+      )}
+      {...props}
+    >
+      <div className="mx-auto mt-4 h-2 w-[100px] shrink-0 rounded-full bg-muted" />
+      {/* data-vaul-no-drag: prevents Vaul from treating keyboard/IME touch events as drag gestures */}
+      {/* onKeyDown: prevents Space from accidentally triggering focused buttons inside the drawer */}
+      <div
+        data-vaul-no-drag
+        className="flex flex-col flex-1 min-h-0"
+        onKeyDown={(e) => {
+          if (e.key === " " && e.target instanceof HTMLElement && e.target.tagName === "BUTTON") {
+            e.preventDefault();
+          }
         }}
-        className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[85dvh] flex-col rounded-t-[10px] border bg-background",
-          className,
-        )}
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        {...props}
       >
-        <div className="mx-auto mt-4 h-2 w-[100px] shrink-0 rounded-full bg-muted" />
         {children}
-      </DrawerPrimitive.Content>
-    </DrawerPortal>
-  );
-});
+      </div>
+    </DrawerPrimitive.Content>
+  </DrawerPortal>
+));
 DrawerContent.displayName = "DrawerContent";
 
 const DrawerHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("grid gap-1.5 p-4 text-right", className)} {...props} />
+  <div ref={ref} className={cn("grid gap-1.5 p-4 text-right shrink-0", className)} {...props} />
 ));
 DrawerHeader.displayName = "DrawerHeader";
 
 const DrawerFooter = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("mt-auto flex flex-col gap-2 p-4", className)} {...props} />
+  React.HTMLAttributes<HTMLDivElement> & { style?: React.CSSProperties }
+>(({ className, style, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("mt-auto flex flex-col gap-2 p-4 shrink-0", className)}
+    style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))", ...style }}
+    {...props}
+  />
 ));
 DrawerFooter.displayName = "DrawerFooter";
 

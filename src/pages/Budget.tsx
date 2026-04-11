@@ -14,6 +14,7 @@ import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from "@/components/ui/drawer";
 import { haptic } from "@/lib/haptics";
+import { appToast } from "@/lib/toast";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { Calendar } from "@/components/ui/calendar";
@@ -101,7 +102,7 @@ const BudgetCard = ({ b, onSelect, remaining, spentPercent }: {
             )}
             {shared && (
               <span className="text-[9px] text-primary/70 flex items-center gap-0.5">
-                <Users size={10} /> مع {b.sharedWith.join("، ")}
+                <Users size={10} /> مشترك مع {b.sharedWith.length} {b.sharedWith.length === 1 ? "عضو" : "أعضاء"}
               </span>
             )}
           </div>
@@ -162,7 +163,7 @@ const Budget = () => {
   const [expenseName, setExpenseName] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
   const [editIncomeVal, setEditIncomeVal] = useState("");
-  const [shareNames, setShareNames] = useState<string[]>([]);
+  const [shareIds, setShareIds] = useState<string[]>([]);
   const [editExpenseName, setEditExpenseName] = useState("");
   const [editExpenseAmount, setEditExpenseAmount] = useState("");
   const [expenseDate, setExpenseDate] = useState<Date | undefined>(undefined);
@@ -182,12 +183,15 @@ const Budget = () => {
 
     if (budgetType === "month") {
       const monthStr = `${newYear}-${String(parseInt(newMonthIdx) + 1).padStart(2, "0")}`;
-      if (budgets.some(b => b.month === monthStr && b.type === "month")) return;
+      if (budgets.some(b => b.month === monthStr && b.type === "month")) {
+        appToast.error("يوجد ميزانية لهذا الشهر مسبقاً");
+        return;
+      }
       createBudget.mutate({
         type: "month",
         month: monthStr,
         income: parseFloat(newIncome),
-        shared_with: [...shareNames],
+        shared_with: [...shareIds],
       });
     } else {
       if (!projectLabel.trim()) return;
@@ -196,14 +200,14 @@ const Budget = () => {
         month: `project-${Date.now()}`,
         label: projectLabel.trim(),
         income: parseFloat(newIncome),
-        shared_with: [...shareNames],
+        shared_with: [...shareIds],
       });
     }
 
     setShowAddMonth(false);
     setNewIncome("");
     setProjectLabel("");
-    setShareNames([]);
+    setShareIds([]);
   };
 
   const handleAddExpense = () => {
@@ -262,12 +266,12 @@ const Budget = () => {
       id: showEditBudget.id,
       income: parseFloat(newIncome),
       label: showEditBudget.type === "project" ? projectLabel.trim() || showEditBudget.label : showEditBudget.label,
-      shared_with: [...shareNames],
+      shared_with: [...shareIds],
     });
     setShowEditBudget(null);
     setNewIncome("");
     setProjectLabel("");
-    setShareNames([]);
+    setShareIds([]);
   };
 
   const onRefresh = useCallback(() => new Promise<void>(r => setTimeout(r, 600)), []);
@@ -379,7 +383,7 @@ const Budget = () => {
               <DrawerTitle>إضافة بند مصروف</DrawerTitle>
               <DrawerDescription>أضف بند جديد سيتم خصمه من الميزانية</DrawerDescription>
             </DrawerHeader>
-            <div className="px-4 space-y-3">
+            <div className="flex-1 overflow-y-auto px-4 space-y-3">
               <Input
                 placeholder="اسم البند (مثال: إيجار، فواتير...)"
                 value={expenseName}
@@ -422,10 +426,11 @@ const Budget = () => {
                 </Popover>
               </div>
             </div>
-            <DrawerFooter>
-              <Button onClick={handleAddExpense} disabled={!expenseName.trim() || !expenseAmount}>
+            <DrawerFooter className="flex-row gap-2">
+              <Button onClick={handleAddExpense} disabled={!expenseName.trim() || !expenseAmount} className="flex-1">
                 إضافة
               </Button>
+              <Button variant="outline" onClick={() => setShowAddExpense(false)} className="flex-1">إلغاء</Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
@@ -587,7 +592,7 @@ const Budget = () => {
                           setShowEditBudget(b);
                           setNewIncome(b.income.toString());
                           setProjectLabel(b.label || "");
-                          setShareNames([...b.sharedWith]);
+                          setShareIds([...b.sharedWith]);
                         }},
                       ]}
                     >
@@ -614,7 +619,7 @@ const Budget = () => {
                           setShowEditBudget(b);
                           setNewIncome(b.income.toString());
                           setProjectLabel(b.label || "");
-                          setShareNames([...b.sharedWith]);
+                          setShareIds([...b.sharedWith]);
                         }},
                       ]}
                     >
@@ -636,7 +641,7 @@ const Budget = () => {
         setNewYear(String(new Date().getFullYear()));
         setProjectLabel("");
         setNewIncome("");
-        setShareNames([]);
+        setShareIds([]);
         setShowAddMonth(true);
       }} />
 
@@ -647,7 +652,7 @@ const Budget = () => {
             <DrawerTitle>إضافة ميزانية جديدة</DrawerTitle>
             <DrawerDescription>اختر نوع الميزانية وحدد المبلغ الوارد</DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 space-y-4">
+          <div className="flex-1 overflow-y-auto px-4 space-y-4">
             {/* Type Selection */}
             <div className="flex gap-2">
               <button
@@ -740,34 +745,36 @@ const Budget = () => {
                     key={member.id}
                     type="button"
                     onClick={() =>
-                      setShareNames((prev) =>
-                        prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
+                      setShareIds((prev) =>
+                        prev.includes(member.id) ? prev.filter((id) => id !== member.id) : [...prev, member.id]
                       )
                     }
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                      shareNames.includes(member.name)
+                      shareIds.includes(member.id)
                         ? "border-primary bg-primary/10"
                         : "border-border bg-card"
                     }`}
                   >
                     <span className="font-medium text-foreground">{member.name}</span>
-                    {shareNames.includes(member.name) && <Check size={14} className="text-primary" />}
+                    {shareIds.includes(member.id) && <Check size={14} className="text-primary" />}
                   </button>
                 ))}
               </div>
-              {shareNames.length === 0 && (
+              {shareIds.length === 0 && (
                 <p className="text-[10px] text-muted-foreground/60 mt-2">🔒 ستبقى خاصة بك فقط</p>
               )}
             </div>
             )}
           </div>
-          <DrawerFooter>
+          <DrawerFooter className="flex-row gap-2">
             <Button
               onClick={handleAddBudget}
               disabled={!newIncome || (budgetType === "project" && !projectLabel.trim())}
+              className="flex-1"
             >
               إضافة
             </Button>
+            <Button variant="outline" onClick={() => setShowAddMonth(false)} className="flex-1">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
@@ -816,18 +823,18 @@ const Budget = () => {
                     key={member.id}
                     type="button"
                     onClick={() =>
-                      setShareNames((prev) =>
-                        prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
+                      setShareIds((prev) =>
+                        prev.includes(member.id) ? prev.filter((id) => id !== member.id) : [...prev, member.id]
                       )
                     }
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                      shareNames.includes(member.name)
+                      shareIds.includes(member.id)
                         ? "border-primary bg-primary/10"
                         : "border-border bg-card"
                     }`}
                   >
                     <span className="font-medium text-foreground">{member.name}</span>
-                    {shareNames.includes(member.name) && <Check size={14} className="text-primary" />}
+                    {shareIds.includes(member.id) && <Check size={14} className="text-primary" />}
                   </button>
                 ))}
               </div>

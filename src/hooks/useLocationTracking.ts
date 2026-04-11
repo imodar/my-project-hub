@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "./useFamilyId";
+import { db } from "@/lib/db";
 
 interface MemberLocation {
   user_id: string;
@@ -19,11 +20,23 @@ interface MemberLocation {
 export function useLocationTracking(intervalMinutes = 5) {
   const { familyId } = useFamilyId();
   const queryClient = useQueryClient();
-  const [isSharing, setIsSharingState] = useState(true);
+  // null = لم نعرف بعد من السيرفر، true/false = محدّد
+  const [isSharing, setIsSharingState] = useState<boolean | null>(null);
+  const isSharingRef = useRef<boolean>(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendMyLocationRef = useRef<() => Promise<void>>(async () => {});
 
-  // Fetch family locations
+  // تحميل آخر مواقع محفوظة من Dexie فوراً (initialData)
+  const cachedLocations = useRef<MemberLocation[]>([]);
+  useEffect(() => {
+    if (!familyId) return;
+    db.member_locations
+      .where("family_id").equals(familyId)
+      .toArray()
+      .then((rows) => { cachedLocations.current = rows as MemberLocation[]; });
+  }, [familyId]);
+
+  // جلب مواقع العائلة من السيرفر
   const { data: locations = [], isLoading } = useQuery({
     queryKey: ["family-locations", familyId],
     queryFn: async (): Promise<MemberLocation[]> => {
@@ -43,14 +56,40 @@ export function useLocationTracking(intervalMinutes = 5) {
         }
       );
       if (!res.ok) throw new Error("Failed to fetch locations");
-      return res.json();
+      const data: MemberLocation[] = await res.json();
+
+      // حفظ المواقع في Dexie لعرضها فوراً في المرة القادمة
+      if (data.length > 0) {
+        await db.member_locations.bulkPut(
+          data.map((l) => ({ ...l, family_id: familyId }))
+        );
+      }
+
+      return data;
     },
     enabled: !!familyId,
     refetchInterval: intervalMinutes * 60 * 1000,
     staleTime: 60 * 1000,
+    // عرض الكاش المحلي فوراً ريثما يحمّل السيرفر
+    placeholderData: cachedLocations.current.length > 0 ? cachedLocations.current : undefined,
   });
 
-  // Update my location
+  // تحديد isSharing من بيانات السيرفر (موقعي الخاص)
+  useEffect(() => {
+    if (locations.length === 0 || isSharing !== null) return;
+    const me = locations.find((l) => l.isMe);
+    if (me !== undefined) {
+      setIsSharingState(me.is_sharing);
+      isSharingRef.current = me.is_sharing;
+    }
+  }, [locations, isSharing]);
+
+  // تزامن الـ ref مع الـ state
+  useEffect(() => {
+    if (isSharing !== null) isSharingRef.current = isSharing;
+  }, [isSharing]);
+
+  // تحديث موقعي
   const updateMutation = useMutation({
     mutationFn: async (coords: { lat: number; lng: number; accuracy?: number }) => {
       if (!familyId) throw new Error("No family");
@@ -73,7 +112,7 @@ export function useLocationTracking(intervalMinutes = 5) {
             lng: coords.lng,
             accuracy: coords.accuracy,
             familyId,
-            isSharing,
+            isSharing: isSharingRef.current,
           }),
         }
       );
@@ -88,9 +127,10 @@ export function useLocationTracking(intervalMinutes = 5) {
     },
   });
 
-  // Toggle sharing and immediately notify server
+  // تبديل المشاركة وإرسالها فوراً للسيرفر
   const setIsSharing = useCallback(async (newVal: boolean) => {
     setIsSharingState(newVal);
+    isSharingRef.current = newVal;
     if (!familyId) return;
     try {
       const session = await supabase.auth.getSession();
@@ -98,7 +138,6 @@ export function useLocationTracking(intervalMinutes = 5) {
       if (!token) return;
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
-      // Get last known position or use 0,0 as fallback
       let lat = 0, lng = 0;
       try {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -108,8 +147,8 @@ export function useLocationTracking(intervalMinutes = 5) {
         });
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
-      } catch { /* use last known from locations */ 
-        const me = locations.find(l => l.isMe);
+      } catch {
+        const me = locations.find((l) => l.isMe);
         if (me) { lat = me.lat; lng = me.lng; }
       }
 
@@ -131,9 +170,9 @@ export function useLocationTracking(intervalMinutes = 5) {
     }
   }, [familyId, locations, queryClient]);
 
-  // Get current position and send
+  // إرسال موقعي الحالي
   const sendMyLocation = useCallback(async () => {
-    if (!isSharing || !familyId) return;
+    if (!isSharingRef.current || !familyId) return;
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -150,33 +189,33 @@ export function useLocationTracking(intervalMinutes = 5) {
     } catch (err) {
       console.warn("Location error:", err);
     }
-  }, [isSharing, familyId, updateMutation]);
+  }, [familyId, updateMutation]);
 
-  // Keep ref in sync
   useEffect(() => {
     sendMyLocationRef.current = sendMyLocation;
   }, [sendMyLocation]);
 
-  // Start periodic tracking
+  // تتبع دوري للموقع
   useEffect(() => {
-    if (!isSharing || !familyId) return;
+    if (isSharing !== true || !familyId) return;
 
     sendMyLocationRef.current();
-
     intervalRef.current = setInterval(
       () => sendMyLocationRef.current(),
       intervalMinutes * 60 * 1000
     );
-
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [isSharing, familyId, intervalMinutes]);
 
+  // الحالة الافتراضية قبل تحديد السيرفر: true (لتبدأ المتابعة إذا لم يُوجد بيانات سيرفر بعد)
+  const effectiveSharing = isSharing ?? true;
+
   return {
     locations,
     isLoading,
-    isSharing,
+    isSharing: effectiveSharing,
     setIsSharing,
     sendMyLocation,
     isSending: updateMutation.isPending,

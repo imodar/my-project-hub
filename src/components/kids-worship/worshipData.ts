@@ -137,9 +137,9 @@ export const loadChildren = (): ChildProfile[] => {
     const members = localStorage.getItem("family_members");
     if (members) {
       const parsed = JSON.parse(members);
-      const kids = parsed.filter((m: any) => m.role === "son" || m.role === "daughter");
+      const kids = (parsed as { id: string; name: string; role: string }[]).filter((m) => m.role === "son" || m.role === "daughter");
       if (kids.length > 0) {
-        return kids.map((k: any) => ({ id: k.id, name: k.name }));
+        return kids.map((k) => ({ id: k.id, name: k.name }));
       }
     }
   } catch { /* */ }

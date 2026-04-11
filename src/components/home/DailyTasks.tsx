@@ -4,20 +4,28 @@ import { useAppNavigate } from "@/hooks/useAppNavigate";
 import { useTaskLists } from "@/hooks/useTaskLists";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+interface TaskRow {
+  id: string;
+  name?: string;
+  done?: boolean;
+  listName?: string;
+  [key: string]: unknown;
+}
+
 const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
   const navigate = useAppNavigate();
   const { lists: taskLists, isLoading } = useTaskLists();
   const { t } = useLanguage();
 
   const allTasks = (taskLists || []).flatMap((list) =>
-    (list.task_items || []).map((item: any) => ({
+    (list.task_items || []).map((item: TaskRow) => ({
       ...item,
       listName: list.name,
     }))
   );
 
   const displayTasks = allTasks
-    .sort((a: any, b: any) => Number(a.done) - Number(b.done))
+    .sort((a: TaskRow, b: TaskRow) => Number(a.done) - Number(b.done))
     .slice(0, 6);
 
   if (isLoading) {
@@ -77,7 +85,7 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
         </button>
       </div>
       <div className="space-y-3">
-        {displayTasks.map((task: any, i: number) => {
+        {displayTasks.map((task: TaskRow, i: number) => {
           const tc = tagColors[i % tagColors.length];
           return (
             <div

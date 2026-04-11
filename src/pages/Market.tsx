@@ -20,10 +20,6 @@ import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from "@/components/ui/drawer";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { haptic } from "@/lib/haptics";
@@ -202,6 +198,9 @@ const Market = () => {
   const [newItemName, setNewItemName] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("أخرى");
   const [newItemQuantity, setNewItemQuantity] = useState("");
+  // Ref to read actual DOM value when Android IME composition hasn't committed to React state yet
+  const newItemNameRef = useRef("");
+  const newListNameRef = useRef("");
 
   // Draft persistence للنموذج
   const marketDraft = useDraftPersistence<{
@@ -276,7 +275,10 @@ const Market = () => {
   }, [editTarget, editName, editQuantity, editCategory, updateItemMutation]);
 
   const addItem = useCallback(() => {
-    if (!newItemName.trim() || !activeList) return;
+    // Read from ref first — handles Android IME composition where React state lags behind DOM
+    const name = (newItemNameRef.current || newItemName).trim();
+    if (!name) { appToast.error("أدخل اسم المنتج"); return; }
+    if (!activeList) { appToast.error("اختر قائمة أولاً"); return; }
 
     if (!familyId || activeList.id === DEFAULT_FAMILY_LIST_ID) {
       appToast.error(familyId ? "جارٍ تجهيز القائمة العائلية" : "يجب الانضمام لعائلة أولاً");
@@ -284,7 +286,8 @@ const Market = () => {
     }
 
     haptic.medium();
-    addItemMutation.mutate({ list_id: activeList.id, name: newItemName.trim(), category: newItemCategory, quantity: newItemQuantity.trim() || undefined });
+    addItemMutation.mutate({ list_id: activeList.id, name, category: newItemCategory, quantity: newItemQuantity.trim() || undefined });
+    newItemNameRef.current = "";
     setNewItemName("");
     setNewItemQuantity("");
     setNewItemCategory("أخرى");
@@ -292,7 +295,9 @@ const Market = () => {
   }, [activeList, newItemName, newItemCategory, newItemQuantity, addItemMutation, familyId]);
 
   const addList = useCallback(() => {
-    if (!newListName.trim()) return;
+    // Read from ref first — handles Android IME composition where React state lags behind DOM
+    const name = (newListNameRef.current || newListName).trim();
+    if (!name) { appToast.error("أدخل اسم القائمة"); return; }
     if (!familyId) {
       appToast.error("يجب الانضمام لعائلة أولاً");
       return;
@@ -304,7 +309,7 @@ const Market = () => {
     const autoType = newListShareMembers.length > 0 ? "family" : "personal";
     createListMutation.mutate(
       {
-        name: newListName.trim(),
+        name,
         type: autoType,
         shared_with: newListShareMembers,
         use_categories: newListUseCategories,
@@ -319,6 +324,7 @@ const Market = () => {
         },
       }
     );
+    newListNameRef.current = "";
     setNewListName("");
     setNewListShareMembers([]);
     setNewListUseCategories(false);
@@ -644,22 +650,26 @@ const Market = () => {
       </Drawer>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>حذف المنتج</AlertDialogTitle>
-            <AlertDialogDescription>
-              هل أنت متأكد من حذف "{deleteTarget?.name}"؟
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row gap-2">
-            <AlertDialogAction onClick={confirmDelete} className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
-              حذف
-            </AlertDialogAction>
-            <AlertDialogCancel className="flex-1 rounded-xl">إلغاء</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Drawer open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DrawerContent onClick={(e) => e.stopPropagation()}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center font-black">حذف المنتج</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-5 space-y-4" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }} dir="rtl">
+            <p className="text-right text-sm text-muted-foreground break-words">
+              هل أنت متأكد من حذف "<span className="font-medium text-foreground">{deleteTarget?.name}</span>"؟
+            </p>
+            <div className="flex gap-2">
+              <button onClick={confirmDelete} className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                حذف
+              </button>
+              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-3 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* Delete List Confirmation */}
       <Drawer open={!!deleteListTarget} onOpenChange={(open) => !open && setDeleteListTarget(null)}>
@@ -751,8 +761,11 @@ const Market = () => {
             <DrawerTitle>إضافة منتج جديد</DrawerTitle>
             <DrawerDescription>أضف المنتج مع التصنيف والكمية</DrawerDescription>
           </DrawerHeader>
-          <div className="space-y-3 px-4">
-            <Input placeholder="اسم المنتج" value={newItemName} onChange={(e) => { setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }} className="rounded-xl" />
+          <div className="flex-1 overflow-y-auto space-y-3 px-4">
+            <Input placeholder="اسم المنتج" value={newItemName}
+              onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }}
+              onCompositionEnd={(e) => { const v = (e.target as HTMLInputElement).value; newItemNameRef.current = v; setNewItemName(v); }}
+              className="rounded-xl" />
             <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }} className="rounded-xl" />
             {activeList?.useCategories && (
             <div>
@@ -789,8 +802,11 @@ const Market = () => {
             <DrawerTitle>إنشاء قائمة جديدة</DrawerTitle>
             <DrawerDescription>أنشئ قائمة تسوق جديدة</DrawerDescription>
           </DrawerHeader>
-          <div className="space-y-3 px-4">
-            <Input placeholder="اسم القائمة" value={newListName} onChange={(e) => setNewListName(e.target.value)} className="rounded-xl" />
+          <div className="space-y-3 px-4" data-vaul-no-drag>
+            <Input placeholder="اسم القائمة" value={newListName}
+              onChange={(e) => { newListNameRef.current = e.target.value; setNewListName(e.target.value); }}
+              onCompositionEnd={(e) => { const v = (e.target as HTMLInputElement).value; newListNameRef.current = v; setNewListName(v); }}
+              className="rounded-xl" />
             <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">إظهار فئات التسوق الافتراضية</p>
@@ -806,17 +822,17 @@ const Market = () => {
                     key={member.id}
                     onClick={() =>
                       setNewListShareMembers((prev) =>
-                        prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
+                        prev.includes(member.id) ? prev.filter((id) => id !== member.id) : [...prev, member.id]
                       )
                     }
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
-                      newListShareMembers.includes(member.name)
+                      newListShareMembers.includes(member.id)
                         ? "border-primary bg-primary/10"
                         : "border-border bg-card"
                     }`}
                   >
                     <span className="font-medium text-foreground">{member.name}</span>
-                    {newListShareMembers.includes(member.name) && <Check size={14} className="text-primary" />}
+                    {newListShareMembers.includes(member.id) && <Check size={14} className="text-primary" />}
                   </button>
                 ))}
               </div>
@@ -839,17 +855,18 @@ const Market = () => {
           <div className="space-y-2 px-4">
             {FAMILY_MEMBERS.map((member) => (
               <button
-                key={member.id}                onClick={() =>
+                key={member.id}
+                onClick={() =>
                   setSelectedShareMembers((prev) =>
-                    prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
+                    prev.includes(member.id) ? prev.filter((id) => id !== member.id) : [...prev, member.id]
                   )
                 }
                 className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-all ${
-                  selectedShareMembers.includes(member.name) ? "border-primary bg-primary/10" : "border-border bg-card"
+                  selectedShareMembers.includes(member.id) ? "border-primary bg-primary/10" : "border-border bg-card"
                 }`}
               >
                 <span className="font-medium text-foreground">{member.name}</span>
-                {selectedShareMembers.includes(member.name) && <Check size={16} className="text-primary" />}
+                {selectedShareMembers.includes(member.id) && <Check size={16} className="text-primary" />}
               </button>
             ))}
           </div>

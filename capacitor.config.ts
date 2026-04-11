@@ -8,6 +8,7 @@ const config: CapacitorConfig = {
   android: {
     backgroundColor: '#FFFFFF',
     captureInput: true,
+    windowSoftInputMode: "adjustResize",
   },
   ios: {
     contentInset: 'always',

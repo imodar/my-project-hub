@@ -7,12 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { uploadImage } from "@/lib/storage";
 import { db } from "@/lib/db";
 
-const isGoogleEmail = (email: string): boolean => {
-  const googleDomains = ["gmail.com", "googlemail.com"];
-  const domain = email.split("@")[1]?.toLowerCase();
-  return googleDomains.includes(domain);
-};
-
 const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -23,7 +17,6 @@ const Profile = () => {
   const [gmail, setGmail] = useState("");
   const [editingEmail, setEditingEmail] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
-  const [gmailError, setGmailError] = useState("");
 
   // Load profile via Edge Function
   useEffect(() => {
@@ -185,21 +178,14 @@ const Profile = () => {
         }}>
           <label className="text-xs font-semibold text-muted-foreground block mb-2">
             <Mail size={12} className="inline ml-1" />
-            بريد Gmail
+            البريد الإلكتروني
           </label>
           {editingEmail ? (
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
                 <input
                   value={gmail}
-                  onChange={(e) => {
-                    setGmail(e.target.value);
-                    if (e.target.value && !isGoogleEmail(e.target.value)) {
-                      setGmailError("يُقبل فقط بريد Gmail (@gmail.com)");
-                    } else {
-                      setGmailError("");
-                    }
-                  }}
+                  onChange={(e) => setGmail(e.target.value)}
                   placeholder="example@gmail.com"
                   type="email"
                   dir="ltr"
@@ -209,10 +195,6 @@ const Profile = () => {
                 <button
                   onClick={async () => {
                     if (!gmail) { setEditingEmail(false); return; }
-                    if (!isGoogleEmail(gmail)) {
-                      setGmailError("يُقبل فقط بريد Gmail (@gmail.com)");
-                      return;
-                    }
                     setSavingEmail(true);
                     const { error } = await supabase.auth.updateUser({ email: gmail });
                     setSavingEmail(false);
@@ -231,7 +213,6 @@ const Profile = () => {
                   {savingEmail ? "جاري..." : "حفظ"}
                 </button>
               </div>
-              {gmailError && <p className="text-destructive text-xs">{gmailError}</p>}
             </div>
           ) : (
             <button onClick={() => setEditingEmail(true)} className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-right transition-colors active:bg-muted/50">

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ListContentSkeleton } from "@/components/PageSkeletons";
@@ -140,6 +140,16 @@ const Documents = () => {
   const [newExpiryDate, setNewExpiryDate] = useState("");
   const [newReminderEnabled, setNewReminderEnabled] = useState(false);
   const [newFiles, setNewFiles] = useState<DocFile[]>([]);
+  const isPickingFileRef = useRef(false);
+
+  // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
+  useEffect(() => {
+    const onWindowFocus = () => {
+      setTimeout(() => { isPickingFileRef.current = false; }, 800);
+    };
+    window.addEventListener("focus", onWindowFocus);
+    return () => window.removeEventListener("focus", onWindowFocus);
+  }, []);
 
   // New list form
   const [newListName, setNewListName] = useState("");
@@ -667,8 +677,8 @@ const Documents = () => {
         </AlertDialog>
 
         {/* Edit Item Drawer */}
-        <Drawer open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
-          <DrawerContent dir="rtl">
+        <Drawer open={!!editTarget} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; if (!open) setEditTarget(null); }}>
+          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
             <DrawerHeader className="text-right">
               <DrawerTitle>تعديل المستند</DrawerTitle>
               <DrawerDescription>عدّل تفاصيل المستند</DrawerDescription>
@@ -692,7 +702,10 @@ const Documents = () => {
               )}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">إضافة مرفقات</p>
-                <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors">
+                <label
+                  className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
+                  onPointerDown={() => { isPickingFileRef.current = true; }}
+                >
                   <Plus size={16} />
                   رفع صورة أو PDF
                   <input
@@ -700,7 +713,7 @@ const Documents = () => {
                     accept="image/*,.pdf"
                     multiple
                     className="hidden"
-                    onChange={(e) => handleFileUpload(e, "existing")}
+                    onChange={(e) => { isPickingFileRef.current = false; handleFileUpload(e, "existing"); }}
                   />
                 </label>
               </div>
@@ -713,8 +726,11 @@ const Documents = () => {
         </Drawer>
 
         {/* Add Item Drawer */}
-        <Drawer open={showAddItem} onOpenChange={setShowAddItem}>
-          <DrawerContent dir="rtl">
+        <Drawer open={showAddItem} onOpenChange={(open) => {
+          if (!open && isPickingFileRef.current) return;
+          setShowAddItem(open);
+        }}>
+          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
             <DrawerHeader className="text-right">
               <DrawerTitle>إضافة مستند جديد</DrawerTitle>
               <DrawerDescription>أضف وثيقة مع التصنيف والمرفقات</DrawerDescription>
@@ -738,7 +754,10 @@ const Documents = () => {
               )}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">المرفقات</p>
-                <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors">
+                <label
+                  className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
+                  onPointerDown={() => { isPickingFileRef.current = true; }}
+                >
                   <Plus size={16} />
                   رفع صورة أو PDF
                   <input
@@ -746,7 +765,10 @@ const Documents = () => {
                     accept="image/*,.pdf"
                     multiple
                     className="hidden"
-                    onChange={(e) => handleFileUpload(e, "new")}
+                    onChange={(e) => {
+                      isPickingFileRef.current = false;
+                      handleFileUpload(e, "new");
+                    }}
                   />
                 </label>
                 {newFiles.length > 0 && (

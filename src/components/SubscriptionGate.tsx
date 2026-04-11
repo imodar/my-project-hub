@@ -61,11 +61,11 @@ export default function SubscriptionGate({ children, feature, overlay = false }:
         onTouchEnd={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          setShowUpgrade(true);
         }}
-        className="contents"
-        style={{ pointerEvents: "auto" }}
+        style={{ pointerEvents: "auto", display: "block", width: "100%" }}
       >
-        <div className="pointer-events-none">
+        <div className="pointer-events-none select-none">
           {children}
         </div>
       </div>

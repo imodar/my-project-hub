@@ -4,8 +4,9 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useTaskLists } from "@/hooks/useTaskLists";
 import { useTrash } from "@/contexts/TrashContext";
 import { useDraftPersistence } from "@/hooks/useDraftPersistence";
+import { useAuth } from "@/contexts/AuthContext";
 import FAB from "@/components/FAB";
-import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical } from "lucide-react";
+import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, UserCheck } from "lucide-react";
 import SwipeableCard from "@/components/SwipeableCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useFamilyId } from "@/hooks/useFamilyId";
@@ -57,6 +58,7 @@ const DEFAULT_FAMILY_LIST_NAME = "مهام العائلة";
 const Tasks = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
+  const { user } = useAuth();
   const { members: FAMILY_MEMBERS } = useFamilyMembers();
   const { familyId } = useFamilyId();
   const { lists: dbLists, isLoading, isSyncing, createList: createListMutation, deleteList: deleteListMutation, addItem: addItemMutation, toggleItem: toggleItemMutation, updateItem: updateItemMutation, deleteItem: deleteItemMutation, updateList: updateListMutation, pendingItemIds } = useTaskLists();
@@ -130,6 +132,7 @@ const Tasks = () => {
     }
   }, [lists, activeListId]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [taskTab, setTaskTab] = useState<"all" | "mine">("all");
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -189,8 +192,11 @@ const Tasks = () => {
     setVisibleDoneCount(PAGE_SIZE);
   }, [activeListId, searchQuery]);
 
+  const isSharedList = activeList && (activeList.type === "shared" || activeList.type === "family");
   const filteredItems = activeList?.items.filter((item) => {
-    return !searchQuery || item.name.includes(searchQuery) || item.note.includes(searchQuery);
+    const matchesSearch = !searchQuery || item.name.includes(searchQuery) || item.note.includes(searchQuery);
+    const matchesTab = !isSharedList || taskTab === "all" || item.assignedTo === user?.id;
+    return matchesSearch && matchesTab;
   }) || [];
 
   const pendingItems = filteredItems.filter((i) => !i.done);
@@ -454,11 +460,19 @@ const Tasks = () => {
                 <p className="text-[10px] text-muted-foreground mt-0.5">{item.addedBy}</p>
               )}
             </div>
-            {item.priority !== "none" && (
+            {(item.priority !== "none" || item.assignedTo) && (
               <div className="flex flex-col items-end gap-1">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
-                  {prioInfo.emoji} {prioInfo.label}
-                </span>
+                {item.priority !== "none" && (
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${prioInfo.bg} ${prioInfo.text}`}>
+                    {prioInfo.emoji} {prioInfo.label}
+                  </span>
+                )}
+                {item.assignedTo && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
+                    <UserCheck size={9} />
+                    {FAMILY_MEMBERS.find(m => m.id === item.assignedTo)?.name ?? ""}
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -512,10 +526,20 @@ const Tasks = () => {
         </PageHeader>
 
         <PullToRefresh onRefresh={handleRefresh}>
-        {/* Stats bar */}
+        {/* Search + Stats */}
         {activeList && (
-          <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="px-4 pt-3 space-y-2">
+            <div className="relative">
+              <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="ابحث في المهام..."
+                aria-label="بحث في المهام"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-9 bg-card border-border rounded-xl text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground pb-1">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-primary" />
                 {remainingItems} متبقي
@@ -525,27 +549,26 @@ const Tasks = () => {
                 {completedItems} مكتمل
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground">
-                {activeList.lastUpdatedBy} – {activeList.lastUpdatedAt}
-              </span>
-            </div>
           </div>
         )}
 
-        {/* Search */}
-        <div className="px-4 pt-3">
-          <div className="relative">
-            <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="ابحث في المهام..."
-              aria-label="بحث في المهام"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-9 bg-card border-border rounded-xl text-sm"
-            />
+        {/* Shared/Assigned tabs */}
+        {isSharedList && (
+          <div className="px-4 pt-2 flex gap-2">
+            <button
+              onClick={() => setTaskTab("all")}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${taskTab === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+            >
+              مهام مشتركة
+            </button>
+            <button
+              onClick={() => setTaskTab("mine")}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${taskTab === "mine" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+            >
+              مهام مسندة إلي
+            </button>
           </div>
-        </div>
+        )}
 
         {/* Items list */}
         <div className="px-4 pt-4 space-y-2 pb-4">
@@ -631,9 +654,9 @@ const Tasks = () => {
             <DrawerHeader>
               <DrawerTitle className="text-center font-black">حذف المهمة</DrawerTitle>
             </DrawerHeader>
-            <div className="px-5 pb-6 space-y-4" dir="rtl">
-              <p className="text-center text-sm text-muted-foreground">
-                هل أنت متأكد من حذف "{deleteTarget?.name}"؟
+            <div className="px-5 space-y-4" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }} dir="rtl">
+              <p className="text-right text-sm text-muted-foreground break-words">
+                هل أنت متأكد من حذف "<span className="font-medium text-foreground">{deleteTarget?.name}</span>"؟
               </p>
               <div className="flex gap-2">
                 <button onClick={confirmDelete} className="flex-1 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
@@ -703,9 +726,10 @@ const Tasks = () => {
                   <div className="flex flex-wrap gap-2">
                     {FAMILY_MEMBERS.map((member) => (
                       <button
-                        key={member.id}                        onClick={() => setEditAssignedTo(member.name)}
+                        key={member.id}
+                        onClick={() => setEditAssignedTo(editAssignedTo === member.id ? "" : member.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
-                          editAssignedTo === member.name
+                          editAssignedTo === member.id
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border bg-card text-foreground"
                         }`}
@@ -761,9 +785,10 @@ const Tasks = () => {
                   <div className="flex flex-wrap gap-2">
                     {FAMILY_MEMBERS.map((member) => (
                       <button
-                        key={member.id}                        onClick={() => setNewItemAssignedTo(member.name)}
+                        key={member.id}
+                        onClick={() => setNewItemAssignedTo(newItemAssignedTo === member.id ? "" : member.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
-                          newItemAssignedTo === member.name
+                          newItemAssignedTo === member.id
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border bg-card text-foreground"
                         }`}

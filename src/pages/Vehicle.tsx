@@ -45,53 +45,53 @@ interface CarData {
   createdAt: string;
 }
 
-// ─── Car Logos (SVG URLs) ───
+// ─── Car Logos (local SVG assets) ───
 const CAR_LOGOS: Record<string, string> = {
-  toyota: "https://www.carlogos.org/car-logos/toyota-logo-2020-europe.png",
-  honda: "https://www.carlogos.org/car-logos/honda-logo-2000.png",
-  nissan: "https://www.carlogos.org/car-logos/nissan-logo-2020.png",
-  hyundai: "https://www.carlogos.org/car-logos/hyundai-logo-2011.png",
-  kia: "https://www.carlogos.org/car-logos/kia-logo-2021.png",
-  bmw: "https://www.carlogos.org/car-logos/bmw-logo-2020.png",
-  mercedes: "https://www.carlogos.org/car-logos/mercedes-benz-logo-2011.png",
-  audi: "https://www.carlogos.org/car-logos/audi-logo-2016.png",
-  lexus: "https://www.carlogos.org/car-logos/lexus-logo-2013.png",
-  ford: "https://www.carlogos.org/car-logos/ford-logo-2017.png",
-  chevrolet: "https://www.carlogos.org/car-logos/chevrolet-logo-2013.png",
-  volkswagen: "https://www.carlogos.org/car-logos/volkswagen-logo-2019.png",
-  mazda: "https://www.carlogos.org/car-logos/mazda-logo-2018.png",
-  subaru: "https://www.carlogos.org/car-logos/subaru-logo-2019.png",
-  porsche: "https://www.carlogos.org/car-logos/porsche-logo-2014.png",
-  landrover: "https://www.carlogos.org/car-logos/land-rover-logo-2020.png",
-  jeep: "https://www.carlogos.org/car-logos/jeep-logo-2017.png",
-  gmc: "https://www.carlogos.org/car-logos/gmc-logo-2014.png",
-  dodge: "https://www.carlogos.org/car-logos/dodge-logo-2010.png",
-  mitsubishi: "https://www.carlogos.org/car-logos/mitsubishi-logo-2020.png",
-  infiniti: "https://www.carlogos.org/car-logos/infiniti-logo-2020.png",
-  acura: "https://www.carlogos.org/car-logos/acura-logo-2020.png",
-  volvo: "https://www.carlogos.org/car-logos/volvo-logo-2014.png",
-  jaguar: "https://www.carlogos.org/car-logos/jaguar-logo-2012.png",
-  maserati: "https://www.carlogos.org/car-logos/maserati-logo-2020.png",
-  bentley: "https://www.carlogos.org/car-logos/bentley-logo-2002.png",
-  rollsroyce: "https://www.carlogos.org/car-logos/rolls-royce-logo-2020.png",
-  ferrari: "https://www.carlogos.org/car-logos/ferrari-logo-2002.png",
-  lamborghini: "https://www.carlogos.org/car-logos/lamborghini-logo-1998.png",
-  tesla: "https://www.carlogos.org/car-logos/tesla-logo-2007.png",
-  genesis: "https://www.carlogos.org/car-logos/genesis-logo-2015.png",
-  cadillac: "https://www.carlogos.org/car-logos/cadillac-logo-2014.png",
-  lincoln: "https://www.carlogos.org/car-logos/lincoln-logo-2019.png",
-  peugeot: "https://www.carlogos.org/car-logos/peugeot-logo-2010.png",
-  renault: "https://www.carlogos.org/car-logos/renault-logo-2021.png",
-  fiat: "https://www.carlogos.org/car-logos/fiat-logo-2006.png",
-  suzuki: "https://www.carlogos.org/car-logos/suzuki-logo-2019.png",
-  isuzu: "https://www.carlogos.org/car-logos/isuzu-logo-2022.png",
-  chery: "https://www.carlogos.org/car-logos/chery-logo-2013.png",
-  geely: "https://www.carlogos.org/car-logos/geely-logo-2019.png",
-  haval: "https://www.carlogos.org/car-logos/haval-logo-2020.png",
-  mg: "https://www.carlogos.org/car-logos/mg-logo-2021.png",
-  gac: "https://www.carlogos.org/car-logos/gac-logo-2020.png",
-  changan: "https://www.carlogos.org/car-logos/changan-logo-2020.png",
-  byd: "https://www.carlogos.org/car-logos/byd-logo-2021.png",
+  toyota:      "/car-logos/toyota.png",
+  honda:       "/car-logos/honda.png",
+  nissan:      "/car-logos/nissan.png",
+  hyundai:     "/car-logos/hyundai.png",
+  kia:         "/car-logos/kia.png",
+  bmw:         "/car-logos/bmw.png",
+  mercedes:    "/car-logos/mercedes.png",
+  audi:        "/car-logos/audi.png",
+  lexus:       "/car-logos/lexus.png",
+  ford:        "/car-logos/ford.png",
+  chevrolet:   "/car-logos/chevrolet.png",
+  volkswagen:  "/car-logos/volkswagen.png",
+  mazda:       "/car-logos/mazda.png",
+  subaru:      "/car-logos/subaru.png",
+  porsche:     "/car-logos/porsche.png",
+  landrover:   "/car-logos/landrover.png",
+  jeep:        "/car-logos/jeep.png",
+  gmc:         "/car-logos/gmc.png",
+  dodge:       "/car-logos/dodge.png",
+  mitsubishi:  "/car-logos/mitsubishi.png",
+  infiniti:    "/car-logos/infiniti.png",
+  acura:       "/car-logos/acura.png",
+  volvo:       "/car-logos/volvo.png",
+  jaguar:      "/car-logos/jaguar.png",
+  maserati:    "/car-logos/maserati.png",
+  bentley:     "/car-logos/bentley.png",
+  rollsroyce:  "/car-logos/rollsroyce.png",
+  ferrari:     "/car-logos/ferrari.png",
+  lamborghini: "/car-logos/lamborghini.png",
+  tesla:       "/car-logos/tesla.png",
+  genesis:     "/car-logos/genesis.png",
+  cadillac:    "/car-logos/cadillac.png",
+  lincoln:     "/car-logos/lincoln.png",
+  peugeot:     "/car-logos/peugeot.png",
+  renault:     "/car-logos/renault.png",
+  fiat:        "/car-logos/fiat.png",
+  suzuki:      "/car-logos/suzuki.png",
+  isuzu:       "/car-logos/isuzu.png",
+  chery:       "/car-logos/chery.png",
+  geely:       "/car-logos/geely.png",
+  haval:       "/car-logos/haval.png",
+  mg:          "/car-logos/mg.png",
+  gac:         "/car-logos/gac.svg",
+  changan:     "/car-logos/changan.png",
+  byd:         "/car-logos/byd.png",
 };
 
 // ─── Constants ───
@@ -611,7 +611,7 @@ const Vehicle = () => {
             <DrawerHeader>
               <DrawerTitle>{editMaintenanceRecord ? "تعديل سجل الصيانة" : "إضافة سجل صيانة"}</DrawerTitle>
             </DrawerHeader>
-            <div className="px-4 pb-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="px-4 pb-4 space-y-4 flex-1 overflow-y-auto">
               <div className="space-y-2">
                 <Label className="text-right block">نوع الصيانة</Label>
                 <div className="grid grid-cols-3 gap-2">
@@ -645,13 +645,13 @@ const Vehicle = () => {
 
               <div className="space-y-2">
                 <Label className="text-right block">الممشى عند الصيانة ({selectedCar.mileageUnit === "km" ? "كم" : "ميل"})</Label>
-                <Input type="number" value={maintMileage} onChange={e => setMaintMileage(e.target.value)}
+                <Input type="text" inputMode="numeric" pattern="\d*" value={maintMileage} onChange={e => setMaintMileage(e.target.value)}
                   placeholder={selectedCar.mileage.toLocaleString()} className="text-right" />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-right block">التغيير القادم عند ({selectedCar.mileageUnit === "km" ? "كم" : "ميل"})</Label>
-                <Input type="number" value={maintNextMileage} onChange={e => setMaintNextMileage(e.target.value)}
+                <Input type="text" inputMode="numeric" pattern="\d*" value={maintNextMileage} onChange={e => setMaintNextMileage(e.target.value)}
                   placeholder="مثال: 50000" className="text-right" />
               </div>
 
@@ -833,7 +833,7 @@ const Vehicle = () => {
             <DrawerHeader>
               <DrawerTitle>إضافة مركبة جديدة</DrawerTitle>
             </DrawerHeader>
-            <div className="px-4 pb-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="px-4 pb-4 space-y-4 flex-1 overflow-y-auto">
               {/* Manufacturer with search */}
               <div className="space-y-2">
                 <Label className="text-right block">الشركة المصنعة *</Label>
@@ -878,8 +878,8 @@ const Vehicle = () => {
                 </div>
                 <div className="space-y-2 w-28 shrink-0">
                   <Label className="text-right block">السنة *</Label>
-                  <Input type="number" value={newYear} onChange={e => setNewYear(e.target.value)}
-                    placeholder="2024" className="text-right" min={1900} max={maxYear} />
+                  <Input type="text" inputMode="numeric" pattern="\d*" value={newYear} onChange={e => setNewYear(e.target.value)}
+                    placeholder="2024" className="text-right" />
                 </div>
               </div>
 
@@ -887,8 +887,8 @@ const Vehicle = () => {
               <div className="space-y-2">
                 <Label className="text-right block">الممشى (اختياري)</Label>
                 <div className="flex gap-3">
-                  <Input type="number" value={newMileage} onChange={e => setNewMileage(e.target.value)}
-                    placeholder="0" className="text-right flex-1" min={0} />
+                  <Input type="text" inputMode="numeric" pattern="\d*" value={newMileage} onChange={e => setNewMileage(e.target.value)}
+                    placeholder="0" className="text-right flex-1" />
                   <Select value={newMileageUnit} onValueChange={v => setNewMileageUnit(v as "km" | "mi")}>
                     <SelectTrigger className="w-28 shrink-0 text-right" dir="rtl">
                       <SelectValue />
@@ -967,7 +967,7 @@ const Vehicle = () => {
             <DrawerHeader>
               <DrawerTitle>تعديل المركبة</DrawerTitle>
             </DrawerHeader>
-            <div className="px-4 pb-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="px-4 pb-4 space-y-4 flex-1 overflow-y-auto">
               {/* Manufacturer with search */}
               <div className="space-y-2">
                 <Label className="text-right block">الشركة المصنعة *</Label>
@@ -1009,8 +1009,8 @@ const Vehicle = () => {
                 </div>
                 <div className="space-y-2 w-28 shrink-0">
                   <Label className="text-right block">السنة *</Label>
-                  <Input type="number" value={newYear} onChange={e => setNewYear(e.target.value)}
-                    placeholder="2024" className="text-right" min={1900} max={maxYear} />
+                  <Input type="text" inputMode="numeric" pattern="\d*" value={newYear} onChange={e => setNewYear(e.target.value)}
+                    placeholder="2024" className="text-right" />
                 </div>
               </div>
 
@@ -1018,8 +1018,8 @@ const Vehicle = () => {
               <div className="space-y-2">
                 <Label className="text-right block">الممشى</Label>
                 <div className="flex gap-3">
-                  <Input type="number" value={newMileage} onChange={e => setNewMileage(e.target.value)}
-                    placeholder="0" className="text-right flex-1" min={0} />
+                  <Input type="text" inputMode="numeric" pattern="\d*" value={newMileage} onChange={e => setNewMileage(e.target.value)}
+                    placeholder="0" className="text-right flex-1" />
                   <Select value={newMileageUnit} onValueChange={v => setNewMileageUnit(v as "km" | "mi")}>
                     <SelectTrigger className="w-28 shrink-0 text-right" dir="rtl">
                       <SelectValue />

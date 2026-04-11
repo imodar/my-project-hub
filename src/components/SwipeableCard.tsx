@@ -29,6 +29,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
   const isDragging = useRef(false);
   const isVertical = useRef(false);
   const pointerType = useRef<"touch" | "mouse" | null>(null);
+  const hadDrag = useRef(false);
 
   const onDragStart = useCallback((clientX: number, clientY: number, type: "touch" | "mouse") => {
     startX.current = clientX;
@@ -52,6 +53,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
     if (isVertical.current) return;
 
     // RTL: drag right (positive dx) reveals actions on the left
+    if (Math.abs(dx) > 5) hadDrag.current = true;
     const base = isOpen.current ? ACTION_WIDTH : 0;
     const newOffset = Math.max(0, Math.min(ACTION_WIDTH, base + dx));
     setOffset(newOffset);
@@ -91,7 +93,11 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
     onDragMove(e.touches[0].clientX, e.touches[0].clientY);
   }, [onDragMove]);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (hadDrag.current) {
+      e.preventDefault(); // block the synthesized click that follows touchend
+      hadDrag.current = false;
+    }
     onDragEnd();
   }, [onDragEnd]);
 
@@ -130,9 +136,9 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
         {actions.map((action, i) => (
           <button
             key={i}
-            onClick={() => { action.onClick(); close(); }}
+            onPointerDown={(e) => { e.stopPropagation(); action.onClick(); close(); }}
             aria-label={action.label}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 
+            className={`flex-1 flex flex-col items-center justify-center gap-1
                         ${action.color} ${action.textColor ?? "text-white"}
                         ${i === 0 ? "rounded-r-none" : ""}
                         ${i === actions.length - 1 ? "rounded-l-2xl" : ""}`}

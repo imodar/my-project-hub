@@ -7,11 +7,6 @@ import { db } from "@/lib/db";
 import { Camera, User, Loader2, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 
-const isGoogleEmail = (email: string): boolean => {
-  const googleDomains = ["gmail.com", "googlemail.com"];
-  const domain = email.split("@")[1]?.toLowerCase();
-  return googleDomains.includes(domain);
-};
 
 const CompleteProfile = () => {
   const { session, user, refreshProfile, loading: authLoading } = useAuth();
@@ -19,7 +14,6 @@ const CompleteProfile = () => {
 
   const [name, setName] = useState("");
   const [gmail, setGmail] = useState("");
-  const [gmailError, setGmailError] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -44,14 +38,6 @@ const CompleteProfile = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleGmailChange = (value: string) => {
-    setGmail(value);
-    if (value && !isGoogleEmail(value)) {
-      setGmailError("يُقبل فقط بريد Gmail (@gmail.com)");
-    } else {
-      setGmailError("");
-    }
-  };
 
   const handleSubmit = async () => {
     const trimmed = name.trim();
@@ -60,11 +46,6 @@ const CompleteProfile = () => {
       return;
     }
     setNameError("");
-
-    if (gmail && !isGoogleEmail(gmail)) {
-      setGmailError("يُقبل فقط بريد Gmail (@gmail.com)");
-      return;
-    }
 
     if (!user) return;
     setSaving(true);
@@ -100,8 +81,8 @@ const CompleteProfile = () => {
         return;
       }
 
-      // Link Gmail if provided
-      if (gmail && isGoogleEmail(gmail)) {
+      // Link email if provided
+      if (gmail) {
         const { error: emailErr } = await supabase.auth.updateUser({ email: gmail });
         if (emailErr) {
           appToast.error("هذا البريد مستخدم بحساب آخر");
@@ -205,23 +186,19 @@ const CompleteProfile = () => {
         <div>
           <label className="text-sm font-semibold text-foreground block mb-2">
             <Mail size={14} className="inline ml-1" />
-            بريد Gmail
+            البريد الإلكتروني
           </label>
           <input
             value={gmail}
-            onChange={(e) => handleGmailChange(e.target.value)}
+            onChange={(e) => setGmail(e.target.value)}
             placeholder="example@gmail.com"
             type="email"
             dir="ltr"
             className="w-full px-4 py-3 rounded-xl text-left text-sm border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
           />
-          {gmailError ? (
-            <p className="text-destructive text-xs mt-1">{gmailError}</p>
-          ) : (
-            <p className="text-muted-foreground text-xs mt-1">
-              أضف بريد Gmail لتتمكن من الدخول لاحقاً بواسطة Google
-            </p>
-          )}
+          <p className="text-muted-foreground text-xs mt-1">
+            أضف بريدك الإلكتروني للتمكن من الدخول لاحقاً
+          </p>
         </div>
 
         {/* Submit */}

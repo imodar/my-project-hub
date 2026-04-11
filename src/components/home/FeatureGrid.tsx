@@ -2,8 +2,8 @@ import React from "react";
 import { useAppNavigate } from "@/hooks/useAppNavigate";
 import {
   ShoppingCart, Calendar, HandCoins, Wallet,
-  Image, Plane, FileText, ListChecks,
-  FolderLock, TreePine, MapPin, Heart, Scale, ScrollText, Camera, BookHeart, Car, Syringe, Pill
+  Plane, ListChecks,
+  FolderLock, MapPin, Scale, ScrollText, Camera, BookHeart, Car, Syringe, Pill
 } from "lucide-react";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { useLanguage } from "@/contexts/LanguageContext";

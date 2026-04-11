@@ -1,6 +1,6 @@
 import { useState } from "react";
 import SwipeableCard from "@/components/SwipeableCard";
-import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare, PersonStanding } from "lucide-react";
+import { Plus, Baby, Check, Clock, AlertTriangle, Syringe, Bell, Pencil, MessageSquare, PersonStanding, Trash2 } from "lucide-react";
 import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "@/components/ui/drawer";
 import PageHeader from "@/components/PageHeader";
 import {
   Child,
@@ -30,6 +30,7 @@ const Vaccinations = () => {
     isLoading,
     addChild,
     updateChild,
+    removeChild,
     toggleVaccine,
     updateReminderSettings,
     saveVaccineNote: saveVaccineNoteMutation,
@@ -49,6 +50,7 @@ const Vaccinations = () => {
   const [newBirthDate, setNewBirthDate] = useState("");
 
   const [openChildCardId, setOpenChildCardId] = useState<string | null>(null);
+  const [deleteConfirmChild, setDeleteConfirmChild] = useState<Child | null>(null);
 
   // Keep selectedChild in sync with data
   const resolvedSelected = selectedChild ? children.find((c: Child) => c.id === selectedChild.id) || selectedChild : null;
@@ -190,6 +192,12 @@ const Vaccinations = () => {
                     color: "bg-amber-500",
                     onClick: () => openReminderFromSwipe(child),
                   },
+                  {
+                    icon: <Trash2 size={16} />,
+                    label: "حذف",
+                    color: "bg-red-500",
+                    onClick: () => setDeleteConfirmChild(child),
+                  },
                 ]}
                 onSwipeOpen={() => setOpenChildCardId(child.id)}
               >
@@ -239,7 +247,7 @@ const Vaccinations = () => {
           <DrawerHeader>
             <DrawerTitle className="text-center">إضافة طفل جديد</DrawerTitle>
           </DrawerHeader>
-          <div className="space-y-5 px-5 pb-8">
+          <div className="space-y-5 px-5" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
             <div className="space-y-2">
               <Label className="text-right block">اسم الطفل</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="أدخل اسم الطفل" className="text-right" />
@@ -268,7 +276,7 @@ const Vaccinations = () => {
           <DrawerHeader>
             <DrawerTitle className="text-center">تعديل بيانات الطفل</DrawerTitle>
           </DrawerHeader>
-          <div className="space-y-5 px-5 pb-8">
+          <div className="space-y-5 px-5" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
             <div className="space-y-2">
               <Label className="text-right block">اسم الطفل</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="أدخل اسم الطفل" className="text-right" />
@@ -300,7 +308,7 @@ const Vaccinations = () => {
             </DrawerTitle>
           </DrawerHeader>
           {reminderChild && (
-            <div className="space-y-4 px-5 pb-8">
+            <div className="space-y-4 px-5" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
               <p className="text-sm text-muted-foreground text-right">سيتم تذكيرك بجميع لقاحات {reminderChild.name} المستحقة</p>
               {[
                 { key: "beforeDay" as const, label: "قبل يوم واحد" },
@@ -457,7 +465,7 @@ const Vaccinations = () => {
           <DrawerHeader>
             <DrawerTitle className="text-center">ملاحظة على اللقاح</DrawerTitle>
           </DrawerHeader>
-          <div className="space-y-4 px-5 pb-8">
+          <div className="space-y-4 px-5" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
             <Textarea
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
@@ -479,6 +487,38 @@ const Vaccinations = () => {
               )}
             </div>
           </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Delete Child Confirmation */}
+      <Drawer open={!!deleteConfirmChild} onOpenChange={(open) => { if (!open) setDeleteConfirmChild(null); }}>
+        <DrawerContent onClick={(e) => e.stopPropagation()}>
+          <DrawerHeader>
+            <DrawerTitle className="text-center font-black">حذف {deleteConfirmChild?.name}؟</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-5 pb-2 text-right text-sm text-muted-foreground break-words">
+            سيتم حذف جميع بيانات اللقاحات الخاصة بـ <span className="font-medium text-foreground">{deleteConfirmChild?.name}</span>. لا يمكن التراجع عن هذا الإجراء.
+          </div>
+          <DrawerFooter className="flex-row gap-2">
+            <button
+              onClick={() => {
+                if (deleteConfirmChild) {
+                  removeChild(deleteConfirmChild.id);
+                  if (selectedChild?.id === deleteConfirmChild.id) setSelectedChild(null);
+                  setDeleteConfirmChild(null);
+                }
+              }}
+              className="flex-1 py-3 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-colors"
+            >
+              حذف
+            </button>
+            <button
+              onClick={() => setDeleteConfirmChild(null)}
+              className="flex-1 py-3 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors"
+            >
+              إلغاء
+            </button>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
     </div>

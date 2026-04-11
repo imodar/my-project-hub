@@ -20,23 +20,18 @@ export default defineConfig(({ mode }) => ({
     // تقليص حجم الـ chunks وتحسين التقسيم
     rollupOptions: {
       output: {
-        manualChunks: {
-          // فصل المكتبات الثقيلة في chunks منفصلة
-          "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-ui": [
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-select",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-toast",
-          ],
-          "vendor-query": ["@tanstack/react-query"],
-          "vendor-charts": ["recharts"],
-          "vendor-motion": ["framer-motion"],
-          "vendor-maps": ["leaflet", "react-leaflet"],
-          "vendor-pdf": ["jspdf"],
-          "vendor-dexie": ["dexie"],
-          "vendor-sentry": ["@sentry/react"],
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react-dom") || id.includes("react-router-dom") || (id.includes("/react/") && !id.includes("react-"))) return "vendor-react";
+            if (id.includes("@radix-ui")) return "vendor-ui";
+            if (id.includes("@tanstack/react-query")) return "vendor-query";
+            if (id.includes("recharts")) return "vendor-charts";
+            if (id.includes("framer-motion")) return "vendor-motion";
+            if (id.includes("leaflet")) return "vendor-maps";
+            if (id.includes("jspdf")) return "vendor-pdf";
+            if (id.includes("dexie")) return "vendor-dexie";
+            if (id.includes("@sentry")) return "vendor-sentry";
+          }
         },
       },
     },

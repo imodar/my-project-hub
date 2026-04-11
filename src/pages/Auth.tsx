@@ -27,7 +27,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { appToast } from "@/lib/toast";
-import { Phone, ArrowRight, Loader2, Globe } from "lucide-react";
+import { Phone, ArrowRight, Loader2, Globe, ChevronDown } from "lucide-react";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import authFamily from "@/assets/auth-family.png";
@@ -35,6 +36,31 @@ import LanguageSheet from "@/components/LanguageSheet";
 import LegalPageSheet from "@/components/LegalPageSheet";
 
 type Step = "phone" | "otp";
+
+const COUNTRIES = [
+  { code: "SA", dial: "+966", flag: "🇸🇦", name: "السعودية" },
+  { code: "AE", dial: "+971", flag: "🇦🇪", name: "الإمارات" },
+  { code: "KW", dial: "+965", flag: "🇰🇼", name: "الكويت" },
+  { code: "BH", dial: "+973", flag: "🇧🇭", name: "البحرين" },
+  { code: "QA", dial: "+974", flag: "🇶🇦", name: "قطر" },
+  { code: "OM", dial: "+968", flag: "🇴🇲", name: "عُمان" },
+  { code: "JO", dial: "+962", flag: "🇯🇴", name: "الأردن" },
+  { code: "EG", dial: "+20", flag: "🇪🇬", name: "مصر" },
+  { code: "LB", dial: "+961", flag: "🇱🇧", name: "لبنان" },
+  { code: "YE", dial: "+967", flag: "🇾🇪", name: "اليمن" },
+  { code: "IQ", dial: "+964", flag: "🇮🇶", name: "العراق" },
+  { code: "SY", dial: "+963", flag: "🇸🇾", name: "سوريا" },
+  { code: "SD", dial: "+249", flag: "🇸🇩", name: "السودان" },
+  { code: "LY", dial: "+218", flag: "🇱🇾", name: "ليبيا" },
+  { code: "TN", dial: "+216", flag: "🇹🇳", name: "تونس" },
+  { code: "DZ", dial: "+213", flag: "🇩🇿", name: "الجزائر" },
+  { code: "MA", dial: "+212", flag: "🇲🇦", name: "المغرب" },
+  { code: "TR", dial: "+90", flag: "🇹🇷", name: "تركيا" },
+  { code: "PK", dial: "+92", flag: "🇵🇰", name: "باكستان" },
+  { code: "IN", dial: "+91", flag: "🇮🇳", name: "الهند" },
+  { code: "GB", dial: "+44", flag: "🇬🇧", name: "بريطانيا" },
+  { code: "US", dial: "+1", flag: "🇺🇸", name: "الولايات المتحدة" },
+];
 
 const Auth = () => {
   const [langSheetOpen, setLangSheetOpen] = useState(false);
@@ -47,6 +73,8 @@ const Auth = () => {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
+  const [showCountryDrawer, setShowCountryDrawer] = useState(false);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -63,7 +91,7 @@ const Auth = () => {
     return () => clearTimeout(t);
   }, [countdown]);
 
-  const fullPhone = phone.startsWith("+") ? phone : `+966${phone.replace(/^0/, "")}`;
+  const fullPhone = phone.startsWith("+") ? phone : `${selectedCountry.dial}${phone.replace(/^0/, "")}`;
 
   const sendOtp = async () => {
     if (!phone || phone.replace(/\D/g, "").length < 9) {
@@ -186,16 +214,24 @@ const Auth = () => {
 
               {/* Phone input */}
               <div className="relative" dir="ltr">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-sm text-muted-foreground select-none">
-                  <span className="text-base">🇸🇦</span>
-                  <span>+966</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCountryDrawer(true)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span className="text-base">{selectedCountry.flag}</span>
+                  <span>{selectedCountry.dial}</span>
+                  <ChevronDown size={12} />
+                </button>
                 <Input
                   type="tel"
                   inputMode="numeric"
                   placeholder="5XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ""))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && phone.replace(/\D/g, "").length >= 9) sendOtp();
+                  }}
                   className="pl-[5.5rem] text-left h-14 rounded-xl bg-secondary/50 border-border/50 text-base"
                   maxLength={10}
                   autoFocus
@@ -285,7 +321,7 @@ const Auth = () => {
               </div>
 
               <div className="flex justify-center" dir="ltr">
-                <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus>
+                <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus inputMode="numeric">
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
@@ -336,6 +372,27 @@ const Auth = () => {
       <LanguageSheet open={langSheetOpen} onOpenChange={setLangSheetOpen} />
       <LegalPageSheet open={termsSheet} onOpenChange={setTermsSheet} slug="terms-of-service" />
       <LegalPageSheet open={privacySheet} onOpenChange={setPrivacySheet} slug="privacy-policy" />
+
+      <Drawer open={showCountryDrawer} onOpenChange={setShowCountryDrawer}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle className="text-right">اختر الدولة</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+            {COUNTRIES.map((c) => (
+              <button
+                key={c.code}
+                onClick={() => { setSelectedCountry(c); setShowCountryDrawer(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-right hover:bg-muted transition-colors ${selectedCountry.code === c.code ? "bg-primary/5" : ""}`}
+              >
+                <span className="text-2xl">{c.flag}</span>
+                <span className="flex-1 text-foreground">{c.name}</span>
+                <span className="text-muted-foreground text-sm" dir="ltr">{c.dial}</span>
+              </button>
+            ))}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

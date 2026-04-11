@@ -12,6 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useUserRole, ROLE_LABELS } from "@/contexts/UserRoleContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useFamilyId } from "@/hooks/useFamilyId";
@@ -45,6 +46,7 @@ const Settings = () => {
   const [termsSheet, setTermsSheet] = useState(false);
   const [keyBackupOpen, setKeyBackupOpen] = useState(false);
   const [deleteSheet, setDeleteSheet] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteStep, setDeleteStep] = useState<"confirm" | "progress" | "done">("confirm");
@@ -110,7 +112,7 @@ const Settings = () => {
         { icon: Crown, label: "إدارة الاشتراك", desc: "اشتراكك وتفاصيل خطتك", onClick: () => navigate("/subscription") },
         { icon: Archive, label: t.settings.trash, desc: t.settings.trashDesc, onClick: () => navigate("/trash") },
         { icon: Trash2, label: t.settings.deleteAccount, desc: t.settings.deleteAccountDesc, danger: true, onClick: () => { setDeleteSheet(true); setDeleteStep("confirm"); setDeleteConfirmed(false); setDeleteReason(""); setDeleteProgress(0); } },
-        { icon: LogOut, label: t.settings.logout, desc: t.settings.logoutDesc, danger: true, onClick: async () => { await signOut(); navigate("/auth", { replace: true }); } },
+        { icon: LogOut, label: t.settings.logout, desc: t.settings.logoutDesc, danger: true, onClick: () => setShowLogoutConfirm(true) },
       ],
     },
   ];
@@ -454,7 +456,7 @@ const Settings = () => {
 
       {/* Emergency Settings Sheet */}
       <Sheet open={emergencySheetOpen} onOpenChange={setEmergencySheetOpen}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0 border-none" style={{ direction: dir }}>
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0 border-none" style={{ direction: dir, paddingBottom: "env(safe-area-inset-bottom)" }}>
           <div className="h-full flex flex-col overflow-hidden">
             <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
@@ -638,7 +640,7 @@ const Settings = () => {
 
       {/* Delete Account Sheet */}
       <Sheet open={deleteSheet} onOpenChange={(open) => { if (deleteStep !== "progress") setDeleteSheet(open); }}>
-        <SheetContent side="bottom" className="rounded-t-3xl p-0 border-none" style={{ direction: dir, maxHeight: "85dvh" }}>
+        <SheetContent side="bottom" className="rounded-t-3xl p-0 border-none" style={{ direction: dir, maxHeight: "85dvh", paddingBottom: "env(safe-area-inset-bottom)" }}>
           <div className="flex flex-col overflow-hidden">
             <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
@@ -724,6 +726,24 @@ const Settings = () => {
       </Sheet>
 
       <KeyBackupDialog open={keyBackupOpen} onOpenChange={setKeyBackupOpen} />
+
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تسجيل الخروج</AlertDialogTitle>
+            <AlertDialogDescription>هل تريد تسجيل الخروج من حسابك؟</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={async () => { await signOut(); navigate("/auth", { replace: true }); }}
+            >
+              تسجيل الخروج
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

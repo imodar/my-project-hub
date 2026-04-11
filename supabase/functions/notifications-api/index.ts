@@ -13,6 +13,31 @@ function json(data: unknown, status = 200) {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function validUuid(v: unknown): v is string { return typeof v === "string" && UUID_RE.test(v); }
 
+/** إرسال FCM Push Notification عبر Firebase HTTP v1 API */
+async function sendFcmPush(tokens: string[], title: string, body: string, data: Record<string, string>) {
+  const fcmServerKey = Deno.env.get("FCM_SERVER_KEY");
+  if (!fcmServerKey || tokens.length === 0) return;
+
+  // FCM Legacy HTTP API — يعمل مع توكنات الجهاز مباشرةً
+  const payload = {
+    registration_ids: tokens,
+    notification: { title, body, sound: "default" },
+    data: { ...data, click_action: "FLUTTER_NOTIFICATION_CLICK" },
+    priority: "high",
+    android: { priority: "HIGH" },
+    apns: { headers: { "apns-priority": "10" } },
+  };
+
+  await fetch("https://fcm.googleapis.com/fcm/send", {
+    method: "POST",
+    headers: {
+      Authorization: `key=${fcmServerKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  }).catch(() => {/* non-fatal */});
+}
+
 async function handleSosAlert(adminClient: any, userId: string, familyId: string, type: "send" | "cancel") {
   // Verify membership
   const { data: membership } = await adminClient.from("family_members")
@@ -20,44 +45,48 @@ async function handleSosAlert(adminClient: any, userId: string, familyId: string
   if (!membership) return json({ error: "غير مصرح" }, 403);
 
   // Get sender name
-  const { data: profile } = await adminClient.from("profiles").select("name").eq("id", userId).single();
+  const { data: profile } = await adminClient.from("profiles").select("name, fcm_token").eq("id", userId).single();
   const senderName = profile?.name || "أحد أفراد العائلة";
 
-  // Get other active members
+  // Get other active members + their FCM tokens
   const { data: members } = await adminClient.from("family_members")
     .select("user_id").eq("family_id", familyId).eq("status", "active").neq("user_id", userId);
   const memberIds = (members || []).map((m: any) => m.user_id);
   if (memberIds.length === 0) return json({ data: { notified: 0 } });
 
-  if (type === "send") {
-    await adminClient.from("user_notifications").insert(
-      memberIds.map((uid: string) => ({
-        user_id: uid,
-        family_id: familyId,
-        type: "sos_alert",
-        title: "🚨 تنبيه طوارئ",
-        body: `${senderName} يحتاج مساعدة`,
-        source_type: "sos",
-        source_id: userId,
-        is_read: false,
-      }))
-    );
-  } else {
-    await adminClient.from("user_notifications").insert(
-      memberIds.map((uid: string) => ({
-        user_id: uid,
-        family_id: familyId,
-        type: "sos_cancelled",
-        title: "✅ إلغاء تنبيه الطوارئ",
-        body: `${senderName} بخير — تم إلغاء التنبيه`,
-        source_type: "sos",
-        source_id: userId,
-        is_read: false,
-      }))
-    );
-  }
+  // جلب FCM tokens لأعضاء العائلة
+  const { data: profiles } = await adminClient.from("profiles")
+    .select("id, fcm_token").in("id", memberIds);
+  const fcmTokens = (profiles || []).map((p: any) => p.fcm_token).filter(Boolean) as string[];
 
-  return json({ data: { notified: memberIds.length } });
+  const notifTitle = type === "send" ? "🚨 تنبيه طوارئ" : "✅ إلغاء تنبيه الطوارئ";
+  const notifBody  = type === "send"
+    ? `${senderName} يحتاج مساعدة!`
+    : `${senderName} بخير — تم إلغاء التنبيه`;
+
+  // إرسال FCM Push (حتى لو التطبيق مغلق)
+  await sendFcmPush(fcmTokens, notifTitle, notifBody, {
+    type: type === "send" ? "sos_alert" : "sos_cancelled",
+    sender_id: userId,
+    family_id: familyId,
+    sender_name: senderName,
+  });
+
+  // حفظ الإشعار في قاعدة البيانات (للتاريخ وللمستخدمين الذين لا يملكون FCM token)
+  await adminClient.from("user_notifications").insert(
+    memberIds.map((uid: string) => ({
+      user_id: uid,
+      family_id: familyId,
+      type: type === "send" ? "sos_alert" : "sos_cancelled",
+      title: notifTitle,
+      body: notifBody,
+      source_type: "sos",
+      source_id: userId,
+      is_read: false,
+    }))
+  );
+
+  return json({ data: { notified: memberIds.length, pushed: fcmTokens.length } });
 }
 
 Deno.serve(async (req) => {

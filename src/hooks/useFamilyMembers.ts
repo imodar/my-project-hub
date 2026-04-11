@@ -137,9 +137,13 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
       : undefined,
   });
 
+  // اعتبر البيانات جاهزة إذا توفّرت من Dexie (localMembers) حتى لو السيرفر لم يرد بعد
+  const effectiveMembers = query.data?.members || localMembers;
+  const isLoading = query.isPending && localMembers.length === 0;
+
   return {
-    members: query.data?.members || [],
-    isLoading: query.isLoading,
+    members: effectiveMembers,
+    isLoading,
     refetch: query.refetch,
     subscriptionLocked: query.data?.subscriptionLocked ?? false,
   };

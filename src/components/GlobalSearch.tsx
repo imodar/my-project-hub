@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Search, ArrowRight, ShoppingCart, CheckSquare, Calendar, CreditCard, Plane, FileText, MapPin, Pill, Car, MessageCircle, Image, Users } from "lucide-react";
+import { Search, ArrowRight, ShoppingCart, CheckSquare, Calendar, CreditCard, Plane, FileText, MapPin, Pill, Car, Image, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppNavigate } from "@/hooks/useAppNavigate";
@@ -81,7 +81,7 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
       const [
         marketLists, marketItems, taskLists, taskItems,
         events, budgets, debts, trips,
-        docLists, docItems, placeLists, places,
+        docLists, docItems, , places,
         medications, vehicles, albums, members, profiles
       ] = await Promise.all([
         db.market_lists.toArray(),
@@ -104,78 +104,78 @@ const GlobalSearch = ({ open, onClose }: { open: boolean; onClose: () => void })
       ]);
 
       const profileMap = new Map<string, string>();
-      (profiles as any[]).forEach(p => { if (p.name) profileMap.set(p.id, p.name); });
+      (profiles).forEach(p => { if (p.name) profileMap.set(p.id, p.name); });
 
-      (marketLists as any[]).forEach(l => {
+      (marketLists).forEach(l => {
         if (l.name?.toLowerCase().includes(lq)) addResult(l.id, l.name, undefined, "market_list");
       });
-      (marketItems as any[]).forEach(i => {
+      (marketItems).forEach(i => {
         if (i.name?.toLowerCase().includes(lq)) {
-          const list = (marketLists as any[]).find(l => l.id === i.list_id);
+          const list = (marketLists).find(l => l.id === i.list_id);
           addResult(i.id, i.name, list?.name, "market_item");
         }
       });
 
-      (taskLists as any[]).forEach(l => {
+      (taskLists).forEach(l => {
         if (l.name?.toLowerCase().includes(lq)) addResult(l.id, l.name, undefined, "task_list");
       });
-      (taskItems as any[]).forEach(i => {
+      (taskItems).forEach(i => {
         if (i.name?.toLowerCase().includes(lq)) {
-          const list = (taskLists as any[]).find(l => l.id === i.list_id);
+          const list = (taskLists).find(l => l.id === i.list_id);
           addResult(i.id, i.name, list?.name, "task_item");
         }
       });
 
-      (events as any[]).forEach(e => {
+      (events).forEach(e => {
         if (e.title?.toLowerCase().includes(lq)) addResult(e.id, e.title, e.date, "calendar_event");
       });
 
-      (budgets as any[]).forEach(b => {
+      (budgets).forEach(b => {
         const label = b.label || b.month || "";
         if (label.toLowerCase().includes(lq)) addResult(b.id, label, b.type, "budget");
       });
 
-      (debts as any[]).forEach(d => {
+      (debts).forEach(d => {
         if (d.person_name?.toLowerCase().includes(lq)) {
           const dir = d.direction === "owed_to_me" ? (language === "ar" ? "لي" : "owed to me") : (language === "ar" ? "عليّ" : "I owe");
           addResult(d.id, d.person_name, `${d.amount} - ${dir}`, "debt");
         }
       });
 
-      (trips as any[]).forEach(t => {
+      (trips).forEach(t => {
         if (t.name?.toLowerCase().includes(lq) || t.destination?.toLowerCase().includes(lq))
           addResult(t.id, t.name, t.destination, "trip");
       });
 
-      (docLists as any[]).forEach(l => {
+      (docLists).forEach(l => {
         if (l.name?.toLowerCase().includes(lq)) addResult(l.id, l.name, undefined, "document");
       });
-      (docItems as any[]).forEach(i => {
+      (docItems).forEach(i => {
         if (i.name?.toLowerCase().includes(lq)) {
-          const list = (docLists as any[]).find(l => l.id === i.list_id);
+          const list = (docLists).find(l => l.id === i.list_id);
           addResult(i.id, i.name, list?.name, "document");
         }
       });
 
-      (places as any[]).forEach(p => {
+      (places).forEach(p => {
         if (p.name?.toLowerCase().includes(lq) || p.address?.toLowerCase().includes(lq))
           addResult(p.id, p.name, p.address || p.category, "place");
       });
 
-      (medications as any[]).forEach(m => {
+      (medications).forEach(m => {
         if (m.name?.toLowerCase().includes(lq)) addResult(m.id, m.name, m.member_name, "medication");
       });
 
-      (vehicles as any[]).forEach(v => {
+      (vehicles).forEach(v => {
         const label = [v.brand, v.model, v.plate].filter(Boolean).join(" ");
         if (label.toLowerCase().includes(lq)) addResult(v.id, label, v.year?.toString(), "vehicle");
       });
 
-      (albums as any[]).forEach(a => {
+      (albums).forEach(a => {
         if (a.name?.toLowerCase().includes(lq)) addResult(a.id, a.name, undefined, "album");
       });
 
-      (members as any[]).forEach(m => {
+      (members).forEach(m => {
         const name = profileMap.get(m.user_id) || "";
         if (name.toLowerCase().includes(lq)) addResult(m.id, name, m.role, "member");
       });

@@ -1047,7 +1047,7 @@ const FamilyManagement = () => {
       </Drawer>
 
       <Drawer open={showScanner} onOpenChange={(open) => { if (!open) { setShowScanner(false); setJoinCode(""); } }}>
-        <DrawerContent className="px-4 pb-6" style={{ direction: "rtl" }}>
+        <DrawerContent className="px-4" style={{ direction: "rtl" }}>
           <DrawerHeader>
             <DrawerTitle className="text-center text-lg">مسح رمز QR للانضمام</DrawerTitle>
           </DrawerHeader>
@@ -1085,20 +1085,21 @@ const FamilyManagement = () => {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   placeholder="أدخل الكود"
-                  className="flex-1 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="flex-1 min-w-0 px-4 py-3 rounded-xl text-center text-sm font-bold tracking-widest border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                   style={{ direction: "ltr" }}
                   maxLength={8}
                 />
                 <button
                   onClick={handleManualJoin}
                   disabled={joinCode.length < 8}
-                  className="px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
+                  className="shrink-0 px-5 py-3 rounded-xl text-sm font-bold text-primary-foreground bg-primary disabled:opacity-40"
                 >
                   انضمام
                 </button>
               </div>
             </div>
           </div>
+          <div style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }} />
         </DrawerContent>
       </Drawer>
 
