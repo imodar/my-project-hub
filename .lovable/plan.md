@@ -1,34 +1,34 @@
 
 
-# إصلاح خطأ بناء RevenueCat: jvmTarget = 21
+## خطة إصلاح رفع الملفات في صفحة المستندات
 
-## المشكلة
-مكتبة `@revenuecat/purchases-capacitor` تتطلب `jvmTarget = 21` لكن Kotlin الافتراضي في Capacitor لا يدعمه.
+### المشاكل
+1. مسار الرفع بدون `familyId/` → RLS يرفض الرفع
+2. fallback base64 غير عملي ويجب إزالته
+3. `useMediaUrl` مقيد بـ `chat-media` فقط → لا يعمل مع المستندات
+4. لا يوجد تخزين مؤقت محلي → الملفات لا تفتح أوفلاين
 
-## الحل
-إضافة خطوة في `build-apk.yml` بعد `cap add android` (سطر 38) وقبل `cap sync` (سطر 41) لتعديل ملفات Gradle تلقائياً.
+### التعديلات
 
-## التعديل: `.github/workflows/build-apk.yml`
+#### 1. `src/pages/Documents.tsx`
+- استيراد `useFamilyId` واستخراج `familyId`
+- تغيير مسار الرفع من `${fileId}.${ext}` إلى `${familyId}/${fileId}.${ext}`
+- إزالة fallback base64 بالكامل واستبداله بـ toast خطأ
+- بعد رفع ناجح: تخزين الـ blob في Cache API (`documents-cache-v1`) للأوفلاين
+- عند عرض ملف: التحقق من الكاش أولاً قبل الشبكة
 
-إضافة خطوة جديدة بين "Add Android platform" و "Sync web build":
+#### 2. `src/hooks/useMediaUrl.ts`
+- إضافة معامل `bucket` اختياري (افتراضي `chat-media`)
+- تعميم `extractStoragePath` ليقبل أي اسم حاوية
+- تعميم `createSignedUrl` ليستخدم الحاوية الممررة
+- تحديث اسم الكاش ليشمل الحاوية: `${bucket}-cache-v1`
 
-```yaml
-- name: Fix Kotlin/JVM target for RevenueCat
-  run: |
-    # Upgrade Kotlin to 2.0.21
-    sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '2.0.21'/" android/build.gradle
-    
-    # Add compileOptions + kotlinOptions to app/build.gradle
-    sed -i '/android {/a \
-        compileOptions {\
-            sourceCompatibility JavaVersion.VERSION_21\
-            targetCompatibility JavaVersion.VERSION_21\
-        }\
-        kotlinOptions {\
-            jvmTarget = "21"\
-        }' android/app/build.gradle
-```
+#### 3. `src/pages/Documents.tsx` (عرض الملفات)
+- استخدام `useMediaUrl` المعدّل مع `bucket: "documents"` عند فتح/عرض الملفات
+- هذا يضمن: كاش محلي + تجديد تلقائي للروابط المنتهية
 
-## الملفات المتأثرة
-- `.github/workflows/build-apk.yml` — إضافة خطوة واحدة فقط
+### ملاحظات
+- صلاحيات Android سليمة، لا تحتاج تعديل
+- نستخدم `familyId` (وليس `userId`) لأن الوثائق مشتركة عائلياً
+- سياسة RLS permissive تقبل كلا المسارين لكن `familyId` هو الصحيح معمارياً
 
