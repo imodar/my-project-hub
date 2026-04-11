@@ -145,7 +145,7 @@ const Documents = () => {
   // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
   useEffect(() => {
     const onWindowFocus = () => {
-      setTimeout(() => { isPickingFileRef.current = false; }, 800);
+      setTimeout(() => { isPickingFileRef.current = false; }, 2000);
     };
     window.addEventListener("focus", onWindowFocus);
     return () => window.removeEventListener("focus", onWindowFocus);
@@ -678,7 +678,7 @@ const Documents = () => {
 
         {/* Edit Item Drawer */}
         <Drawer open={!!editTarget} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; if (!open) setEditTarget(null); }}>
-          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
+          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }} onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
             <DrawerHeader className="text-right">
               <DrawerTitle>تعديل المستند</DrawerTitle>
               <DrawerDescription>عدّل تفاصيل المستند</DrawerDescription>
@@ -730,7 +730,7 @@ const Documents = () => {
           if (!open && isPickingFileRef.current) return;
           setShowAddItem(open);
         }}>
-          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
+          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }} onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
             <DrawerHeader className="text-right">
               <DrawerTitle>إضافة مستند جديد</DrawerTitle>
               <DrawerDescription>أضف وثيقة مع التصنيف والمرفقات</DrawerDescription>
