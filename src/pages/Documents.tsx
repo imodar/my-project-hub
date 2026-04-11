@@ -145,7 +145,7 @@ const Documents = () => {
   // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
   useEffect(() => {
     const onWindowFocus = () => {
-      setTimeout(() => { isPickingFileRef.current = false; }, 800);
+      setTimeout(() => { isPickingFileRef.current = false; }, 2000);
     };
     window.addEventListener("focus", onWindowFocus);
     return () => window.removeEventListener("focus", onWindowFocus);
