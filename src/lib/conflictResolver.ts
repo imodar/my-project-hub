@@ -102,7 +102,7 @@ export async function resolveConflict(
 
   if (resolution === "server") {
     // تطبيق بيانات السيرفر محلياً
-    const table = (db as Record<string, unknown>)[conflict.table] as { put: (data: unknown) => Promise<unknown> } | undefined;
+    const table = (db as unknown as Record<string, unknown>)[conflict.table] as { put: (data: unknown) => Promise<unknown> } | undefined;
     if (table) {
       await table.put(conflict.server_data);
       console.info(

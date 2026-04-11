@@ -21,7 +21,7 @@ export interface UseOfflineMutationOptions<TData, TVariables> {
   /** نوع العملية */
   operation: SyncOperation;
   /** دالة إرسال البيانات للـ API */
-  apiFn: (data: TVariables) => Promise<{ data: TData | null; error: string | null }>;
+  apiFn?: (data: TVariables) => Promise<{ data: TData | null; error: string | null }>;
   /** مفتاح React Query لإعادة الجلب بعد النجاح */
   queryKey?: QueryKey;
   /** callback بعد النجاح */

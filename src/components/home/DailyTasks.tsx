@@ -8,6 +8,7 @@ interface TaskRow {
   id: string;
   name?: string;
   done?: boolean;
+  note?: string;
   listName?: string;
   [key: string]: unknown;
 }
@@ -113,7 +114,7 @@ const DailyTasks = React.forwardRef<HTMLElement>((_props, ref) => {
                     {task.listName}
                   </span>
                 </div>
-                {task.note && <p className="text-xs text-muted-foreground mt-1">{task.note}</p>}
+                {task.note && <p className="text-xs text-muted-foreground mt-1">{String(task.note)}</p>}
               </div>
             </div>
           );
