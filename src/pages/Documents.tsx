@@ -271,7 +271,7 @@ const Documents = () => {
       }
     });
     e.target.value = "";
-  }, [editTarget, activeListId]);
+  }, [editTarget, activeListId, familyId]);
 
   const addItem = useCallback(() => {
     if (!newName.trim() || !activeListId) return;
