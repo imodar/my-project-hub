@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ListContentSkeleton } from "@/components/PageSkeletons";
@@ -181,16 +182,25 @@ const Documents = () => {
     }, delay);
   }, [clearPickerLockTimeout, setPickerLock]);
 
-  const triggerFilePicker = useCallback((target: "new" | "existing") => {
-    setPickerLock(true);
+  const primeFilePickerLock = useCallback(() => {
+    flushSync(() => {
+      setPickerLock(true);
+    });
     schedulePickerUnlock(10000);
+  }, [schedulePickerUnlock, setPickerLock]);
+
+  const triggerFilePicker = useCallback((target: "new" | "existing") => {
+    if (!isPickingFileRef.current) {
+      primeFilePickerLock();
+    }
+
     const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
     if (!input) {
       setPickerLock(false);
       return;
     }
     input?.click();
-  }, [schedulePickerUnlock, setPickerLock]);
+  }, [primeFilePickerLock, setPickerLock]);
 
   // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
   useEffect(() => {
@@ -817,6 +827,10 @@ const Documents = () => {
                 <button
                   type="button"
                   className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
+                  onPointerDownCapture={(e) => {
+                    e.stopPropagation();
+                    primeFilePickerLock();
+                  }}
                   onClick={() => triggerFilePicker("existing")}
                 >
                   <Plus size={16} />
@@ -888,6 +902,10 @@ const Documents = () => {
                 <button
                   type="button"
                   className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
+                  onPointerDownCapture={(e) => {
+                    e.stopPropagation();
+                    primeFilePickerLock();
+                  }}
                   onClick={() => triggerFilePicker("new")}
                 >
                   <Plus size={16} />
