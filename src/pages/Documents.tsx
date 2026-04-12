@@ -191,16 +191,18 @@ const Documents = () => {
   }, [schedulePickerUnlock, setPickerLock]);
 
   const triggerFilePicker = useCallback(async (target: "new" | "existing") => {
-    // ── Native path (Android / iOS) ──────────────────────────────────────────
-    // @capawesome/capacitor-file-picker returns files via JS Promise, so the Sheet
-    // open/close state and DOM mutations never affect whether the file is received.
-    // Falls back silently to <input type="file"> when the plugin is not compiled
-    // into the current build (UNIMPLEMENTED) or Capacitor is not available.
-    let useHtmlInput = true; // will be set false if native path handles everything
+    // ── DEBUG toasts — remove after issue is diagnosed ───────────────────────
+    const dbg = (msg: string) => appToast.info(`[DBG] ${msg}`);
+
+    let useHtmlInput = true;
 
     try {
       const { Capacitor } = await import("@capacitor/core");
-      if (Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("FilePicker")) {
+      const isNative    = Capacitor.isNativePlatform();
+      const pluginAvail = Capacitor.isPluginAvailable("FilePicker");
+      dbg(`native=${isNative} plugin=${pluginAvail}`);
+
+      if (isNative && pluginAvail) {
         useHtmlInput = false;
         setIsUploadingFile(true);
         setPickerLock(true);
@@ -210,44 +212,48 @@ const Documents = () => {
 
         try {
           const { FilePicker } = await import("@capawesome/capacitor-file-picker");
+          dbg("calling pickFiles…");
+
           const result = await FilePicker.pickFiles({
             types: ["image/*", "application/pdf"],
             multiple: true,
-            readData: true, // always return base64 — avoids content:// URI issues on Android
+            readData: true,
           });
+
+          dbg(`got ${result.files.length} file(s)`);
 
           for (const pickedFile of result.files) {
             const rawMime  = pickedFile.mimeType ?? "";
             const fileName = pickedFile.name ?? "file";
             const fileExt  = fileName.split(".").pop()?.toLowerCase() ?? "";
+            const hasData  = !!pickedFile.data;
 
-            // Determine type from mimeType first, fall back to file extension.
-            // Some cloud/OEM pickers return null mimeType even for valid files.
+            dbg(`file: ${fileName} | mime: ${rawMime || "—"} | ext: ${fileExt} | data: ${hasData}`);
+
             const isImage = rawMime.startsWith("image/") ||
               ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "bmp"].includes(fileExt);
             const isPdf   = rawMime === "application/pdf" || fileExt === "pdf";
 
             if (!isImage && !isPdf) {
-              console.warn("[Documents] Unsupported file type — mime:", rawMime, "ext:", fileExt);
-              appToast.warning("نوع الملف غير مدعوم، يُقبل صور و PDF فقط");
+              appToast.warning(`نوع غير مدعوم: ${rawMime || fileExt}`);
               continue;
             }
 
             if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
 
-            if (!pickedFile.data) {
-              console.warn("[Documents] No data for file:", fileName, "mime:", rawMime);
-              appToast.error("تعذّر قراءة بيانات الملف");
+            if (!hasData) {
+              appToast.error(`لا توجد بيانات: ${fileName}`);
               continue;
             }
 
-            // base64 → Uint8Array → Blob. Avoids fetch(data:) which is unreliable
-            // in older Android WebViews and has URI-length limits for large files.
+            // base64 → Uint8Array → Blob (no fetch, works in all WebView versions)
             const mime   = rawMime || (isImage ? "image/jpeg" : "application/pdf");
-            const binary = atob(pickedFile.data);
+            dbg(`decoding base64 (${Math.round(pickedFile.data!.length / 1024)} KB b64)…`);
+            const binary = atob(pickedFile.data!);
             const bytes  = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
             const blob = new Blob([bytes], { type: mime });
+            dbg(`blob ready: ${Math.round(blob.size / 1024)} KB`);
 
             const file      = new File([blob], fileName, { type: mime });
             const sizeLabel = file.size < 1024 * 1024
@@ -258,16 +264,17 @@ const Documents = () => {
             const ext         = fileName.split(".").pop() || "bin";
             const storagePath = `${familyId}/${fileId}.${ext}`;
 
+            dbg(`uploading → ${storagePath}`);
             const { error: uploadError } = await supabase.storage
               .from("documents")
               .upload(storagePath, file, { contentType: mime, upsert: false });
 
             if (uploadError) {
-              console.error("[Documents] Native upload failed:", uploadError);
-              appToast.error("فشل رفع الملف إلى التخزين السحابي");
+              appToast.error(`رفع فشل: ${uploadError.message}`);
               continue;
             }
 
+            dbg("upload OK, signing URL…");
             try {
               if ("caches" in window) {
                 const cache = await caches.open("documents-cache-v1");
@@ -289,46 +296,43 @@ const Documents = () => {
 
             if (target === "new") {
               setNewFiles((prev) => [...prev, docFile]);
-              setShowAddItem(true); // re-open if focus-management accidentally closed it
+              setShowAddItem(true);
             } else {
-              if (!editTarget) { appToast.error("تعذّر تحديد المستند لإرفاق الملف"); continue; }
+              if (!editTarget) { appToast.error("تعذّر تحديد المستند"); continue; }
               setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
               addDocFileMut.mutate({
                 document_id: editTarget.id, name: fileName,
                 file_url: url, type: isImage ? "image" : "pdf", size: file.size,
               });
             }
+            dbg("✓ done");
           }
         } catch (err: any) {
           const msg = String(err?.message ?? err ?? "");
-          const isCancel  = /cancel|user/i.test(msg);
-          const isNotImpl = /not implemented|unimplemented/i.test(msg);
-
-          if (isCancel) {
-            // User cancelled — nothing to do
-          } else if (isNotImpl) {
-            // Native plugin not compiled yet → fall back silently
-            console.warn("[Documents] FilePicker not implemented, falling back to <input>:", msg);
+          if (/cancel|user/i.test(msg)) {
+            dbg("cancelled");
+          } else if (/not implemented|unimplemented/i.test(msg)) {
+            dbg("UNIMPLEMENTED — falling back to <input>");
             shouldFallbackToHtml = true;
           } else {
-            console.error("[Documents] Native FilePicker error:", err);
-            appToast.error("فشل رفع الملف");
+            appToast.error(`خطأ: ${msg.slice(0, 80)}`);
           }
         } finally {
           setIsUploadingFile(false);
           setPickerLock(false);
         }
 
-        if (!shouldFallbackToHtml) return; // native path handled everything
-        useHtmlInput = true;               // will use <input> below
+        if (!shouldFallbackToHtml) return;
+        useHtmlInput = true;
       }
-    } catch {
-      // Capacitor module not available → web environment
+    } catch (capErr: any) {
+      dbg(`Capacitor load error: ${String(capErr).slice(0, 60)}`);
     }
 
     if (!useHtmlInput) return;
 
-    // ── Web / <input type="file"> fallback path ────────────────────────────────
+    // ── Web / <input type="file"> fallback ────────────────────────────────────
+    dbg("using <input> fallback");
     if (!isPickingFileRef.current) primeFilePickerLock();
     const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
     if (!input) { setPickerLock(false); return; }
