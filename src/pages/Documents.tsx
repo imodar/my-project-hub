@@ -242,11 +242,11 @@ const Documents = () => {
 
   /* ── Handle file selection → upload → show overlay ── */
   const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    e.target.value = ""; // reset so same file can be picked again
+    const input = e.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    input.value = ""; // reset after capturing the File object so Android doesn't clear it before we use it
 
-    const file = files[0]; // handle one file at a time
     const isImage = file.type.startsWith("image/");
     const isPdf = file.type === "application/pdf";
     if (!isImage && !isPdf) {
