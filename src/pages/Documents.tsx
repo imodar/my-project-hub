@@ -93,6 +93,9 @@ interface UploadOverlayState {
   attachToDocumentId?: string;
 }
 
+const DEFAULT_FAMILY_LIST_ID = "default-family-doc-list";
+const DEFAULT_FAMILY_LIST_NAME = "وثائق العائلة";
+
 const Documents = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
