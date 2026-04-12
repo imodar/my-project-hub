@@ -696,104 +696,112 @@ const Documents = () => {
           </div>
         </div>
 
-        {/* Items list */}
-        <div className="px-4 pt-4 space-y-2 pb-4">
-          {filteredItems.map((item) => renderItem(item))}
-
-          {filteredItems.length === 0 && (
+        {/* Card stacks grouped by category */}
+        <div className="px-4 pt-4 space-y-6 pb-4">
+          {groupedByCategory.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <FolderLock size={40} className="mx-auto mb-3 opacity-30" />
               <p className="text-sm">لا توجد وثائق</p>
             </div>
           )}
+
+          {groupedByCategory.map(([category, items]) => {
+            const catInfo = CATEGORIES[category];
+            const CatIcon = catInfo.icon;
+            return (
+              <div key={category} className="space-y-2">
+                {/* Category header */}
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${catInfo.bg}`}>
+                    <CatIcon size={14} className={catInfo.color} />
+                  </div>
+                  <span className="text-sm font-bold text-foreground">{catInfo.label}</span>
+                  <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{items.length}</span>
+                </div>
+
+                {/* Overlapping card stack */}
+                <div className="relative" style={{ height: `${Math.min(items.length, 4) * 28 + 100}px` }}>
+                  {items.slice(0, 4).map((item, idx) => {
+                    const expiryStatus = getExpiryStatus(item.expiryDate);
+                    const zIndex = items.length - idx;
+                    const topOffset = idx * 28;
+                    const scale = 1 - idx * 0.02;
+                    const hasThumb = item.files.length > 0 && item.files[0].type === "image";
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="absolute right-0 left-0 cursor-pointer transition-all duration-200 hover:translate-y-[-2px]"
+                        style={{
+                          top: `${topOffset}px`,
+                          zIndex,
+                          transform: `scale(${scale})`,
+                          transformOrigin: "top center",
+                        }}
+                        onClick={() => { haptic.light(); setFullPreviewDoc(item); }}
+                      >
+                        <div className={`rounded-2xl p-3 border shadow-sm flex items-center gap-3 ${
+                          idx === 0
+                            ? "bg-card border-border shadow-md"
+                            : "bg-card/80 border-border/60"
+                        }`}>
+                          {/* Thumbnail or icon */}
+                          {hasThumb ? (
+                            <img
+                              src={item.files[0].url}
+                              alt={item.name}
+                              className="w-12 h-12 rounded-xl object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${catInfo.bg}`}>
+                              <CatIcon size={20} className={catInfo.color} />
+                            </div>
+                          )}
+
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
+                            {item.note && (
+                              <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
+                            )}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {item.files.length > 0 && (
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                  <FileText size={10} /> {item.files.length} ملف
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {expiryStatus && (
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${expiryStatus.className}`}>
+                                {expiryStatus.label}
+                              </span>
+                            )}
+                            {item.reminderEnabled && item.expiryDate && (
+                              <Bell size={12} className="text-amber-500" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {items.length > 4 && (
+                    <div
+                      className="absolute right-0 left-0 text-center"
+                      style={{ top: `${4 * 28 + 80}px` }}
+                    >
+                      <span className="text-xs text-muted-foreground">+{items.length - 4} مستندات أخرى</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* FAB: directly opens file picker — NO drawer/sheet */}
         <FAB onClick={() => { haptic.medium(); openFilePicker("new"); }} />
-
-        {/* View Document Drawer */}
-        <Drawer open={!!viewDoc} onOpenChange={(open) => !open && setViewDoc(null)}>
-          <DrawerContent dir="rtl" className="max-h-[85vh]">
-            <DrawerHeader className="text-right">
-              <DrawerTitle>{viewDoc?.name}</DrawerTitle>
-              <DrawerDescription>
-                {viewDoc && CATEGORIES[viewDoc.category].label} • {viewDoc?.addedBy}
-              </DrawerDescription>
-            </DrawerHeader>
-            <div className="px-4 space-y-4 overflow-y-auto pb-4">
-              {viewDoc?.note && (
-                <p className="text-sm text-muted-foreground bg-muted/50 rounded-xl p-3">{viewDoc.note}</p>
-              )}
-              {viewDoc?.expiryDate && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar size={14} className="text-muted-foreground" />
-                  <span className="text-foreground">ينتهي: {viewDoc.expiryDate}</span>
-                  {viewDoc.reminderEnabled && (
-                    <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                      تذكير مفعّل
-                    </span>
-                  )}
-                </div>
-              )}
-              {viewDoc?.files && viewDoc.files.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium">المرفقات ({viewDoc.files.length})</p>
-                  {viewDoc.files.map((file) => (
-                    <div key={file.id} className="w-full bg-card rounded-xl p-3 flex items-center gap-3 border border-border">
-                      {file.type === "image" ? (
-                        <img src={file.url} alt={file.name} className="w-12 h-12 rounded-lg object-cover" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                          <FileText size={20} className="text-red-600" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{file.size}</p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => {
-                            haptic.light();
-                            window.open(file.url, "_blank");
-                          }}
-                          className="p-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
-                          title="فتح"
-                        >
-                          <ExternalLink size={16} className="text-primary" />
-                        </button>
-                        {navigator.share && (
-                          <button
-                            onClick={async () => {
-                              haptic.light();
-                              try {
-                                const response = await fetch(file.url);
-                                const blob = await response.blob();
-                                const shareFile = new globalThis.File([blob], file.name, { type: blob.type });
-                                await navigator.share({ title: file.name, files: [shareFile] });
-                              } catch {
-                                window.open(file.url, "_blank");
-                              }
-                            }}
-                            className="p-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
-                            title="مشاركة"
-                          >
-                            <Share2 size={16} className="text-primary" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  <File size={24} className="mx-auto mb-2 opacity-30" />
-                  <p className="text-xs">لا توجد مرفقات</p>
-                </div>
-              )}
-            </div>
-          </DrawerContent>
-        </Drawer>
 
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
