@@ -96,21 +96,14 @@ interface UploadOverlayState {
 
 /* ── Crop helper: canvas from cropped area ── */
 async function getCroppedImg(imageSrc: string, pixelCrop: Area, rotation = 0): Promise<File> {
-  appToast.info("DEBUG: getCroppedImg", `src=${imageSrc.substring(0, 40)}...`);
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = document.createElement("img");
     // Don't set crossOrigin on blob: URLs — it breaks loading on Capacitor WebView
     if (!imageSrc.startsWith("blob:")) {
       img.crossOrigin = "anonymous";
     }
-    img.onload = () => {
-      appToast.success("DEBUG: Image loaded in getCroppedImg", `${img.width}x${img.height}`);
-      resolve(img);
-    };
-    img.onerror = (err) => {
-      appToast.error("DEBUG: Image FAILED to load in getCroppedImg", String(err));
-      reject(err);
-    };
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
     img.src = imageSrc;
   });
 
@@ -301,12 +294,6 @@ const Documents = () => {
       const next = typeof v === "function" ? v(prev) : v;
       documentsUiDraft.familyId = familyId ?? null;
       documentsUiDraft.uploadOverlay = next;
-      if (prev && !next) {
-        appToast.warning("DEBUG: uploadOverlay RESET to null", new Error().stack?.split("\n")[2]?.trim() || "");
-      }
-      if (!prev && next) {
-        appToast.info("DEBUG: uploadOverlay SET", `phase=${next.phase}`);
-      }
       return next;
     });
   }, [familyId]);
@@ -406,14 +393,12 @@ const Documents = () => {
 
   /* ── File picker trigger ── */
   const openFilePicker = useCallback((mode: "new" | "attach", documentId?: string) => {
-    appToast.info("DEBUG: openFilePicker", `mode=${mode}, docId=${documentId || "none"}`);
     pickerModeRef.current = mode;
     attachTargetRef.current = documentId || null;
     if (mode === "attach") {
       setEditTarget(null);
     }
     fileInputRef.current?.click();
-    appToast.info("DEBUG: click() called on input", `inputExists=${!!fileInputRef.current}`);
   }, []);
 
   // Ref to keep activeListId fresh for upload callbacks
@@ -421,20 +406,13 @@ const Documents = () => {
   useEffect(() => { activeListIdRef.current = activeListId; }, [activeListId]);
 
   useEffect(() => {
-    if (documentsUiDraft.familyId === (familyId ?? null) && documentsUiDraft.uploadOverlay) {
-      appToast.warning("DEBUG: Documents remounted", `restored phase=${documentsUiDraft.uploadOverlay.phase}`);
-    }
-
     return () => {
-      if (documentsUiDraft.familyId === (familyId ?? null) && documentsUiDraft.uploadOverlay) {
-        appToast.warning("DEBUG: Documents unmounted", `pending phase=${documentsUiDraft.uploadOverlay.phase}`);
-      }
+      // Keep draft state for potential remount on Capacitor
     };
   }, [familyId]);
 
   /* ── Upload a file to storage (shared by crop confirm + PDF direct) ── */
   const startUpload = useCallback(async (fileToUpload: File, overlay: UploadOverlayState) => {
-    appToast.info("DEBUG: startUpload", `name=${fileToUpload.name}, size=${fileToUpload.size}, type=${fileToUpload.type}`);
 
     let progressInterval: ReturnType<typeof setInterval> | undefined;
     try {
@@ -497,14 +475,9 @@ const Documents = () => {
 
   /* ── Handle file selection → crop (image) or upload (PDF) ── */
   const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    appToast.info("DEBUG: handleFileSelected triggered");
     const input = e.currentTarget;
     const file = input.files?.[0];
-    if (!file) {
-      appToast.error("DEBUG: No file found in input.files", `files length=${input.files?.length ?? "null"}`);
-      return;
-    }
-    appToast.info("DEBUG: File selected", `name=${file.name}, size=${file.size}, type=${file.type}`);
+    if (!file) return;
     // Don't clear input.value here — on some Android WebViews it
     // invalidates the File reference. We clear it after processing.
 
@@ -534,7 +507,6 @@ const Documents = () => {
 
     if (isImage) {
       const previewUrl = URL.createObjectURL(file);
-      appToast.info("DEBUG: Image preview blob created", previewUrl.substring(0, 50));
       setCropState({ x: 0, y: 0 });
       setCropZoom(1);
       setCropRotation(0);
@@ -549,7 +521,6 @@ const Documents = () => {
         fileType: "image",
         attachToDocumentId: attachId,
       });
-      appToast.info("DEBUG: Crop overlay set");
     } else {
       // PDF: upload directly
       const overlay: UploadOverlayState = {
@@ -568,20 +539,15 @@ const Documents = () => {
 
   /* ── Confirm crop → proceed to upload ── */
   const confirmCrop = useCallback(async () => {
-    appToast.info("DEBUG: confirmCrop called", `previewUrl=${!!uploadOverlay?.previewUrl}, croppedArea=${!!croppedAreaPixels}`);
-    if (!uploadOverlay || !uploadOverlay.previewUrl || !croppedAreaPixels) {
-      appToast.error("DEBUG: confirmCrop aborted — missing data");
-      return;
-    }
+    if (!uploadOverlay || !uploadOverlay.previewUrl || !croppedAreaPixels) return;
     try {
       const croppedFile = await getCroppedImg(uploadOverlay.previewUrl, croppedAreaPixels, cropRotation);
-      appToast.success("DEBUG: Crop done", `size=${croppedFile.size}`);
       const newPreview = URL.createObjectURL(croppedFile);
       if (uploadOverlay.previewUrl) URL.revokeObjectURL(uploadOverlay.previewUrl);
       startUpload(croppedFile, { ...uploadOverlay, previewUrl: newPreview });
     } catch (err) {
       console.error("[Documents] Crop error:", err);
-      appToast.error("DEBUG: Crop FAILED", String(err));
+      appToast.error("حدث خطأ أثناء قص الصورة");
     }
   }, [uploadOverlay, croppedAreaPixels, cropRotation, startUpload]);
 
