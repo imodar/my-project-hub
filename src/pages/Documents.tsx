@@ -748,7 +748,7 @@ const Documents = () => {
                           )}
 
                           {/* Info overlay — transparent, on top of image */}
-                          <div className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 py-2 backdrop-blur-sm" style={{ background: "linear-gradient(to bottom, hsl(var(--background) / 0.7), hsl(var(--background) / 0.3), transparent)", paddingBottom: "1rem" }}>
+                          <div className="absolute inset-x-0 top-0 flex items-start gap-2 px-3 pt-2" style={{ background: "linear-gradient(to bottom, hsl(var(--background) / 0.75) 0%, hsl(var(--background) / 0.5) 30%, hsl(var(--background) / 0.2) 60%, transparent 100%)", paddingBottom: "3rem" }}>
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm text-foreground truncate drop-shadow-sm">{item.name}</p>
                             </div>
