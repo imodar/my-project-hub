@@ -395,8 +395,8 @@ const Documents = () => {
     if (!uploadOverlay) return;
 
     // If attaching to an existing document, no list needed
-    if (!uploadOverlay.attachToDocumentId && !activeListId) {
-      appToast.error("أنشئ قائمة وثائق أولاً ثم أضف المستند");
+    if (!uploadOverlay.attachToDocumentId && (!activeListId || activeListId === DEFAULT_FAMILY_LIST_ID)) {
+      appToast.error("جارٍ تجهيز القائمة العائلية، حاول مرة أخرى");
       return;
     }
     haptic.medium();
