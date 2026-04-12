@@ -190,18 +190,139 @@ const Documents = () => {
     schedulePickerUnlock(10000);
   }, [schedulePickerUnlock, setPickerLock]);
 
-  const triggerFilePicker = useCallback((target: "new" | "existing") => {
+  const triggerFilePicker = useCallback(async (target: "new" | "existing") => {
+    // ── Native path (Android / iOS) ──────────────────────────────────────────
+    // On Capacitor we skip the HTML <input> entirely.  When a native activity
+    // (file-picker) takes focus, Radix UI's DismissableLayer fires focus/pointer
+    // events that can close the Sheet — and once the Sheet closes, the <input>
+    // may be gone before Android delivers the file result → onChange never fires.
+    // Using the native FilePicker plugin returns the file through a JS Promise,
+    // so the Sheet state never matters for whether the upload succeeds.
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      if (Capacitor.isNativePlatform()) {
+        setIsUploadingFile(true);
+        setPickerLock(true);
+        clearPickerLockTimeout();
+        try {
+          const { FilePicker } = await import("@capawesome/capacitor-file-picker");
+          const result = await FilePicker.pickFiles({
+            types: ["image/*", "application/pdf"],
+            multiple: true,
+          });
+
+          for (const pickedFile of result.files) {
+            const isImage = pickedFile.mimeType?.startsWith("image/") ?? false;
+            const isPdf = pickedFile.mimeType === "application/pdf";
+            if (!isImage && !isPdf) continue;
+
+            if (!familyId) {
+              appToast.error("لا يمكن رفع الملف بدون عائلة");
+              continue;
+            }
+
+            // Convert native path → web URL → Blob (avoids base64 OOM issues)
+            let blob: Blob;
+            if (pickedFile.path) {
+              const webPath = Capacitor.convertFileSrc(pickedFile.path);
+              const resp = await fetch(webPath);
+              blob = await resp.blob();
+            } else if (pickedFile.data) {
+              const resp = await fetch(`data:${pickedFile.mimeType};base64,${pickedFile.data}`);
+              blob = await resp.blob();
+            } else {
+              appToast.error("تعذّر قراءة الملف");
+              continue;
+            }
+
+            const file = new File([blob], pickedFile.name, { type: pickedFile.mimeType });
+            const sizeLabel = file.size < 1024 * 1024
+              ? `${(file.size / 1024).toFixed(0)} KB`
+              : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+
+            const fileId = crypto.randomUUID();
+            const ext = pickedFile.name.split(".").pop() || "bin";
+            const storagePath = `${familyId}/${fileId}.${ext}`;
+
+            const { error: uploadError } = await supabase.storage
+              .from("documents")
+              .upload(storagePath, file, { contentType: file.type, upsert: false });
+
+            if (uploadError) {
+              console.error("[Documents] Native upload failed:", uploadError);
+              appToast.error("فشل رفع الملف إلى التخزين السحابي");
+              continue;
+            }
+
+            // Cache locally for offline
+            try {
+              if ("caches" in window) {
+                const cache = await caches.open("documents-cache-v1");
+                await cache.put(storagePath, new Response(blob));
+              }
+            } catch {}
+
+            const { data: signedData } = await supabase.storage
+              .from("documents")
+              .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+            const url = signedData?.signedUrl || storagePath;
+
+            const docFile: DocFile = {
+              id: fileId,
+              name: pickedFile.name,
+              type: isImage ? "image" : "pdf",
+              url,
+              size: sizeLabel,
+              rawSize: file.size,
+              addedAt: new Date().toISOString(),
+            };
+
+            if (target === "new") {
+              setNewFiles((prev) => [...prev, docFile]);
+              setShowAddItem(true); // Re-open if focus-management closed it
+            } else {
+              if (!editTarget) {
+                appToast.error("تعذّر تحديد المستند لإرفاق الملف");
+                continue;
+              }
+              setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
+              addDocFileMut.mutate({
+                document_id: editTarget.id,
+                name: pickedFile.name,
+                file_url: url,
+                type: isImage ? "image" : "pdf",
+                size: file.size,
+              });
+            }
+          }
+        } catch (err: any) {
+          // User cancelled — not an error
+          const msg: string = err?.message ?? "";
+          if (!msg.toLowerCase().includes("cancel") && !msg.toLowerCase().includes("user")) {
+            console.error("[Documents] Native FilePicker error:", err);
+            appToast.error("فشل اختيار الملف");
+          }
+        } finally {
+          setIsUploadingFile(false);
+          setPickerLock(false);
+        }
+        return; // ← done for native
+      }
+    } catch {
+      // Capacitor import failed → fall through to web path
+    }
+
+    // ── Web path ─────────────────────────────────────────────────────────────
     if (!isPickingFileRef.current) {
       primeFilePickerLock();
     }
-
     const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
     if (!input) {
       setPickerLock(false);
       return;
     }
-    input?.click();
-  }, [primeFilePickerLock, setPickerLock]);
+    input.click();
+  }, [addDocFileMut, clearPickerLockTimeout, editTarget, familyId, primeFilePickerLock, setPickerLock]);
 
   // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
   useEffect(() => {
@@ -840,7 +961,7 @@ const Documents = () => {
                       e.stopPropagation();
                       primeFilePickerLock();
                     }}
-                    onClick={() => triggerFilePicker("existing")}
+                    onClick={() => { void triggerFilePicker("existing"); }}
                   >
                     <Plus size={16} />
                     رفع صورة أو PDF
@@ -914,7 +1035,7 @@ const Documents = () => {
                       e.stopPropagation();
                       primeFilePickerLock();
                     }}
-                    onClick={() => triggerFilePicker("new")}
+                    onClick={() => { void triggerFilePicker("new"); }}
                   >
                     <Plus size={16} />
                     رفع صورة أو PDF
