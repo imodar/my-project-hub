@@ -188,7 +188,8 @@ const Documents = () => {
     }
   }, [lists]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<DocCategory | "all">("all");
+  const [activeCategory, setActiveCategory] = useState<DocCategory | null>(null);
+  const [fullPreviewDoc, setFullPreviewDoc] = useState<DocumentItem | null>(null);
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null);
@@ -233,9 +234,20 @@ const Documents = () => {
 
   const filteredItems = activeList?.items.filter((item) => {
     const matchesSearch = !searchQuery || item.name.includes(searchQuery) || item.note.includes(searchQuery);
-    const matchesCategory = activeCategory === "all" || item.category === activeCategory;
+    const matchesCategory = !activeCategory || item.category === activeCategory;
     return matchesSearch && matchesCategory;
   }) || [];
+
+  // Group items by category for card-stack view
+  const groupedByCategory = useMemo(() => {
+    const groups: Record<DocCategory, DocumentItem[]> = {
+      identity: [], medical: [], vehicles: [], home: [], passport: [], other: [],
+    };
+    filteredItems.forEach((item) => {
+      groups[item.category].push(item);
+    });
+    return Object.entries(groups).filter(([, items]) => items.length > 0) as [DocCategory, DocumentItem[]][];
+  }, [filteredItems]);
 
   const totalItems = activeList?.items.length || 0;
 
