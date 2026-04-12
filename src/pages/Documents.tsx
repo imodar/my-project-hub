@@ -807,6 +807,7 @@ const Documents = () => {
             className="max-h-[85dvh] rounded-t-3xl border-none p-0"
             onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
             onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
+            onPointerDownOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
           >
             <div className="flex max-h-[85dvh] flex-col overflow-hidden">
               <SheetHeader className="shrink-0 border-b border-border px-4 pt-5 pb-4 text-right">
@@ -844,16 +845,6 @@ const Documents = () => {
                     <Plus size={16} />
                     رفع صورة أو PDF
                   </button>
-                  <input
-                    ref={editFileInputRef}
-                    type="file"
-                    accept="image/*,.pdf"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      void handleFileUpload(e, "existing");
-                    }}
-                  />
                   {editTarget?.files.length ? (
                     <div className="space-y-1.5 mt-2">
                       {editTarget.files.map((file) => (
@@ -890,6 +881,7 @@ const Documents = () => {
             className="max-h-[85dvh] rounded-t-3xl border-none p-0"
             onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
             onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
+            onPointerDownOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
           >
             <div className="flex max-h-[85dvh] flex-col overflow-hidden">
               <SheetHeader className="shrink-0 border-b border-border px-4 pt-5 pb-4 text-right">
@@ -927,16 +919,6 @@ const Documents = () => {
                     <Plus size={16} />
                     رفع صورة أو PDF
                   </button>
-                  <input
-                    ref={newFileInputRef}
-                    type="file"
-                    accept="image/*,.pdf"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      void handleFileUpload(e, "new");
-                    }}
-                  />
                   {newFiles.length > 0 && (
                     <div className="space-y-1.5 mt-2">
                       {newFiles.map((file) => (
@@ -1042,6 +1024,37 @@ const Documents = () => {
         </Drawer>
       </PullToRefresh>
       )}
+
+      {/*
+        *** FIX: File inputs MUST live outside every Sheet/Dialog. ***
+        On Android (Capacitor WebView), when a native file-picker opens the
+        WebView loses focus. Radix UI Dialog's DismissableLayer fires
+        onFocusOutside / onPointerDownOutside which can close the Sheet even
+        with our isPickingFileRef guard. Once the Sheet unmounts its children,
+        the <input type="file"> element is removed from the DOM. Android then
+        cannot deliver the selected file back → onChange never fires → "drawer
+        closes, no action happens".
+
+        Keeping both inputs permanently mounted here (outside any Sheet) means
+        Android always has a live DOM node to deliver the file result to,
+        regardless of what the Sheet does.
+      */}
+      <input
+        ref={newFileInputRef}
+        type="file"
+        accept="image/*,.pdf"
+        multiple
+        className="hidden"
+        onChange={(e) => { void handleFileUpload(e, "new"); }}
+      />
+      <input
+        ref={editFileInputRef}
+        type="file"
+        accept="image/*,.pdf"
+        multiple
+        className="hidden"
+        onChange={(e) => { void handleFileUpload(e, "existing"); }}
+      />
     </div>
   );
 };
