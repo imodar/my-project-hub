@@ -213,6 +213,7 @@ const Documents = () => {
           const result = await FilePicker.pickFiles({
             types: ["image/*", "application/pdf"],
             multiple: true,
+            readData: true, // always return base64 — avoids content:// URI issues on Android
           });
 
           for (const pickedFile of result.files) {
@@ -222,20 +223,13 @@ const Documents = () => {
 
             if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
 
-            // Convert native path → web URL → Blob (avoids base64 OOM issues)
-            let blob: Blob;
-            if (pickedFile.path) {
-              const webPath = Capacitor.convertFileSrc(pickedFile.path);
-              const resp = await fetch(webPath);
-              if (!resp.ok) throw new Error(`fetch ${resp.status}: ${webPath}`);
-              blob = await resp.blob();
-            } else if (pickedFile.data) {
-              blob = await (await fetch(`data:${pickedFile.mimeType};base64,${pickedFile.data}`)).blob();
-            } else {
-              appToast.error("تعذّر قراءة الملف"); continue;
-            }
+            // Use base64 data directly — content:// URIs on Android cannot be
+            // converted via Capacitor.convertFileSrc(), so readData:true is required.
+            if (!pickedFile.data) { appToast.error("تعذّر قراءة الملف"); continue; }
+            const mime = pickedFile.mimeType ?? (isImage ? "image/jpeg" : "application/pdf");
+            const blob = await (await fetch(`data:${mime};base64,${pickedFile.data}`)).blob();
 
-            const file      = new File([blob], pickedFile.name, { type: pickedFile.mimeType });
+            const file      = new File([blob], pickedFile.name, { type: mime });
             const sizeLabel = file.size < 1024 * 1024
               ? `${(file.size / 1024).toFixed(0)} KB`
               : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
