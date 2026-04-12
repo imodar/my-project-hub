@@ -724,7 +724,7 @@ const Documents = () => {
                   {items.map((item, idx) => {
                     const expiryStatus = getExpiryStatus(item.expiryDate);
                     const hasThumb = item.files.length > 0 && item.files[0].type === "image";
-                    const zIndex = items.length - idx;
+                    const zIndex = idx + 1;
 
                     return (
                       <div
