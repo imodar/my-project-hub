@@ -192,7 +192,7 @@ const Documents = () => {
   const [fullPreviewDoc, setFullPreviewDoc] = useState<DocumentItem | null>(null);
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null);
+  const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null); // kept for potential use
 
   const [openCardId, setOpenCardId] = useState<string | null>(null);
 
