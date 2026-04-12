@@ -733,11 +733,24 @@ const Documents = () => {
                         style={{ top: `${idx * 48}px`, zIndex }}
                         onClick={() => { haptic.light(); setFullPreviewDoc(item); }}
                       >
-                        <div className="rounded-2xl overflow-hidden border border-border bg-card shadow-md">
-                          {/* Info bar — on top */}
-                          <div className="flex items-center gap-2 px-3 py-2 bg-card">
+                        <div className="rounded-2xl overflow-hidden border border-border shadow-md relative">
+                          {/* Full-width image/icon — fills entire card */}
+                          {hasThumb ? (
+                            <img
+                              src={item.files[0].url}
+                              alt={item.name}
+                              className="w-full h-36 object-cover"
+                            />
+                          ) : (
+                            <div className={`w-full h-36 flex items-center justify-center ${catInfo.bg}`}>
+                              <CatIcon size={36} className={catInfo.color} />
+                            </div>
+                          )}
+
+                          {/* Info overlay — transparent, on top of image */}
+                          <div className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 py-2 bg-background/60 backdrop-blur-sm">
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
+                              <p className="font-semibold text-sm text-foreground truncate drop-shadow-sm">{item.name}</p>
                             </div>
                             {expiryStatus && (
                               <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${expiryStatus.className}`}>
@@ -745,19 +758,6 @@ const Documents = () => {
                               </span>
                             )}
                           </div>
-
-                          {/* Full-width image preview */}
-                          {hasThumb ? (
-                            <img
-                              src={item.files[0].url}
-                              alt={item.name}
-                              className="w-full h-28 object-cover"
-                            />
-                          ) : (
-                            <div className={`w-full h-28 flex items-center justify-center ${catInfo.bg}`}>
-                              <CatIcon size={36} className={catInfo.color} />
-                            </div>
-                          )}
                         </div>
                       </div>
                     );
