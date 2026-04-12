@@ -1,5 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
-import { flushSync } from "react-dom";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ListContentSkeleton } from "@/components/PageSkeletons";
@@ -11,7 +10,7 @@ import {
   Plus, Search, FolderLock, Users, Lock, Share2, Trash2, Pencil,
   MoreVertical, Check, FileText, Image, File, Bell, Calendar,
   CreditCard, Heart, Car, Home, MoreHorizontal, Eye, Download,
-  ChevronDown, ChevronUp, BookOpen, ExternalLink, X
+  ChevronDown, ChevronUp, BookOpen, ExternalLink, X, Loader2, Upload
 } from "lucide-react";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
@@ -20,9 +19,7 @@ import { useUserRole } from "@/contexts/UserRoleContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
+import { Progress } from "@/components/ui/progress";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from "@/components/ui/drawer";
@@ -31,8 +28,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
 import { haptic } from "@/lib/haptics";
 import { useFamilyId } from "@/hooks/useFamilyId";
 import { appToast } from "@/lib/toast";
@@ -43,9 +40,9 @@ interface DocFile {
   id: string;
   name: string;
   type: "image" | "pdf";
-  url: string; // base64 or object URL
+  url: string;
   size: string;
-  rawSize?: number; // raw bytes, needed for add-file API
+  rawSize?: number;
   addedAt: string;
 }
 
@@ -81,10 +78,20 @@ const CATEGORIES: Record<DocCategory, { label: string; icon: typeof CreditCard; 
   other: { label: "أخرى", icon: File, bg: "bg-muted", color: "text-muted-foreground" },
 };
 
-// FAMILY_MEMBERS removed — using useFamilyMembers hook
 const SWIPE_WIDTH = 140;
 
-// Initial data removed — using Supabase hooks
+/* ── Upload Overlay state ── */
+interface UploadOverlayState {
+  file: File;
+  progress: number;
+  phase: "uploading" | "form";
+  previewUrl: string | null;
+  storagePath: string;
+  signedUrl: string;
+  fileType: "image" | "pdf";
+  /** If set, attach file to this existing document instead of creating a new one */
+  attachToDocumentId?: string;
+}
 
 const Documents = () => {
   const navigate = useNavigate();
@@ -132,13 +139,11 @@ const Documents = () => {
   const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<DocCategory | "all">("all");
-  const [showAddItem, setShowAddItem] = useState(false);
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null);
 
   const [openCardId, setOpenCardId] = useState<string | null>(null);
-  const pointerStartYRef = useRef(0);
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<DocumentItem | null>(null);
@@ -151,71 +156,15 @@ const Documents = () => {
   const [editExpiryDate, setEditExpiryDate] = useState("");
   const [editReminderEnabled, setEditReminderEnabled] = useState(false);
 
-  // New item form
-  const [newName, setNewName] = useState("");
-  const [newCategory, setNewCategory] = useState<DocCategory>("identity");
-  const [newNote, setNewNote] = useState("");
-  const [newExpiryDate, setNewExpiryDate] = useState("");
-  const [newReminderEnabled, setNewReminderEnabled] = useState(false);
-  const [newFiles, setNewFiles] = useState<DocFile[]>([]);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const isPickingFileRef = useRef(false);
-  const pickerResetTimeoutRef = useRef<number | null>(null);
-  const newFileInputRef = useRef<HTMLInputElement>(null);
-  const editFileInputRef = useRef<HTMLInputElement>(null);
+  // Upload overlay
+  const [uploadOverlay, setUploadOverlay] = useState<UploadOverlayState | null>(null);
+  const [overlayName, setOverlayName] = useState("");
+  const [overlayCategory, setOverlayCategory] = useState<DocCategory>("identity");
+  const [overlayNote, setOverlayNote] = useState("");
+  const [overlayExpiryDate, setOverlayExpiryDate] = useState("");
+  const [overlayReminderEnabled, setOverlayReminderEnabled] = useState(false);
 
-  const setPickerLock = useCallback((locked: boolean) => {
-    isPickingFileRef.current = locked;
-  }, []);
-
-  const clearPickerLockTimeout = useCallback(() => {
-    if (pickerResetTimeoutRef.current !== null) {
-      window.clearTimeout(pickerResetTimeoutRef.current);
-      pickerResetTimeoutRef.current = null;
-    }
-  }, []);
-
-  const schedulePickerUnlock = useCallback((delay = 2000) => {
-    clearPickerLockTimeout();
-    pickerResetTimeoutRef.current = window.setTimeout(() => {
-      setPickerLock(false);
-      pickerResetTimeoutRef.current = null;
-    }, delay);
-  }, [clearPickerLockTimeout, setPickerLock]);
-
-  const primeFilePickerLock = useCallback(() => {
-    flushSync(() => {
-      setPickerLock(true);
-    });
-    schedulePickerUnlock(10000);
-  }, [schedulePickerUnlock, setPickerLock]);
-
-  const triggerFilePicker = useCallback((target: "new" | "existing") => {
-    if (!isPickingFileRef.current) {
-      primeFilePickerLock();
-    }
-
-    const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
-    if (!input) {
-      setPickerLock(false);
-      return;
-    }
-    input?.click();
-  }, [primeFilePickerLock, setPickerLock]);
-
-  // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
-  useEffect(() => {
-    const onWindowFocus = () => {
-      if (isPickingFileRef.current) {
-        schedulePickerUnlock(2000);
-      }
-    };
-    window.addEventListener("focus", onWindowFocus);
-    return () => {
-      window.removeEventListener("focus", onWindowFocus);
-      clearPickerLockTimeout();
-    };
-  }, [clearPickerLockTimeout, schedulePickerUnlock]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // New list form
   const [newListName, setNewListName] = useState("");
@@ -225,6 +174,10 @@ const Documents = () => {
   const [selectedShareMembers, setSelectedShareMembers] = useState<string[]>([]);
   const [showListActions, setShowListActions] = useState(false);
   const [deleteListConfirm, setDeleteListConfirm] = useState(false);
+
+  // Track what mode the file picker was opened for
+  const pickerModeRef = useRef<"new" | "attach">("new");
+  const attachTargetRef = useRef<string | null>(null);
 
   const activeList = lists.find((l) => l.id === activeListId);
 
@@ -236,7 +189,6 @@ const Documents = () => {
 
   const totalItems = activeList?.items.length || 0;
 
-  // Check expiry status
   const getExpiryStatus = (expiryDate?: string) => {
     if (!expiryDate) return null;
     const now = new Date();
@@ -246,8 +198,6 @@ const Documents = () => {
     if (diffDays <= 60) return { label: `${diffDays} يوم`, className: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" };
     return { label: `${diffDays} يوم`, className: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" };
   };
-
-  // Swipe handlers moved to SwipeableCard component
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
@@ -276,128 +226,190 @@ const Documents = () => {
     setEditTarget(null);
   }, [editTarget, editName, editCategory, editNote, editExpiryDate, editReminderEnabled, updateDocItemMut]);
 
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, target: "new" | "existing") => {
+  /* ── File picker trigger ── */
+  const openFilePicker = useCallback((mode: "new" | "attach", documentId?: string) => {
+    pickerModeRef.current = mode;
+    attachTargetRef.current = documentId || null;
+    // Close any open edit sheet first so it doesn't interfere
+    if (mode === "attach") {
+      setEditTarget(null);
+    }
+    // Small delay to let sheet close animation finish
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, mode === "attach" ? 350 : 0);
+  }, []);
+
+  /* ── Handle file selection → upload → show overlay ── */
+  const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) {
-      schedulePickerUnlock(300);
+    if (!files || files.length === 0) return;
+    e.target.value = ""; // reset so same file can be picked again
+
+    const file = files[0]; // handle one file at a time
+    const isImage = file.type.startsWith("image/");
+    const isPdf = file.type === "application/pdf";
+    if (!isImage && !isPdf) {
+      appToast.error("نوع الملف غير مدعوم، يُسمح بالصور وPDF فقط");
       return;
     }
 
-    setIsUploadingFile(true);
-    try {
-      for (const file of Array.from(files)) {
-        const isImage = file.type.startsWith("image/");
-        const isPdf = file.type === "application/pdf";
-        if (!isImage && !isPdf) continue;
-
-        const sizeLabel = file.size < 1024 * 1024
-          ? `${(file.size / 1024).toFixed(0)} KB`
-          : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-
-        // Upload to Supabase Storage with familyId prefix for RLS
-        const fileId = crypto.randomUUID();
-        const ext = file.name.split(".").pop() || "bin";
-        if (!familyId) {
-          appToast.error("لا يمكن رفع الملف بدون عائلة");
-          continue;
-        }
-        const storagePath = `${familyId}/${fileId}.${ext}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("documents")
-          .upload(storagePath, file, { contentType: file.type, upsert: false });
-
-        if (uploadError) {
-          console.error("[Documents] Upload failed:", uploadError);
-          appToast.error("فشل رفع الملف إلى التخزين السحابي");
-          continue;
-        }
-
-        // Cache blob locally for offline access
-        try {
-          if ("caches" in window) {
-            const cache = await caches.open("documents-cache-v1");
-            await cache.put(storagePath, new Response(file));
-          }
-        } catch {}
-
-        // Get signed URL for display
-        const { data: signedData } = await supabase.storage
-          .from("documents")
-          .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-        const url = signedData?.signedUrl || storagePath;
-
-        const docFile: DocFile = {
-          id: fileId,
-          name: file.name,
-          type: isImage ? "image" : "pdf",
-          url,
-          size: sizeLabel,
-          rawSize: file.size,
-          addedAt: new Date().toISOString(),
-        };
-
-        if (target === "new") {
-          setNewFiles((prev) => [...prev, docFile]);
-          continue;
-        }
-
-        if (!editTarget) {
-          appToast.error("تعذّر تحديد المستند لإرفاق الملف");
-          continue;
-        }
-
-        setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
-        addDocFileMut.mutate({
-          document_id: editTarget.id,
-          name: file.name,
-          file_url: url,
-          type: isImage ? "image" : "pdf",
-          size: file.size,
-        });
-      }
-    } finally {
-      e.target.value = "";
-      setIsUploadingFile(false);
-      schedulePickerUnlock(600);
+    if (!familyId) {
+      appToast.error("لا يمكن رفع الملف بدون عائلة");
+      return;
     }
-  }, [addDocFileMut, editTarget, familyId, schedulePickerUnlock]);
 
-  const addItem = useCallback(async () => {
-    if (!newName.trim() || !activeListId) return;
+    // Create preview for images
+    let previewUrl: string | null = null;
+    if (isImage) {
+      previewUrl = URL.createObjectURL(file);
+    }
+
+    const fileId = crypto.randomUUID();
+    const ext = file.name.split(".").pop() || "bin";
+    const storagePath = `${familyId}/${fileId}.${ext}`;
+
+    // Show overlay immediately with uploading state
+    setUploadOverlay({
+      file,
+      progress: 0,
+      phase: "uploading",
+      previewUrl,
+      storagePath,
+      signedUrl: "",
+      fileType: isImage ? "image" : "pdf",
+      attachToDocumentId: pickerModeRef.current === "attach" ? (attachTargetRef.current || undefined) : undefined,
+    });
+
+    // Reset form fields
+    setOverlayName(file.name.replace(/\.[^.]+$/, ""));
+    setOverlayCategory("identity");
+    setOverlayNote("");
+    setOverlayExpiryDate("");
+    setOverlayReminderEnabled(false);
+
+    try {
+      // Simulate progress (Supabase JS SDK doesn't support progress callbacks)
+      const progressInterval = setInterval(() => {
+        setUploadOverlay(prev => {
+          if (!prev || prev.phase !== "uploading") return prev;
+          const next = Math.min(prev.progress + 15, 90);
+          return { ...prev, progress: next };
+        });
+      }, 300);
+
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(storagePath, file, { contentType: file.type, upsert: false });
+
+      clearInterval(progressInterval);
+
+      if (uploadError) {
+        console.error("[Documents] Upload failed:", uploadError);
+        appToast.error("فشل رفع الملف إلى التخزين السحابي");
+        setUploadOverlay(null);
+        return;
+      }
+
+      // Cache locally for offline
+      try {
+        if ("caches" in window) {
+          const cache = await caches.open("documents-cache-v1");
+          await cache.put(storagePath, new Response(file));
+        }
+      } catch {}
+
+      // Get signed URL
+      const { data: signedData } = await supabase.storage
+        .from("documents")
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+      const signedUrl = signedData?.signedUrl || storagePath;
+
+      // Move to form phase
+      setUploadOverlay(prev => prev ? {
+        ...prev,
+        progress: 100,
+        phase: "form",
+        signedUrl,
+      } : null);
+
+    } catch (err) {
+      console.error("[Documents] Upload error:", err);
+      appToast.error("حدث خطأ أثناء رفع الملف");
+      setUploadOverlay(null);
+    }
+  }, [familyId]);
+
+  /* ── Confirm: save file to DB ── */
+  const confirmUpload = useCallback(async () => {
+    if (!uploadOverlay || !activeListId) return;
     haptic.medium();
 
-    // Capture values before clearing state
-    const filesToAttach = [...newFiles];
-    const itemPayload = {
-      list_id: activeListId, name: newName.trim(), category: newCategory,
-      note: newNote.trim(), expiry_date: newExpiryDate || undefined,
-      reminder_enabled: newReminderEnabled,
-    };
+    const sizeLabel = uploadOverlay.file.size < 1024 * 1024
+      ? `${(uploadOverlay.file.size / 1024).toFixed(0)} KB`
+      : `${(uploadOverlay.file.size / (1024 * 1024)).toFixed(1)} MB`;
 
-    // Optimistically reset form and close drawer
-    setNewName(""); setNewNote(""); setNewCategory("identity");
-    setNewExpiryDate(""); setNewReminderEnabled(false); setNewFiles([]);
-    setShowAddItem(false);
+    if (uploadOverlay.attachToDocumentId) {
+      // Attach to existing document
+      addDocFileMut.mutate({
+        document_id: uploadOverlay.attachToDocumentId,
+        name: uploadOverlay.file.name,
+        file_url: uploadOverlay.signedUrl,
+        type: uploadOverlay.fileType,
+        size: uploadOverlay.file.size,
+      });
+      appToast.success("تم إرفاق الملف بنجاح");
+      setUploadOverlay(null);
+      return;
+    }
 
+    // Create new document with file
     try {
-      const result = await addDocItemMut.mutateAsync(itemPayload);
+      const result = await addDocItemMut.mutateAsync({
+        list_id: activeListId,
+        name: overlayName.trim() || uploadOverlay.file.name,
+        category: overlayCategory,
+        note: overlayNote.trim(),
+        expiry_date: overlayExpiryDate || undefined,
+        reminder_enabled: overlayReminderEnabled,
+      });
+
       const documentId = (result as any)?.data?.id;
-      if (documentId && filesToAttach.length > 0) {
-        for (const file of filesToAttach) {
-          addDocFileMut.mutate({
-            document_id: documentId,
-            name: file.name,
-            file_url: file.url,
-            type: file.type,
-            size: file.rawSize ?? 0,
-          });
-        }
+      if (documentId) {
+        addDocFileMut.mutate({
+          document_id: documentId,
+          name: uploadOverlay.file.name,
+          file_url: uploadOverlay.signedUrl,
+          type: uploadOverlay.fileType,
+          size: uploadOverlay.file.size,
+        });
       }
+
+      appToast.success("تم إضافة المستند بنجاح");
     } catch (err) {
       console.error("[Documents] Failed to add document:", err);
+      appToast.error("فشل في إضافة المستند");
     }
-  }, [activeListId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, newFiles, addDocItemMut, addDocFileMut]);
+
+    setUploadOverlay(null);
+  }, [uploadOverlay, activeListId, overlayName, overlayCategory, overlayNote, overlayExpiryDate, overlayReminderEnabled, addDocItemMut, addDocFileMut]);
+
+  /* ── Cancel: delete uploaded file from storage ── */
+  const cancelUpload = useCallback(async () => {
+    if (!uploadOverlay) return;
+    try {
+      await supabase.storage.from("documents").remove([uploadOverlay.storagePath]);
+      // Also remove from cache
+      if ("caches" in window) {
+        const cache = await caches.open("documents-cache-v1");
+        await cache.delete(uploadOverlay.storagePath);
+      }
+    } catch {}
+    if (uploadOverlay.previewUrl) {
+      URL.revokeObjectURL(uploadOverlay.previewUrl);
+    }
+    setUploadOverlay(null);
+  }, [uploadOverlay]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
@@ -637,7 +649,8 @@ const Documents = () => {
           )}
         </div>
 
-        <FAB onClick={() => { haptic.medium(); setShowAddItem(true); }} />
+        {/* FAB: directly opens file picker — NO drawer/sheet */}
+        <FAB onClick={() => { haptic.medium(); openFilePicker("new"); }} />
 
         {/* View Document Drawer */}
         <Drawer open={!!viewDoc} onOpenChange={(open) => !open && setViewDoc(null)}>
@@ -725,6 +738,22 @@ const Documents = () => {
 
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>حذف المستند</AlertDialogTitle>
+              <AlertDialogDescription>
+                هل أنت متأكد من حذف "{deleteTarget?.name}"؟
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row gap-2">
+              <AlertDialogAction onClick={confirmDelete} className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
+                حذف
+              </AlertDialogAction>
+              <AlertDialogCancel className="flex-1 rounded-xl">إلغاء</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* List Actions Drawer */}
         <Drawer open={showListActions} onOpenChange={setShowListActions}>
           <DrawerContent dir="rtl">
@@ -782,33 +811,9 @@ const Documents = () => {
           </DrawerContent>
         </Drawer>
 
-
-          <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>حذف المستند</AlertDialogTitle>
-              <AlertDialogDescription>
-                هل أنت متأكد من حذف "{deleteTarget?.name}"؟
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex-row gap-2">
-              <AlertDialogAction onClick={confirmDelete} className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
-                حذف
-              </AlertDialogAction>
-              <AlertDialogCancel className="flex-1 rounded-xl">إلغاء</AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Edit Item Sheet */}
-        <Sheet open={!!editTarget} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; if (!open) setEditTarget(null); }}>
-          <SheetContent
-            side="bottom"
-            dir="rtl"
-            className="max-h-[85dvh] rounded-t-3xl border-none p-0"
-            onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
-            onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
-            onPointerDownOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
-          >
+        {/* Edit Item Sheet — no file upload here, just metadata */}
+        <Sheet open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null); }}>
+          <SheetContent side="bottom" dir="rtl" className="max-h-[85dvh] rounded-t-3xl border-none p-0">
             <div className="flex max-h-[85dvh] flex-col overflow-hidden">
               <SheetHeader className="shrink-0 border-b border-border px-4 pt-5 pb-4 text-right">
                 <SheetTitle className="text-right">تعديل المستند</SheetTitle>
@@ -831,22 +836,11 @@ const Documents = () => {
                     <Switch checked={editReminderEnabled} onCheckedChange={setEditReminderEnabled} />
                   </div>
                 )}
+                {/* Files list (read-only) + add attachment button */}
                 <div>
-                  <p className="text-xs text-muted-foreground mb-2">إضافة مرفقات</p>
-                  <button
-                    type="button"
-                    className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
-                    onPointerDownCapture={(e) => {
-                      e.stopPropagation();
-                      primeFilePickerLock();
-                    }}
-                    onClick={() => triggerFilePicker("existing")}
-                  >
-                    <Plus size={16} />
-                    رفع صورة أو PDF
-                  </button>
+                  <p className="text-xs text-muted-foreground mb-2">المرفقات</p>
                   {editTarget?.files.length ? (
-                    <div className="space-y-1.5 mt-2">
+                    <div className="space-y-1.5 mb-2">
                       {editTarget.files.map((file) => (
                         <div key={file.id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
                           {file.type === "image" ? (
@@ -860,93 +854,21 @@ const Documents = () => {
                       ))}
                     </div>
                   ) : null}
+                  <button
+                    type="button"
+                    className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors w-full"
+                    onClick={() => {
+                      if (editTarget) openFilePicker("attach", editTarget.id);
+                    }}
+                  >
+                    <Plus size={16} />
+                    رفع صورة أو PDF
+                  </button>
                 </div>
               </div>
               <div className="mt-auto flex shrink-0 flex-row gap-2 border-t border-border px-4 pt-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
                 <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
                 <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1 rounded-xl">إلغاء</Button>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        {/* Add Item Sheet */}
-        <Sheet open={showAddItem} onOpenChange={(open) => {
-          if (!open && isPickingFileRef.current) return;
-          setShowAddItem(open);
-        }}>
-          <SheetContent
-            side="bottom"
-            dir="rtl"
-            className="max-h-[85dvh] rounded-t-3xl border-none p-0"
-            onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
-            onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
-            onPointerDownOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
-          >
-            <div className="flex max-h-[85dvh] flex-col overflow-hidden">
-              <SheetHeader className="shrink-0 border-b border-border px-4 pt-5 pb-4 text-right">
-                <SheetTitle className="text-right">إضافة مستند جديد</SheetTitle>
-                <SheetDescription className="text-right">أضف وثيقة مع التصنيف والمرفقات</SheetDescription>
-              </SheetHeader>
-              <div className="space-y-3 overflow-y-auto px-4 py-4">
-                <Input placeholder="اسم المستند" value={newName} onChange={(e) => setNewName(e.target.value)} className="rounded-xl" />
-                {renderCategoryForm(newCategory, setNewCategory)}
-                <Input placeholder="ملاحظة (اختياري)" value={newNote} onChange={(e) => setNewNote(e.target.value)} className="rounded-xl" />
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">تاريخ الانتهاء (اختياري)</p>
-                  <Input type="date" value={newExpiryDate} onChange={(e) => setNewExpiryDate(e.target.value)} className="rounded-xl" />
-                </div>
-                {newExpiryDate && (
-                  <div className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
-                    <div className="flex items-center gap-2">
-                      <Bell size={14} className="text-amber-500" />
-                      <span className="text-sm text-foreground">تذكير قبل 60 يوم</span>
-                    </div>
-                    <Switch checked={newReminderEnabled} onCheckedChange={setNewReminderEnabled} />
-                  </div>
-                )}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">المرفقات</p>
-                  <button
-                    type="button"
-                    className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
-                    onPointerDownCapture={(e) => {
-                      e.stopPropagation();
-                      primeFilePickerLock();
-                    }}
-                    onClick={() => triggerFilePicker("new")}
-                  >
-                    <Plus size={16} />
-                    رفع صورة أو PDF
-                  </button>
-                  {newFiles.length > 0 && (
-                    <div className="space-y-1.5 mt-2">
-                      {newFiles.map((file) => (
-                        <div key={file.id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
-                          {file.type === "image" ? (
-                            <Image size={14} className="text-blue-500" />
-                          ) : (
-                            <FileText size={14} className="text-red-500" />
-                          )}
-                          <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
-                          <span className="text-[10px] text-muted-foreground">{file.size}</span>
-                          <button
-                            onClick={() => setNewFiles((prev) => prev.filter((f) => f.id !== file.id))}
-                            className="text-destructive"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="mt-auto flex shrink-0 flex-row gap-2 border-t border-border px-4 pt-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
-                <Button onClick={addItem} disabled={isUploadingFile} className="flex-1 rounded-xl">
-                  {isUploadingFile ? "جاري الرفع..." : "إضافة"}
-                </Button>
-                <Button variant="outline" onClick={() => setShowAddItem(false)} className="flex-1 rounded-xl">إلغاء</Button>
               </div>
             </div>
           </SheetContent>
@@ -1002,7 +924,8 @@ const Documents = () => {
             <div className="space-y-2 px-4">
               {FAMILY_MEMBERS.map((member) => (
                 <button
-                  key={member.id}                  onClick={() =>
+                  key={member.id}
+                  onClick={() =>
                     setSelectedShareMembers((prev) =>
                       prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
                     )
@@ -1025,35 +948,132 @@ const Documents = () => {
       </PullToRefresh>
       )}
 
-      {/*
-        *** FIX: File inputs MUST live outside every Sheet/Dialog. ***
-        On Android (Capacitor WebView), when a native file-picker opens the
-        WebView loses focus. Radix UI Dialog's DismissableLayer fires
-        onFocusOutside / onPointerDownOutside which can close the Sheet even
-        with our isPickingFileRef guard. Once the Sheet unmounts its children,
-        the <input type="file"> element is removed from the DOM. Android then
-        cannot deliver the selected file back → onChange never fires → "drawer
-        closes, no action happens".
+      {/* ══════════════════════════════════════════════════
+          UPLOAD OVERLAY — full-screen, NOT a modal library
+          No Radix, no Vaul — just a plain div.
+          This prevents Android WebView focus-loss issues.
+         ══════════════════════════════════════════════════ */}
+      {uploadOverlay && (
+        <div className="fixed inset-0 z-[100] bg-background flex flex-col" dir="rtl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border">
+            <h2 className="text-lg font-bold text-foreground">
+              {uploadOverlay.attachToDocumentId ? "إرفاق ملف" : "إضافة مستند جديد"}
+            </h2>
+            <button
+              onClick={cancelUpload}
+              className="p-2 rounded-xl hover:bg-muted transition-colors"
+            >
+              <X size={20} className="text-muted-foreground" />
+            </button>
+          </div>
 
-        Keeping both inputs permanently mounted here (outside any Sheet) means
-        Android always has a live DOM node to deliver the file result to,
-        regardless of what the Sheet does.
-      */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            {/* Upload progress phase */}
+            {uploadOverlay.phase === "uploading" && (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Loader2 size={32} className="text-primary animate-spin" />
+                </div>
+                <p className="text-sm font-medium text-foreground">جاري رفع الملف...</p>
+                <p className="text-xs text-muted-foreground truncate max-w-[250px]">{uploadOverlay.file.name}</p>
+                <div className="w-full max-w-xs">
+                  <Progress value={uploadOverlay.progress} className="h-2" />
+                </div>
+                <p className="text-xs text-muted-foreground">{uploadOverlay.progress}%</p>
+              </div>
+            )}
+
+            {/* Form phase — file uploaded successfully */}
+            {uploadOverlay.phase === "form" && (
+              <>
+                {/* File preview */}
+                <div className="flex flex-col items-center py-4">
+                  {uploadOverlay.fileType === "image" && uploadOverlay.previewUrl ? (
+                    <img
+                      src={uploadOverlay.previewUrl}
+                      alt="معاينة"
+                      className="w-full max-w-xs h-48 object-cover rounded-2xl border border-border"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                      <FileText size={40} className="text-red-600" />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 mt-3">
+                    <Check size={16} className="text-emerald-500" />
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">تم رفع الملف بنجاح</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 truncate max-w-[250px]">{uploadOverlay.file.name}</p>
+                </div>
+
+                {/* If attaching to existing doc, no need for metadata form */}
+                {uploadOverlay.attachToDocumentId ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">سيتم إرفاق هذا الملف بالمستند الحالي</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Metadata form */}
+                    <Input
+                      placeholder="اسم المستند"
+                      value={overlayName}
+                      onChange={(e) => setOverlayName(e.target.value)}
+                      className="rounded-xl"
+                    />
+                    {renderCategoryForm(overlayCategory, setOverlayCategory)}
+                    <Input
+                      placeholder="ملاحظة (اختياري)"
+                      value={overlayNote}
+                      onChange={(e) => setOverlayNote(e.target.value)}
+                      className="rounded-xl"
+                    />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">تاريخ الانتهاء (اختياري)</p>
+                      <Input
+                        type="date"
+                        value={overlayExpiryDate}
+                        onChange={(e) => setOverlayExpiryDate(e.target.value)}
+                        className="rounded-xl"
+                      />
+                    </div>
+                    {overlayExpiryDate && (
+                      <div className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
+                        <div className="flex items-center gap-2">
+                          <Bell size={14} className="text-amber-500" />
+                          <span className="text-sm text-foreground">تذكير قبل 60 يوم</span>
+                        </div>
+                        <Switch checked={overlayReminderEnabled} onCheckedChange={setOverlayReminderEnabled} />
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Bottom action buttons */}
+          {uploadOverlay.phase === "form" && (
+            <div className="flex flex-row gap-2 border-t border-border px-4 pt-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+              <Button onClick={confirmUpload} className="flex-1 rounded-xl">
+                <Upload size={16} className="ml-1" />
+                {uploadOverlay.attachToDocumentId ? "إرفاق" : "إضافة للوثائق"}
+              </Button>
+              <Button variant="outline" onClick={cancelUpload} className="flex-1 rounded-xl">
+                إلغاء
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Hidden file input — lives outside ALL modals */}
       <input
-        ref={newFileInputRef}
+        ref={fileInputRef}
         type="file"
         accept="image/*,.pdf"
-        multiple
         className="hidden"
-        onChange={(e) => { void handleFileUpload(e, "new"); }}
-      />
-      <input
-        ref={editFileInputRef}
-        type="file"
-        accept="image/*,.pdf"
-        multiple
-        className="hidden"
-        onChange={(e) => { void handleFileUpload(e, "existing"); }}
+        onChange={handleFileSelected}
       />
     </div>
   );
