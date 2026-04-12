@@ -145,6 +145,18 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area, rotation = 0): P
 const DEFAULT_FAMILY_LIST_ID = "default-family-doc-list";
 const DEFAULT_FAMILY_LIST_NAME = "وثائق العائلة";
 
+interface DocumentsUiDraft {
+  familyId: string | null;
+  activeListId: string;
+  uploadOverlay: UploadOverlayState | null;
+}
+
+let documentsUiDraft: DocumentsUiDraft = {
+  familyId: null,
+  activeListId: "",
+  uploadOverlay: null,
+};
+
 const Documents = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
@@ -210,6 +222,13 @@ const Documents = () => {
 
   // Auto-create default family list
   useEffect(() => {
+    if (documentsUiDraft.familyId !== familyId) {
+      documentsUiDraft = {
+        familyId: familyId ?? null,
+        activeListId: "",
+        uploadOverlay: null,
+      };
+    }
     createdDefaultListRef.current = null;
     pendingActiveListIdRef.current = null;
   }, [familyId]);
@@ -223,7 +242,19 @@ const Documents = () => {
     createDocListMut.mutate({ name: DEFAULT_FAMILY_LIST_NAME, type: "family", shared_with: [], is_default: true });
   }, [familyId, featureAccess.isStaff, docsLoading, dbDocLists]);
 
-  const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
+  const [activeListId, _setActiveListId] = useState(() =>
+    documentsUiDraft.familyId === (familyId ?? null)
+      ? documentsUiDraft.activeListId || lists[0]?.id || ""
+      : lists[0]?.id || ""
+  );
+  const setActiveListId = useCallback((value: string | ((prev: string) => string)) => {
+    _setActiveListId((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      documentsUiDraft.familyId = familyId ?? null;
+      documentsUiDraft.activeListId = next;
+      return next;
+    });
+  }, [familyId]);
 
   // Auto-select first real list when data loads (only on init or if current list removed)
   const hasInitializedListRef = useRef(false);
@@ -231,15 +262,16 @@ const Documents = () => {
     if (!lists.length) return;
     const exists = lists.some(l => l.id === activeListId);
     if (!hasInitializedListRef.current) {
+      hasInitializedListRef.current = true;
+      if (activeListId && exists) return;
       const real = lists.find(l => l.id !== DEFAULT_FAMILY_LIST_ID);
       setActiveListId(real?.id || lists[0].id);
-      hasInitializedListRef.current = true;
       return;
     }
     if (exists) return; // keep current selection
     const real = lists.find(l => l.id !== DEFAULT_FAMILY_LIST_ID);
     setActiveListId(real?.id || lists[0].id);
-  }, [lists]);
+  }, [lists, activeListId, setActiveListId]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<DocCategory | null>(null);
   const [fullPreviewDocId, setFullPreviewDocId] = useState<string | null>(null);
@@ -261,10 +293,14 @@ const Documents = () => {
   const [editReminderEnabled, setEditReminderEnabled] = useState(false);
 
   // Upload overlay
-  const [uploadOverlay, _setUploadOverlay] = useState<UploadOverlayState | null>(null);
+  const [uploadOverlay, _setUploadOverlay] = useState<UploadOverlayState | null>(() =>
+    documentsUiDraft.familyId === (familyId ?? null) ? documentsUiDraft.uploadOverlay : null
+  );
   const setUploadOverlay = useCallback((v: UploadOverlayState | null | ((prev: UploadOverlayState | null) => UploadOverlayState | null)) => {
     _setUploadOverlay((prev) => {
       const next = typeof v === "function" ? v(prev) : v;
+      documentsUiDraft.familyId = familyId ?? null;
+      documentsUiDraft.uploadOverlay = next;
       if (prev && !next) {
         appToast.warning("DEBUG: uploadOverlay RESET to null", new Error().stack?.split("\n")[2]?.trim() || "");
       }
@@ -273,7 +309,7 @@ const Documents = () => {
       }
       return next;
     });
-  }, []);
+  }, [familyId]);
   const [overlayName, setOverlayName] = useState("");
   const [overlayCategory, setOverlayCategory] = useState<DocCategory>("identity");
   const [overlayNote, setOverlayNote] = useState("");
@@ -384,14 +420,17 @@ const Documents = () => {
   const activeListIdRef = useRef(activeListId);
   useEffect(() => { activeListIdRef.current = activeListId; }, [activeListId]);
 
-  // Cleanup ObjectURL on unmount or when overlay changes
   useEffect(() => {
+    if (documentsUiDraft.familyId === (familyId ?? null) && documentsUiDraft.uploadOverlay) {
+      appToast.warning("DEBUG: Documents remounted", `restored phase=${documentsUiDraft.uploadOverlay.phase}`);
+    }
+
     return () => {
-      if (uploadOverlay?.previewUrl) {
-        URL.revokeObjectURL(uploadOverlay.previewUrl);
+      if (documentsUiDraft.familyId === (familyId ?? null) && documentsUiDraft.uploadOverlay) {
+        appToast.warning("DEBUG: Documents unmounted", `pending phase=${documentsUiDraft.uploadOverlay.phase}`);
       }
     };
-  }, [uploadOverlay?.previewUrl]);
+  }, [familyId]);
 
   /* ── Upload a file to storage (shared by crop confirm + PDF direct) ── */
   const startUpload = useCallback(async (fileToUpload: File, overlay: UploadOverlayState) => {
