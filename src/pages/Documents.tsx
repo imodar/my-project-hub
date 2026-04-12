@@ -1237,6 +1237,71 @@ const Documents = () => {
             </button>
           </div>
 
+          {/* Crop phase — image only */}
+          {uploadOverlay.phase === "cropping" && uploadOverlay.previewUrl && (
+            <>
+              <div className="flex-1 relative bg-black/90">
+                <Cropper
+                  image={uploadOverlay.previewUrl}
+                  crop={cropState}
+                  zoom={cropZoom}
+                  rotation={cropRotation}
+                  aspect={4 / 3}
+                  onCropChange={setCropState}
+                  onZoomChange={setCropZoom}
+                  onRotationChange={setCropRotation}
+                  onCropComplete={(_, area) => setCroppedAreaPixels(area)}
+                />
+              </div>
+              {/* Crop controls */}
+              <div className="px-4 py-3 space-y-3 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-14 shrink-0">تكبير</span>
+                  <input
+                    type="range"
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    value={cropZoom}
+                    onChange={(e) => setCropZoom(Number(e.target.value))}
+                    className="flex-1 accent-primary"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-14 shrink-0">استدارة</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={360}
+                    step={1}
+                    value={cropRotation}
+                    onChange={(e) => setCropRotation(Number(e.target.value))}
+                    className="flex-1 accent-primary"
+                  />
+                  <span className="text-[10px] text-muted-foreground w-8 text-center">{cropRotation}°</span>
+                </div>
+              </div>
+              <div className="flex flex-row gap-2 border-t border-border px-4 pt-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+                <Button onClick={confirmCrop} className="flex-1 rounded-xl">
+                  <Check size={16} className="ml-1" />
+                  تأكيد القص
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  // Skip crop, upload original
+                  startUpload(uploadOverlay.file, { ...uploadOverlay });
+                }} className="flex-1 rounded-xl">
+                  تخطي
+                </Button>
+                <Button variant="ghost" onClick={cancelUpload} className="rounded-xl px-3">
+                  <X size={16} className="text-muted-foreground" />
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Upload + Form phases */}
+          {(uploadOverlay.phase === "uploading" || uploadOverlay.phase === "form") && (
+          <>
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
             {/* Upload progress phase */}
             {uploadOverlay.phase === "uploading" && (
