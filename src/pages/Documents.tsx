@@ -507,6 +507,7 @@ const Documents = () => {
       });
       appToast.success("تم إرفاق الملف بنجاح");
       setUploadOverlay(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
@@ -539,6 +540,7 @@ const Documents = () => {
     }
 
     setUploadOverlay(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, [uploadOverlay, activeListId, overlayName, overlayCategory, overlayNote, overlayExpiryDate, overlayReminderEnabled, addDocItemMut, addDocFileMut]);
 
   /* ── Cancel: delete uploaded file from storage ── */
@@ -556,6 +558,7 @@ const Documents = () => {
       URL.revokeObjectURL(uploadOverlay.previewUrl);
     }
     setUploadOverlay(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, [uploadOverlay]);
 
   const addList = useCallback(() => {
