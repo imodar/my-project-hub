@@ -261,7 +261,19 @@ const Documents = () => {
   const [editReminderEnabled, setEditReminderEnabled] = useState(false);
 
   // Upload overlay
-  const [uploadOverlay, setUploadOverlay] = useState<UploadOverlayState | null>(null);
+  const [uploadOverlay, _setUploadOverlay] = useState<UploadOverlayState | null>(null);
+  const setUploadOverlay = useCallback((v: UploadOverlayState | null | ((prev: UploadOverlayState | null) => UploadOverlayState | null)) => {
+    _setUploadOverlay((prev) => {
+      const next = typeof v === "function" ? v(prev) : v;
+      if (prev && !next) {
+        appToast.warning("DEBUG: uploadOverlay RESET to null", new Error().stack?.split("\n")[2]?.trim() || "");
+      }
+      if (!prev && next) {
+        appToast.info("DEBUG: uploadOverlay SET", `phase=${next.phase}`);
+      }
+      return next;
+    });
+  }, []);
   const [overlayName, setOverlayName] = useState("");
   const [overlayCategory, setOverlayCategory] = useState<DocCategory>("identity");
   const [overlayNote, setOverlayNote] = useState("");
