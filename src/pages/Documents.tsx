@@ -97,7 +97,7 @@ interface UploadOverlayState {
 /* ── Crop helper: canvas from cropped area ── */
 async function getCroppedImg(imageSrc: string, pixelCrop: Area, rotation = 0): Promise<File> {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
+    const img = document.createElement("img");
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = reject;
