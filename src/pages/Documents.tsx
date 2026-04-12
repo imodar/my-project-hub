@@ -341,10 +341,9 @@ const Documents = () => {
     if (mode === "attach") {
       setEditTarget(null);
     }
-    // Small delay to let sheet close animation finish
-    setTimeout(() => {
-      fileInputRef.current?.click();
-    }, mode === "attach" ? 350 : 0);
+    // Trigger file picker directly from user gesture — no setTimeout
+    // (setTimeout breaks user-gesture requirement on iOS/Android)
+    fileInputRef.current?.click();
   }, []);
 
   /* ── Upload a file to storage (shared by crop confirm + PDF direct) ── */
@@ -408,7 +407,8 @@ const Documents = () => {
     const input = e.currentTarget;
     const file = input.files?.[0];
     if (!file) return;
-    input.value = "";
+    // Don't clear input.value here — on some Android WebViews it
+    // invalidates the File reference. We clear it after processing.
 
     const isImage = file.type.startsWith("image/");
     const isPdf = file.type === "application/pdf";
@@ -1408,7 +1408,7 @@ const Documents = () => {
         ref={fileInputRef}
         type="file"
         accept="image/*,.pdf"
-        className="hidden"
+        className="absolute w-0 h-0 opacity-0 overflow-hidden"
         onChange={handleFileSelected}
       />
     </div>
