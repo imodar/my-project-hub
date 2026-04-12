@@ -113,6 +113,9 @@ const Documents = () => {
   } = useDocumentLists();
   const { familyId } = useFamilyId();
 
+  const createdDefaultListRef = useRef<string | null>(null);
+  const pendingActiveListIdRef = useRef<string | null>(null);
+
   const lists: DocList[] = useMemo(() => {
     const mapped = (dbDocLists || []).map((l: any) => ({
       id: l.id,
@@ -136,10 +139,57 @@ const Documents = () => {
         addedAt: item.added_at,
       })),
     }));
-    return featureAccess.isStaff ? mapped.filter((l: DocList) => l.type !== "family") : mapped;
+    const filtered = featureAccess.isStaff ? mapped.filter((l: DocList) => l.type !== "family") : mapped;
+
+    // If no family list exists yet, show a placeholder
+    const hasFamilyList = filtered.some((l) => l.type === "family");
+    if (!hasFamilyList && !featureAccess.isStaff) {
+      return [{
+        id: DEFAULT_FAMILY_LIST_ID,
+        name: DEFAULT_FAMILY_LIST_NAME,
+        type: "family" as const,
+        isDefault: true,
+        sharedWith: [],
+        items: [],
+        lastUpdatedBy: "",
+        lastUpdatedAt: "",
+      }, ...filtered];
+    }
+
+    return filtered;
   }, [dbDocLists, featureAccess.isStaff]);
 
+  // Auto-create default family list
+  useEffect(() => {
+    createdDefaultListRef.current = null;
+    pendingActiveListIdRef.current = null;
+  }, [familyId]);
+
+  useEffect(() => {
+    if (!familyId || featureAccess.isStaff || docsLoading) return;
+    const hasFamilyList = (dbDocLists || []).some((l: any) => l.type === "family" || l.is_default);
+    if (hasFamilyList || createdDefaultListRef.current === familyId || createDocListMut.isPending) return;
+
+    createdDefaultListRef.current = familyId;
+    createDocListMut.mutate(
+      { name: DEFAULT_FAMILY_LIST_NAME, type: "family", shared_with: [], is_default: true },
+      { onError: () => { createdDefaultListRef.current = null; } } as any,
+    );
+  }, [familyId, featureAccess.isStaff, docsLoading, dbDocLists]);
+
   const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
+
+  // Auto-select first real list when data loads
+  useEffect(() => {
+    if (lists.length > 0 && (!activeListId || activeListId === DEFAULT_FAMILY_LIST_ID)) {
+      const realList = lists.find((l) => l.id !== DEFAULT_FAMILY_LIST_ID);
+      if (realList) {
+        setActiveListId(realList.id);
+      } else {
+        setActiveListId(lists[0].id);
+      }
+    }
+  }, [lists]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<DocCategory | "all">("all");
   const [showAddList, setShowAddList] = useState(false);
