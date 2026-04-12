@@ -370,19 +370,12 @@ const Documents = () => {
           else { appToast.error("فشل اختيار الملف"); }
         } finally {
           if (target === "existing") setIsUploadingFile(false);
-          // Only schedule the short post-pick unlock when the lifecycle path
-          // (visibilitychange / window focus) has NOT already set a longer timer.
-          // If lifecycleLockRef.current is true it means the visibilitychange
-          // handler already extended the lock to 2 500 ms; overriding it with
-          // 600 ms here would shrink the protection window and let a synthetic
-          // Android pointer-down slip through.
-          if (!lifecycleLockRef.current) {
-            clearPickerLockTimeout();
-            // Use 2500ms to cover devices where visibilitychange does not fire —
-            // Android's synthetic touch/click can arrive up to ~1 200 ms after the
-            // picker closes, so 600 ms was too short on those devices.
-            schedulePickerUnlock(2500);
-          }
+          // Always reset the lock timer after processing completes.
+          // The visibilitychange/focus handlers may have already set a timer, but
+          // resetting it here (from the point where JS finishes work) is safer —
+          // it ensures the 2 500 ms covers the synthetic Android touch events
+          // regardless of whether the lifecycle events fired or not.
+          schedulePickerUnlock(2500);
         }
 
         if (!shouldFallbackToHtml) return;
@@ -473,31 +466,34 @@ const Documents = () => {
       }
     };
 
-    // ── Capture-phase pointerdown blocker ───────────────────────────────────
-    // On Android (touch), Radix DismissableLayer's pointerdown handler does NOT
-    // call onPointerDownOutside immediately.  Instead it registers a one-time
-    // "click" handler that will close the Sheet.  By intercepting the pointerdown
-    // in capture phase (before Radix's bubble listener runs) we prevent Radix
-    // from ever registering that click handler, making the Sheet dismissal
-    // impossible while the lock is active.
-    const blockOutsidePointerDown = (e: PointerEvent) => {
+    // ── Capture-phase pointer + click blockers ──────────────────────────────
+    // On Android (touch), Radix DismissableLayer works in two steps:
+    //   1. pointerdown fires → Radix registers a one-time "click" handler.
+    //   2. click fires     → Radix calls onPointerDownOutside → Sheet closes.
+    //
+    // We block BOTH events at capture phase (before any bubble listeners run)
+    // while the picker lock is active.  This ensures:
+    //   • Radix never registers the dismiss click handler (pointerdown block).
+    //   • Even if a stale click handler was already registered from a prior
+    //     interaction, it cannot fire (click block).
+    //
+    // We block ALL pointer/click events during the lock window (not just
+    // "outside" ones) because the synthetic Android event's target is
+    // unpredictable — it depends on where the user tapped in the native picker.
+    const blockPickerEvents = (e: PointerEvent | MouseEvent) => {
       if (!isPickingFileRef.current) return;
-      // Allow events that originate inside the open Sheet / Dialog — those are
-      // legitimate user taps (e.g. pressing the "إضافة" button after upload).
-      const openDialog = document.querySelector('[role="dialog"]');
-      if (openDialog && openDialog.contains(e.target as Node)) return;
-      // Block everything outside: prevents Radix from setting up the dismiss
-      // click handler that would close the Sheet.
       e.stopImmediatePropagation();
     };
 
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("focus", onWindowFocus);
-    document.addEventListener("pointerdown", blockOutsidePointerDown, { capture: true });
+    document.addEventListener("pointerdown", blockPickerEvents, { capture: true });
+    document.addEventListener("click",       blockPickerEvents, { capture: true });
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("focus", onWindowFocus);
-      document.removeEventListener("pointerdown", blockOutsidePointerDown, { capture: true });
+      document.removeEventListener("pointerdown", blockPickerEvents, { capture: true });
+      document.removeEventListener("click",       blockPickerEvents, { capture: true });
       clearPickerLockTimeout();
     };
   }, [clearPickerLockTimeout, schedulePickerUnlock, setPickerLock]);
@@ -1093,7 +1089,10 @@ const Documents = () => {
         </AlertDialog>
 
         {/* Edit Item Sheet */}
-        <Sheet open={!!editTarget} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; if (!open) setEditTarget(null); }}>
+        <Sheet open={!!editTarget} onOpenChange={(open) => {
+          if (!open && (isPickingFileRef.current || lifecycleLockRef.current)) return;
+          if (!open) setEditTarget(null);
+        }}>
           <SheetContent
             side="bottom"
             dir="rtl"
@@ -1101,6 +1100,8 @@ const Documents = () => {
             onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
             onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
             onPointerDownOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onCloseAutoFocus={(e) => e.preventDefault()}
           >
             <div className="flex max-h-[85dvh] flex-col overflow-hidden">
               <SheetHeader className="shrink-0 border-b border-border px-4 pt-5 pb-4 text-right">
@@ -1165,7 +1166,7 @@ const Documents = () => {
 
         {/* Add Item Sheet */}
         <Sheet open={showAddItem} onOpenChange={(open) => {
-          if (!open && isPickingFileRef.current) return;
+          if (!open && (isPickingFileRef.current || lifecycleLockRef.current)) return;
           if (!open) { cancelAndCleanup(); return; }
           setShowAddItem(true);
         }}>
@@ -1176,6 +1177,8 @@ const Documents = () => {
             onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
             onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
             onPointerDownOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onCloseAutoFocus={(e) => e.preventDefault()}
           >
             <div className="flex max-h-[85dvh] flex-col overflow-hidden">
               <SheetHeader className="shrink-0 border-b border-border px-4 pt-5 pb-4 text-right">
