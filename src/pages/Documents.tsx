@@ -159,7 +159,6 @@ const Documents = () => {
   const [newReminderEnabled, setNewReminderEnabled] = useState(false);
   const [newFiles, setNewFiles] = useState<DocFile[]>([]);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const [isPickerLocked, setIsPickerLocked] = useState(false);
   const isPickingFileRef = useRef(false);
   const pickerResetTimeoutRef = useRef<number | null>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
@@ -167,7 +166,6 @@ const Documents = () => {
 
   const setPickerLock = useCallback((locked: boolean) => {
     isPickingFileRef.current = locked;
-    setIsPickerLocked(locked);
   }, []);
 
   const clearPickerLockTimeout = useCallback(() => {
