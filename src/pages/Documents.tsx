@@ -358,15 +358,14 @@ const Documents = () => {
 
   /* ── File picker trigger ── */
   const openFilePicker = useCallback((mode: "new" | "attach", documentId?: string) => {
+    appToast.info("DEBUG: openFilePicker", `mode=${mode}, docId=${documentId || "none"}`);
     pickerModeRef.current = mode;
     attachTargetRef.current = documentId || null;
-    // Close any open edit sheet first so it doesn't interfere
     if (mode === "attach") {
       setEditTarget(null);
     }
-    // Trigger file picker directly from user gesture — no setTimeout
-    // (setTimeout breaks user-gesture requirement on iOS/Android)
     fileInputRef.current?.click();
+    appToast.info("DEBUG: click() called on input", `inputExists=${!!fileInputRef.current}`);
   }, []);
 
   // Ref to keep activeListId fresh for upload callbacks
