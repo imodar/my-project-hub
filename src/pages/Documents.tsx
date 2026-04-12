@@ -342,7 +342,13 @@ const Documents = () => {
 
   /* ── Confirm: save file to DB ── */
   const confirmUpload = useCallback(async () => {
-    if (!uploadOverlay || !activeListId) return;
+    if (!uploadOverlay) return;
+
+    // If attaching to an existing document, no list needed
+    if (!uploadOverlay.attachToDocumentId && !activeListId) {
+      appToast.error("أنشئ قائمة وثائق أولاً ثم أضف المستند");
+      return;
+    }
     haptic.medium();
 
     const sizeLabel = uploadOverlay.file.size < 1024 * 1024
