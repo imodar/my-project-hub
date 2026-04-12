@@ -378,7 +378,10 @@ const Documents = () => {
           // Android pointer-down slip through.
           if (!lifecycleLockRef.current) {
             clearPickerLockTimeout();
-            schedulePickerUnlock(600);
+            // Use 2500ms to cover devices where visibilitychange does not fire —
+            // Android's synthetic touch/click can arrive up to ~1 200 ms after the
+            // picker closes, so 600 ms was too short on those devices.
+            schedulePickerUnlock(2500);
           }
         }
 
@@ -470,11 +473,31 @@ const Documents = () => {
       }
     };
 
+    // ── Capture-phase pointerdown blocker ───────────────────────────────────
+    // On Android (touch), Radix DismissableLayer's pointerdown handler does NOT
+    // call onPointerDownOutside immediately.  Instead it registers a one-time
+    // "click" handler that will close the Sheet.  By intercepting the pointerdown
+    // in capture phase (before Radix's bubble listener runs) we prevent Radix
+    // from ever registering that click handler, making the Sheet dismissal
+    // impossible while the lock is active.
+    const blockOutsidePointerDown = (e: PointerEvent) => {
+      if (!isPickingFileRef.current) return;
+      // Allow events that originate inside the open Sheet / Dialog — those are
+      // legitimate user taps (e.g. pressing the "إضافة" button after upload).
+      const openDialog = document.querySelector('[role="dialog"]');
+      if (openDialog && openDialog.contains(e.target as Node)) return;
+      // Block everything outside: prevents Radix from setting up the dismiss
+      // click handler that would close the Sheet.
+      e.stopImmediatePropagation();
+    };
+
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("focus", onWindowFocus);
+    document.addEventListener("pointerdown", blockOutsidePointerDown, { capture: true });
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("focus", onWindowFocus);
+      document.removeEventListener("pointerdown", blockOutsidePointerDown, { capture: true });
       clearPickerLockTimeout();
     };
   }, [clearPickerLockTimeout, schedulePickerUnlock, setPickerLock]);
