@@ -320,7 +320,11 @@ const Documents = () => {
           }
         } finally {
           setIsUploadingFile(false);
-          setPickerLock(false);
+          // Cancel any premature unlock that window.focus may have scheduled,
+          // then hold the lock for 600 ms so React can flush the state updates
+          // (setNewFiles / setShowAddItem) before Radix focus events can fire.
+          clearPickerLockTimeout();
+          schedulePickerUnlock(600);
         }
 
         if (!shouldFallbackToHtml) return;
@@ -338,7 +342,7 @@ const Documents = () => {
     const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
     if (!input) { setPickerLock(false); return; }
     input.click();
-  }, [addDocFileMut, clearPickerLockTimeout, editTarget, familyId, primeFilePickerLock, setPickerLock]);
+  }, [addDocFileMut, clearPickerLockTimeout, schedulePickerUnlock, editTarget, familyId, primeFilePickerLock, setPickerLock]);
 
   // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
   useEffect(() => {
