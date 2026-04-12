@@ -217,30 +217,50 @@ const Documents = () => {
           });
 
           for (const pickedFile of result.files) {
-            const isImage = pickedFile.mimeType?.startsWith("image/") ?? false;
-            const isPdf   = pickedFile.mimeType === "application/pdf";
-            if (!isImage && !isPdf) continue;
+            const rawMime  = pickedFile.mimeType ?? "";
+            const fileName = pickedFile.name ?? "file";
+            const fileExt  = fileName.split(".").pop()?.toLowerCase() ?? "";
+
+            // Determine type from mimeType first, fall back to file extension.
+            // Some cloud/OEM pickers return null mimeType even for valid files.
+            const isImage = rawMime.startsWith("image/") ||
+              ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "bmp"].includes(fileExt);
+            const isPdf   = rawMime === "application/pdf" || fileExt === "pdf";
+
+            if (!isImage && !isPdf) {
+              console.warn("[Documents] Unsupported file type — mime:", rawMime, "ext:", fileExt);
+              appToast.warning("نوع الملف غير مدعوم، يُقبل صور و PDF فقط");
+              continue;
+            }
 
             if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
 
-            // Use base64 data directly — content:// URIs on Android cannot be
-            // converted via Capacitor.convertFileSrc(), so readData:true is required.
-            if (!pickedFile.data) { appToast.error("تعذّر قراءة الملف"); continue; }
-            const mime = pickedFile.mimeType ?? (isImage ? "image/jpeg" : "application/pdf");
-            const blob = await (await fetch(`data:${mime};base64,${pickedFile.data}`)).blob();
+            if (!pickedFile.data) {
+              console.warn("[Documents] No data for file:", fileName, "mime:", rawMime);
+              appToast.error("تعذّر قراءة بيانات الملف");
+              continue;
+            }
 
-            const file      = new File([blob], pickedFile.name, { type: mime });
+            // base64 → Uint8Array → Blob. Avoids fetch(data:) which is unreliable
+            // in older Android WebViews and has URI-length limits for large files.
+            const mime   = rawMime || (isImage ? "image/jpeg" : "application/pdf");
+            const binary = atob(pickedFile.data);
+            const bytes  = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const blob = new Blob([bytes], { type: mime });
+
+            const file      = new File([blob], fileName, { type: mime });
             const sizeLabel = file.size < 1024 * 1024
               ? `${(file.size / 1024).toFixed(0)} KB`
               : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
 
             const fileId      = crypto.randomUUID();
-            const ext         = pickedFile.name.split(".").pop() || "bin";
+            const ext         = fileName.split(".").pop() || "bin";
             const storagePath = `${familyId}/${fileId}.${ext}`;
 
             const { error: uploadError } = await supabase.storage
               .from("documents")
-              .upload(storagePath, file, { contentType: file.type, upsert: false });
+              .upload(storagePath, file, { contentType: mime, upsert: false });
 
             if (uploadError) {
               console.error("[Documents] Native upload failed:", uploadError);
@@ -261,7 +281,7 @@ const Documents = () => {
             const url = signedData?.signedUrl || storagePath;
 
             const docFile: DocFile = {
-              id: fileId, name: pickedFile.name,
+              id: fileId, name: fileName,
               type: isImage ? "image" : "pdf",
               url, size: sizeLabel, rawSize: file.size,
               addedAt: new Date().toISOString(),
@@ -274,7 +294,7 @@ const Documents = () => {
               if (!editTarget) { appToast.error("تعذّر تحديد المستند لإرفاق الملف"); continue; }
               setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
               addDocFileMut.mutate({
-                document_id: editTarget.id, name: pickedFile.name,
+                document_id: editTarget.id, name: fileName,
                 file_url: url, type: isImage ? "image" : "pdf", size: file.size,
               });
             }
