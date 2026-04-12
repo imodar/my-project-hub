@@ -85,13 +85,51 @@ const SWIPE_WIDTH = 140;
 interface UploadOverlayState {
   file: File;
   progress: number;
-  phase: "uploading" | "form";
+  phase: "cropping" | "uploading" | "form";
   previewUrl: string | null;
   storagePath: string;
   signedUrl: string;
   fileType: "image" | "pdf";
   /** If set, attach file to this existing document instead of creating a new one */
   attachToDocumentId?: string;
+}
+
+/* ── Crop helper: canvas from cropped area ── */
+async function getCroppedImg(imageSrc: string, pixelCrop: Area, rotation = 0): Promise<File> {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = imageSrc;
+  });
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d")!;
+
+  const radians = (rotation * Math.PI) / 180;
+  const sin = Math.abs(Math.sin(radians));
+  const cos = Math.abs(Math.cos(radians));
+  const bW = image.width * cos + image.height * sin;
+  const bH = image.width * sin + image.height * cos;
+
+  canvas.width = bW;
+  canvas.height = bH;
+  ctx.translate(bW / 2, bH / 2);
+  ctx.rotate(radians);
+  ctx.drawImage(image, -image.width / 2, -image.height / 2);
+
+  // Now crop
+  const data = ctx.getImageData(pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height);
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+  ctx.putImageData(data, 0, 0);
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(new globalThis.File([blob!], "cropped.jpg", { type: "image/jpeg" }));
+    }, "image/jpeg", 0.92);
+  });
 }
 
 const DEFAULT_FAMILY_LIST_ID = "default-family-doc-list";
