@@ -661,26 +661,17 @@ const Documents = () => {
           </div>
         )}
 
-        {/* Category filter */}
+        {/* Category filter — no "الكل" tab */}
         <div className="px-4 pt-3 flex gap-2 overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setActiveCategory("all")}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
-              activeCategory === "all"
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-card text-muted-foreground"
-            }`}
-          >
-            الكل
-          </button>
           {Object.entries(CATEGORIES).map(([key, info]) => {
             const Icon = info.icon;
+            const isActive = activeCategory === key;
             return (
               <button
                 key={key}
-                onClick={() => setActiveCategory(key as DocCategory)}
+                onClick={() => setActiveCategory(isActive ? null : key as DocCategory)}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
-                  activeCategory === key
+                  isActive
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border bg-card text-muted-foreground"
                 }`}
