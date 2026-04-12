@@ -171,10 +171,7 @@ const Documents = () => {
     if (hasFamilyList || createdDefaultListRef.current === familyId || createDocListMut.isPending) return;
 
     createdDefaultListRef.current = familyId;
-    createDocListMut.mutate(
-      { name: DEFAULT_FAMILY_LIST_NAME, type: "family", shared_with: [], is_default: true },
-      { onError: () => { createdDefaultListRef.current = null; } } as any,
-    );
+    createDocListMut.mutate({ name: DEFAULT_FAMILY_LIST_NAME, type: "family", shared_with: [], is_default: true });
   }, [familyId, featureAccess.isStaff, docsLoading, dbDocLists]);
 
   const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
