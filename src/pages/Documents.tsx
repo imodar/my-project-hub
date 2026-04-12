@@ -482,8 +482,8 @@ const Documents = () => {
     setOverlayReminderEnabled(false);
 
     if (isImage) {
-      // Show crop phase
       const previewUrl = URL.createObjectURL(file);
+      appToast.info("DEBUG: Image preview blob created", previewUrl.substring(0, 50));
       setCropState({ x: 0, y: 0 });
       setCropZoom(1);
       setCropRotation(0);
@@ -498,6 +498,7 @@ const Documents = () => {
         fileType: "image",
         attachToDocumentId: attachId,
       });
+      appToast.info("DEBUG: Crop overlay set");
     } else {
       // PDF: upload directly
       const overlay: UploadOverlayState = {
