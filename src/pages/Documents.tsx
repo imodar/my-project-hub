@@ -887,7 +887,7 @@ const Documents = () => {
 
         {/* FAB: directly opens file picker — NO drawer/sheet */}
         {/* FAB: directly opens file picker — haptic AFTER click to preserve gesture chain */}
-        <FAB onClick={() => { openFilePicker("new"); haptic.light(); }} />
+        <FAB skipHaptic onClick={() => { openFilePicker("new"); }} />
 
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
