@@ -734,6 +734,18 @@ const Documents = () => {
                         onClick={() => { haptic.light(); setFullPreviewDoc(item); }}
                       >
                         <div className="rounded-2xl overflow-hidden border border-border bg-card shadow-md">
+                          {/* Info bar — on top */}
+                          <div className="flex items-center gap-2 px-3 py-2 bg-card">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
+                            </div>
+                            {expiryStatus && (
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${expiryStatus.className}`}>
+                                {expiryStatus.label}
+                              </span>
+                            )}
+                          </div>
+
                           {/* Full-width image preview */}
                           {hasThumb ? (
                             <img
@@ -746,33 +758,6 @@ const Documents = () => {
                               <CatIcon size={36} className={catInfo.color} />
                             </div>
                           )}
-
-                          {/* Info bar */}
-                          <div className="flex items-center gap-2 px-3 py-2 bg-card">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                {item.files.length > 0 && (
-                                  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                                    <FileText size={10} /> {item.files.length} ملف
-                                  </span>
-                                )}
-                                {item.note && (
-                                  <span className="text-[10px] text-muted-foreground truncate">{item.note}</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end gap-1 shrink-0">
-                              {expiryStatus && (
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${expiryStatus.className}`}>
-                                  {expiryStatus.label}
-                                </span>
-                              )}
-                              {item.reminderEnabled && item.expiryDate && (
-                                <Bell size={12} className="text-amber-500" />
-                              )}
-                            </div>
-                          </div>
                         </div>
                       </div>
                     );
