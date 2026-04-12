@@ -255,10 +255,11 @@ const Documents = () => {
             const blob = new Blob([bytes], { type: mime });
             dbg(`blob ready: ${Math.round(blob.size / 1024)} KB`);
 
-            const file      = new File([blob], fileName, { type: mime });
-            const sizeLabel = file.size < 1024 * 1024
-              ? `${(file.size / 1024).toFixed(0)} KB`
-              : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+            // new File() is not available in all Android WebViews — use Blob directly.
+            // Supabase storage.upload() accepts Blob just like File.
+            const sizeLabel = blob.size < 1024 * 1024
+              ? `${(blob.size / 1024).toFixed(0)} KB`
+              : `${(blob.size / (1024 * 1024)).toFixed(1)} MB`;
 
             const fileId      = crypto.randomUUID();
             const ext         = fileName.split(".").pop() || "bin";
@@ -267,7 +268,7 @@ const Documents = () => {
             dbg(`uploading → ${storagePath}`);
             const { error: uploadError } = await supabase.storage
               .from("documents")
-              .upload(storagePath, file, { contentType: mime, upsert: false });
+              .upload(storagePath, blob, { contentType: mime, upsert: false });
 
             if (uploadError) {
               appToast.error(`رفع فشل: ${uploadError.message}`);
@@ -290,7 +291,7 @@ const Documents = () => {
             const docFile: DocFile = {
               id: fileId, name: fileName,
               type: isImage ? "image" : "pdf",
-              url, size: sizeLabel, rawSize: file.size,
+              url, size: sizeLabel, rawSize: blob.size,
               addedAt: new Date().toISOString(),
             };
 
@@ -302,7 +303,7 @@ const Documents = () => {
               setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
               addDocFileMut.mutate({
                 document_id: editTarget.id, name: fileName,
-                file_url: url, type: isImage ? "image" : "pdf", size: file.size,
+                file_url: url, type: isImage ? "image" : "pdf", size: blob.size,
               });
             }
             dbg("✓ done");
