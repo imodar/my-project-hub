@@ -188,10 +188,11 @@ const Documents = () => {
     }
   }, [lists]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<DocCategory | "all">("all");
+  const [activeCategory, setActiveCategory] = useState<DocCategory | null>(null);
+  const [fullPreviewDoc, setFullPreviewDoc] = useState<DocumentItem | null>(null);
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null);
+  const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null); // kept for potential use
 
   const [openCardId, setOpenCardId] = useState<string | null>(null);
 
@@ -233,9 +234,20 @@ const Documents = () => {
 
   const filteredItems = activeList?.items.filter((item) => {
     const matchesSearch = !searchQuery || item.name.includes(searchQuery) || item.note.includes(searchQuery);
-    const matchesCategory = activeCategory === "all" || item.category === activeCategory;
+    const matchesCategory = !activeCategory || item.category === activeCategory;
     return matchesSearch && matchesCategory;
   }) || [];
+
+  // Group items by category for card-stack view
+  const groupedByCategory = useMemo(() => {
+    const groups: Record<DocCategory, DocumentItem[]> = {
+      identity: [], medical: [], vehicles: [], home: [], passport: [], other: [],
+    };
+    filteredItems.forEach((item) => {
+      groups[item.category].push(item);
+    });
+    return Object.entries(groups).filter(([, items]) => items.length > 0) as [DocCategory, DocumentItem[]][];
+  }, [filteredItems]);
 
   const totalItems = activeList?.items.length || 0;
 
@@ -649,26 +661,17 @@ const Documents = () => {
           </div>
         )}
 
-        {/* Category filter */}
+        {/* Category filter — no "الكل" tab */}
         <div className="px-4 pt-3 flex gap-2 overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setActiveCategory("all")}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
-              activeCategory === "all"
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-card text-muted-foreground"
-            }`}
-          >
-            الكل
-          </button>
           {Object.entries(CATEGORIES).map(([key, info]) => {
             const Icon = info.icon;
+            const isActive = activeCategory === key;
             return (
               <button
                 key={key}
-                onClick={() => setActiveCategory(key as DocCategory)}
+                onClick={() => setActiveCategory(isActive ? null : key as DocCategory)}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
-                  activeCategory === key
+                  isActive
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border bg-card text-muted-foreground"
                 }`}
@@ -693,104 +696,112 @@ const Documents = () => {
           </div>
         </div>
 
-        {/* Items list */}
-        <div className="px-4 pt-4 space-y-2 pb-4">
-          {filteredItems.map((item) => renderItem(item))}
-
-          {filteredItems.length === 0 && (
+        {/* Card stacks grouped by category */}
+        <div className="px-4 pt-4 space-y-6 pb-4">
+          {groupedByCategory.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <FolderLock size={40} className="mx-auto mb-3 opacity-30" />
               <p className="text-sm">لا توجد وثائق</p>
             </div>
           )}
+
+          {groupedByCategory.map(([category, items]) => {
+            const catInfo = CATEGORIES[category];
+            const CatIcon = catInfo.icon;
+            return (
+              <div key={category} className="space-y-2">
+                {/* Category header */}
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${catInfo.bg}`}>
+                    <CatIcon size={14} className={catInfo.color} />
+                  </div>
+                  <span className="text-sm font-bold text-foreground">{catInfo.label}</span>
+                  <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{items.length}</span>
+                </div>
+
+                {/* Overlapping card stack */}
+                <div className="relative" style={{ height: `${Math.min(items.length, 4) * 28 + 100}px` }}>
+                  {items.slice(0, 4).map((item, idx) => {
+                    const expiryStatus = getExpiryStatus(item.expiryDate);
+                    const zIndex = items.length - idx;
+                    const topOffset = idx * 28;
+                    const scale = 1 - idx * 0.02;
+                    const hasThumb = item.files.length > 0 && item.files[0].type === "image";
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="absolute right-0 left-0 cursor-pointer transition-all duration-200 hover:translate-y-[-2px]"
+                        style={{
+                          top: `${topOffset}px`,
+                          zIndex,
+                          transform: `scale(${scale})`,
+                          transformOrigin: "top center",
+                        }}
+                        onClick={() => { haptic.light(); setFullPreviewDoc(item); }}
+                      >
+                        <div className={`rounded-2xl p-3 border shadow-sm flex items-center gap-3 ${
+                          idx === 0
+                            ? "bg-card border-border shadow-md"
+                            : "bg-card/80 border-border/60"
+                        }`}>
+                          {/* Thumbnail or icon */}
+                          {hasThumb ? (
+                            <img
+                              src={item.files[0].url}
+                              alt={item.name}
+                              className="w-12 h-12 rounded-xl object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${catInfo.bg}`}>
+                              <CatIcon size={20} className={catInfo.color} />
+                            </div>
+                          )}
+
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
+                            {item.note && (
+                              <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
+                            )}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {item.files.length > 0 && (
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                  <FileText size={10} /> {item.files.length} ملف
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {expiryStatus && (
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${expiryStatus.className}`}>
+                                {expiryStatus.label}
+                              </span>
+                            )}
+                            {item.reminderEnabled && item.expiryDate && (
+                              <Bell size={12} className="text-amber-500" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {items.length > 4 && (
+                    <div
+                      className="absolute right-0 left-0 text-center"
+                      style={{ top: `${4 * 28 + 80}px` }}
+                    >
+                      <span className="text-xs text-muted-foreground">+{items.length - 4} مستندات أخرى</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* FAB: directly opens file picker — NO drawer/sheet */}
         <FAB onClick={() => { haptic.medium(); openFilePicker("new"); }} />
-
-        {/* View Document Drawer */}
-        <Drawer open={!!viewDoc} onOpenChange={(open) => !open && setViewDoc(null)}>
-          <DrawerContent dir="rtl" className="max-h-[85vh]">
-            <DrawerHeader className="text-right">
-              <DrawerTitle>{viewDoc?.name}</DrawerTitle>
-              <DrawerDescription>
-                {viewDoc && CATEGORIES[viewDoc.category].label} • {viewDoc?.addedBy}
-              </DrawerDescription>
-            </DrawerHeader>
-            <div className="px-4 space-y-4 overflow-y-auto pb-4">
-              {viewDoc?.note && (
-                <p className="text-sm text-muted-foreground bg-muted/50 rounded-xl p-3">{viewDoc.note}</p>
-              )}
-              {viewDoc?.expiryDate && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar size={14} className="text-muted-foreground" />
-                  <span className="text-foreground">ينتهي: {viewDoc.expiryDate}</span>
-                  {viewDoc.reminderEnabled && (
-                    <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                      تذكير مفعّل
-                    </span>
-                  )}
-                </div>
-              )}
-              {viewDoc?.files && viewDoc.files.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium">المرفقات ({viewDoc.files.length})</p>
-                  {viewDoc.files.map((file) => (
-                    <div key={file.id} className="w-full bg-card rounded-xl p-3 flex items-center gap-3 border border-border">
-                      {file.type === "image" ? (
-                        <img src={file.url} alt={file.name} className="w-12 h-12 rounded-lg object-cover" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                          <FileText size={20} className="text-red-600" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{file.size}</p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => {
-                            haptic.light();
-                            window.open(file.url, "_blank");
-                          }}
-                          className="p-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
-                          title="فتح"
-                        >
-                          <ExternalLink size={16} className="text-primary" />
-                        </button>
-                        {navigator.share && (
-                          <button
-                            onClick={async () => {
-                              haptic.light();
-                              try {
-                                const response = await fetch(file.url);
-                                const blob = await response.blob();
-                                const shareFile = new globalThis.File([blob], file.name, { type: blob.type });
-                                await navigator.share({ title: file.name, files: [shareFile] });
-                              } catch {
-                                window.open(file.url, "_blank");
-                              }
-                            }}
-                            className="p-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
-                            title="مشاركة"
-                          >
-                            <Share2 size={16} className="text-primary" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  <File size={24} className="mx-auto mb-2 opacity-30" />
-                  <p className="text-xs">لا توجد مرفقات</p>
-                </div>
-              )}
-            </div>
-          </DrawerContent>
-        </Drawer>
 
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
@@ -1005,10 +1016,165 @@ const Documents = () => {
       )}
 
       {/* ══════════════════════════════════════════════════
-          UPLOAD OVERLAY — full-screen, NOT a modal library
-          No Radix, no Vaul — just a plain div.
-          This prevents Android WebView focus-loss issues.
+          FULL-SCREEN DOCUMENT PREVIEW
          ══════════════════════════════════════════════════ */}
+      {fullPreviewDoc && (() => {
+        const catInfo = CATEGORIES[fullPreviewDoc.category];
+        const CatIcon = catInfo.icon;
+        const expiryStatus = getExpiryStatus(fullPreviewDoc.expiryDate);
+        const mainFile = fullPreviewDoc.files[0];
+
+        return (
+          <div className="fixed inset-0 z-[90] bg-background flex flex-col" dir="rtl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${catInfo.bg}`}>
+                  <CatIcon size={16} className={catInfo.color} />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-base font-bold text-foreground truncate">{fullPreviewDoc.name}</h2>
+                  <p className="text-[11px] text-muted-foreground">{catInfo.label}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {navigator.share && mainFile && (
+                  <button
+                    onClick={async () => {
+                      haptic.light();
+                      try {
+                        const response = await fetch(mainFile.url);
+                        const blob = await response.blob();
+                        const shareFile = new globalThis.File([blob], mainFile.name, { type: blob.type });
+                        await navigator.share({ title: fullPreviewDoc.name, files: [shareFile] });
+                      } catch {
+                        if (mainFile.url) window.open(mainFile.url, "_blank");
+                      }
+                    }}
+                    className="p-2 rounded-xl hover:bg-muted transition-colors"
+                  >
+                    <Share2 size={20} className="text-primary" />
+                  </button>
+                )}
+                <button
+                  onClick={() => setFullPreviewDoc(null)}
+                  className="p-2 rounded-xl hover:bg-muted transition-colors"
+                >
+                  <X size={20} className="text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Main image/pdf preview */}
+              {mainFile ? (
+                <div className="w-full flex items-center justify-center bg-muted/30 p-4">
+                  {mainFile.type === "image" ? (
+                    <img
+                      src={mainFile.url}
+                      alt={fullPreviewDoc.name}
+                      className="max-w-full max-h-[50vh] object-contain rounded-2xl border border-border shadow-lg"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 py-8">
+                      <div className="w-20 h-20 rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                        <FileText size={40} className="text-red-600 dark:text-red-400" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground">{mainFile.name}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        onClick={() => window.open(mainFile.url, "_blank")}
+                      >
+                        <ExternalLink size={14} className="ml-1" />
+                        فتح PDF
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <File size={40} className="mb-3 opacity-30" />
+                  <p className="text-sm">لا توجد مرفقات</p>
+                </div>
+              )}
+
+              {/* Document details */}
+              <div className="px-4 py-4 space-y-3">
+                {fullPreviewDoc.note && (
+                  <div className="bg-muted/50 rounded-xl p-3">
+                    <p className="text-sm text-foreground">{fullPreviewDoc.note}</p>
+                  </div>
+                )}
+
+                {expiryStatus && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar size={14} className="text-muted-foreground" />
+                    <span className="text-foreground">ينتهي: {fullPreviewDoc.expiryDate}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${expiryStatus.className}`}>
+                      {expiryStatus.label}
+                    </span>
+                    {fullPreviewDoc.reminderEnabled && (
+                      <Bell size={12} className="text-amber-500" />
+                    )}
+                  </div>
+                )}
+
+                {/* All files */}
+                {fullPreviewDoc.files.length > 1 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground">كل المرفقات ({fullPreviewDoc.files.length})</p>
+                    {fullPreviewDoc.files.map((file) => (
+                      <div key={file.id} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border">
+                        {file.type === "image" ? (
+                          <img src={file.url} alt={file.name} className="w-10 h-10 rounded-lg object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                            <FileText size={16} className="text-red-600 dark:text-red-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{file.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{file.size}</p>
+                        </div>
+                        <button
+                          onClick={() => window.open(file.url, "_blank")}
+                          className="p-2 rounded-lg hover:bg-muted"
+                        >
+                          <ExternalLink size={14} className="text-primary" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom actions */}
+            <div className="flex flex-row gap-2 border-t border-border px-4 pt-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={() => { openEdit(fullPreviewDoc); setFullPreviewDoc(null); }}
+              >
+                <Pencil size={14} className="ml-1" />
+                تعديل
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => { setDeleteTarget(fullPreviewDoc); setFullPreviewDoc(null); }}
+              >
+                <Trash2 size={14} className="ml-1" />
+                حذف
+              </Button>
+            </div>
+          </div>
+        );
+      })()}
+      {/* UPLOAD OVERLAY */}
       {uploadOverlay && (
         <div className="fixed inset-0 z-[100] bg-background flex flex-col" dir="rtl">
           {/* Header */}
