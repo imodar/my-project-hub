@@ -1016,6 +1016,165 @@ const Documents = () => {
       )}
 
       {/* ══════════════════════════════════════════════════
+          FULL-SCREEN DOCUMENT PREVIEW
+         ══════════════════════════════════════════════════ */}
+      {fullPreviewDoc && (() => {
+        const catInfo = CATEGORIES[fullPreviewDoc.category];
+        const CatIcon = catInfo.icon;
+        const expiryStatus = getExpiryStatus(fullPreviewDoc.expiryDate);
+        const mainFile = fullPreviewDoc.files[0];
+
+        return (
+          <div className="fixed inset-0 z-[90] bg-background flex flex-col" dir="rtl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${catInfo.bg}`}>
+                  <CatIcon size={16} className={catInfo.color} />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-base font-bold text-foreground truncate">{fullPreviewDoc.name}</h2>
+                  <p className="text-[11px] text-muted-foreground">{catInfo.label}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {navigator.share && mainFile && (
+                  <button
+                    onClick={async () => {
+                      haptic.light();
+                      try {
+                        const response = await fetch(mainFile.url);
+                        const blob = await response.blob();
+                        const shareFile = new globalThis.File([blob], mainFile.name, { type: blob.type });
+                        await navigator.share({ title: fullPreviewDoc.name, files: [shareFile] });
+                      } catch {
+                        if (mainFile.url) window.open(mainFile.url, "_blank");
+                      }
+                    }}
+                    className="p-2 rounded-xl hover:bg-muted transition-colors"
+                  >
+                    <Share2 size={20} className="text-primary" />
+                  </button>
+                )}
+                <button
+                  onClick={() => setFullPreviewDoc(null)}
+                  className="p-2 rounded-xl hover:bg-muted transition-colors"
+                >
+                  <X size={20} className="text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Main image/pdf preview */}
+              {mainFile ? (
+                <div className="w-full flex items-center justify-center bg-muted/30 p-4">
+                  {mainFile.type === "image" ? (
+                    <img
+                      src={mainFile.url}
+                      alt={fullPreviewDoc.name}
+                      className="max-w-full max-h-[50vh] object-contain rounded-2xl border border-border shadow-lg"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 py-8">
+                      <div className="w-20 h-20 rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                        <FileText size={40} className="text-red-600 dark:text-red-400" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground">{mainFile.name}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        onClick={() => window.open(mainFile.url, "_blank")}
+                      >
+                        <ExternalLink size={14} className="ml-1" />
+                        فتح PDF
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <File size={40} className="mb-3 opacity-30" />
+                  <p className="text-sm">لا توجد مرفقات</p>
+                </div>
+              )}
+
+              {/* Document details */}
+              <div className="px-4 py-4 space-y-3">
+                {fullPreviewDoc.note && (
+                  <div className="bg-muted/50 rounded-xl p-3">
+                    <p className="text-sm text-foreground">{fullPreviewDoc.note}</p>
+                  </div>
+                )}
+
+                {expiryStatus && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar size={14} className="text-muted-foreground" />
+                    <span className="text-foreground">ينتهي: {fullPreviewDoc.expiryDate}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${expiryStatus.className}`}>
+                      {expiryStatus.label}
+                    </span>
+                    {fullPreviewDoc.reminderEnabled && (
+                      <Bell size={12} className="text-amber-500" />
+                    )}
+                  </div>
+                )}
+
+                {/* All files */}
+                {fullPreviewDoc.files.length > 1 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground">كل المرفقات ({fullPreviewDoc.files.length})</p>
+                    {fullPreviewDoc.files.map((file) => (
+                      <div key={file.id} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border">
+                        {file.type === "image" ? (
+                          <img src={file.url} alt={file.name} className="w-10 h-10 rounded-lg object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                            <FileText size={16} className="text-red-600 dark:text-red-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{file.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{file.size}</p>
+                        </div>
+                        <button
+                          onClick={() => window.open(file.url, "_blank")}
+                          className="p-2 rounded-lg hover:bg-muted"
+                        >
+                          <ExternalLink size={14} className="text-primary" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom actions */}
+            <div className="flex flex-row gap-2 border-t border-border px-4 pt-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={() => { openEdit(fullPreviewDoc); setFullPreviewDoc(null); }}
+              >
+                <Pencil size={14} className="ml-1" />
+                تعديل
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => { setDeleteTarget(fullPreviewDoc); setFullPreviewDoc(null); }}
+              >
+                <Trash2 size={14} className="ml-1" />
+                حذف
+              </Button>
+            </div>
+          </div>
+        );
+      })()}
+
           UPLOAD OVERLAY — full-screen, NOT a modal library
           No Radix, no Vaul — just a plain div.
           This prevents Android WebView focus-loss issues.
