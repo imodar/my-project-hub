@@ -446,9 +446,14 @@ const Documents = () => {
 
   /* ── Handle file selection → crop (image) or upload (PDF) ── */
   const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    appToast.info("DEBUG: handleFileSelected triggered");
     const input = e.currentTarget;
     const file = input.files?.[0];
-    if (!file) return;
+    if (!file) {
+      appToast.error("DEBUG: No file found in input.files", `files length=${input.files?.length ?? "null"}`);
+      return;
+    }
+    appToast.info("DEBUG: File selected", `name=${file.name}, size=${file.size}, type=${file.type}`);
     // Don't clear input.value here — on some Android WebViews it
     // invalidates the File reference. We clear it after processing.
 
