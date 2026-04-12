@@ -15,15 +15,17 @@ interface FABProps {
   actions?: FABAction[];
   icon?: React.ReactNode;
   show?: boolean;
+  /** Skip haptic before onClick — needed when onClick triggers file picker */
+  skipHaptic?: boolean;
 }
 
-const FAB = ({ onClick, actions, icon, show = true }: FABProps) => {
+const FAB = ({ onClick, actions, icon, show = true, skipHaptic = false }: FABProps) => {
   const [open, setOpen] = useState(false);
 
   if (!show) return null;
 
   const handleClick = () => {
-    haptic.medium();
+    if (!skipHaptic) haptic.medium();
     if (actions) {
       setOpen(!open);
     } else {
