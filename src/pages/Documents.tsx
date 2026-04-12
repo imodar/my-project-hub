@@ -848,7 +848,7 @@ const Documents = () => {
                         key={item.id}
                         className="absolute right-0 left-0 cursor-pointer transition-all duration-200 active:scale-[0.98]"
                         style={{ top: `${idx * 48}px`, zIndex }}
-                        onClick={() => { haptic.light(); setFullPreviewDoc(item); }}
+                        onClick={() => { haptic.light(); setFullPreviewDocId(item.id); }}
                       >
                         <div className="rounded-2xl overflow-hidden border border-border shadow-md relative">
                           {/* Full-width image/icon — fills entire card */}
@@ -1143,7 +1143,7 @@ const Documents = () => {
                   </button>
                 )}
                 <button
-                  onClick={() => setFullPreviewDoc(null)}
+                  onClick={() => setFullPreviewDocId(null)}
                   className="p-2 rounded-xl hover:bg-muted transition-colors"
                 >
                   <X size={20} className="text-muted-foreground" />
@@ -1243,7 +1243,7 @@ const Documents = () => {
               <Button
                 variant="outline"
                 className="flex-1 rounded-xl"
-                onClick={() => { openEdit(fullPreviewDoc); setFullPreviewDoc(null); }}
+                onClick={() => { openEdit(fullPreviewDoc); setFullPreviewDocId(null); }}
               >
                 <Pencil size={14} className="ml-1" />
                 تعديل
@@ -1251,7 +1251,7 @@ const Documents = () => {
               <Button
                 variant="outline"
                 className="flex-1 rounded-xl text-destructive border-destructive/30 hover:bg-destructive/10"
-                onClick={() => { setDeleteTarget(fullPreviewDoc); setFullPreviewDoc(null); }}
+                onClick={() => { setDeleteTarget(fullPreviewDoc); setFullPreviewDocId(null); }}
               >
                 <Trash2 size={14} className="ml-1" />
                 حذف
