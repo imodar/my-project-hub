@@ -96,11 +96,21 @@ interface UploadOverlayState {
 
 /* ── Crop helper: canvas from cropped area ── */
 async function getCroppedImg(imageSrc: string, pixelCrop: Area, rotation = 0): Promise<File> {
+  appToast.info("DEBUG: getCroppedImg", `src=${imageSrc.substring(0, 40)}...`);
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = document.createElement("img");
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = reject;
+    // Don't set crossOrigin on blob: URLs — it breaks loading on Capacitor WebView
+    if (!imageSrc.startsWith("blob:")) {
+      img.crossOrigin = "anonymous";
+    }
+    img.onload = () => {
+      appToast.success("DEBUG: Image loaded in getCroppedImg", `${img.width}x${img.height}`);
+      resolve(img);
+    };
+    img.onerror = (err) => {
+      appToast.error("DEBUG: Image FAILED to load in getCroppedImg", String(err));
+      reject(err);
+    };
     img.src = imageSrc;
   });
 
