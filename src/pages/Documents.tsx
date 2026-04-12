@@ -719,54 +719,59 @@ const Documents = () => {
                   <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{items.length}</span>
                 </div>
 
-                {/* Cards list — vertical stack */}
-                <div className="space-y-2">
-                  {items.map((item) => {
+                {/* Overlapping vertical card stack */}
+                <div className="relative" style={{ height: `${items.length * 48 + 120}px` }}>
+                  {items.map((item, idx) => {
                     const expiryStatus = getExpiryStatus(item.expiryDate);
                     const hasThumb = item.files.length > 0 && item.files[0].type === "image";
+                    const zIndex = items.length - idx;
 
                     return (
                       <div
                         key={item.id}
-                        className="cursor-pointer transition-all duration-200 active:scale-[0.98]"
+                        className="absolute right-0 left-0 cursor-pointer transition-all duration-200 active:scale-[0.98]"
+                        style={{ top: `${idx * 48}px`, zIndex }}
                         onClick={() => { haptic.light(); setFullPreviewDoc(item); }}
                       >
-                        <div className="rounded-2xl p-3 border border-border bg-card shadow-sm flex items-center gap-3">
+                        <div className="rounded-2xl overflow-hidden border border-border bg-card shadow-md">
+                          {/* Full-width image preview */}
                           {hasThumb ? (
                             <img
                               src={item.files[0].url}
                               alt={item.name}
-                              className="w-12 h-12 rounded-xl object-cover shrink-0"
+                              className="w-full h-28 object-cover"
                             />
                           ) : (
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${catInfo.bg}`}>
-                              <CatIcon size={20} className={catInfo.color} />
+                            <div className={`w-full h-28 flex items-center justify-center ${catInfo.bg}`}>
+                              <CatIcon size={36} className={catInfo.color} />
                             </div>
                           )}
 
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
-                            {item.note && (
-                              <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
-                            )}
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {item.files.length > 0 && (
-                                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                                  <FileText size={10} /> {item.files.length} ملف
+                          {/* Info bar */}
+                          <div className="flex items-center gap-2 px-3 py-2 bg-card">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-foreground truncate">{item.name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {item.files.length > 0 && (
+                                  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                    <FileText size={10} /> {item.files.length} ملف
+                                  </span>
+                                )}
+                                {item.note && (
+                                  <span className="text-[10px] text-muted-foreground truncate">{item.note}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              {expiryStatus && (
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${expiryStatus.className}`}>
+                                  {expiryStatus.label}
                                 </span>
                               )}
+                              {item.reminderEnabled && item.expiryDate && (
+                                <Bell size={12} className="text-amber-500" />
+                              )}
                             </div>
-                          </div>
-
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            {expiryStatus && (
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${expiryStatus.className}`}>
-                                {expiryStatus.label}
-                              </span>
-                            )}
-                            {item.reminderEnabled && item.expiryDate && (
-                              <Bell size={12} className="text-amber-500" />
-                            )}
                           </div>
                         </div>
                       </div>
