@@ -198,11 +198,16 @@ const Documents = () => {
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const isPickingFileRef = useRef(false);
   const pickerResetTimeoutRef = useRef<number | null>(null);
+  // Tracks whether the lock was set by the visibilitychange/appState path.
+  // When true the finally-block in triggerFilePicker must NOT override the
+  // longer lifecycle-based timer with a short one.
+  const lifecycleLockRef = useRef(false);
   const newFileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const setPickerLock = useCallback((locked: boolean) => {
     isPickingFileRef.current = locked;
+    if (!locked) lifecycleLockRef.current = false;
   }, []);
 
   const clearPickerLockTimeout = useCallback(() => {
@@ -365,8 +370,16 @@ const Documents = () => {
           else { appToast.error("فشل اختيار الملف"); }
         } finally {
           if (target === "existing") setIsUploadingFile(false);
-          clearPickerLockTimeout();
-          schedulePickerUnlock(600);
+          // Only schedule the short post-pick unlock when the lifecycle path
+          // (visibilitychange / window focus) has NOT already set a longer timer.
+          // If lifecycleLockRef.current is true it means the visibilitychange
+          // handler already extended the lock to 2 500 ms; overriding it with
+          // 600 ms here would shrink the protection window and let a synthetic
+          // Android pointer-down slip through.
+          if (!lifecycleLockRef.current) {
+            clearPickerLockTimeout();
+            schedulePickerUnlock(600);
+          }
         }
 
         if (!shouldFallbackToHtml) return;
@@ -385,19 +398,86 @@ const Documents = () => {
     input.click();
   }, [addDocFileMut, clearPickerLockTimeout, schedulePickerUnlock, editTarget, familyId, primeFilePickerLock, setPickerLock, startBackgroundUpload]);
 
-  // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
+  // ── Lifecycle-aware picker lock ──────────────────────────────────────────────
+  // On Android (Capacitor WebView) the native file-picker launches a new Activity
+  // on top of the WebView.  The sequence of DOM events that results is:
+  //
+  //   1.  document "visibilitychange" fires → document.hidden = true
+  //       (WebView pauses / goes to background)
+  //   2.  The active DOM element loses focus → focusout fires (relatedTarget=null)
+  //   3.  Focus may shift to document.body or a Radix focus-guard span → focusin fires
+  //   4.  When the picker closes, document "visibilitychange" fires → document.hidden = false
+  //   5.  window "focus" fires (on some Android / WebView versions only)
+  //   6.  Chromium may deliver a synthetic pointer-down (from the touch that confirmed
+  //       the file selection) to whatever element is at those coordinates in the WebView.
+  //
+  // The guard in onOpenChange / onPointerDownOutside / onFocusOutside uses
+  // isPickingFileRef.current to block dismiss.  The guard must stay active
+  // long enough to cover event (6) above – which can arrive several hundred ms
+  // after the picker closes.
+  //
+  // Previous bug: the `finally` block in triggerFilePicker called
+  // schedulePickerUnlock(600), which *overrode* the longer 2 000 ms timer set by
+  // the window "focus" handler when it fired first.  On devices where "focus"
+  // fires before the await resolves, the protection window shrank to 600 ms and
+  // the synthetic pointer-down could slip through after it expired.
+  //
+  // Fix:
+  //  • "visibilitychange" (hidden → visible) and window "focus" both set a
+  //    lifecycle-based unlock of 2 500 ms AND mark lifecycleLockRef = true.
+  //  • triggerFilePicker's finally block only schedules the SHORT (600 ms) unlock
+  //    when the lifecycle path was NOT already active; otherwise it leaves the
+  //    longer timer in place.
+  //  • A hard 15 s safety valve still prevents the lock from being stuck forever.
   useEffect(() => {
-    const onWindowFocus = () => {
+    const LIFECYCLE_UNLOCK_DELAY = 2500;
+
+    const onHidden = () => {
+      // WebView going to background (picker / other Activity is opening)
       if (isPickingFileRef.current) {
-        schedulePickerUnlock(2000);
+        lifecycleLockRef.current = true;
+        // Extend the safety timer; the lock was already set by primeFilePickerLock
+        clearPickerLockTimeout();
+        pickerResetTimeoutRef.current = window.setTimeout(() => {
+          setPickerLock(false);
+          pickerResetTimeoutRef.current = null;
+        }, 15000);
       }
     };
+
+    const onVisible = () => {
+      // WebView returned to foreground (picker closed)
+      if (isPickingFileRef.current) {
+        lifecycleLockRef.current = true;
+        schedulePickerUnlock(LIFECYCLE_UNLOCK_DELAY);
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        onHidden();
+      } else {
+        onVisible();
+      }
+    };
+
+    const onWindowFocus = () => {
+      // Fallback for Android WebViews that fire "focus" instead of / in addition to
+      // visibilitychange when the Activity regains the foreground.
+      if (isPickingFileRef.current) {
+        lifecycleLockRef.current = true;
+        schedulePickerUnlock(LIFECYCLE_UNLOCK_DELAY);
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("focus", onWindowFocus);
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("focus", onWindowFocus);
       clearPickerLockTimeout();
     };
-  }, [clearPickerLockTimeout, schedulePickerUnlock]);
+  }, [clearPickerLockTimeout, schedulePickerUnlock, setPickerLock]);
 
   // New list form
   const [newListName, setNewListName] = useState("");
