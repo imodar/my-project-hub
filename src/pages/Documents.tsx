@@ -192,18 +192,22 @@ const Documents = () => {
 
   const triggerFilePicker = useCallback(async (target: "new" | "existing") => {
     // ── Native path (Android / iOS) ──────────────────────────────────────────
-    // On Capacitor we skip the HTML <input> entirely.  When a native activity
-    // (file-picker) takes focus, Radix UI's DismissableLayer fires focus/pointer
-    // events that can close the Sheet — and once the Sheet closes, the <input>
-    // may be gone before Android delivers the file result → onChange never fires.
-    // Using the native FilePicker plugin returns the file through a JS Promise,
-    // so the Sheet state never matters for whether the upload succeeds.
+    // @capawesome/capacitor-file-picker returns files via JS Promise, so the Sheet
+    // open/close state and DOM mutations never affect whether the file is received.
+    // Falls back silently to <input type="file"> when the plugin is not compiled
+    // into the current build (UNIMPLEMENTED) or Capacitor is not available.
+    let useHtmlInput = true; // will be set false if native path handles everything
+
     try {
       const { Capacitor } = await import("@capacitor/core");
-      if (Capacitor.isNativePlatform()) {
+      if (Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("FilePicker")) {
+        useHtmlInput = false;
         setIsUploadingFile(true);
         setPickerLock(true);
         clearPickerLockTimeout();
+
+        let shouldFallbackToHtml = false;
+
         try {
           const { FilePicker } = await import("@capawesome/capacitor-file-picker");
           const result = await FilePicker.pickFiles({
@@ -213,35 +217,31 @@ const Documents = () => {
 
           for (const pickedFile of result.files) {
             const isImage = pickedFile.mimeType?.startsWith("image/") ?? false;
-            const isPdf = pickedFile.mimeType === "application/pdf";
+            const isPdf   = pickedFile.mimeType === "application/pdf";
             if (!isImage && !isPdf) continue;
 
-            if (!familyId) {
-              appToast.error("لا يمكن رفع الملف بدون عائلة");
-              continue;
-            }
+            if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
 
             // Convert native path → web URL → Blob (avoids base64 OOM issues)
             let blob: Blob;
             if (pickedFile.path) {
               const webPath = Capacitor.convertFileSrc(pickedFile.path);
               const resp = await fetch(webPath);
+              if (!resp.ok) throw new Error(`fetch ${resp.status}: ${webPath}`);
               blob = await resp.blob();
             } else if (pickedFile.data) {
-              const resp = await fetch(`data:${pickedFile.mimeType};base64,${pickedFile.data}`);
-              blob = await resp.blob();
+              blob = await (await fetch(`data:${pickedFile.mimeType};base64,${pickedFile.data}`)).blob();
             } else {
-              appToast.error("تعذّر قراءة الملف");
-              continue;
+              appToast.error("تعذّر قراءة الملف"); continue;
             }
 
-            const file = new File([blob], pickedFile.name, { type: pickedFile.mimeType });
+            const file      = new File([blob], pickedFile.name, { type: pickedFile.mimeType });
             const sizeLabel = file.size < 1024 * 1024
               ? `${(file.size / 1024).toFixed(0)} KB`
               : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
 
-            const fileId = crypto.randomUUID();
-            const ext = pickedFile.name.split(".").pop() || "bin";
+            const fileId      = crypto.randomUUID();
+            const ext         = pickedFile.name.split(".").pop() || "bin";
             const storagePath = `${familyId}/${fileId}.${ext}`;
 
             const { error: uploadError } = await supabase.storage
@@ -254,7 +254,6 @@ const Documents = () => {
               continue;
             }
 
-            // Cache locally for offline
             try {
               if ("caches" in window) {
                 const cache = await caches.open("documents-cache-v1");
@@ -268,59 +267,57 @@ const Documents = () => {
             const url = signedData?.signedUrl || storagePath;
 
             const docFile: DocFile = {
-              id: fileId,
-              name: pickedFile.name,
+              id: fileId, name: pickedFile.name,
               type: isImage ? "image" : "pdf",
-              url,
-              size: sizeLabel,
-              rawSize: file.size,
+              url, size: sizeLabel, rawSize: file.size,
               addedAt: new Date().toISOString(),
             };
 
             if (target === "new") {
               setNewFiles((prev) => [...prev, docFile]);
-              setShowAddItem(true); // Re-open if focus-management closed it
+              setShowAddItem(true); // re-open if focus-management accidentally closed it
             } else {
-              if (!editTarget) {
-                appToast.error("تعذّر تحديد المستند لإرفاق الملف");
-                continue;
-              }
+              if (!editTarget) { appToast.error("تعذّر تحديد المستند لإرفاق الملف"); continue; }
               setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
               addDocFileMut.mutate({
-                document_id: editTarget.id,
-                name: pickedFile.name,
-                file_url: url,
-                type: isImage ? "image" : "pdf",
-                size: file.size,
+                document_id: editTarget.id, name: pickedFile.name,
+                file_url: url, type: isImage ? "image" : "pdf", size: file.size,
               });
             }
           }
         } catch (err: any) {
-          // User cancelled — not an error
-          const msg: string = err?.message ?? "";
-          if (!msg.toLowerCase().includes("cancel") && !msg.toLowerCase().includes("user")) {
+          const msg = String(err?.message ?? err ?? "");
+          const isCancel  = /cancel|user/i.test(msg);
+          const isNotImpl = /not implemented|unimplemented/i.test(msg);
+
+          if (isCancel) {
+            // User cancelled — nothing to do
+          } else if (isNotImpl) {
+            // Native plugin not compiled yet → fall back silently
+            console.warn("[Documents] FilePicker not implemented, falling back to <input>:", msg);
+            shouldFallbackToHtml = true;
+          } else {
             console.error("[Documents] Native FilePicker error:", err);
-            appToast.error("فشل اختيار الملف");
+            appToast.error("فشل رفع الملف");
           }
         } finally {
           setIsUploadingFile(false);
           setPickerLock(false);
         }
-        return; // ← done for native
+
+        if (!shouldFallbackToHtml) return; // native path handled everything
+        useHtmlInput = true;               // will use <input> below
       }
     } catch {
-      // Capacitor import failed → fall through to web path
+      // Capacitor module not available → web environment
     }
 
-    // ── Web path ─────────────────────────────────────────────────────────────
-    if (!isPickingFileRef.current) {
-      primeFilePickerLock();
-    }
+    if (!useHtmlInput) return;
+
+    // ── Web / <input type="file"> fallback path ────────────────────────────────
+    if (!isPickingFileRef.current) primeFilePickerLock();
     const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
-    if (!input) {
-      setPickerLock(false);
-      return;
-    }
+    if (!input) { setPickerLock(false); return; }
     input.click();
   }, [addDocFileMut, clearPickerLockTimeout, editTarget, familyId, primeFilePickerLock, setPickerLock]);
 
