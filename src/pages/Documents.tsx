@@ -383,7 +383,7 @@ const Documents = () => {
 
   /* ── Upload a file to storage (shared by crop confirm + PDF direct) ── */
   const startUpload = useCallback(async (fileToUpload: File, overlay: UploadOverlayState) => {
-    setUploadOverlay({ ...overlay, phase: "uploading", progress: 0 });
+    appToast.info("DEBUG: startUpload", `name=${fileToUpload.name}, size=${fileToUpload.size}, type=${fileToUpload.type}`);
 
     let progressInterval: ReturnType<typeof setInterval> | undefined;
     try {
