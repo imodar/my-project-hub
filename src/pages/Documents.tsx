@@ -1398,6 +1398,8 @@ const Documents = () => {
               </Button>
             </div>
           )}
+          </>
+          )}
         </div>
       )}
 
