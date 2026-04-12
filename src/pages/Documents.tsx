@@ -645,6 +645,10 @@ const Documents = () => {
 
   /** Cancel the add-document form: delete any already-uploaded files and close. */
   const cancelAndCleanup = useCallback(() => {
+    // Ignore accidental calls while the file picker is active — the synthetic
+    // Android touch event can land on the cancel button inside the Sheet.
+    if (isPickingFileRef.current) return;
+
     const toDelete = newFiles
       .filter((f) => f.storagePath)
       .map((f) => f.storagePath as string);
@@ -1169,7 +1173,7 @@ const Documents = () => {
               </div>
               <div className="mt-auto flex shrink-0 flex-row gap-2 border-t border-border px-4 pt-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
                 <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
-                <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1 rounded-xl">إلغاء</Button>
+                <Button variant="outline" onClick={() => { if (!isPickingFileRef.current) setEditTarget(null); }} className="flex-1 rounded-xl">إلغاء</Button>
               </div>
             </div>
           </SheetContent>
