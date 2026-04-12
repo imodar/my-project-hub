@@ -719,33 +719,19 @@ const Documents = () => {
                   <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{items.length}</span>
                 </div>
 
-                {/* Overlapping card stack */}
-                <div className="relative" style={{ height: `${Math.min(items.length, 4) * 28 + 100}px` }}>
-                  {items.slice(0, 4).map((item, idx) => {
+                {/* Cards list — vertical stack */}
+                <div className="space-y-2">
+                  {items.map((item) => {
                     const expiryStatus = getExpiryStatus(item.expiryDate);
-                    const zIndex = items.length - idx;
-                    const topOffset = idx * 28;
-                    const scale = 1 - idx * 0.02;
                     const hasThumb = item.files.length > 0 && item.files[0].type === "image";
 
                     return (
                       <div
                         key={item.id}
-                        className="absolute right-0 left-0 cursor-pointer transition-all duration-200 hover:translate-y-[-2px]"
-                        style={{
-                          top: `${topOffset}px`,
-                          zIndex,
-                          transform: `scale(${scale})`,
-                          transformOrigin: "top center",
-                        }}
+                        className="cursor-pointer transition-all duration-200 active:scale-[0.98]"
                         onClick={() => { haptic.light(); setFullPreviewDoc(item); }}
                       >
-                        <div className={`rounded-2xl p-3 border shadow-sm flex items-center gap-3 ${
-                          idx === 0
-                            ? "bg-card border-border shadow-md"
-                            : "bg-card/80 border-border/60"
-                        }`}>
-                          {/* Thumbnail or icon */}
+                        <div className="rounded-2xl p-3 border border-border bg-card shadow-sm flex items-center gap-3">
                           {hasThumb ? (
                             <img
                               src={item.files[0].url}
@@ -786,14 +772,6 @@ const Documents = () => {
                       </div>
                     );
                   })}
-                  {items.length > 4 && (
-                    <div
-                      className="absolute right-0 left-0 text-center"
-                      style={{ top: `${4 * 28 + 80}px` }}
-                    >
-                      <span className="text-xs text-muted-foreground">+{items.length - 4} مستندات أخرى</span>
-                    </div>
-                  )}
                 </div>
               </div>
             );
