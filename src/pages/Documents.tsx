@@ -517,15 +517,20 @@ const Documents = () => {
 
   /* ── Confirm crop → proceed to upload ── */
   const confirmCrop = useCallback(async () => {
-    if (!uploadOverlay || !uploadOverlay.previewUrl || !croppedAreaPixels) return;
+    appToast.info("DEBUG: confirmCrop called", `previewUrl=${!!uploadOverlay?.previewUrl}, croppedArea=${!!croppedAreaPixels}`);
+    if (!uploadOverlay || !uploadOverlay.previewUrl || !croppedAreaPixels) {
+      appToast.error("DEBUG: confirmCrop aborted — missing data");
+      return;
+    }
     try {
       const croppedFile = await getCroppedImg(uploadOverlay.previewUrl, croppedAreaPixels, cropRotation);
+      appToast.success("DEBUG: Crop done", `size=${croppedFile.size}`);
       const newPreview = URL.createObjectURL(croppedFile);
       if (uploadOverlay.previewUrl) URL.revokeObjectURL(uploadOverlay.previewUrl);
       startUpload(croppedFile, { ...uploadOverlay, previewUrl: newPreview });
     } catch (err) {
       console.error("[Documents] Crop error:", err);
-      appToast.error("فشل في قص الصورة");
+      appToast.error("DEBUG: Crop FAILED", String(err));
     }
   }, [uploadOverlay, croppedAreaPixels, cropRotation, startUpload]);
 
