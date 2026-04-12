@@ -43,10 +43,11 @@ interface DocFile {
   id: string;
   name: string;
   type: "image" | "pdf";
-  url: string; // base64 or object URL
+  url: string;           // object URL (pending) or signed Supabase URL (uploaded)
   size: string;
-  rawSize?: number; // raw bytes, needed for add-file API
+  rawSize?: number;
   addedAt: string;
+  pendingBlob?: Blob;    // set when file is staged locally, cleared after upload
 }
 
 interface DocumentItem {
@@ -191,20 +192,15 @@ const Documents = () => {
   }, [schedulePickerUnlock, setPickerLock]);
 
   const triggerFilePicker = useCallback(async (target: "new" | "existing") => {
-    // ── DEBUG toasts — remove after issue is diagnosed ───────────────────────
-    const dbg = (msg: string) => appToast.info(`[DBG] ${msg}`);
-
     let useHtmlInput = true;
 
     try {
       const { Capacitor } = await import("@capacitor/core");
-      const isNative    = Capacitor.isNativePlatform();
-      const pluginAvail = Capacitor.isPluginAvailable("FilePicker");
-      dbg(`native=${isNative} plugin=${pluginAvail}`);
-
-      if (isNative && pluginAvail) {
+      if (Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("FilePicker")) {
         useHtmlInput = false;
-        setIsUploadingFile(true);
+        // For "existing" we upload immediately so show loading; for "new" we
+        // just stage the blob locally — no loading state needed.
+        if (target === "existing") setIsUploadingFile(true);
         setPickerLock(true);
         clearPickerLockTimeout();
 
@@ -212,117 +208,106 @@ const Documents = () => {
 
         try {
           const { FilePicker } = await import("@capawesome/capacitor-file-picker");
-          dbg("calling pickFiles…");
-
           const result = await FilePicker.pickFiles({
             types: ["image/*", "application/pdf"],
             multiple: true,
-            readData: true,
+            readData: true, // base64 data — avoids content:// URI issues on Android
           });
-
-          dbg(`got ${result.files.length} file(s)`);
 
           for (const pickedFile of result.files) {
             const rawMime  = pickedFile.mimeType ?? "";
             const fileName = pickedFile.name ?? "file";
             const fileExt  = fileName.split(".").pop()?.toLowerCase() ?? "";
-            const hasData  = !!pickedFile.data;
-
-            dbg(`file: ${fileName} | mime: ${rawMime || "—"} | ext: ${fileExt} | data: ${hasData}`);
 
             const isImage = rawMime.startsWith("image/") ||
               ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "bmp"].includes(fileExt);
             const isPdf   = rawMime === "application/pdf" || fileExt === "pdf";
 
             if (!isImage && !isPdf) {
-              appToast.warning(`نوع غير مدعوم: ${rawMime || fileExt}`);
+              appToast.warning("نوع الملف غير مدعوم — يُقبل صور و PDF فقط");
               continue;
             }
+            if (!pickedFile.data) { appToast.error("تعذّر قراءة بيانات الملف"); continue; }
 
-            if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
-
-            if (!hasData) {
-              appToast.error(`لا توجد بيانات: ${fileName}`);
-              continue;
-            }
-
-            // base64 → Uint8Array → Blob (no fetch, works in all WebView versions)
+            // base64 → Uint8Array → Blob
+            // new File() is not available in all Android WebViews, use Blob directly
             const mime   = rawMime || (isImage ? "image/jpeg" : "application/pdf");
-            dbg(`decoding base64 (${Math.round(pickedFile.data!.length / 1024)} KB b64)…`);
-            const binary = atob(pickedFile.data!);
+            const binary = atob(pickedFile.data);
             const bytes  = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
             const blob = new Blob([bytes], { type: mime });
-            dbg(`blob ready: ${Math.round(blob.size / 1024)} KB`);
 
-            // new File() is not available in all Android WebViews — use Blob directly.
-            // Supabase storage.upload() accepts Blob just like File.
             const sizeLabel = blob.size < 1024 * 1024
               ? `${(blob.size / 1024).toFixed(0)} KB`
               : `${(blob.size / (1024 * 1024)).toFixed(1)} MB`;
-
-            const fileId      = crypto.randomUUID();
-            const ext         = fileName.split(".").pop() || "bin";
-            const storagePath = `${familyId}/${fileId}.${ext}`;
-
-            dbg(`uploading → ${storagePath}`);
-            const { error: uploadError } = await supabase.storage
-              .from("documents")
-              .upload(storagePath, blob, { contentType: mime, upsert: false });
-
-            if (uploadError) {
-              appToast.error(`رفع فشل: ${uploadError.message}`);
-              continue;
-            }
-
-            dbg("upload OK, signing URL…");
-            try {
-              if ("caches" in window) {
-                const cache = await caches.open("documents-cache-v1");
-                await cache.put(storagePath, new Response(blob));
-              }
-            } catch {}
-
-            const { data: signedData } = await supabase.storage
-              .from("documents")
-              .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-            const url = signedData?.signedUrl || storagePath;
-
-            const docFile: DocFile = {
-              id: fileId, name: fileName,
-              type: isImage ? "image" : "pdf",
-              url, size: sizeLabel, rawSize: blob.size,
-              addedAt: new Date().toISOString(),
-            };
+            const fileId = crypto.randomUUID();
 
             if (target === "new") {
-              setNewFiles((prev) => [...prev, docFile]);
+              // ── Stage locally — upload happens when user submits the form ──
+              setNewFiles((prev) => [...prev, {
+                id: fileId, name: fileName,
+                type: isImage ? "image" : "pdf",
+                url: URL.createObjectURL(blob),
+                size: sizeLabel, rawSize: blob.size,
+                addedAt: new Date().toISOString(),
+                pendingBlob: blob,
+              }]);
               setShowAddItem(true);
             } else {
+              // ── Existing document: upload immediately and attach ────────────
+              if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
               if (!editTarget) { appToast.error("تعذّر تحديد المستند"); continue; }
-              setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
+
+              const ext         = fileName.split(".").pop() || "bin";
+              const storagePath = `${familyId}/${fileId}.${ext}`;
+
+              const { error: uploadError } = await supabase.storage
+                .from("documents")
+                .upload(storagePath, blob, { contentType: mime, upsert: false });
+
+              if (uploadError) {
+                appToast.error("فشل رفع الملف إلى التخزين السحابي");
+                continue;
+              }
+
+              try {
+                if ("caches" in window) {
+                  const cache = await caches.open("documents-cache-v1");
+                  await cache.put(storagePath, new Response(blob));
+                }
+              } catch {}
+
+              const { data: signedData } = await supabase.storage
+                .from("documents")
+                .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+              const url = signedData?.signedUrl || storagePath;
+
+              setEditTarget((prev) => prev ? ({
+                ...prev,
+                files: [...prev.files, {
+                  id: fileId, name: fileName,
+                  type: isImage ? "image" : "pdf",
+                  url, size: sizeLabel, rawSize: blob.size,
+                  addedAt: new Date().toISOString(),
+                }],
+              }) : prev);
               addDocFileMut.mutate({
                 document_id: editTarget.id, name: fileName,
                 file_url: url, type: isImage ? "image" : "pdf", size: blob.size,
               });
             }
-            dbg("✓ done");
           }
         } catch (err: any) {
           const msg = String(err?.message ?? err ?? "");
           if (/cancel|user/i.test(msg)) {
-            dbg("cancelled");
+            // user dismissed the picker — nothing to do
           } else if (/not implemented|unimplemented/i.test(msg)) {
-            dbg("UNIMPLEMENTED — falling back to <input>");
             shouldFallbackToHtml = true;
           } else {
-            appToast.error(`خطأ: ${msg.slice(0, 80)}`);
+            appToast.error("فشل اختيار الملف");
           }
         } finally {
-          setIsUploadingFile(false);
-          // Cancel any premature unlock that window.focus may have scheduled,
-          // then hold the lock for 600 ms so React can flush the state updates
-          // (setNewFiles / setShowAddItem) before Radix focus events can fire.
+          if (target === "existing") setIsUploadingFile(false);
           clearPickerLockTimeout();
           schedulePickerUnlock(600);
         }
@@ -330,14 +315,13 @@ const Documents = () => {
         if (!shouldFallbackToHtml) return;
         useHtmlInput = true;
       }
-    } catch (capErr: any) {
-      dbg(`Capacitor load error: ${String(capErr).slice(0, 60)}`);
+    } catch {
+      // Capacitor not available — web environment
     }
 
     if (!useHtmlInput) return;
 
     // ── Web / <input type="file"> fallback ────────────────────────────────────
-    dbg("using <input> fallback");
     if (!isPickingFileRef.current) primeFilePickerLock();
     const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
     if (!input) { setPickerLock(false); return; }
@@ -424,24 +408,36 @@ const Documents = () => {
       return;
     }
 
-    setIsUploadingFile(true);
+    if (target === "existing") setIsUploadingFile(true);
     try {
       for (const file of Array.from(files)) {
         const isImage = file.type.startsWith("image/");
-        const isPdf = file.type === "application/pdf";
+        const isPdf   = file.type === "application/pdf";
         if (!isImage && !isPdf) continue;
 
         const sizeLabel = file.size < 1024 * 1024
           ? `${(file.size / 1024).toFixed(0)} KB`
           : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-
-        // Upload to Supabase Storage with familyId prefix for RLS
         const fileId = crypto.randomUUID();
-        const ext = file.name.split(".").pop() || "bin";
-        if (!familyId) {
-          appToast.error("لا يمكن رفع الملف بدون عائلة");
+
+        if (target === "new") {
+          // Stage locally — upload deferred to addItem
+          setNewFiles((prev) => [...prev, {
+            id: fileId, name: file.name,
+            type: isImage ? "image" : "pdf",
+            url: URL.createObjectURL(file),
+            size: sizeLabel, rawSize: file.size,
+            addedAt: new Date().toISOString(),
+            pendingBlob: file,
+          }]);
           continue;
         }
+
+        // target === "existing": upload immediately
+        if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
+        if (!editTarget) { appToast.error("تعذّر تحديد المستند"); continue; }
+
+        const ext         = file.name.split(".").pop() || "bin";
         const storagePath = `${familyId}/${fileId}.${ext}`;
 
         const { error: uploadError } = await supabase.storage
@@ -449,12 +445,10 @@ const Documents = () => {
           .upload(storagePath, file, { contentType: file.type, upsert: false });
 
         if (uploadError) {
-          console.error("[Documents] Upload failed:", uploadError);
           appToast.error("فشل رفع الملف إلى التخزين السحابي");
           continue;
         }
 
-        // Cache blob locally for offline access
         try {
           if ("caches" in window) {
             const cache = await caches.open("documents-cache-v1");
@@ -462,44 +456,29 @@ const Documents = () => {
           }
         } catch {}
 
-        // Get signed URL for display
         const { data: signedData } = await supabase.storage
           .from("documents")
           .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
         const url = signedData?.signedUrl || storagePath;
 
-        const docFile: DocFile = {
-          id: fileId,
-          name: file.name,
-          type: isImage ? "image" : "pdf",
-          url,
-          size: sizeLabel,
-          rawSize: file.size,
-          addedAt: new Date().toISOString(),
-        };
-
-        if (target === "new") {
-          setNewFiles((prev) => [...prev, docFile]);
-          continue;
-        }
-
-        if (!editTarget) {
-          appToast.error("تعذّر تحديد المستند لإرفاق الملف");
-          continue;
-        }
-
-        setEditTarget((prev) => prev ? ({ ...prev, files: [...prev.files, docFile] }) : prev);
+        setEditTarget((prev) => prev ? ({
+          ...prev,
+          files: [...prev.files, {
+            id: fileId, name: file.name,
+            type: isImage ? "image" : "pdf",
+            url, size: sizeLabel, rawSize: file.size,
+            addedAt: new Date().toISOString(),
+          }],
+        }) : prev);
         addDocFileMut.mutate({
           document_id: editTarget.id,
-          name: file.name,
-          file_url: url,
-          type: isImage ? "image" : "pdf",
-          size: file.size,
+          name: file.name, file_url: url,
+          type: isImage ? "image" : "pdf", size: file.size,
         });
       }
     } finally {
       e.target.value = "";
-      setIsUploadingFile(false);
+      if (target === "existing") setIsUploadingFile(false);
       schedulePickerUnlock(600);
     }
   }, [addDocFileMut, editTarget, familyId, schedulePickerUnlock]);
@@ -507,38 +486,76 @@ const Documents = () => {
   const addItem = useCallback(async () => {
     if (!newName.trim() || !activeListId) return;
     haptic.medium();
-
-    // Capture values before clearing state
-    const filesToAttach = [...newFiles];
-    const itemPayload = {
-      list_id: activeListId, name: newName.trim(), category: newCategory,
-      note: newNote.trim(), expiry_date: newExpiryDate || undefined,
-      reminder_enabled: newReminderEnabled,
-    };
-
-    // Optimistically reset form and close drawer
-    setNewName(""); setNewNote(""); setNewCategory("identity");
-    setNewExpiryDate(""); setNewReminderEnabled(false); setNewFiles([]);
-    setShowAddItem(false);
+    setIsUploadingFile(true);
 
     try {
-      const result = await addDocItemMut.mutateAsync(itemPayload);
+      // ── 1. Upload any pending (locally staged) blobs to Supabase ─────────
+      const readyFiles: DocFile[] = [];
+      for (const f of newFiles) {
+        if (!f.pendingBlob) {
+          readyFiles.push(f);
+          continue;
+        }
+        if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
+
+        const ext         = f.name.split(".").pop() || "bin";
+        const storagePath = `${familyId}/${f.id}.${ext}`;
+        const mime        = f.pendingBlob.type || (f.type === "image" ? "image/jpeg" : "application/pdf");
+
+        const { error: uploadError } = await supabase.storage
+          .from("documents")
+          .upload(storagePath, f.pendingBlob, { contentType: mime, upsert: false });
+
+        if (uploadError) {
+          appToast.error(`فشل رفع ${f.name}`);
+          continue;
+        }
+
+        try {
+          if ("caches" in window) {
+            const cache = await caches.open("documents-cache-v1");
+            await cache.put(storagePath, new Response(f.pendingBlob));
+          }
+        } catch {}
+
+        const { data: signedData } = await supabase.storage
+          .from("documents")
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+
+        URL.revokeObjectURL(f.url); // release the object URL now that we have a signed URL
+        readyFiles.push({ ...f, url: signedData?.signedUrl || storagePath, pendingBlob: undefined });
+      }
+
+      // ── 2. Create the document record ─────────────────────────────────────
+      const result = await addDocItemMut.mutateAsync({
+        list_id: activeListId, name: newName.trim(), category: newCategory,
+        note: newNote.trim(), expiry_date: newExpiryDate || undefined,
+        reminder_enabled: newReminderEnabled,
+      });
       const documentId = (result as any)?.data?.id;
-      if (documentId && filesToAttach.length > 0) {
-        for (const file of filesToAttach) {
+
+      // ── 3. Attach uploaded files ───────────────────────────────────────────
+      if (documentId) {
+        for (const f of readyFiles) {
           addDocFileMut.mutate({
             document_id: documentId,
-            name: file.name,
-            file_url: file.url,
-            type: file.type,
-            size: file.rawSize ?? 0,
+            name: f.name, file_url: f.url,
+            type: f.type, size: f.rawSize ?? 0,
           });
         }
       }
+
+      // ── 4. Reset form and close ────────────────────────────────────────────
+      setNewName(""); setNewNote(""); setNewCategory("identity");
+      setNewExpiryDate(""); setNewReminderEnabled(false); setNewFiles([]);
+      setShowAddItem(false);
     } catch (err) {
       console.error("[Documents] Failed to add document:", err);
+      appToast.error("فشل إنشاء المستند");
+    } finally {
+      setIsUploadingFile(false);
     }
-  }, [activeListId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, newFiles, addDocItemMut, addDocFileMut]);
+  }, [activeListId, familyId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, newFiles, addDocItemMut, addDocFileMut]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
@@ -1072,7 +1089,10 @@ const Documents = () => {
                           <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
                           <span className="text-[10px] text-muted-foreground">{file.size}</span>
                           <button
-                            onClick={() => setNewFiles((prev) => prev.filter((f) => f.id !== file.id))}
+                            onClick={() => {
+                              if (file.pendingBlob) URL.revokeObjectURL(file.url);
+                              setNewFiles((prev) => prev.filter((f) => f.id !== file.id));
+                            }}
                             className="text-destructive"
                           >
                             <Trash2 size={12} />
@@ -1084,10 +1104,12 @@ const Documents = () => {
                 </div>
               </div>
               <div className="mt-auto flex shrink-0 flex-row gap-2 border-t border-border px-4 pt-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
-                <Button onClick={addItem} disabled={isUploadingFile} className="flex-1 rounded-xl">
-                  {isUploadingFile ? "جاري الرفع..." : "إضافة"}
+                <Button onClick={addItem} disabled={isUploadingFile || !newName.trim()} className="flex-1 rounded-xl">
+                  {isUploadingFile
+                    ? (newFiles.some(f => f.pendingBlob) ? "جاري رفع الملفات..." : "جاري الحفظ...")
+                    : "إضافة"}
                 </Button>
-                <Button variant="outline" onClick={() => setShowAddItem(false)} className="flex-1 rounded-xl">إلغاء</Button>
+                <Button variant="outline" onClick={() => setShowAddItem(false)} disabled={isUploadingFile} className="flex-1 rounded-xl">إلغاء</Button>
               </div>
             </div>
           </SheetContent>
