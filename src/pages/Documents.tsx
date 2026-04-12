@@ -43,11 +43,13 @@ interface DocFile {
   id: string;
   name: string;
   type: "image" | "pdf";
-  url: string;           // object URL (pending) or signed Supabase URL (uploaded)
+  url: string;
   size: string;
   rawSize?: number;
   addedAt: string;
-  pendingBlob?: Blob;    // set when file is staged locally, cleared after upload
+  storagePath?: string;    // set when upload starts; used for cancel/delete
+  uploading?: boolean;     // true while XHR is in progress
+  uploadProgress?: number; // 0–100
 }
 
 interface DocumentItem {
@@ -84,6 +86,40 @@ const CATEGORIES: Record<DocCategory, { label: string; icon: typeof CreditCard; 
 
 // FAMILY_MEMBERS removed — using useFamilyMembers hook
 const SWIPE_WIDTH = 140;
+
+/** Upload a Blob to Supabase Storage with real XHR progress events. */
+async function uploadToStorageWithProgress(
+  blob: Blob,
+  storagePath: string,
+  mime: string,
+  onProgress: (pct: number) => void,
+): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token   = session?.access_token;
+  if (!token) throw new Error("غير مصرح بالرفع");
+
+  const baseUrl  = (supabase as any).supabaseUrl as string;
+  const anonKey  = (supabase as any).supabaseKey as string;
+  const endpoint = `${baseUrl}/storage/v1/object/documents/${storagePath}`;
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    });
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`HTTP ${xhr.status}`));
+    });
+    xhr.addEventListener("error", () => reject(new Error("خطأ في الشبكة")));
+    xhr.open("POST", endpoint);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.setRequestHeader("apikey", anonKey);
+    xhr.setRequestHeader("Content-Type", mime);
+    xhr.setRequestHeader("x-upsert", "false");
+    xhr.send(blob);
+  });
+}
 
 // Initial data removed — using Supabase hooks
 
@@ -191,6 +227,65 @@ const Documents = () => {
     schedulePickerUnlock(10000);
   }, [schedulePickerUnlock, setPickerLock]);
 
+  /** Start a background upload for a new-document file and track XHR progress. */
+  const startBackgroundUpload = useCallback((
+    blob: Blob, mime: string, fileId: string, fileName: string,
+    isImage: boolean, sizeLabel: string,
+  ) => {
+    if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); return; }
+    const ext         = fileName.split(".").pop() || "bin";
+    const storagePath = `${familyId}/${fileId}.${ext}`;
+
+    // Add entry immediately — uploading=true so "إضافة" button stays disabled
+    setNewFiles((prev) => [...prev, {
+      id: fileId, name: fileName,
+      type: isImage ? "image" : "pdf",
+      url: "", size: sizeLabel, rawSize: blob.size,
+      addedAt: new Date().toISOString(),
+      storagePath, uploading: true, uploadProgress: 0,
+    }]);
+    setShowAddItem(true);
+
+    void (async () => {
+      try {
+        await uploadToStorageWithProgress(blob, storagePath, mime, (pct) => {
+          setNewFiles((prev) => prev.map((f) =>
+            f.id === fileId ? { ...f, uploadProgress: pct } : f,
+          ));
+        });
+
+        // Cache for offline
+        try {
+          if ("caches" in window) {
+            const cache = await caches.open("documents-cache-v1");
+            await cache.put(storagePath, new Response(blob));
+          }
+        } catch {}
+
+        const { data: signedData } = await supabase.storage
+          .from("documents")
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+        const signedUrl = signedData?.signedUrl || storagePath;
+
+        setNewFiles((prev) => {
+          const idx = prev.findIndex((f) => f.id === fileId);
+          if (idx === -1) {
+            // Cancelled while uploading — delete the orphaned file
+            supabase.storage.from("documents").remove([storagePath]).catch(() => {});
+            return prev;
+          }
+          const updated = [...prev];
+          updated[idx] = { ...updated[idx], url: signedUrl, uploading: false, uploadProgress: 100 };
+          return updated;
+        });
+      } catch (err) {
+        console.error("[Documents] Background upload error:", err);
+        setNewFiles((prev) => prev.filter((f) => f.id !== fileId));
+        appToast.error("فشل رفع الملف");
+      }
+    })();
+  }, [familyId]);
+
   const triggerFilePicker = useCallback(async (target: "new" | "existing") => {
     let useHtmlInput = true;
 
@@ -198,8 +293,6 @@ const Documents = () => {
       const { Capacitor } = await import("@capacitor/core");
       if (Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("FilePicker")) {
         useHtmlInput = false;
-        // For "existing" we upload immediately so show loading; for "new" we
-        // just stage the blob locally — no loading state needed.
         if (target === "existing") setIsUploadingFile(true);
         setPickerLock(true);
         clearPickerLockTimeout();
@@ -211,7 +304,7 @@ const Documents = () => {
           const result = await FilePicker.pickFiles({
             types: ["image/*", "application/pdf"],
             multiple: true,
-            readData: true, // base64 data — avoids content:// URI issues on Android
+            readData: true,
           });
 
           for (const pickedFile of result.files) {
@@ -223,14 +316,10 @@ const Documents = () => {
               ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "bmp"].includes(fileExt);
             const isPdf   = rawMime === "application/pdf" || fileExt === "pdf";
 
-            if (!isImage && !isPdf) {
-              appToast.warning("نوع الملف غير مدعوم — يُقبل صور و PDF فقط");
-              continue;
-            }
+            if (!isImage && !isPdf) { appToast.warning("نوع الملف غير مدعوم — يُقبل صور و PDF فقط"); continue; }
             if (!pickedFile.data) { appToast.error("تعذّر قراءة بيانات الملف"); continue; }
 
-            // base64 → Uint8Array → Blob
-            // new File() is not available in all Android WebViews, use Blob directly
+            // base64 → Uint8Array → Blob (new File() not available in all Android WebViews)
             const mime   = rawMime || (isImage ? "image/jpeg" : "application/pdf");
             const binary = atob(pickedFile.data);
             const bytes  = new Uint8Array(binary.length);
@@ -243,69 +332,37 @@ const Documents = () => {
             const fileId = crypto.randomUUID();
 
             if (target === "new") {
-              // ── Stage locally — upload happens when user submits the form ──
-              setNewFiles((prev) => [...prev, {
-                id: fileId, name: fileName,
-                type: isImage ? "image" : "pdf",
-                url: URL.createObjectURL(blob),
-                size: sizeLabel, rawSize: blob.size,
-                addedAt: new Date().toISOString(),
-                pendingBlob: blob,
-              }]);
-              setShowAddItem(true);
+              startBackgroundUpload(blob, mime, fileId, fileName, isImage, sizeLabel);
             } else {
-              // ── Existing document: upload immediately and attach ────────────
+              // Existing document: upload immediately and attach
               if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
               if (!editTarget) { appToast.error("تعذّر تحديد المستند"); continue; }
-
-              const ext         = fileName.split(".").pop() || "bin";
-              const storagePath = `${familyId}/${fileId}.${ext}`;
-
+              const storagePath = `${familyId}/${fileId}.${fileName.split(".").pop() || "bin"}`;
               const { error: uploadError } = await supabase.storage
                 .from("documents")
                 .upload(storagePath, blob, { contentType: mime, upsert: false });
-
-              if (uploadError) {
-                appToast.error("فشل رفع الملف إلى التخزين السحابي");
-                continue;
-              }
-
+              if (uploadError) { appToast.error("فشل رفع الملف إلى التخزين السحابي"); continue; }
               try {
                 if ("caches" in window) {
                   const cache = await caches.open("documents-cache-v1");
                   await cache.put(storagePath, new Response(blob));
                 }
               } catch {}
-
               const { data: signedData } = await supabase.storage
-                .from("documents")
-                .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+                .from("documents").createSignedUrl(storagePath, 60 * 60 * 24 * 365);
               const url = signedData?.signedUrl || storagePath;
-
               setEditTarget((prev) => prev ? ({
                 ...prev,
-                files: [...prev.files, {
-                  id: fileId, name: fileName,
-                  type: isImage ? "image" : "pdf",
-                  url, size: sizeLabel, rawSize: blob.size,
-                  addedAt: new Date().toISOString(),
-                }],
+                files: [...prev.files, { id: fileId, name: fileName, type: isImage ? "image" : "pdf", url, size: sizeLabel, rawSize: blob.size, addedAt: new Date().toISOString() }],
               }) : prev);
-              addDocFileMut.mutate({
-                document_id: editTarget.id, name: fileName,
-                file_url: url, type: isImage ? "image" : "pdf", size: blob.size,
-              });
+              addDocFileMut.mutate({ document_id: editTarget.id, name: fileName, file_url: url, type: isImage ? "image" : "pdf", size: blob.size });
             }
           }
         } catch (err: any) {
           const msg = String(err?.message ?? err ?? "");
-          if (/cancel|user/i.test(msg)) {
-            // user dismissed the picker — nothing to do
-          } else if (/not implemented|unimplemented/i.test(msg)) {
-            shouldFallbackToHtml = true;
-          } else {
-            appToast.error("فشل اختيار الملف");
-          }
+          if (/cancel|user/i.test(msg)) { /* dismissed */ }
+          else if (/not implemented|unimplemented/i.test(msg)) { shouldFallbackToHtml = true; }
+          else { appToast.error("فشل اختيار الملف"); }
         } finally {
           if (target === "existing") setIsUploadingFile(false);
           clearPickerLockTimeout();
@@ -326,7 +383,7 @@ const Documents = () => {
     const input = target === "new" ? newFileInputRef.current : editFileInputRef.current;
     if (!input) { setPickerLock(false); return; }
     input.click();
-  }, [addDocFileMut, clearPickerLockTimeout, schedulePickerUnlock, editTarget, familyId, primeFilePickerLock, setPickerLock]);
+  }, [addDocFileMut, clearPickerLockTimeout, schedulePickerUnlock, editTarget, familyId, primeFilePickerLock, setPickerLock, startBackgroundUpload]);
 
   // Reset isPickingFileRef when WebView regains focus (user returned from file picker)
   useEffect(() => {
@@ -421,15 +478,9 @@ const Documents = () => {
         const fileId = crypto.randomUUID();
 
         if (target === "new") {
-          // Stage locally — upload deferred to addItem
-          setNewFiles((prev) => [...prev, {
-            id: fileId, name: file.name,
-            type: isImage ? "image" : "pdf",
-            url: URL.createObjectURL(file),
-            size: sizeLabel, rawSize: file.size,
-            addedAt: new Date().toISOString(),
-            pendingBlob: file,
-          }]);
+          // Start background upload with progress (same as native path)
+          const mime = file.type || (isImage ? "image/jpeg" : "application/pdf");
+          startBackgroundUpload(file, mime, fileId, file.name, isImage, sizeLabel);
           continue;
         }
 
@@ -481,52 +532,33 @@ const Documents = () => {
       if (target === "existing") setIsUploadingFile(false);
       schedulePickerUnlock(600);
     }
-  }, [addDocFileMut, editTarget, familyId, schedulePickerUnlock]);
+  }, [addDocFileMut, editTarget, familyId, schedulePickerUnlock, startBackgroundUpload]);
+
+  /** Cancel the add-document form: delete any already-uploaded files and close. */
+  const cancelAndCleanup = useCallback(() => {
+    const toDelete = newFiles
+      .filter((f) => f.storagePath)
+      .map((f) => f.storagePath as string);
+
+    // Clear state first — background uploads will detect removal and self-delete
+    setNewFiles([]);
+    setNewName(""); setNewNote(""); setNewCategory("identity");
+    setNewExpiryDate(""); setNewReminderEnabled(false);
+    setShowAddItem(false);
+
+    if (toDelete.length > 0) {
+      supabase.storage.from("documents").remove(toDelete).catch(() => {});
+    }
+  }, [newFiles]);
 
   const addItem = useCallback(async () => {
     if (!newName.trim() || !activeListId) return;
+    if (newFiles.some((f) => f.uploading)) return; // guarded by disabled button too
     haptic.medium();
     setIsUploadingFile(true);
 
     try {
-      // ── 1. Upload any pending (locally staged) blobs to Supabase ─────────
-      const readyFiles: DocFile[] = [];
-      for (const f of newFiles) {
-        if (!f.pendingBlob) {
-          readyFiles.push(f);
-          continue;
-        }
-        if (!familyId) { appToast.error("لا يمكن رفع الملف بدون عائلة"); continue; }
-
-        const ext         = f.name.split(".").pop() || "bin";
-        const storagePath = `${familyId}/${f.id}.${ext}`;
-        const mime        = f.pendingBlob.type || (f.type === "image" ? "image/jpeg" : "application/pdf");
-
-        const { error: uploadError } = await supabase.storage
-          .from("documents")
-          .upload(storagePath, f.pendingBlob, { contentType: mime, upsert: false });
-
-        if (uploadError) {
-          appToast.error(`فشل رفع ${f.name}`);
-          continue;
-        }
-
-        try {
-          if ("caches" in window) {
-            const cache = await caches.open("documents-cache-v1");
-            await cache.put(storagePath, new Response(f.pendingBlob));
-          }
-        } catch {}
-
-        const { data: signedData } = await supabase.storage
-          .from("documents")
-          .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-
-        URL.revokeObjectURL(f.url); // release the object URL now that we have a signed URL
-        readyFiles.push({ ...f, url: signedData?.signedUrl || storagePath, pendingBlob: undefined });
-      }
-
-      // ── 2. Create the document record ─────────────────────────────────────
+      // Files are already uploaded — just create the document and attach them
       const result = await addDocItemMut.mutateAsync({
         list_id: activeListId, name: newName.trim(), category: newCategory,
         note: newNote.trim(), expiry_date: newExpiryDate || undefined,
@@ -534,9 +566,9 @@ const Documents = () => {
       });
       const documentId = (result as any)?.data?.id;
 
-      // ── 3. Attach uploaded files ───────────────────────────────────────────
       if (documentId) {
-        for (const f of readyFiles) {
+        for (const f of newFiles) {
+          if (!f.url) continue; // upload failed — skip
           addDocFileMut.mutate({
             document_id: documentId,
             name: f.name, file_url: f.url,
@@ -545,7 +577,7 @@ const Documents = () => {
         }
       }
 
-      // ── 4. Reset form and close ────────────────────────────────────────────
+      // Reset and close — do NOT delete files (they're now attached to document)
       setNewName(""); setNewNote(""); setNewCategory("identity");
       setNewExpiryDate(""); setNewReminderEnabled(false); setNewFiles([]);
       setShowAddItem(false);
@@ -555,7 +587,7 @@ const Documents = () => {
     } finally {
       setIsUploadingFile(false);
     }
-  }, [activeListId, familyId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, newFiles, addDocItemMut, addDocFileMut]);
+  }, [activeListId, newName, newCategory, newNote, newExpiryDate, newReminderEnabled, newFiles, addDocItemMut, addDocFileMut]);
 
   const addList = useCallback(() => {
     if (!newListName.trim()) return;
@@ -1031,7 +1063,8 @@ const Documents = () => {
         {/* Add Item Sheet */}
         <Sheet open={showAddItem} onOpenChange={(open) => {
           if (!open && isPickingFileRef.current) return;
-          setShowAddItem(open);
+          if (!open) { cancelAndCleanup(); return; }
+          setShowAddItem(true);
         }}>
           <SheetContent
             side="bottom"
@@ -1080,23 +1113,42 @@ const Documents = () => {
                   {newFiles.length > 0 && (
                     <div className="space-y-1.5 mt-2">
                       {newFiles.map((file) => (
-                        <div key={file.id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
-                          {file.type === "image" ? (
-                            <Image size={14} className="text-blue-500" />
-                          ) : (
-                            <FileText size={14} className="text-red-500" />
+                        <div key={file.id} className="bg-card rounded-lg p-2 border border-border">
+                          <div className="flex items-center gap-2">
+                            {file.type === "image" ? (
+                              <Image size={14} className="text-blue-500 shrink-0" />
+                            ) : (
+                              <FileText size={14} className="text-red-500 shrink-0" />
+                            )}
+                            <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
+                            <span className="text-[10px] text-muted-foreground shrink-0">{file.size}</span>
+                            {!file.uploading && (
+                              <button
+                                onClick={() => {
+                                  if (file.storagePath) {
+                                    supabase.storage.from("documents").remove([file.storagePath]).catch(() => {});
+                                  }
+                                  setNewFiles((prev) => prev.filter((f) => f.id !== file.id));
+                                }}
+                                className="text-destructive shrink-0"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </div>
+                          {file.uploading && (
+                            <div className="mt-1.5 space-y-0.5">
+                              <div className="w-full bg-muted rounded-full overflow-hidden" style={{ height: 4 }}>
+                                <div
+                                  className="h-full bg-primary rounded-full transition-all duration-200"
+                                  style={{ width: `${file.uploadProgress ?? 0}%` }}
+                                />
+                              </div>
+                              <p className="text-[10px] text-muted-foreground text-left">
+                                {file.uploadProgress ?? 0}%
+                              </p>
+                            </div>
                           )}
-                          <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
-                          <span className="text-[10px] text-muted-foreground">{file.size}</span>
-                          <button
-                            onClick={() => {
-                              if (file.pendingBlob) URL.revokeObjectURL(file.url);
-                              setNewFiles((prev) => prev.filter((f) => f.id !== file.id));
-                            }}
-                            className="text-destructive"
-                          >
-                            <Trash2 size={12} />
-                          </button>
                         </div>
                       ))}
                     </div>
@@ -1104,12 +1156,16 @@ const Documents = () => {
                 </div>
               </div>
               <div className="mt-auto flex shrink-0 flex-row gap-2 border-t border-border px-4 pt-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
-                <Button onClick={addItem} disabled={isUploadingFile || !newName.trim()} className="flex-1 rounded-xl">
-                  {isUploadingFile
-                    ? (newFiles.some(f => f.pendingBlob) ? "جاري رفع الملفات..." : "جاري الحفظ...")
-                    : "إضافة"}
+                <Button
+                  onClick={addItem}
+                  disabled={isUploadingFile || newFiles.some((f) => f.uploading) || !newName.trim()}
+                  className="flex-1 rounded-xl"
+                >
+                  {isUploadingFile ? "جاري الحفظ..." : "إضافة"}
                 </Button>
-                <Button variant="outline" onClick={() => setShowAddItem(false)} disabled={isUploadingFile} className="flex-1 rounded-xl">إلغاء</Button>
+                <Button variant="outline" onClick={cancelAndCleanup} className="flex-1 rounded-xl">
+                  إلغاء
+                </Button>
               </div>
             </div>
           </SheetContent>
