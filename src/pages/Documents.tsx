@@ -254,6 +254,12 @@ const Documents = () => {
   const [overlayExpiryDate, setOverlayExpiryDate] = useState("");
   const [overlayReminderEnabled, setOverlayReminderEnabled] = useState(false);
 
+  // Crop state
+  const [cropState, setCropState] = useState({ x: 0, y: 0 });
+  const [cropZoom, setCropZoom] = useState(1);
+  const [cropRotation, setCropRotation] = useState(0);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // New list form
