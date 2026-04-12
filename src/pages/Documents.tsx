@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import Cropper, { Area } from "react-easy-crop";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { ListContentSkeleton } from "@/components/PageSkeletons";
@@ -84,13 +85,51 @@ const SWIPE_WIDTH = 140;
 interface UploadOverlayState {
   file: File;
   progress: number;
-  phase: "uploading" | "form";
+  phase: "cropping" | "uploading" | "form";
   previewUrl: string | null;
   storagePath: string;
   signedUrl: string;
   fileType: "image" | "pdf";
   /** If set, attach file to this existing document instead of creating a new one */
   attachToDocumentId?: string;
+}
+
+/* ── Crop helper: canvas from cropped area ── */
+async function getCroppedImg(imageSrc: string, pixelCrop: Area, rotation = 0): Promise<File> {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = document.createElement("img");
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = imageSrc;
+  });
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d")!;
+
+  const radians = (rotation * Math.PI) / 180;
+  const sin = Math.abs(Math.sin(radians));
+  const cos = Math.abs(Math.cos(radians));
+  const bW = image.width * cos + image.height * sin;
+  const bH = image.width * sin + image.height * cos;
+
+  canvas.width = bW;
+  canvas.height = bH;
+  ctx.translate(bW / 2, bH / 2);
+  ctx.rotate(radians);
+  ctx.drawImage(image, -image.width / 2, -image.height / 2);
+
+  // Now crop
+  const data = ctx.getImageData(pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height);
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+  ctx.putImageData(data, 0, 0);
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(new globalThis.File([blob!], "cropped.jpg", { type: "image/jpeg" }));
+    }, "image/jpeg", 0.92);
+  });
 }
 
 const DEFAULT_FAMILY_LIST_ID = "default-family-doc-list";
@@ -215,6 +254,12 @@ const Documents = () => {
   const [overlayExpiryDate, setOverlayExpiryDate] = useState("");
   const [overlayReminderEnabled, setOverlayReminderEnabled] = useState(false);
 
+  // Crop state
+  const [cropState, setCropState] = useState({ x: 0, y: 0 });
+  const [cropZoom, setCropZoom] = useState(1);
+  const [cropRotation, setCropRotation] = useState(0);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // New list form
@@ -302,56 +347,11 @@ const Documents = () => {
     }, mode === "attach" ? 350 : 0);
   }, []);
 
-  /* ── Handle file selection → upload → show overlay ── */
-  const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.currentTarget;
-    const file = input.files?.[0];
-    if (!file) return;
-    input.value = ""; // reset after capturing the File object so Android doesn't clear it before we use it
-
-    const isImage = file.type.startsWith("image/");
-    const isPdf = file.type === "application/pdf";
-    if (!isImage && !isPdf) {
-      appToast.error("نوع الملف غير مدعوم، يُسمح بالصور وPDF فقط");
-      return;
-    }
-
-    if (!familyId) {
-      appToast.error("لا يمكن رفع الملف بدون عائلة");
-      return;
-    }
-
-    // Create preview for images
-    let previewUrl: string | null = null;
-    if (isImage) {
-      previewUrl = URL.createObjectURL(file);
-    }
-
-    const fileId = crypto.randomUUID();
-    const ext = file.name.split(".").pop() || "bin";
-    const storagePath = `${familyId}/${fileId}.${ext}`;
-
-    // Show overlay immediately with uploading state
-    setUploadOverlay({
-      file,
-      progress: 0,
-      phase: "uploading",
-      previewUrl,
-      storagePath,
-      signedUrl: "",
-      fileType: isImage ? "image" : "pdf",
-      attachToDocumentId: pickerModeRef.current === "attach" ? (attachTargetRef.current || undefined) : undefined,
-    });
-
-    // Reset form fields
-    setOverlayName(file.name.replace(/\.[^.]+$/, ""));
-    setOverlayCategory("identity");
-    setOverlayNote("");
-    setOverlayExpiryDate("");
-    setOverlayReminderEnabled(false);
+  /* ── Upload a file to storage (shared by crop confirm + PDF direct) ── */
+  const startUpload = useCallback(async (fileToUpload: File, overlay: UploadOverlayState) => {
+    setUploadOverlay({ ...overlay, phase: "uploading", progress: 0 });
 
     try {
-      // Simulate progress (Supabase JS SDK doesn't support progress callbacks)
       const progressInterval = setInterval(() => {
         setUploadOverlay(prev => {
           if (!prev || prev.phase !== "uploading") return prev;
@@ -362,7 +362,7 @@ const Documents = () => {
 
       const { error: uploadError } = await supabase.storage
         .from("documents")
-        .upload(storagePath, file, { contentType: file.type, upsert: false });
+        .upload(overlay.storagePath, fileToUpload, { contentType: fileToUpload.type, upsert: false });
 
       clearInterval(progressInterval);
 
@@ -377,22 +377,23 @@ const Documents = () => {
       try {
         if ("caches" in window) {
           const cache = await caches.open("documents-cache-v1");
-          await cache.put(storagePath, new Response(file));
+          await cache.put(overlay.storagePath, new Response(fileToUpload));
         }
       } catch {}
 
       // Get signed URL
       const { data: signedData } = await supabase.storage
         .from("documents")
-        .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-      const signedUrl = signedData?.signedUrl || storagePath;
+        .createSignedUrl(overlay.storagePath, 60 * 60 * 24 * 365);
+      const signedUrl = signedData?.signedUrl || overlay.storagePath;
 
-      // Move to form phase
       setUploadOverlay(prev => prev ? {
         ...prev,
+        file: fileToUpload,
         progress: 100,
         phase: "form",
         signedUrl,
+        previewUrl: fileToUpload.type.startsWith("image/") ? URL.createObjectURL(fileToUpload) : prev.previewUrl,
       } : null);
 
     } catch (err) {
@@ -400,7 +401,85 @@ const Documents = () => {
       appToast.error("حدث خطأ أثناء رفع الملف");
       setUploadOverlay(null);
     }
-  }, [familyId]);
+  }, []);
+
+  /* ── Handle file selection → crop (image) or upload (PDF) ── */
+  const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    input.value = "";
+
+    const isImage = file.type.startsWith("image/");
+    const isPdf = file.type === "application/pdf";
+    if (!isImage && !isPdf) {
+      appToast.error("نوع الملف غير مدعوم، يُسمح بالصور وPDF فقط");
+      return;
+    }
+
+    if (!familyId) {
+      appToast.error("لا يمكن رفع الملف بدون عائلة");
+      return;
+    }
+
+    const fileId = crypto.randomUUID();
+    const ext = file.name.split(".").pop() || "bin";
+    const storagePath = `${familyId}/${fileId}.${ext}`;
+    const attachId = pickerModeRef.current === "attach" ? (attachTargetRef.current || undefined) : undefined;
+
+    // Reset form fields
+    setOverlayName(file.name.replace(/\.[^.]+$/, ""));
+    setOverlayCategory("identity");
+    setOverlayNote("");
+    setOverlayExpiryDate("");
+    setOverlayReminderEnabled(false);
+
+    if (isImage) {
+      // Show crop phase
+      const previewUrl = URL.createObjectURL(file);
+      setCropState({ x: 0, y: 0 });
+      setCropZoom(1);
+      setCropRotation(0);
+      setCroppedAreaPixels(null);
+      setUploadOverlay({
+        file,
+        progress: 0,
+        phase: "cropping",
+        previewUrl,
+        storagePath,
+        signedUrl: "",
+        fileType: "image",
+        attachToDocumentId: attachId,
+      });
+    } else {
+      // PDF: upload directly
+      const overlay: UploadOverlayState = {
+        file,
+        progress: 0,
+        phase: "uploading",
+        previewUrl: null,
+        storagePath,
+        signedUrl: "",
+        fileType: "pdf",
+        attachToDocumentId: attachId,
+      };
+      startUpload(file, overlay);
+    }
+  }, [familyId, startUpload]);
+
+  /* ── Confirm crop → proceed to upload ── */
+  const confirmCrop = useCallback(async () => {
+    if (!uploadOverlay || !uploadOverlay.previewUrl || !croppedAreaPixels) return;
+    try {
+      const croppedFile = await getCroppedImg(uploadOverlay.previewUrl, croppedAreaPixels, cropRotation);
+      const newPreview = URL.createObjectURL(croppedFile);
+      if (uploadOverlay.previewUrl) URL.revokeObjectURL(uploadOverlay.previewUrl);
+      startUpload(croppedFile, { ...uploadOverlay, previewUrl: newPreview });
+    } catch (err) {
+      console.error("[Documents] Crop error:", err);
+      appToast.error("فشل في قص الصورة");
+    }
+  }, [uploadOverlay, croppedAreaPixels, cropRotation, startUpload]);
 
   /* ── Confirm: save file to DB ── */
   const confirmUpload = useCallback(async () => {
@@ -1158,6 +1237,71 @@ const Documents = () => {
             </button>
           </div>
 
+          {/* Crop phase — image only */}
+          {uploadOverlay.phase === "cropping" && uploadOverlay.previewUrl && (
+            <>
+              <div className="flex-1 relative bg-black/90">
+                <Cropper
+                  image={uploadOverlay.previewUrl}
+                  crop={cropState}
+                  zoom={cropZoom}
+                  rotation={cropRotation}
+                  aspect={4 / 3}
+                  onCropChange={setCropState}
+                  onZoomChange={setCropZoom}
+                  onRotationChange={setCropRotation}
+                  onCropComplete={(_, area) => setCroppedAreaPixels(area)}
+                />
+              </div>
+              {/* Crop controls */}
+              <div className="px-4 py-3 space-y-3 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-14 shrink-0">تكبير</span>
+                  <input
+                    type="range"
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    value={cropZoom}
+                    onChange={(e) => setCropZoom(Number(e.target.value))}
+                    className="flex-1 accent-primary"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-14 shrink-0">استدارة</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={360}
+                    step={1}
+                    value={cropRotation}
+                    onChange={(e) => setCropRotation(Number(e.target.value))}
+                    className="flex-1 accent-primary"
+                  />
+                  <span className="text-[10px] text-muted-foreground w-8 text-center">{cropRotation}°</span>
+                </div>
+              </div>
+              <div className="flex flex-row gap-2 border-t border-border px-4 pt-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+                <Button onClick={confirmCrop} className="flex-1 rounded-xl">
+                  <Check size={16} className="ml-1" />
+                  تأكيد القص
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  // Skip crop, upload original
+                  startUpload(uploadOverlay.file, { ...uploadOverlay });
+                }} className="flex-1 rounded-xl">
+                  تخطي
+                </Button>
+                <Button variant="ghost" onClick={cancelUpload} className="rounded-xl px-3">
+                  <X size={16} className="text-muted-foreground" />
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Upload + Form phases */}
+          {(uploadOverlay.phase === "uploading" || uploadOverlay.phase === "form") && (
+          <>
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
             {/* Upload progress phase */}
             {uploadOverlay.phase === "uploading" && (
@@ -1253,6 +1397,8 @@ const Documents = () => {
                 إلغاء
               </Button>
             </div>
+          )}
+          </>
           )}
         </div>
       )}
