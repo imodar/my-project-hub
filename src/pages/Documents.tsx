@@ -202,6 +202,11 @@ const Documents = () => {
   // When true the finally-block in triggerFilePicker must NOT override the
   // longer lifecycle-based timer with a short one.
   const lifecycleLockRef = useRef(false);
+  // Refs to SheetContent DOM nodes — used by the capture-phase event blocker
+  // to allow legitimate taps INSIDE the Sheet while blocking the synthetic
+  // Android pointer/click events that land outside.
+  const addSheetContentRef = useRef<HTMLDivElement>(null);
+  const editSheetContentRef = useRef<HTMLDivElement>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -477,11 +482,16 @@ const Documents = () => {
     //   • Even if a stale click handler was already registered from a prior
     //     interaction, it cannot fire (click block).
     //
-    // We block ALL pointer/click events during the lock window (not just
-    // "outside" ones) because the synthetic Android event's target is
-    // unpredictable — it depends on where the user tapped in the native picker.
+    // We block pointer/click events that originate OUTSIDE any open Sheet.
+    // Events inside the Sheet (e.g. tapping the upload button again, or the
+    // "إضافة" button) are allowed through so the UI stays interactive.
     const blockPickerEvents = (e: PointerEvent | MouseEvent) => {
       if (!isPickingFileRef.current) return;
+      const t = e.target as Node | null;
+      if (
+        (addSheetContentRef.current  && addSheetContentRef.current.contains(t))  ||
+        (editSheetContentRef.current && editSheetContentRef.current.contains(t))
+      ) return; // tap is inside the Sheet — allow it
       e.stopImmediatePropagation();
     };
 
@@ -1094,6 +1104,7 @@ const Documents = () => {
           if (!open) setEditTarget(null);
         }}>
           <SheetContent
+            ref={editSheetContentRef}
             side="bottom"
             dir="rtl"
             className="max-h-[85dvh] rounded-t-3xl border-none p-0"
@@ -1171,6 +1182,7 @@ const Documents = () => {
           setShowAddItem(true);
         }}>
           <SheetContent
+            ref={addSheetContentRef}
             side="bottom"
             dir="rtl"
             className="max-h-[85dvh] rounded-t-3xl border-none p-0"
