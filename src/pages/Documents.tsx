@@ -1174,11 +1174,7 @@ const Documents = () => {
           </div>
         );
       })()}
-
-          UPLOAD OVERLAY — full-screen, NOT a modal library
-          No Radix, no Vaul — just a plain div.
-          This prevents Android WebView focus-loss issues.
-         ══════════════════════════════════════════════════ */}
+      {/* UPLOAD OVERLAY */}
       {uploadOverlay && (
         <div className="fixed inset-0 z-[100] bg-background flex flex-col" dir="rtl">
           {/* Header */}
