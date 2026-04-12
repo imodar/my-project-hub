@@ -215,20 +215,24 @@ const Documents = () => {
 
   const [activeListId, setActiveListId] = useState(lists[0]?.id || "");
 
-  // Auto-select first real list when data loads
+  // Auto-select first real list when data loads (only on init or if current list removed)
+  const hasInitializedListRef = useRef(false);
   useEffect(() => {
-    if (lists.length > 0 && (!activeListId || activeListId === DEFAULT_FAMILY_LIST_ID)) {
-      const realList = lists.find((l) => l.id !== DEFAULT_FAMILY_LIST_ID);
-      if (realList) {
-        setActiveListId(realList.id);
-      } else {
-        setActiveListId(lists[0].id);
-      }
+    if (!lists.length) return;
+    const exists = lists.some(l => l.id === activeListId);
+    if (!hasInitializedListRef.current) {
+      const real = lists.find(l => l.id !== DEFAULT_FAMILY_LIST_ID);
+      setActiveListId(real?.id || lists[0].id);
+      hasInitializedListRef.current = true;
+      return;
     }
+    if (exists) return; // keep current selection
+    const real = lists.find(l => l.id !== DEFAULT_FAMILY_LIST_ID);
+    setActiveListId(real?.id || lists[0].id);
   }, [lists]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<DocCategory | null>(null);
-  const [fullPreviewDoc, setFullPreviewDoc] = useState<DocumentItem | null>(null);
+  const [fullPreviewDocId, setFullPreviewDocId] = useState<string | null>(null);
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [viewDoc, setViewDoc] = useState<DocumentItem | null>(null); // kept for potential use
@@ -277,11 +281,20 @@ const Documents = () => {
 
   const activeList = lists.find((l) => l.id === activeListId);
 
-  const filteredItems = activeList?.items.filter((item) => {
-    const matchesSearch = !searchQuery || item.name.includes(searchQuery) || item.note.includes(searchQuery);
-    const matchesCategory = !activeCategory || item.category === activeCategory;
-    return matchesSearch && matchesCategory;
-  }) || [];
+  // Derive fullPreviewDoc from live data instead of stale snapshot
+  const fullPreviewDoc = useMemo(() =>
+    fullPreviewDocId ? (activeList?.items.find(i => i.id === fullPreviewDocId) ?? null) : null,
+    [activeList, fullPreviewDocId]
+  );
+
+  const filteredItems = useMemo(() =>
+    activeList?.items.filter((item) => {
+      const matchesSearch = !searchQuery || item.name.includes(searchQuery) || item.note.includes(searchQuery);
+      const matchesCategory = !activeCategory || item.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    }) || [],
+    [activeList, searchQuery, activeCategory]
+  );
 
   // Group items by category for card-stack view
   const groupedByCategory = useMemo(() => {
@@ -346,12 +359,26 @@ const Documents = () => {
     fileInputRef.current?.click();
   }, []);
 
+  // Ref to keep activeListId fresh for upload callbacks
+  const activeListIdRef = useRef(activeListId);
+  useEffect(() => { activeListIdRef.current = activeListId; }, [activeListId]);
+
+  // Cleanup ObjectURL on unmount or when overlay changes
+  useEffect(() => {
+    return () => {
+      if (uploadOverlay?.previewUrl) {
+        URL.revokeObjectURL(uploadOverlay.previewUrl);
+      }
+    };
+  }, [uploadOverlay?.previewUrl]);
+
   /* ── Upload a file to storage (shared by crop confirm + PDF direct) ── */
   const startUpload = useCallback(async (fileToUpload: File, overlay: UploadOverlayState) => {
     setUploadOverlay({ ...overlay, phase: "uploading", progress: 0 });
 
+    let progressInterval: ReturnType<typeof setInterval> | undefined;
     try {
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setUploadOverlay(prev => {
           if (!prev || prev.phase !== "uploading") return prev;
           const next = Math.min(prev.progress + 15, 90);
@@ -362,8 +389,6 @@ const Documents = () => {
       const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(overlay.storagePath, fileToUpload, { contentType: fileToUpload.type, upsert: false });
-
-      clearInterval(progressInterval);
 
       if (uploadError) {
         console.error("[Documents] Upload failed:", uploadError);
@@ -380,25 +405,33 @@ const Documents = () => {
         }
       } catch {}
 
-      // Get signed URL
+      // Get signed URL — 2 hours instead of 1 year for sensitive documents
       const { data: signedData } = await supabase.storage
         .from("documents")
-        .createSignedUrl(overlay.storagePath, 60 * 60 * 24 * 365);
+        .createSignedUrl(overlay.storagePath, 60 * 60 * 2);
       const signedUrl = signedData?.signedUrl || overlay.storagePath;
 
-      setUploadOverlay(prev => prev ? {
-        ...prev,
-        file: fileToUpload,
-        progress: 100,
-        phase: "form",
-        signedUrl,
-        previewUrl: fileToUpload.type.startsWith("image/") ? URL.createObjectURL(fileToUpload) : prev.previewUrl,
-      } : null);
+      setUploadOverlay(prev => {
+        // Revoke old preview if replacing
+        if (prev?.previewUrl && fileToUpload.type.startsWith("image/")) {
+          URL.revokeObjectURL(prev.previewUrl);
+        }
+        return prev ? {
+          ...prev,
+          file: fileToUpload,
+          progress: 100,
+          phase: "form",
+          signedUrl,
+          previewUrl: fileToUpload.type.startsWith("image/") ? URL.createObjectURL(fileToUpload) : prev.previewUrl,
+        } : null;
+      });
 
     } catch (err) {
       console.error("[Documents] Upload error:", err);
       appToast.error("حدث خطأ أثناء رفع الملف");
       setUploadOverlay(null);
+    } finally {
+      if (progressInterval) clearInterval(progressInterval);
     }
   }, []);
 
@@ -486,7 +519,8 @@ const Documents = () => {
     if (!uploadOverlay) return;
 
     // If attaching to an existing document, no list needed
-    if (!uploadOverlay.attachToDocumentId && (!activeListId || activeListId === DEFAULT_FAMILY_LIST_ID)) {
+    const currentListId = activeListIdRef.current;
+    if (!uploadOverlay.attachToDocumentId && (!currentListId || currentListId === DEFAULT_FAMILY_LIST_ID)) {
       appToast.error("جارٍ تجهيز القائمة العائلية، حاول مرة أخرى");
       return;
     }
@@ -514,7 +548,7 @@ const Documents = () => {
     // Create new document with file
     try {
       const result = await addDocItemMut.mutateAsync({
-        list_id: activeListId,
+        list_id: currentListId,
         name: overlayName.trim() || uploadOverlay.file.name,
         category: overlayCategory,
         note: overlayNote.trim(),
@@ -539,9 +573,10 @@ const Documents = () => {
       appToast.error("فشل في إضافة المستند");
     }
 
+    if (uploadOverlay.previewUrl) URL.revokeObjectURL(uploadOverlay.previewUrl);
     setUploadOverlay(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [uploadOverlay, activeListId, overlayName, overlayCategory, overlayNote, overlayExpiryDate, overlayReminderEnabled, addDocItemMut, addDocFileMut]);
+  }, [uploadOverlay, overlayName, overlayCategory, overlayNote, overlayExpiryDate, overlayReminderEnabled, addDocItemMut, addDocFileMut]);
 
   /* ── Cancel: delete uploaded file from storage ── */
   const cancelUpload = useCallback(async () => {
@@ -851,7 +886,8 @@ const Documents = () => {
         </div>
 
         {/* FAB: directly opens file picker — NO drawer/sheet */}
-        <FAB onClick={() => { haptic.medium(); openFilePicker("new"); }} />
+        {/* FAB: directly opens file picker — haptic AFTER click to preserve gesture chain */}
+        <FAB onClick={() => { openFilePicker("new"); haptic.light(); }} />
 
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
@@ -1407,11 +1443,20 @@ const Documents = () => {
       )}
 
       {/* Hidden file input — lives outside ALL modals */}
+      {/* Hidden file input — off-screen 1px for maximum WebView compat */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*,.pdf"
-        className="absolute w-0 h-0 opacity-0 overflow-hidden"
+        style={{
+          position: "fixed",
+          top: "-1000px",
+          left: "-1000px",
+          width: "1px",
+          height: "1px",
+          opacity: 0,
+          pointerEvents: "none",
+        }}
         onChange={handleFileSelected}
       />
     </div>
