@@ -21,6 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
+import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from "@/components/ui/drawer";
 import {
@@ -156,7 +159,6 @@ const Documents = () => {
   const [newReminderEnabled, setNewReminderEnabled] = useState(false);
   const [newFiles, setNewFiles] = useState<DocFile[]>([]);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const [isPickerLocked, setIsPickerLocked] = useState(false);
   const isPickingFileRef = useRef(false);
   const pickerResetTimeoutRef = useRef<number | null>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
@@ -164,7 +166,6 @@ const Documents = () => {
 
   const setPickerLock = useCallback((locked: boolean) => {
     isPickingFileRef.current = locked;
-    setIsPickerLocked(locked);
   }, []);
 
   const clearPickerLockTimeout = useCallback(() => {
@@ -798,160 +799,176 @@ const Documents = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Edit Item Drawer */}
-        <Drawer dismissible={!isPickerLocked} open={!!editTarget} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; if (!open) setEditTarget(null); }}>
-          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }} onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
-            <DrawerHeader className="text-right">
-              <DrawerTitle>تعديل المستند</DrawerTitle>
-              <DrawerDescription>عدّل تفاصيل المستند</DrawerDescription>
-            </DrawerHeader>
-            <div className="space-y-3 px-4 overflow-y-auto max-h-[60vh]">
-              <Input placeholder="اسم المستند" value={editName} onChange={(e) => setEditName(e.target.value)} className="rounded-xl" />
-              {renderCategoryForm(editCategory, setEditCategory)}
-              <Input placeholder="ملاحظة (اختياري)" value={editNote} onChange={(e) => setEditNote(e.target.value)} className="rounded-xl" />
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">تاريخ الانتهاء (اختياري)</p>
-                <Input type="date" value={editExpiryDate} onChange={(e) => setEditExpiryDate(e.target.value)} className="rounded-xl" />
-              </div>
-              {editExpiryDate && (
-                <div className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
-                  <div className="flex items-center gap-2">
-                    <Bell size={14} className="text-amber-500" />
-                    <span className="text-sm text-foreground">تذكير قبل 60 يوم</span>
-                  </div>
-                  <Switch checked={editReminderEnabled} onCheckedChange={setEditReminderEnabled} />
+        {/* Edit Item Sheet */}
+        <Sheet open={!!editTarget} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; if (!open) setEditTarget(null); }}>
+          <SheetContent
+            side="bottom"
+            dir="rtl"
+            className="max-h-[85dvh] rounded-t-3xl border-none p-0"
+            onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
+            onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
+          >
+            <div className="flex max-h-[85dvh] flex-col overflow-hidden">
+              <SheetHeader className="shrink-0 border-b border-border px-4 pt-5 pb-4 text-right">
+                <SheetTitle className="text-right">تعديل المستند</SheetTitle>
+                <SheetDescription className="text-right">عدّل تفاصيل المستند</SheetDescription>
+              </SheetHeader>
+              <div className="space-y-3 overflow-y-auto px-4 py-4">
+                <Input placeholder="اسم المستند" value={editName} onChange={(e) => setEditName(e.target.value)} className="rounded-xl" />
+                {renderCategoryForm(editCategory, setEditCategory)}
+                <Input placeholder="ملاحظة (اختياري)" value={editNote} onChange={(e) => setEditNote(e.target.value)} className="rounded-xl" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">تاريخ الانتهاء (اختياري)</p>
+                  <Input type="date" value={editExpiryDate} onChange={(e) => setEditExpiryDate(e.target.value)} className="rounded-xl" />
                 </div>
-              )}
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">إضافة مرفقات</p>
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
-                  onPointerDownCapture={(e) => {
-                    e.stopPropagation();
-                    primeFilePickerLock();
-                  }}
-                  onClick={() => triggerFilePicker("existing")}
-                >
-                  <Plus size={16} />
-                  رفع صورة أو PDF
-                </button>
-                <input
-                  ref={editFileInputRef}
-                  type="file"
-                  accept="image/*,.pdf"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    void handleFileUpload(e, "existing");
-                  }}
-                />
-                {editTarget?.files.length ? (
-                  <div className="space-y-1.5 mt-2">
-                    {editTarget.files.map((file) => (
-                      <div key={file.id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
-                        {file.type === "image" ? (
-                          <Image size={14} className="text-blue-500" />
-                        ) : (
-                          <FileText size={14} className="text-red-500" />
-                        )}
-                        <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{file.size}</span>
-                      </div>
-                    ))}
+                {editExpiryDate && (
+                  <div className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
+                    <div className="flex items-center gap-2">
+                      <Bell size={14} className="text-amber-500" />
+                      <span className="text-sm text-foreground">تذكير قبل 60 يوم</span>
+                    </div>
+                    <Switch checked={editReminderEnabled} onCheckedChange={setEditReminderEnabled} />
                   </div>
-                ) : null}
+                )}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">إضافة مرفقات</p>
+                  <button
+                    type="button"
+                    className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
+                    onPointerDownCapture={(e) => {
+                      e.stopPropagation();
+                      primeFilePickerLock();
+                    }}
+                    onClick={() => triggerFilePicker("existing")}
+                  >
+                    <Plus size={16} />
+                    رفع صورة أو PDF
+                  </button>
+                  <input
+                    ref={editFileInputRef}
+                    type="file"
+                    accept="image/*,.pdf"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void handleFileUpload(e, "existing");
+                    }}
+                  />
+                  {editTarget?.files.length ? (
+                    <div className="space-y-1.5 mt-2">
+                      {editTarget.files.map((file) => (
+                        <div key={file.id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
+                          {file.type === "image" ? (
+                            <Image size={14} className="text-blue-500" />
+                          ) : (
+                            <FileText size={14} className="text-red-500" />
+                          )}
+                          <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{file.size}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="mt-auto flex shrink-0 flex-row gap-2 border-t border-border px-4 pt-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+                <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
+                <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1 rounded-xl">إلغاء</Button>
               </div>
             </div>
-            <DrawerFooter className="flex-row gap-2">
-              <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
-              <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1 rounded-xl">إلغاء</Button>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
+          </SheetContent>
+        </Sheet>
 
-        {/* Add Item Drawer */}
-        <Drawer dismissible={!isPickerLocked} open={showAddItem} onOpenChange={(open) => {
+        {/* Add Item Sheet */}
+        <Sheet open={showAddItem} onOpenChange={(open) => {
           if (!open && isPickingFileRef.current) return;
           setShowAddItem(open);
         }}>
-          <DrawerContent dir="rtl" onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }} onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}>
-            <DrawerHeader className="text-right">
-              <DrawerTitle>إضافة مستند جديد</DrawerTitle>
-              <DrawerDescription>أضف وثيقة مع التصنيف والمرفقات</DrawerDescription>
-            </DrawerHeader>
-            <div className="space-y-3 px-4 overflow-y-auto max-h-[60vh]">
-              <Input placeholder="اسم المستند" value={newName} onChange={(e) => setNewName(e.target.value)} className="rounded-xl" />
-              {renderCategoryForm(newCategory, setNewCategory)}
-              <Input placeholder="ملاحظة (اختياري)" value={newNote} onChange={(e) => setNewNote(e.target.value)} className="rounded-xl" />
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">تاريخ الانتهاء (اختياري)</p>
-                <Input type="date" value={newExpiryDate} onChange={(e) => setNewExpiryDate(e.target.value)} className="rounded-xl" />
-              </div>
-              {newExpiryDate && (
-                <div className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
-                  <div className="flex items-center gap-2">
-                    <Bell size={14} className="text-amber-500" />
-                    <span className="text-sm text-foreground">تذكير قبل 60 يوم</span>
-                  </div>
-                  <Switch checked={newReminderEnabled} onCheckedChange={setNewReminderEnabled} />
+          <SheetContent
+            side="bottom"
+            dir="rtl"
+            className="max-h-[85dvh] rounded-t-3xl border-none p-0"
+            onInteractOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
+            onFocusOutside={(e) => { if (isPickingFileRef.current) e.preventDefault(); }}
+          >
+            <div className="flex max-h-[85dvh] flex-col overflow-hidden">
+              <SheetHeader className="shrink-0 border-b border-border px-4 pt-5 pb-4 text-right">
+                <SheetTitle className="text-right">إضافة مستند جديد</SheetTitle>
+                <SheetDescription className="text-right">أضف وثيقة مع التصنيف والمرفقات</SheetDescription>
+              </SheetHeader>
+              <div className="space-y-3 overflow-y-auto px-4 py-4">
+                <Input placeholder="اسم المستند" value={newName} onChange={(e) => setNewName(e.target.value)} className="rounded-xl" />
+                {renderCategoryForm(newCategory, setNewCategory)}
+                <Input placeholder="ملاحظة (اختياري)" value={newNote} onChange={(e) => setNewNote(e.target.value)} className="rounded-xl" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">تاريخ الانتهاء (اختياري)</p>
+                  <Input type="date" value={newExpiryDate} onChange={(e) => setNewExpiryDate(e.target.value)} className="rounded-xl" />
                 </div>
-              )}
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">المرفقات</p>
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
-                  onPointerDownCapture={(e) => {
-                    e.stopPropagation();
-                    primeFilePickerLock();
-                  }}
-                  onClick={() => triggerFilePicker("new")}
-                >
-                  <Plus size={16} />
-                  رفع صورة أو PDF
-                </button>
-                <input
-                  ref={newFileInputRef}
-                  type="file"
-                  accept="image/*,.pdf"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    void handleFileUpload(e, "new");
-                  }}
-                />
-                {newFiles.length > 0 && (
-                  <div className="space-y-1.5 mt-2">
-                    {newFiles.map((file) => (
-                      <div key={file.id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
-                        {file.type === "image" ? (
-                          <Image size={14} className="text-blue-500" />
-                        ) : (
-                          <FileText size={14} className="text-red-500" />
-                        )}
-                        <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{file.size}</span>
-                        <button
-                          onClick={() => setNewFiles((prev) => prev.filter((f) => f.id !== file.id))}
-                          className="text-destructive"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    ))}
+                {newExpiryDate && (
+                  <div className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
+                    <div className="flex items-center gap-2">
+                      <Bell size={14} className="text-amber-500" />
+                      <span className="text-sm text-foreground">تذكير قبل 60 يوم</span>
+                    </div>
+                    <Switch checked={newReminderEnabled} onCheckedChange={setNewReminderEnabled} />
                   </div>
                 )}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">المرفقات</p>
+                  <button
+                    type="button"
+                    className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
+                    onPointerDownCapture={(e) => {
+                      e.stopPropagation();
+                      primeFilePickerLock();
+                    }}
+                    onClick={() => triggerFilePicker("new")}
+                  >
+                    <Plus size={16} />
+                    رفع صورة أو PDF
+                  </button>
+                  <input
+                    ref={newFileInputRef}
+                    type="file"
+                    accept="image/*,.pdf"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void handleFileUpload(e, "new");
+                    }}
+                  />
+                  {newFiles.length > 0 && (
+                    <div className="space-y-1.5 mt-2">
+                      {newFiles.map((file) => (
+                        <div key={file.id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
+                          {file.type === "image" ? (
+                            <Image size={14} className="text-blue-500" />
+                          ) : (
+                            <FileText size={14} className="text-red-500" />
+                          )}
+                          <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{file.size}</span>
+                          <button
+                            onClick={() => setNewFiles((prev) => prev.filter((f) => f.id !== file.id))}
+                            className="text-destructive"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-auto flex shrink-0 flex-row gap-2 border-t border-border px-4 pt-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+                <Button onClick={addItem} disabled={isUploadingFile} className="flex-1 rounded-xl">
+                  {isUploadingFile ? "جاري الرفع..." : "إضافة"}
+                </Button>
+                <Button variant="outline" onClick={() => setShowAddItem(false)} className="flex-1 rounded-xl">إلغاء</Button>
               </div>
             </div>
-            <DrawerFooter className="flex-row gap-2">
-              <Button onClick={addItem} disabled={isUploadingFile} className="flex-1 rounded-xl">
-                {isUploadingFile ? "جاري الرفع..." : "إضافة"}
-              </Button>
-              <Button variant="outline" onClick={() => setShowAddItem(false)} className="flex-1 rounded-xl">إلغاء</Button>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
+          </SheetContent>
+        </Sheet>
 
         {/* Add List Drawer */}
         <Drawer open={showAddList} onOpenChange={setShowAddList}>
