@@ -347,56 +347,11 @@ const Documents = () => {
     }, mode === "attach" ? 350 : 0);
   }, []);
 
-  /* ── Handle file selection → upload → show overlay ── */
-  const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.currentTarget;
-    const file = input.files?.[0];
-    if (!file) return;
-    input.value = ""; // reset after capturing the File object so Android doesn't clear it before we use it
-
-    const isImage = file.type.startsWith("image/");
-    const isPdf = file.type === "application/pdf";
-    if (!isImage && !isPdf) {
-      appToast.error("نوع الملف غير مدعوم، يُسمح بالصور وPDF فقط");
-      return;
-    }
-
-    if (!familyId) {
-      appToast.error("لا يمكن رفع الملف بدون عائلة");
-      return;
-    }
-
-    // Create preview for images
-    let previewUrl: string | null = null;
-    if (isImage) {
-      previewUrl = URL.createObjectURL(file);
-    }
-
-    const fileId = crypto.randomUUID();
-    const ext = file.name.split(".").pop() || "bin";
-    const storagePath = `${familyId}/${fileId}.${ext}`;
-
-    // Show overlay immediately with uploading state
-    setUploadOverlay({
-      file,
-      progress: 0,
-      phase: "uploading",
-      previewUrl,
-      storagePath,
-      signedUrl: "",
-      fileType: isImage ? "image" : "pdf",
-      attachToDocumentId: pickerModeRef.current === "attach" ? (attachTargetRef.current || undefined) : undefined,
-    });
-
-    // Reset form fields
-    setOverlayName(file.name.replace(/\.[^.]+$/, ""));
-    setOverlayCategory("identity");
-    setOverlayNote("");
-    setOverlayExpiryDate("");
-    setOverlayReminderEnabled(false);
+  /* ── Upload a file to storage (shared by crop confirm + PDF direct) ── */
+  const startUpload = useCallback(async (fileToUpload: File, overlay: UploadOverlayState) => {
+    setUploadOverlay({ ...overlay, phase: "uploading", progress: 0 });
 
     try {
-      // Simulate progress (Supabase JS SDK doesn't support progress callbacks)
       const progressInterval = setInterval(() => {
         setUploadOverlay(prev => {
           if (!prev || prev.phase !== "uploading") return prev;
@@ -407,7 +362,7 @@ const Documents = () => {
 
       const { error: uploadError } = await supabase.storage
         .from("documents")
-        .upload(storagePath, file, { contentType: file.type, upsert: false });
+        .upload(overlay.storagePath, fileToUpload, { contentType: fileToUpload.type, upsert: false });
 
       clearInterval(progressInterval);
 
@@ -422,22 +377,23 @@ const Documents = () => {
       try {
         if ("caches" in window) {
           const cache = await caches.open("documents-cache-v1");
-          await cache.put(storagePath, new Response(file));
+          await cache.put(overlay.storagePath, new Response(fileToUpload));
         }
       } catch {}
 
       // Get signed URL
       const { data: signedData } = await supabase.storage
         .from("documents")
-        .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-      const signedUrl = signedData?.signedUrl || storagePath;
+        .createSignedUrl(overlay.storagePath, 60 * 60 * 24 * 365);
+      const signedUrl = signedData?.signedUrl || overlay.storagePath;
 
-      // Move to form phase
       setUploadOverlay(prev => prev ? {
         ...prev,
+        file: fileToUpload,
         progress: 100,
         phase: "form",
         signedUrl,
+        previewUrl: fileToUpload.type.startsWith("image/") ? URL.createObjectURL(fileToUpload) : prev.previewUrl,
       } : null);
 
     } catch (err) {
@@ -445,7 +401,85 @@ const Documents = () => {
       appToast.error("حدث خطأ أثناء رفع الملف");
       setUploadOverlay(null);
     }
-  }, [familyId]);
+  }, []);
+
+  /* ── Handle file selection → crop (image) or upload (PDF) ── */
+  const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    input.value = "";
+
+    const isImage = file.type.startsWith("image/");
+    const isPdf = file.type === "application/pdf";
+    if (!isImage && !isPdf) {
+      appToast.error("نوع الملف غير مدعوم، يُسمح بالصور وPDF فقط");
+      return;
+    }
+
+    if (!familyId) {
+      appToast.error("لا يمكن رفع الملف بدون عائلة");
+      return;
+    }
+
+    const fileId = crypto.randomUUID();
+    const ext = file.name.split(".").pop() || "bin";
+    const storagePath = `${familyId}/${fileId}.${ext}`;
+    const attachId = pickerModeRef.current === "attach" ? (attachTargetRef.current || undefined) : undefined;
+
+    // Reset form fields
+    setOverlayName(file.name.replace(/\.[^.]+$/, ""));
+    setOverlayCategory("identity");
+    setOverlayNote("");
+    setOverlayExpiryDate("");
+    setOverlayReminderEnabled(false);
+
+    if (isImage) {
+      // Show crop phase
+      const previewUrl = URL.createObjectURL(file);
+      setCropState({ x: 0, y: 0 });
+      setCropZoom(1);
+      setCropRotation(0);
+      setCroppedAreaPixels(null);
+      setUploadOverlay({
+        file,
+        progress: 0,
+        phase: "cropping",
+        previewUrl,
+        storagePath,
+        signedUrl: "",
+        fileType: "image",
+        attachToDocumentId: attachId,
+      });
+    } else {
+      // PDF: upload directly
+      const overlay: UploadOverlayState = {
+        file,
+        progress: 0,
+        phase: "uploading",
+        previewUrl: null,
+        storagePath,
+        signedUrl: "",
+        fileType: "pdf",
+        attachToDocumentId: attachId,
+      };
+      startUpload(file, overlay);
+    }
+  }, [familyId, startUpload]);
+
+  /* ── Confirm crop → proceed to upload ── */
+  const confirmCrop = useCallback(async () => {
+    if (!uploadOverlay || !uploadOverlay.previewUrl || !croppedAreaPixels) return;
+    try {
+      const croppedFile = await getCroppedImg(uploadOverlay.previewUrl, croppedAreaPixels, cropRotation);
+      const newPreview = URL.createObjectURL(croppedFile);
+      if (uploadOverlay.previewUrl) URL.revokeObjectURL(uploadOverlay.previewUrl);
+      startUpload(croppedFile, { ...uploadOverlay, previewUrl: newPreview });
+    } catch (err) {
+      console.error("[Documents] Crop error:", err);
+      appToast.error("فشل في قص الصورة");
+    }
+  }, [uploadOverlay, croppedAreaPixels, cropRotation, startUpload]);
 
   /* ── Confirm: save file to DB ── */
   const confirmUpload = useCallback(async () => {
