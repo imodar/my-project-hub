@@ -27,7 +27,6 @@ const IslamicQuickActions = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const { t } = useLanguage();
 
   const actions = [
-    { icon: BookOpen, label: t.islamic.quran, path: "/" },
     { icon: TasbihIcon, label: t.islamic.tasbih, path: "/tasbih" },
     { icon: Heart, label: t.islamic.athkar, path: "/athkar" },
     { icon: Bell, label: t.islamic.reminders, path: "/islamic-reminders" },
