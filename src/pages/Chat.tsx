@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Send, Pin, Lock, Smile, Check, CheckCheck, ShieldCheck, Plus, Image, Mic, MapPin, Play, Pause, Square, X, Loader2, AlertCircle, RotateCcw, ImageOff } from "lucide-react";
 import { useMediaUrl } from "@/hooks/useMediaUrl";
 import { useNavigate } from "react-router-dom";
