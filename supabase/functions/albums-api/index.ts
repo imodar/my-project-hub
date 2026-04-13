@@ -36,9 +36,16 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-albums") {
       const { family_id, since } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (since && typeof since !== "string") return json({ error: "since غير صالح" }, 400);
       let query = supabase.from("albums").select("*, album_photos(*)").eq("family_id", family_id).order("created_at", { ascending: false });
       if (since) query = query.gt("created_at", since);
@@ -50,6 +57,7 @@ Deno.serve(async (req) => {
     if (action === "create-album") {
       const { family_id, name, cover_color, linked_trip_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب (حد أقصى 100)" }, 400);
       if (cover_color && typeof cover_color === "string" && cover_color.length > MAX_COLOR) return json({ error: "اللون طويل جداً" }, 400);
       if (linked_trip_id && !validUuid(linked_trip_id)) return json({ error: "linked_trip_id غير صالح" }, 400);
