@@ -577,5 +577,6 @@ export function useChat() {
     hasMore,
     isLoadingMore,
     loadOlderMessages,
+    initProgress,
   };
 }
