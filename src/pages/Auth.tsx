@@ -226,6 +226,7 @@ const Auth = () => {
                 <Input
                   type="tel"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="5XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ""))}
@@ -321,7 +322,7 @@ const Auth = () => {
               </div>
 
               <div className="flex justify-center" dir="ltr">
-                <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus inputMode="numeric">
+                <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus inputMode="numeric" pattern="[0-9]*">
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />

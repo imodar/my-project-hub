@@ -132,7 +132,8 @@ export function useFamilyMembers({ excludeSelf = true } = {}) {
       };
     },
     enabled: !!familyId && !!user,
-    placeholderData: localMembers.length > 0
+    // Only use local data as placeholder if members have real names (not fallback labels)
+    placeholderData: localMembers.length > 0 && localMembers.some(m => m.name && !Object.values(ROLE_LABELS).includes(m.name) && m.name !== "عضو")
       ? { members: localMembers, subscriptionLocked: false }
       : undefined,
   });

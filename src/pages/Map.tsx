@@ -1,5 +1,5 @@
-import { useState, useMemo, Suspense, lazy } from "react";
-import { MapPin, EyeOff, Settings2, Loader2 } from "lucide-react";
+import { useState, useMemo, useEffect, Suspense, lazy } from "react";
+import { MapPin, EyeOff, Settings2, Loader2, MapPinOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 const FamilyMap = lazy(() => import("@/components/map/FamilyMap"));
@@ -8,6 +8,7 @@ import { useLocationTracking } from "@/hooks/useLocationTracking";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Button } from "@/components/ui/button";
 
 const Map = () => {
   const navigate = useNavigate();
@@ -17,6 +18,51 @@ const Map = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  const [locationPermission, setLocationPermission] = useState<"granted" | "denied" | "prompt" | "checking">("checking");
+
+  // Check geolocation permission
+  useEffect(() => {
+    const checkPermission = async () => {
+      try {
+        // Try Capacitor Geolocation first
+        const { Geolocation } = await import("@capacitor/geolocation").catch(() => ({ Geolocation: null }));
+        if (Geolocation) {
+          const status = await Geolocation.checkPermissions();
+          setLocationPermission(status.location === "granted" ? "granted" : status.location === "denied" ? "denied" : "prompt");
+          return;
+        }
+        // Fallback to web API
+        if (navigator.permissions) {
+          const result = await navigator.permissions.query({ name: "geolocation" });
+          setLocationPermission(result.state);
+          result.addEventListener("change", () => setLocationPermission(result.state));
+        } else {
+          setLocationPermission("prompt");
+        }
+      } catch {
+        setLocationPermission("prompt");
+      }
+    };
+    checkPermission();
+  }, []);
+
+  const requestLocationPermission = async () => {
+    try {
+      const { Geolocation } = await import("@capacitor/geolocation").catch(() => ({ Geolocation: null }));
+      if (Geolocation) {
+        const status = await Geolocation.requestPermissions();
+        setLocationPermission(status.location === "granted" ? "granted" : "denied");
+        return;
+      }
+      // Web fallback — trigger the browser prompt
+      navigator.geolocation.getCurrentPosition(
+        () => setLocationPermission("granted"),
+        (err) => setLocationPermission(err.code === 1 ? "denied" : "prompt")
+      );
+    } catch {
+      setLocationPermission("denied");
+    }
+  };
 
   const { locations, isLoading: isLoadingLocations, isSharing, setIsSharing } = useLocationTracking(updateInterval);
   const { members } = useFamilyMembers({ excludeSelf: false });
@@ -71,6 +117,52 @@ const Map = () => {
       setIsToggling(false);
     }
   };
+
+  if (locationPermission === "checking") {
+    return (
+      <div className="min-h-screen flex flex-col bg-background" dir={dir}>
+        <PageHeader title={t.map.title} onBack={() => navigate("/")} />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  if (locationPermission !== "granted") {
+    return (
+      <div className="min-h-screen flex flex-col bg-background" dir={dir}>
+        <PageHeader title={t.map.title} onBack={() => navigate("/")} />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
+          <div className="w-20 h-20 rounded-3xl bg-muted flex items-center justify-center">
+            <MapPinOff size={36} className="text-muted-foreground" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-lg font-bold text-foreground">
+              {isRTL ? "يجب تفعيل صلاحية الموقع" : "Location Permission Required"}
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {isRTL
+                ? "لعرض مواقع أفراد العائلة على الخريطة، يجب تفعيل صلاحية الوصول إلى الموقع الجغرافي."
+                : "To view family members on the map, location access must be enabled."}
+            </p>
+          </div>
+          {locationPermission === "denied" ? (
+            <p className="text-xs text-destructive">
+              {isRTL
+                ? "تم رفض صلاحية الموقع. يرجى تفعيلها من إعدادات الجهاز."
+                : "Location permission was denied. Please enable it from device settings."}
+            </p>
+          ) : (
+            <Button onClick={requestLocationPermission} className="gap-2">
+              <MapPin size={16} />
+              {isRTL ? "تفعيل الموقع" : "Enable Location"}
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative" dir={dir}>

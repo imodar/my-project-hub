@@ -228,6 +228,7 @@ const Chat = () => {
     hasMore,
     isLoadingMore,
     loadOlderMessages,
+    initProgress,
   } = useChat();
 
   const [newMessage, setNewMessage] = useState("");
@@ -409,7 +410,7 @@ const Chat = () => {
 
       {/* Messages */}
       <div
-        className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-28"
+        className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-40"
         style={{ backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--muted) / 0.5), transparent 70%)" }}
       >
         {/* Encryption notice — only after key is confirmed */}
@@ -426,11 +427,20 @@ const Chat = () => {
 
         {/* Inline encryption loading banner — only if no cached messages */}
         {!isReady && cachedLoaded && messages.length === 0 && (
-          <div className="flex items-center justify-center gap-2 py-3">
-            <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center animate-pulse">
-              <ShieldCheck size={14} className="text-primary" />
+          <div className="flex flex-col items-center justify-center gap-3 py-6">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center animate-pulse">
+              <ShieldCheck size={16} className="text-primary" />
             </div>
-            <span className="text-xs text-muted-foreground font-medium">جاري تهيئة التشفير...</span>
+            <span className="text-xs text-muted-foreground font-medium">{initProgress.label}</span>
+            <div className="w-40">
+              <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300 rounded-full"
+                  style={{ width: `${initProgress.percent}%` }}
+                />
+              </div>
+            </div>
+            <span className="text-[10px] text-muted-foreground">{initProgress.percent}%</span>
           </div>
         )}
         {isReady && cachedLoaded && messages.length === 0 && (

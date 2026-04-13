@@ -266,7 +266,7 @@ const Documents = () => {
     setActiveListId(real?.id || lists[0].id);
   }, [lists, activeListId, setActiveListId]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<DocCategory | null>(null);
+  const [activeCategory, setActiveCategory] = useState<DocCategory | null>("identity");
   const [fullPreviewDocId, setFullPreviewDocId] = useState<string | null>(null);
   const [showAddList, setShowAddList] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -760,6 +760,10 @@ const Documents = () => {
       <PageHeader
           title="الوثائق"
           actions={[
+            ...(!activeList?.isDefault ? [{
+              icon: <MoreVertical size={18} className="text-white" />,
+              onClick: () => setShowListActions(true),
+            }] : []),
             {
               icon: <Plus size={20} className="text-white" />,
               onClick: () => setShowAddList(true),
@@ -793,27 +797,6 @@ const Documents = () => {
       ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 
-        {/* Stats bar */}
-        {activeList && (
-          <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <FileText size={12} />
-                {totalItems} مستند
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground">
-                {activeList.lastUpdatedBy} – {activeList.lastUpdatedAt}
-              </span>
-              {!activeList.isDefault && (
-                <button className="p-1 rounded-lg hover:bg-muted" onClick={() => setShowListActions(true)}>
-                  <MoreVertical size={16} className="text-muted-foreground" />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Category filter — no "الكل" tab */}
         <div className="px-4 pt-3 flex gap-2 overflow-x-auto scrollbar-hide">
@@ -837,18 +820,6 @@ const Documents = () => {
           })}
         </div>
 
-        {/* Search */}
-        <div className="px-4 pt-3">
-          <div className="relative">
-            <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="ابحث في الوثائق..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-9 bg-card border-border rounded-xl text-sm"
-            />
-          </div>
-        </div>
 
         {/* Card stacks grouped by category */}
         <div className="px-4 pt-4 space-y-6 pb-4">
