@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Send, Pin, Lock, Smile, Check, CheckCheck, ShieldCheck, Plus, Image, Mic, MapPin, Play, Pause, Square, X, Loader2, AlertCircle, RotateCcw, ImageOff } from "lucide-react";
 import { useMediaUrl } from "@/hooks/useMediaUrl";
 import { useNavigate } from "react-router-dom";
@@ -237,15 +238,29 @@ const Chat = () => {
   const [showMentions, setShowMentions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const memberNames = Object.values(profiles);
 
+  const virtualizer = useVirtualizer({
+    count: messages.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 80,
+    overscan: 10,
+  });
+
+  // Auto-scroll to bottom on new messages
+  const prevCountRef = useRef(messages.length);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (messages.length > prevCountRef.current || prevCountRef.current === 0) {
+      setTimeout(() => {
+        scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: "smooth" });
+      }, 50);
+    }
+    prevCountRef.current = messages.length;
+  }, [messages.length]);
 
   const handleSend = () => {
     if (!newMessage.trim() || !isReady) return;
@@ -410,7 +425,8 @@ const Chat = () => {
 
       {/* Messages */}
       <div
-        className="flex-1 overflow-y-auto px-3 py-4 space-y-1 pb-40"
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-3 py-4 pb-40"
         style={{ backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--muted) / 0.5), transparent 70%)" }}
       >
         {/* Encryption notice — only after key is confirmed */}
@@ -465,83 +481,102 @@ const Chat = () => {
           </div>
         )}
 
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex flex-col ${msg.isMe ? "items-start" : "items-end"} mb-1 group`}>
-            {!msg.isMe && (
-              <span className="text-[11px] font-semibold text-primary px-2 mb-0.5">{msg.senderName}</span>
-            )}
-            <div className="relative max-w-[80%]">
-              <div
-                className={`px-3 py-2 rounded-2xl text-sm leading-relaxed relative ${
-                  msg.isMe
-                    ? "rounded-bl-md text-primary-foreground"
-                    : "rounded-br-md bg-card text-card-foreground border border-border"
-                }`}
-                style={msg.isMe ? { background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))" } : undefined}
-              >
-                {msg.pinned && (
-                  <Pin size={10} className={`absolute top-1.5 ${msg.isMe ? "left-1.5 text-white/50" : "left-1.5 text-accent"}`} />
-                )}
-                {renderMessageContent(msg)}
-                <div className={`flex items-center gap-1 mt-0.5 ${msg.isMe ? "justify-start" : "justify-end"}`}>
-                  <span className={`text-[10px] ${msg.isMe ? "text-white/50" : "text-muted-foreground"}`}>{msg.time}</span>
-                  {msg.isMe && <StatusIcon status={msg.status} />}
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className={`absolute top-0 ${msg.isMe ? "-left-20" : "-right-20"} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1`}>
-                {msg.status === "failed" && (
-                  <button
-                    onClick={() => retryMessage(msg.id)}
-                    className="w-7 h-7 rounded-full bg-destructive/10 border border-destructive/30 flex items-center justify-center hover:bg-destructive/20 transition-colors"
-                    title="إعادة الإرسال"
-                  >
-                    <RotateCcw size={14} className="text-destructive" />
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
-                  className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"
+        {messages.length > 0 && (
+          <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const msg = messages[virtualRow.index];
+              return (
+                <div
+                  key={msg.id}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
                 >
-                  <Smile size={14} className="text-muted-foreground" />
-                </button>
-                <button
-                  onClick={() => togglePin(msg.id)}
-                  className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"
-                >
-                  <Pin size={14} className={msg.pinned ? "text-accent" : "text-muted-foreground"} />
-                </button>
-              </div>
+                  <div className={`flex flex-col ${msg.isMe ? "items-start" : "items-end"} mb-1 group`}>
+                    {!msg.isMe && (
+                      <span className="text-[11px] font-semibold text-primary px-2 mb-0.5">{msg.senderName}</span>
+                    )}
+                    <div className="relative max-w-[80%]">
+                      <div
+                        className={`px-3 py-2 rounded-2xl text-sm leading-relaxed relative ${
+                          msg.isMe
+                            ? "rounded-bl-md text-primary-foreground"
+                            : "rounded-br-md bg-card text-card-foreground border border-border"
+                        }`}
+                        style={msg.isMe ? { background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))" } : undefined}
+                      >
+                        {msg.pinned && (
+                          <Pin size={10} className={`absolute top-1.5 ${msg.isMe ? "left-1.5 text-white/50" : "left-1.5 text-accent"}`} />
+                        )}
+                        {renderMessageContent(msg)}
+                        <div className={`flex items-center gap-1 mt-0.5 ${msg.isMe ? "justify-start" : "justify-end"}`}>
+                          <span className={`text-[10px] ${msg.isMe ? "text-white/50" : "text-muted-foreground"}`}>{msg.time}</span>
+                          {msg.isMe && <StatusIcon status={msg.status} />}
+                        </div>
+                      </div>
 
-              {showEmojiPicker === msg.id && (
-                <div className={`absolute ${msg.isMe ? "left-0" : "right-0"} -top-10 flex gap-1 bg-card border border-border rounded-full px-2 py-1 shadow-lg z-10`}>
-                  {emojiOptions.map((emoji) => (
-                    <button key={emoji} onClick={() => handleReaction(msg.id, emoji)} className="text-lg hover:scale-125 transition-transform">
-                      {emoji}
-                    </button>
-                  ))}
+                      {/* Action buttons */}
+                      <div className={`absolute top-0 ${msg.isMe ? "-left-20" : "-right-20"} opacity-0 group-hover:opacity-100 transition-opacity flex gap-1`}>
+                        {msg.status === "failed" && (
+                          <button
+                            onClick={() => retryMessage(msg.id)}
+                            className="w-7 h-7 rounded-full bg-destructive/10 border border-destructive/30 flex items-center justify-center hover:bg-destructive/20 transition-colors"
+                            title="إعادة الإرسال"
+                          >
+                            <RotateCcw size={14} className="text-destructive" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
+                          className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                        >
+                          <Smile size={14} className="text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={() => togglePin(msg.id)}
+                          className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                        >
+                          <Pin size={14} className={msg.pinned ? "text-accent" : "text-muted-foreground"} />
+                        </button>
+                      </div>
+
+                      {showEmojiPicker === msg.id && (
+                        <div className={`absolute ${msg.isMe ? "left-0" : "right-0"} -top-10 flex gap-1 bg-card border border-border rounded-full px-2 py-1 shadow-lg z-10`}>
+                          {emojiOptions.map((emoji) => (
+                            <button key={emoji} onClick={() => handleReaction(msg.id, emoji)} className="text-lg hover:scale-125 transition-transform">
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                      <div className={`flex gap-1 mt-0.5 px-2 ${msg.isMe ? "justify-start" : "justify-end"}`}>
+                        {Object.entries(msg.reactions).map(([emoji, count]) => (
+                          <button
+                            key={emoji}
+                            onClick={() => handleReaction(msg.id, emoji)}
+                            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-muted border border-border text-xs hover:bg-accent/20 transition-colors"
+                          >
+                            <span>{emoji}</span>
+                            <span className="text-muted-foreground">{count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-
-            {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-              <div className={`flex gap-1 mt-0.5 px-2 ${msg.isMe ? "justify-start" : "justify-end"}`}>
-                {Object.entries(msg.reactions).map(([emoji, count]) => (
-                  <button
-                    key={emoji}
-                    onClick={() => handleReaction(msg.id, emoji)}
-                    className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-muted border border-border text-xs hover:bg-accent/20 transition-colors"
-                  >
-                    <span>{emoji}</span>
-                    <span className="text-muted-foreground">{count}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+              );
+            })}
           </div>
-        ))}
-        <div ref={messagesEndRef} />
+        )}
       </div>
 
       {/* Mentions dropdown */}

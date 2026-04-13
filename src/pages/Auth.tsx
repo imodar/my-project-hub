@@ -31,7 +31,7 @@ import { Phone, ArrowRight, Loader2, Globe, ChevronDown } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
-import authFamily from "@/assets/auth-family.png";
+import authFamily from "@/assets/auth-family.webp";
 import LanguageSheet from "@/components/LanguageSheet";
 import LegalPageSheet from "@/components/LegalPageSheet";
 

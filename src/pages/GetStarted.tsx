@@ -2,10 +2,10 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
-import onboarding1 from "@/assets/onboarding-1.png";
-import onboarding2 from "@/assets/onboarding-2.png";
-import onboarding3 from "@/assets/onboarding-3.png";
-import onboarding4 from "@/assets/onboarding-4.png";
+import onboarding1 from "@/assets/onboarding-1.webp";
+import onboarding2 from "@/assets/onboarding-2.webp";
+import onboarding3 from "@/assets/onboarding-3.webp";
+import onboarding4 from "@/assets/onboarding-4.webp";
 
 const slides = [
   {
