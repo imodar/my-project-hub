@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ListContentSkeleton } from "@/components/PageSkeletons";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDocumentLists } from "@/hooks/useDocumentLists";
+import { useMediaUrl } from "@/hooks/useMediaUrl";
 import FAB from "@/components/FAB";
 import SwipeableCard from "@/components/SwipeableCard";
 import {
@@ -27,7 +28,7 @@ import {
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog"; // kept for potential future use
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
@@ -150,12 +151,12 @@ let documentsUiDraft: DocumentsUiDraft = {
   uploadOverlay: null,
 };
 
-/* ── Lazy-loading image for document cards ── */
+/* ── Lazy-loading image for document cards (local-first via useMediaUrl) ── */
 const LazyDocImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+  const { url: localUrl, status } = useMediaUrl(src, { bucket: "documents" });
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
 
-  if (error) {
+  if (status === "error") {
     return (
       <div className={`flex items-center justify-center bg-muted ${className}`}>
         <Image size={32} className="text-muted-foreground opacity-40" />
@@ -163,21 +164,25 @@ const LazyDocImage = ({ src, alt, className }: { src: string; alt: string; class
     );
   }
 
+  const displayUrl = localUrl || src;
+
   return (
     <div className={`relative ${className}`}>
-      {!loaded && (
+      {(!loaded || status === "loading") && (
         <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
           <Loader2 size={24} className="text-muted-foreground animate-spin" />
         </div>
       )}
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
-        onLoad={() => setLoaded(true)}
-        onError={() => setError(true)}
-      />
+      {displayUrl && (
+        <img
+          src={displayUrl}
+          alt={alt}
+          loading="lazy"
+          className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+          onLoad={() => setLoaded(true)}
+          onError={() => setLoaded(false)}
+        />
+      )}
     </div>
   );
 };
@@ -834,7 +839,13 @@ const Documents = () => {
         </PageHeader>
 
       {docsLoading ? (
-        <ListContentSkeleton />
+        <div className="px-4 pt-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Loader2 size={18} className="text-primary animate-spin" />
+            <p className="text-sm text-muted-foreground">جاري تحميل الوثائق...</p>
+          </div>
+          <ListContentSkeleton />
+        </div>
       ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 
@@ -865,9 +876,12 @@ const Documents = () => {
         {/* Card stacks grouped by category */}
         <div className="px-4 pt-4 space-y-6 pb-4">
           {groupedByCategory.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <FolderLock size={40} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">لا توجد وثائق</p>
+            <div className="text-center py-16 text-muted-foreground">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/60 flex items-center justify-center">
+                <FolderLock size={36} className="opacity-40" />
+              </div>
+              <p className="text-base font-semibold mb-1">لا توجد وثائق</p>
+              <p className="text-xs text-muted-foreground/70 max-w-[220px] mx-auto">اضغط على زر الإضافة لرفع أول مستند أو صورة</p>
             </div>
           )}
 
@@ -941,23 +955,34 @@ const Documents = () => {
         {/* FAB: directly opens file picker — haptic AFTER click to preserve gesture chain */}
         <FAB skipHaptic onClick={() => { openFilePicker("new"); }} />
 
-        {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-          <AlertDialogContent className="rounded-2xl max-w-[90%]" dir="rtl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>حذف المستند</AlertDialogTitle>
-              <AlertDialogDescription>
-                هل أنت متأكد من حذف "{deleteTarget?.name}"؟
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex-row gap-2">
-              <AlertDialogAction onClick={confirmDelete} className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
-                حذف
-              </AlertDialogAction>
-              <AlertDialogCancel className="flex-1 rounded-xl">إلغاء</AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Delete Confirmation — uses Drawer (bottom sheet) for mobile UX */}
+        <Drawer open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <DrawerContent dir="rtl" className="z-[110]">
+            <DrawerHeader className="text-right">
+              <DrawerTitle>حذف المستند</DrawerTitle>
+              <DrawerDescription>
+                هل أنت متأكد من حذف "{deleteTarget?.name}"؟ لا يمكن التراجع عن هذا الإجراء.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="flex-row gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+              <Button
+                variant="destructive"
+                className="flex-1 rounded-xl"
+                onClick={confirmDelete}
+              >
+                <Trash2 size={16} className="ml-1" />
+                حذف نهائي
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={() => setDeleteTarget(null)}
+              >
+                إلغاء
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
 
         {/* List Actions Drawer */}
         <Drawer open={showListActions} onOpenChange={setShowListActions}>
