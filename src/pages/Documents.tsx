@@ -1128,7 +1128,7 @@ const Documents = () => {
         return (
           <div className="fixed inset-0 z-[90] bg-background flex flex-col" dir="rtl">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border">
+            <div className="flex items-center justify-between px-4 pb-3 border-b border-border" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top))" }}>
               <div className="flex items-center gap-2 min-w-0">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${catInfo.bg}`}>
                   <CatIcon size={16} className={catInfo.color} />
