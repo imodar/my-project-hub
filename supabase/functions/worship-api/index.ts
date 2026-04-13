@@ -36,6 +36,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-prayer-logs") {
       const { child_id, date } = body;
       if (!validUuid(child_id)) return json({ error: "child_id غير صالح" }, 400);
