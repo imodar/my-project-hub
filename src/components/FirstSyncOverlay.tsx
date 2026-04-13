@@ -7,6 +7,7 @@ import { useFamilyId } from "@/hooks/useFamilyId";
 import { Progress } from "@/components/ui/progress";
 import { Loader2 } from "lucide-react";
 import { getMeaningfulLocalDataState } from "@/lib/meaningfulLocalData";
+import PermissionsScreen from "@/components/PermissionsScreen";
 
 interface FirstSyncOverlayProps {
   onInitialSyncReady?: () => void;
@@ -19,6 +20,7 @@ const FirstSyncOverlay = React.forwardRef<HTMLDivElement, FirstSyncOverlayProps>
   const { state, run, progress } = useInitialSync();
   const startedRef = useRef(false);
   const [isEmptyDevice, setIsEmptyDevice] = useState<boolean | null>(null);
+  const [showPermissions, setShowPermissions] = useState(false);
 
   useEffect(() => {
     startedRef.current = false;
@@ -44,9 +46,21 @@ const FirstSyncOverlay = React.forwardRef<HTMLDivElement, FirstSyncOverlayProps>
 
   useEffect(() => {
     if (user && state === "done") {
-      onInitialSyncReady?.();
+      // After sync, check if permissions were already requested
+      const permissionsRequested = !!localStorage.getItem("permissions_requested");
+      if (!permissionsRequested && isEmptyDevice === true) {
+        // First time on new device — show permissions screen
+        setShowPermissions(true);
+      } else {
+        onInitialSyncReady?.();
+      }
     }
-  }, [user, state, onInitialSyncReady]);
+  }, [user, state, onInitialSyncReady, isEmptyDevice]);
+
+  const handlePermissionsComplete = () => {
+    setShowPermissions(false);
+    onInitialSyncReady?.();
+  };
 
   const firstSyncDone = !!localStorage.getItem("first_sync_done");
   const waitingForInitialCheck = !!user && !firstSyncDone && (familyLoading || (!!familyId && isEmptyDevice === null));
@@ -59,7 +73,10 @@ const FirstSyncOverlay = React.forwardRef<HTMLDivElement, FirstSyncOverlayProps>
   return (
     <div ref={fwdRef}>
       <AnimatePresence>
-        {visible && (
+        {showPermissions && (
+          <PermissionsScreen onComplete={handlePermissionsComplete} />
+        )}
+        {visible && !showPermissions && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
