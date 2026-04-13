@@ -524,7 +524,7 @@ const Documents = () => {
         attachToDocumentId: attachId,
       });
     } else {
-      // PDF: upload directly
+      // PDF: upload directly — set overlay first so UI shows progress
       const overlay: UploadOverlayState = {
         file,
         progress: 0,
@@ -535,6 +535,7 @@ const Documents = () => {
         fileType: "pdf",
         attachToDocumentId: attachId,
       };
+      setUploadOverlay(overlay);
       startUpload(file, overlay);
     }
   }, [familyId, startUpload]);
