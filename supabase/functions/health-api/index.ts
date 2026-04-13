@@ -36,9 +36,16 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-medications") {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       const { data, error } = await supabase.from("medications").select("*, medication_logs(*)").eq("family_id", family_id).order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
       return json({ data });
@@ -47,6 +54,7 @@ Deno.serve(async (req) => {
     if (action === "create-medication") {
       const { family_id, name, dosage, member_name, notes, color, times_per_day, frequency_value } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب (حد أقصى 200)" }, 400);
       if (dosage && typeof dosage === "string" && dosage.length > MAX_DOSAGE) return json({ error: "الجرعة طويلة جداً" }, 400);
       if (member_name && typeof member_name === "string" && member_name.length > MAX_NAME) return json({ error: "اسم العضو طويل جداً" }, 400);
