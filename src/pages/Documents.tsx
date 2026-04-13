@@ -909,14 +909,8 @@ const Documents = () => {
                               className="w-full h-36 object-cover"
                             />
                           ) : isPdf ? (
-                            <div className="w-full h-36 flex items-center justify-start pl-6" style={{ background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)" }}>
-                              {/* White PDF icon */}
-                              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="white" fillOpacity="0.15"/>
-                                <path d="M14 2V8H20" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <text x="12" y="16.5" textAnchor="middle" fill="white" fontSize="5" fontWeight="bold" fontFamily="sans-serif">PDF</text>
-                              </svg>
-                            </div>
+                            <div className="w-full h-36" style={{ background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)" }} />
+
                           ) : (
                             <div className={`w-full h-36 flex items-center justify-center ${catInfo.bg}`}>
                               <CatIcon size={36} className={catInfo.color} />
@@ -924,10 +918,17 @@ const Documents = () => {
                           )}
 
                           {/* Info overlay — transparent, on top of image */}
-                          <div className="absolute inset-x-0 top-0 flex items-start gap-2 px-3 pt-2" style={{ background: isPdf ? "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.25) 40%, transparent 100%)" : "linear-gradient(to bottom, hsl(var(--background) / 0.75) 0%, hsl(var(--background) / 0.5) 30%, hsl(var(--background) / 0.2) 60%, transparent 100%)", paddingBottom: "3rem" }}>
+                          <div className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 pt-2" style={{ background: isPdf ? "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.25) 40%, transparent 100%)" : "linear-gradient(to bottom, hsl(var(--background) / 0.75) 0%, hsl(var(--background) / 0.5) 30%, hsl(var(--background) / 0.2) 60%, transparent 100%)", paddingBottom: "3rem" }}>
                             <div className="flex-1 min-w-0">
                               <p className={`font-semibold text-sm truncate drop-shadow-sm ${isPdf ? "text-white" : "text-foreground"}`}>{item.name}</p>
                             </div>
+                            {isPdf && (
+                              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="shrink-0 opacity-90">
+                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="white" strokeWidth="1.5" fill="white" fillOpacity="0.2"/>
+                                <path d="M14 2V8H20" stroke="white" strokeWidth="1.5"/>
+                                <text x="12" y="16.5" textAnchor="middle" fill="white" fontSize="5" fontWeight="bold" fontFamily="sans-serif">PDF</text>
+                              </svg>
+                            )}
                             {expiryStatus && (
                               <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${expiryStatus.className}`}>
                                 {expiryStatus.label}
