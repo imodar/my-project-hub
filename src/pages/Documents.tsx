@@ -928,7 +928,7 @@ const Documents = () => {
                                 <path d="M14 2V8H20" stroke="white" strokeWidth="1.5"/>
                                 <text x="12" y="16.5" textAnchor="middle" fill="white" fontSize="5" fontWeight="bold" fontFamily="sans-serif">PDF</text>
                               </svg>
-                            )
+                            )}
                             {expiryStatus && (
                               <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${expiryStatus.className}`}>
                                 {expiryStatus.label}
