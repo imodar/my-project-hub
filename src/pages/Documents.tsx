@@ -369,9 +369,9 @@ const Documents = () => {
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     haptic.medium();
-    deleteDocItemMut.mutate(deleteTarget.id);
+    deleteDocItemMut.mutate(deleteTarget.id, activeListId);
     setDeleteTarget(null);
-  }, [deleteTarget, deleteDocItemMut]);
+  }, [deleteTarget, deleteDocItemMut, activeListId]);
 
   const openEdit = useCallback((item: DocumentItem) => {
     setEditTarget(item);
