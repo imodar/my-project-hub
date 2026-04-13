@@ -95,15 +95,24 @@ export function useMedications() {
     operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      const { data: response, error } = await supabase.functions.invoke("health-api", {
-        body: {
-          action: "log-medication",
-          medication_id: rest.medication_id,
-          skipped: rest.skipped || false,
-          notes: rest.notes,
-        },
-      });
-      return { data: response?.data ?? null, error: response?.error || error?.message || null };
+      try {
+        const { data: response, error } = await supabase.functions.invoke("health-api", {
+          body: {
+            action: "log-medication",
+            medication_id: rest.medication_id,
+            skipped: rest.skipped || false,
+            notes: rest.notes,
+          },
+        });
+        // Silently handle 409 (medication not synced yet) — log stays local
+        if (error?.message?.includes("409") || response?.error?.includes("غير موجود")) {
+          return { data: null, error: null }; // treat as success, keep local
+        }
+        return { data: response?.data ?? null, error: response?.error || error?.message || null };
+      } catch {
+        // Network failure — data already saved locally by useOfflineMutation
+        return { data: null, error: null };
+      }
     },
     onSuccess: async (_data, variables) => {
       try {
