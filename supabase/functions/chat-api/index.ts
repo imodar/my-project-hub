@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
     if (action === "get-messages") {
       const { family_id, limit: msgLimit, before, since } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (before && typeof before !== "string") return json({ error: "before غير صالح" }, 400);
       if (since && typeof since !== "string") return json({ error: "since غير صالح" }, 400);
       const safeLimit = Math.min(Math.max(Number(msgLimit) || 50, 1), 200);
@@ -104,6 +105,7 @@ Deno.serve(async (req) => {
     if (action === "send-message") {
       const { family_id, encrypted_text, iv, mention_user_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(encrypted_text, MAX_TEXT)) return json({ error: "الرسالة مطلوبة (حد أقصى 5000)" }, 400);
       if (iv && typeof iv !== "string") return json({ error: "iv غير صالح" }, 400);
       if (mention_user_id && !validUuid(mention_user_id)) return json({ error: "mention_user_id غير صالح" }, 400);
