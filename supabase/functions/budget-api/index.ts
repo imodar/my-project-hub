@@ -46,9 +46,16 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-budgets") {
       const { family_id, type } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (type && !ALLOWED_TYPES.includes(type)) return json({ error: "نوع غير صالح" }, 400);
       let query = supabase.from("budgets").select("*, budget_expenses(*)").eq("family_id", family_id).order("created_at", { ascending: false });
       if (type) query = query.eq("type", type);
@@ -60,6 +67,7 @@ Deno.serve(async (req) => {
     if (action === "create-budget") {
       const { family_id, type, month, label, income, trip_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (type && !ALLOWED_TYPES.includes(type)) return json({ error: "نوع غير صالح" }, 400);
       if (label && !validStr(label, MAX_LABEL)) return json({ error: "العنوان طويل جداً (حد أقصى 100)" }, 400);
       if (income !== undefined && income !== null && (typeof income !== "number" || income < 0 || income > MAX_AMOUNT)) return json({ error: "الدخل غير صالح" }, 400);
