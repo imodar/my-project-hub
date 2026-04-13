@@ -119,6 +119,7 @@ Deno.serve(async (req) => {
     if (action === "get-children") {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       const { data, error } = await supabase.from("vaccination_children").select("*, vaccine_notes(*)").eq("family_id", family_id).order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
       return json({ data });
@@ -127,6 +128,7 @@ Deno.serve(async (req) => {
     if (action === "add-child") {
       const { family_id, name, gender, birth_date } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب (حد أقصى 200)" }, 400);
       if (gender && !ALLOWED_GENDERS.includes(gender)) return json({ error: "الجنس غير صالح" }, 400);
       const { data, error } = await supabase.from("vaccination_children").insert({ family_id, name: sanitize(name, MAX_NAME), gender, birth_date }).select().single();
