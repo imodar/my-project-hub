@@ -12,6 +12,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/AuthGuard";
 import ScrollToTop from "@/components/ScrollToTop";
 import OfflineBanner from "@/components/OfflineBanner";
+import { ListPageSkeleton } from "@/components/PageSkeletons";
 
 import FirstSyncOverlay from "@/components/FirstSyncOverlay";
 import PageTransition from "@/components/PageTransition";
@@ -331,7 +332,7 @@ const App = () => (
                     <StorageQuotaGuard />
                     <ScrollToTop />
                     <WarmCacheProvider>
-                      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                      <Suspense fallback={<ListPageSkeleton />}>
                         <AnimatedRoutes />
                       </Suspense>
                       <BottomNav />
