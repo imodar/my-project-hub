@@ -36,9 +36,17 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    // التحقق من عضوية العائلة
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-lists") {
       const { family_id, since } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (since && typeof since !== "string") return json({ error: "since غير صالح" }, 400);
       let query = supabase.from("market_lists").select("*, market_items(*)").eq("family_id", family_id).order("updated_at", { ascending: false });
       if (since) query = query.gt("updated_at", since);
@@ -50,6 +58,7 @@ Deno.serve(async (req) => {
     if (action === "create-list") {
       const { family_id, name, type, use_categories, id: clientId } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب (حد أقصى 100)" }, 400);
       const listType = type || "family";
       if (!ALLOWED_TYPES.includes(listType)) return json({ error: "نوع غير صالح" }, 400);
