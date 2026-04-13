@@ -150,6 +150,38 @@ let documentsUiDraft: DocumentsUiDraft = {
   uploadOverlay: null,
 };
 
+/* ── Lazy-loading image for document cards ── */
+const LazyDocImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return (
+      <div className={`flex items-center justify-center bg-muted ${className}`}>
+        <Image size={32} className="text-muted-foreground opacity-40" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative ${className}`}>
+      {!loaded && (
+        <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
+          <Loader2 size={24} className="text-muted-foreground animate-spin" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
+      />
+    </div>
+  );
+};
+
 const Documents = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
@@ -1277,7 +1309,7 @@ const Documents = () => {
               <Button
                 variant="outline"
                 className="flex-1 rounded-xl text-destructive border-destructive/30 hover:bg-destructive/10"
-                onClick={() => { setDeleteTarget(fullPreviewDoc); setFullPreviewDocId(null); }}
+                onClick={() => { setDeleteTarget(fullPreviewDoc); }}
               >
                 <Trash2 size={14} className="ml-1" />
                 حذف
