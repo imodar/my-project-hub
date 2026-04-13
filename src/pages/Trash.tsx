@@ -32,16 +32,22 @@ const Trash = () => {
   const navigate = useNavigate();
   const { trashItems, restoreItem, permanentlyDelete } = useTrash();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleRestore = async (item: TrashItem) => {
     await restoreItem(item.id);
   };
 
-  const handlePermanentDelete = () => {
+  const handlePermanentDelete = async () => {
     if (deleteConfirm) {
-      permanentlyDelete(deleteConfirm);
-      setDeleteConfirm(null);
-      appToast.success("تم الحذف نهائياً");
+      setIsDeleting(true);
+      try {
+        await permanentlyDelete(deleteConfirm);
+        appToast.success("تم الحذف نهائياً");
+        setDeleteConfirm(null);
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
