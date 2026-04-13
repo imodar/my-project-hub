@@ -3,10 +3,12 @@
  *
  * مسؤول عن جلب البيانات من API وتحديث IndexedDB المحلية.
  * يدعم Delta Sync عبر تمرير آخر timestamp مزامنة.
+ * يدعم اكتشاف التعارضات عبر isConflicting().
  */
 import { db } from "./db";
 import type { Table } from "dexie";
 import { projectPendingChanges } from "./syncQueue";
+import { isConflicting, saveConflict, type RecordWithTimestamp } from "./conflictResolver";
 
 /* ────────────────────────────────────────────
  *  مزامنة جدول واحد
@@ -14,14 +16,8 @@ import { projectPendingChanges } from "./syncQueue";
 
 /**
  * تجلب البيانات من API وتُحدّث الجدول المحلي في IndexedDB.
- *
- * @param tableName - اسم الجدول في Dexie
- * @param apiFn - دالة تجلب البيانات من الـ API (تستقبل اختيارياً lastSyncedAt)
- * @param postFilter - فلتر اختياري يُطبّق على البيانات المحلية بعد المزامنة (مثل فلترة family_id)
- * @param scopeKey - مفتاح نطاق اختياري (مثل familyId) لعزل sync_meta بين العائلات
- * @returns البيانات المُحدّثة بعد إسقاط العمليات المحلية غير المتزامنة فوقها
  */
-export async function syncTable<T extends { id: string; created_at?: string }>(
+export async function syncTable<T extends { id: string; created_at?: string; updated_at?: string }>(
   tableName: string,
   apiFn: (lastSyncedAt: string | null) => Promise<{ data: T[] | null; error: string | null }>,
   postFilter?: (items: T[]) => T[],
@@ -45,27 +41,58 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
     return projectPendingChanges(tableName, filtered);
   }
 
-  // Delta sync (since was provided): only upsert new/updated records, don't delete old ones
-  // Full sync (no since): replace all — remove stale local records not in API response
-  if (lastSyncedAt && data.length >= 0) {
-    // Delta: just upsert returned records
-    if (data.length > 0) {
+  try {
+    // Delta sync (since was provided): check for conflicts before upserting
+    if (lastSyncedAt && data.length >= 0) {
+      if (data.length > 0) {
+        const nonConflicting: T[] = [];
+
+        for (const serverRecord of data) {
+          const localRecord = await table.get(serverRecord.id) as T | undefined;
+
+          if (localRecord && isConflicting(
+            localRecord as unknown as RecordWithTimestamp,
+            serverRecord as unknown as RecordWithTimestamp,
+            lastSyncedAt
+          )) {
+            // تعارض — حفظه بدلاً من الكتابة فوقه
+            await saveConflict(
+              tableName,
+              localRecord as unknown as RecordWithTimestamp,
+              serverRecord as unknown as RecordWithTimestamp
+            );
+          } else {
+            nonConflicting.push(serverRecord);
+          }
+        }
+
+        if (nonConflicting.length > 0) {
+          await table.bulkPut(nonConflicting);
+        }
+      }
+    } else {
+      // Full sync: remove stale records then upsert
+      const apiIds = new Set(data.map((item) => item.id));
+      const localItems: T[] = await table.toArray();
+      const staleIds = localItems
+        .filter((item) => !apiIds.has(item.id))
+        .map((item) => item.id);
+      if (staleIds.length > 0) {
+        await table.bulkDelete(staleIds);
+      }
       await table.bulkPut(data);
     }
-  } else {
-    // Full sync: remove stale records then upsert
-    const apiIds = new Set(data.map((item) => item.id));
-    const localItems: T[] = await table.toArray();
-    const staleIds = localItems
-      .filter((item) => !apiIds.has(item.id))
-      .map((item) => item.id);
-    if (staleIds.length > 0) {
-      await table.bulkDelete(staleIds);
+  } catch (err: unknown) {
+    // معالجة خطأ تجاوز حصة التخزين
+    if (err instanceof DOMException && err.name === "QuotaExceededError") {
+      console.error(`[SyncManager] ⚠️ مساحة التخزين ممتلئة أثناء مزامنة "${tableName}"`);
+      window.dispatchEvent(new CustomEvent("storage-quota-exceeded", { detail: { table: tableName } }));
+    } else {
+      throw err;
     }
-    await table.bulkPut(data);
   }
 
-  // تحديث وقت المزامنة — بالمفتاح المُقيّد بالنطاق
+  // تحديث وقت المزامنة
   await db.sync_meta.put({
     table: metaKey,
     last_synced_at: new Date().toISOString(),
@@ -74,7 +101,6 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
   // After sync, return ALL local data filtered by scope
   const allLocal: T[] = await table.toArray();
   const filtered = postFilter ? postFilter(allLocal) : allLocal;
-  // projectPendingChanges يستخدم tableName الأصلي (بدون scope)
   const projectedData = await projectPendingChanges(tableName, filtered);
   console.info(
     `[SyncManager] ✅ تمت مزامنة "${tableName}" — API: ${data.length}، محلي: ${filtered.length}${lastSyncedAt ? " (delta)" : " (full)"}`
@@ -86,15 +112,11 @@ export async function syncTable<T extends { id: string; created_at?: string }>(
  *  مزامنة جميع الجداول
  * ──────────────────────────────────────────── */
 
-/** خريطة الجداول مع دوال الجلب — تُملأ عند ربط الشاشات */
 type SyncAllMap = Record<
   string,
   (lastSyncedAt: string | null) => Promise<{ data: unknown[] | null; error: string | null }>
 >;
 
-/**
- * تُزامن جميع الجداول المُسجّلة دفعة واحدة.
- */
 export async function syncAll(tableMap: SyncAllMap): Promise<void> {
   const entries = Object.entries(tableMap);
   console.info(`[SyncManager] بدء مزامنة شاملة — ${entries.length} جدول...`);
@@ -113,12 +135,6 @@ export async function syncAll(tableMap: SyncAllMap): Promise<void> {
  *  قراءة آخر وقت مزامنة
  * ──────────────────────────────────────────── */
 
-/**
- * تُرجع آخر وقت مزامنة ناجحة لجدول معيّن.
- *
- * @param metaKey - مفتاح الجدول (قد يتضمن scopeKey مثل "medications:abc123")
- * @returns ISO string أو null إذا لم يُزامن من قبل
- */
 export async function getLastSyncTime(metaKey: string): Promise<string | null> {
   const meta = await db.sync_meta.get(metaKey);
   return meta?.last_synced_at ?? null;

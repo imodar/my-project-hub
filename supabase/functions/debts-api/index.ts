@@ -38,6 +38,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-debts") {
       const { data, error } = await supabase.from("debts").select("*, debt_payments(*), debt_postponements(*)").eq("user_id", userId).order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
@@ -47,6 +53,7 @@ Deno.serve(async (req) => {
     if (action === "create-debt") {
       const { family_id, direction, person_name, amount, currency, date, due_date, note, payment_details, has_reminder } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!ALLOWED_DIRECTIONS.includes(direction)) return json({ error: "اتجاه الدين غير صالح" }, 400);
       if (!validStr(person_name, MAX_NAME)) return json({ error: "اسم الشخص مطلوب (حد أقصى 100)" }, 400);
       if (!validAmount(amount)) return json({ error: "المبلغ غير صالح (1 - 10,000,000)" }, 400);

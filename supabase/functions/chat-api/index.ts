@@ -34,9 +34,17 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    // التحقق من عضوية العائلة
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-chat-members") {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       const { data: members } = await supabase.from("family_members").select("user_id").eq("family_id", family_id).eq("status", "active");
       if (!members?.length) return json({ data: [] });
       const ids = members.map((m: any) => m.user_id);
@@ -47,6 +55,7 @@ Deno.serve(async (req) => {
     if (action === "get-family-key") {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       const { data } = await supabase.from("family_keys").select("encrypted_key").eq("family_id", family_id).eq("user_id", userId).maybeSingle();
       return json({ data });
     }
@@ -54,6 +63,7 @@ Deno.serve(async (req) => {
     if (action === "get-any-family-key") {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       const { data } = await supabase.from("family_keys").select("encrypted_key").eq("family_id", family_id).limit(1).maybeSingle();
       return json({ data });
     }
@@ -61,6 +71,7 @@ Deno.serve(async (req) => {
     if (action === "upsert-family-key") {
       const { family_id, encrypted_key } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(encrypted_key, MAX_KEY)) return json({ error: "encrypted_key مطلوب" }, 400);
       const { data, error } = await supabase.from("family_keys").upsert({ family_id, user_id: userId, encrypted_key: encrypted_key.slice(0, MAX_KEY) }, { onConflict: "family_id,user_id" }).select().single();
       if (error) return json({ error: error.message }, 400);
@@ -70,6 +81,7 @@ Deno.serve(async (req) => {
     if (action === "get-messages") {
       const { family_id, limit: msgLimit, before, since } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (before && typeof before !== "string") return json({ error: "before غير صالح" }, 400);
       if (since && typeof since !== "string") return json({ error: "since غير صالح" }, 400);
       const safeLimit = Math.min(Math.max(Number(msgLimit) || 50, 1), 200);
@@ -93,6 +105,7 @@ Deno.serve(async (req) => {
     if (action === "send-message") {
       const { family_id, encrypted_text, iv, mention_user_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(encrypted_text, MAX_TEXT)) return json({ error: "الرسالة مطلوبة (حد أقصى 5000)" }, 400);
       if (iv && typeof iv !== "string") return json({ error: "iv غير صالح" }, 400);
       if (mention_user_id && !validUuid(mention_user_id)) return json({ error: "mention_user_id غير صالح" }, 400);

@@ -16,7 +16,7 @@
 
   # سياسة الأمان للمحتوى (CSP)
   # TODO: شدّد هذه القيم حسب الـ domains المستخدمة فعلياً
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.aladhan.com https://api.open-meteo.com https://o*.ingest.sentry.io; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.aladhan.com https://api.open-meteo.com https://o*.ingest.sentry.io; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 
   # Permissions Policy — تقييد الوصول للـ APIs الحساسة
   Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()

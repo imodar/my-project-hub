@@ -36,9 +36,16 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-vehicles") {
       const { family_id } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       const { data, error } = await supabase.from("vehicles" as any).select("*, vehicle_maintenance(*)").eq("family_id", family_id).order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 400);
       return json({ data });
@@ -47,6 +54,7 @@ Deno.serve(async (req) => {
     if (action === "create-vehicle") {
       const { family_id, manufacturer, model, year, mileage, mileage_unit, color, plate_number } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (manufacturer && typeof manufacturer === "string" && manufacturer.length > MAX_NAME) return json({ error: "الشركة المصنعة طويلة جداً" }, 400);
       if (model && typeof model === "string" && model.length > MAX_NAME) return json({ error: "الموديل طويل جداً" }, 400);
       if (year !== undefined && year !== null && (typeof year !== "number" || year < 1900 || year > 2100)) return json({ error: "السنة غير صالحة" }, 400);

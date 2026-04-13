@@ -35,9 +35,16 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-events") {
       const { family_id, month, limit: reqLimit, offset } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (month && (typeof month !== "string" || !/^\d{4}-\d{2}$/.test(month))) return json({ error: "صيغة الشهر غير صالحة (YYYY-MM)" }, 400);
       const safeLimit = Math.min(Math.max(Number(reqLimit) || 200, 1), 500);
       const safeOffset = Math.max(Number(offset) || 0, 0);
@@ -51,6 +58,7 @@ Deno.serve(async (req) => {
     if (action === "create-event") {
       const { family_id, title, date, icon, reminder_before } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(title, MAX_TITLE)) return json({ error: "العنوان مطلوب (حد أقصى 200 حرف)" }, 400);
       if (!date || !DATE_RE.test(date)) return json({ error: "التاريخ مطلوب (YYYY-MM-DD)" }, 400);
       if (icon && !validStr(icon, MAX_ICON)) return json({ error: "الأيقونة طويلة جداً" }, 400);

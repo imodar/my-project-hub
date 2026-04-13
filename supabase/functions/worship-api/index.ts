@@ -36,6 +36,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    async function verifyFamily(fid: string): Promise<Response | null> {
+      const { data } = await adminClient.from("family_members").select("id").eq("user_id", userId).eq("family_id", fid).eq("status", "active").limit(1).maybeSingle();
+      if (!data) return json({ error: "ليس لديك صلاحية الوصول لهذه العائلة" }, 403);
+      return null;
+    }
+
     if (action === "get-prayer-logs") {
       const { child_id, date } = body;
       if (!validUuid(child_id)) return json({ error: "child_id غير صالح" }, 400);
@@ -148,6 +154,7 @@ Deno.serve(async (req) => {
     if (action === "get-children") {
       const familyId = body.family_id;
       if (!validUuid(familyId)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(familyId); if (denied) return denied;
       const { data, error } = await supabase.from("worship_children").select("*").eq("family_id", familyId).order("created_at", { ascending: true });
       if (error) return json({ error: error.message }, 400);
       return json({ data });
@@ -156,6 +163,7 @@ Deno.serve(async (req) => {
     if (action === "add-child") {
       const { family_id, name } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(name, 100)) return json({ error: "اسم الطفل غير صالح" }, 400);
       const { data, error } = await supabase.from("worship_children").insert({ family_id, name: sanitize(name, 100), created_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);

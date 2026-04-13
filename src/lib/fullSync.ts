@@ -40,6 +40,22 @@ const fetchWithTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
   ]);
 
+/**
+ * كتابة آمنة تتعامل مع QuotaExceededError
+ */
+async function safeBulkPut(table: any, items: any[], tableName: string): Promise<void> {
+  try {
+    await table.bulkPut(items);
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "QuotaExceededError") {
+      console.error(`[FullSync] ⚠️ مساحة التخزين ممتلئة أثناء كتابة "${tableName}"`);
+      window.dispatchEvent(new CustomEvent("storage-quota-exceeded", { detail: { table: tableName } }));
+    } else {
+      throw err;
+    }
+  }
+}
+
 export async function fullSync(
   familyId: string,
   onProgress: (p: SyncProgress) => void
@@ -65,7 +81,7 @@ export async function fullSync(
           const items = response?.data || [];
           if (items.length > 0) {
             const table = (db as any)[step.table];
-            if (table) await table.bulkPut(items);
+            if (table) await safeBulkPut(table, items, step.table);
 
             if (step.childTables && step.childTables.length > 0) {
               await persistChildTables(items, step.childTables);
