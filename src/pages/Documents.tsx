@@ -876,14 +876,6 @@ const Documents = () => {
             const CatIcon = catInfo.icon;
             return (
               <div key={category} className="space-y-2">
-                {/* Category header */}
-                <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${catInfo.bg}`}>
-                    <CatIcon size={14} className={catInfo.color} />
-                  </div>
-                  <span className="text-sm font-bold text-foreground">{catInfo.label}</span>
-                  <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{items.length}</span>
-                </div>
 
                 {/* Overlapping vertical card stack */}
                 <div className="relative" style={{ height: `${items.length * 48 + 120}px` }}>
