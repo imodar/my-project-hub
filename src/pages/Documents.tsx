@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Share } from "@capacitor/share";
 import Cropper, { Area } from "react-easy-crop";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -1201,15 +1203,35 @@ const Documents = () => {
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                {navigator.share && mainFile && (
+                {mainFile && (
                   <button
                     onClick={async () => {
                       haptic.light();
                       try {
-                        const response = await fetch(mainFile.url);
-                        const blob = await response.blob();
-                        const shareFile = new globalThis.File([blob], mainFile.name, { type: blob.type });
-                        await navigator.share({ title: fullPreviewDoc.name, files: [shareFile] });
+                        if (Capacitor.isNativePlatform()) {
+                          // Native: use Capacitor Share plugin
+                          const response = await fetch(mainFile.url);
+                          const blob = await response.blob();
+                          // Convert blob to base64 data URL for Capacitor
+                          const reader = new FileReader();
+                          const dataUrl = await new Promise<string>((resolve) => {
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.readAsDataURL(blob);
+                          });
+                          await Share.share({
+                            title: fullPreviewDoc.name,
+                            url: dataUrl,
+                            dialogTitle: fullPreviewDoc.name,
+                          });
+                        } else if (navigator.share) {
+                          // Web: use Web Share API
+                          const response = await fetch(mainFile.url);
+                          const blob = await response.blob();
+                          const shareFile = new globalThis.File([blob], mainFile.name, { type: blob.type });
+                          await navigator.share({ title: fullPreviewDoc.name, files: [shareFile] });
+                        } else {
+                          window.open(mainFile.url, "_blank");
+                        }
                       } catch {
                         if (mainFile.url) window.open(mainFile.url, "_blank");
                       }
