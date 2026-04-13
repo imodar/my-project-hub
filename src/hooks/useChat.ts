@@ -61,6 +61,12 @@ async function trimChatMessages(familyId: string) {
   }
 }
 
+export interface ChatInitProgress {
+  stage: "loading_keys" | "init_encryption" | "loading_messages" | "ready";
+  percent: number;
+  label: string;
+}
+
 export function useChat() {
   const { user } = useAuth();
   const { familyId } = useFamilyId();
@@ -72,6 +78,11 @@ export function useChat() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const subscriptionRef = useRef<any>(null);
+  const [initProgress, setInitProgress] = useState<ChatInitProgress>({
+    stage: "loading_keys",
+    percent: 0,
+    label: "تحميل مفاتيح التشفير...",
+  });
 
   // ─── 0. Load cached messages from IndexedDB instantly ───
   useEffect(() => {
@@ -115,23 +126,25 @@ export function useChat() {
     initKeys();
     async function initKeys() {
       try {
+        setInitProgress({ stage: "loading_keys", percent: 10, label: "تحميل مفاتيح التشفير..." });
         let fKey = await loadFamilyKeyLocally(familyId!);
         if (fKey) {
           setFamilyKey(fKey);
+          setInitProgress({ stage: "ready", percent: 100, label: "جاهز" });
           setIsReady(true);
           return;
         }
 
+        setInitProgress({ stage: "init_encryption", percent: 30, label: "تهيئة التشفير..." });
         let privateKey = await loadPrivateKeyLocally(user!.id);
         if (!privateKey) {
           const pair = await generateKeyPair();
           privateKey = pair.privateKey;
           await savePrivateKeyLocally(user!.id, privateKey);
-          // Public key exported for potential future use (key exchange)
           await exportPublicKey(pair.publicKey);
         }
 
-        // Get existing key via chat-api
+        setInitProgress({ stage: "init_encryption", percent: 50, label: "جلب مفاتيح العائلة..." });
         const { data: existingKeyData } = await supabase.functions.invoke("chat-api", {
           body: { action: "get-family-key", family_id: familyId },
         });
@@ -139,7 +152,6 @@ export function useChat() {
         if (existingKeyData?.data?.encrypted_key) {
           fKey = await importAESKey(existingKeyData.data.encrypted_key);
         } else {
-          // Try getting any family key
           const { data: anyKeyData } = await supabase.functions.invoke("chat-api", {
             body: { action: "get-any-family-key", family_id: familyId },
           });
@@ -150,20 +162,22 @@ export function useChat() {
             fKey = await generateFamilyKey();
           }
 
-          // Upsert the key
           const rawKey = await exportAESKey(fKey);
           await supabase.functions.invoke("chat-api", {
             body: { action: "upsert-family-key", family_id: familyId, encrypted_key: rawKey },
           });
         }
 
+        setInitProgress({ stage: "init_encryption", percent: 80, label: "حفظ المفاتيح..." });
         if (fKey) {
           await saveFamilyKeyLocally(familyId!, fKey);
           setFamilyKey(fKey);
         }
+        setInitProgress({ stage: "ready", percent: 100, label: "جاهز" });
         setIsReady(true);
       } catch (err) {
         console.error("E2EE init error:", err);
+        setInitProgress({ stage: "ready", percent: 100, label: "جاهز" });
         setIsReady(true);
       }
     }
