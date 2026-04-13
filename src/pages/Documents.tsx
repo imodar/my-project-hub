@@ -150,12 +150,12 @@ let documentsUiDraft: DocumentsUiDraft = {
   uploadOverlay: null,
 };
 
-/* ── Lazy-loading image for document cards ── */
+/* ── Lazy-loading image for document cards (local-first via useMediaUrl) ── */
 const LazyDocImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+  const { url: localUrl, status } = useMediaUrl(src, { bucket: "documents" });
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
 
-  if (error) {
+  if (status === "error") {
     return (
       <div className={`flex items-center justify-center bg-muted ${className}`}>
         <Image size={32} className="text-muted-foreground opacity-40" />
@@ -163,21 +163,25 @@ const LazyDocImage = ({ src, alt, className }: { src: string; alt: string; class
     );
   }
 
+  const displayUrl = localUrl || src;
+
   return (
     <div className={`relative ${className}`}>
-      {!loaded && (
+      {(!loaded || status === "loading") && (
         <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
           <Loader2 size={24} className="text-muted-foreground animate-spin" />
         </div>
       )}
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
-        onLoad={() => setLoaded(true)}
-        onError={() => setError(true)}
-      />
+      {displayUrl && (
+        <img
+          src={displayUrl}
+          alt={alt}
+          loading="lazy"
+          className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+          onLoad={() => setLoaded(true)}
+          onError={() => setLoaded(false)}
+        />
+      )}
     </div>
   );
 };
