@@ -154,6 +154,7 @@ Deno.serve(async (req) => {
     if (action === "get-children") {
       const familyId = body.family_id;
       if (!validUuid(familyId)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(familyId); if (denied) return denied;
       const { data, error } = await supabase.from("worship_children").select("*").eq("family_id", familyId).order("created_at", { ascending: true });
       if (error) return json({ error: error.message }, 400);
       return json({ data });
@@ -162,6 +163,7 @@ Deno.serve(async (req) => {
     if (action === "add-child") {
       const { family_id, name } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
+      const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(name, 100)) return json({ error: "اسم الطفل غير صالح" }, 400);
       const { data, error } = await supabase.from("worship_children").insert({ family_id, name: sanitize(name, 100), created_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
