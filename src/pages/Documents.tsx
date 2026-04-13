@@ -620,7 +620,7 @@ const Documents = () => {
     setUploadOverlay(null);
     setIsSaving(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [uploadOverlay, overlayName, overlayCategory, overlayNote, overlayExpiryDate, overlayReminderEnabled, addDocItemMut, addDocFileMut]);
+  }, [uploadOverlay, isSaving, overlayName, overlayCategory, overlayNote, overlayExpiryDate, overlayReminderEnabled, addDocItemMut, addDocFileMut]);
 
   /* ── Cancel: delete uploaded file from storage ── */
   const cancelUpload = useCallback(async () => {
