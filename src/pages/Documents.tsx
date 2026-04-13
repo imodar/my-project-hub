@@ -402,8 +402,9 @@ const Documents = () => {
     if (!deleteTarget) return;
     haptic.medium();
     deleteDocItemMut.mutate(deleteTarget.id, activeListId);
+    if (fullPreviewDocId === deleteTarget.id) setFullPreviewDocId(null);
     setDeleteTarget(null);
-  }, [deleteTarget, deleteDocItemMut, activeListId]);
+  }, [deleteTarget, deleteDocItemMut, activeListId, fullPreviewDocId]);
 
   const openEdit = useCallback((item: DocumentItem) => {
     setEditTarget(item);
