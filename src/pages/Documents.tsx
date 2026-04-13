@@ -959,7 +959,7 @@ const Documents = () => {
                 هل أنت متأكد من حذف "{activeList?.name}"؟ سيتم حذف جميع الوثائق داخلها.
               </DrawerDescription>
             </DrawerHeader>
-            <DrawerFooter className="flex-row gap-2">
+            <DrawerFooter className="flex-row gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
               <Button
                 variant="destructive"
                 className="flex-1"
