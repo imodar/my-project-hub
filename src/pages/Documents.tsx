@@ -308,6 +308,8 @@ const Documents = () => {
   const [cropZoom, setCropZoom] = useState(1);
   const [cropRotation, setCropRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -540,6 +542,7 @@ const Documents = () => {
   /* ── Confirm crop → proceed to upload ── */
   const confirmCrop = useCallback(async () => {
     if (!uploadOverlay || !uploadOverlay.previewUrl || !croppedAreaPixels) return;
+    setIsCropping(true);
     try {
       const croppedFile = await getCroppedImg(uploadOverlay.previewUrl, croppedAreaPixels, cropRotation);
       const newPreview = URL.createObjectURL(croppedFile);
@@ -548,12 +551,15 @@ const Documents = () => {
     } catch (err) {
       console.error("[Documents] Crop error:", err);
       appToast.error("حدث خطأ أثناء قص الصورة");
+    } finally {
+      setIsCropping(false);
     }
   }, [uploadOverlay, croppedAreaPixels, cropRotation, startUpload]);
 
   /* ── Confirm: save file to DB ── */
   const confirmUpload = useCallback(async () => {
-    if (!uploadOverlay) return;
+    if (!uploadOverlay || isSaving) return;
+    setIsSaving(true);
 
     // If attaching to an existing document, no list needed
     const currentListId = activeListIdRef.current;
@@ -612,8 +618,9 @@ const Documents = () => {
 
     if (uploadOverlay.previewUrl) URL.revokeObjectURL(uploadOverlay.previewUrl);
     setUploadOverlay(null);
+    setIsSaving(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [uploadOverlay, overlayName, overlayCategory, overlayNote, overlayExpiryDate, overlayReminderEnabled, addDocItemMut, addDocFileMut]);
+  }, [uploadOverlay, isSaving, overlayName, overlayCategory, overlayNote, overlayExpiryDate, overlayReminderEnabled, addDocItemMut, addDocFileMut]);
 
   /* ── Cancel: delete uploaded file from storage ── */
   const cancelUpload = useCallback(async () => {
@@ -1329,17 +1336,16 @@ const Documents = () => {
                 </div>
               </div>
               <div className="flex flex-row gap-2 border-t border-border px-4 pt-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
-                <Button onClick={confirmCrop} className="flex-1 rounded-xl">
-                  <Check size={16} className="ml-1" />
-                  تأكيد القص
+                <Button onClick={confirmCrop} disabled={isCropping} className="flex-1 rounded-xl">
+                  {isCropping ? <Loader2 size={16} className="ml-1 animate-spin" /> : <Check size={16} className="ml-1" />}
+                  {isCropping ? "جاري القص..." : "تأكيد القص"}
                 </Button>
-                <Button variant="outline" onClick={() => {
-                  // Skip crop, upload original
+                <Button variant="outline" disabled={isCropping} onClick={() => {
                   startUpload(uploadOverlay.file, { ...uploadOverlay });
                 }} className="flex-1 rounded-xl">
                   تخطي
                 </Button>
-                <Button variant="ghost" onClick={cancelUpload} className="rounded-xl px-3">
+                <Button variant="ghost" disabled={isCropping} onClick={cancelUpload} className="rounded-xl px-3">
                   <X size={16} className="text-muted-foreground" />
                 </Button>
               </div>
@@ -1436,11 +1442,11 @@ const Documents = () => {
           {/* Bottom action buttons */}
           {uploadOverlay.phase === "form" && (
             <div className="flex flex-row gap-2 border-t border-border px-4 pt-4" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
-              <Button onClick={confirmUpload} className="flex-1 rounded-xl">
-                <Upload size={16} className="ml-1" />
-                {uploadOverlay.attachToDocumentId ? "إرفاق" : "إضافة للوثائق"}
+              <Button onClick={confirmUpload} disabled={isSaving} className="flex-1 rounded-xl">
+                {isSaving ? <Loader2 size={16} className="ml-1 animate-spin" /> : <Upload size={16} className="ml-1" />}
+                {isSaving ? "جاري الحفظ..." : (uploadOverlay.attachToDocumentId ? "إرفاق" : "إضافة للوثائق")}
               </Button>
-              <Button variant="outline" onClick={cancelUpload} className="flex-1 rounded-xl">
+              <Button variant="outline" onClick={cancelUpload} disabled={isSaving} className="flex-1 rounded-xl">
                 إلغاء
               </Button>
             </div>
