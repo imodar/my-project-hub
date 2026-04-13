@@ -1,99 +1,120 @@
 
 
-# خطة شاملة لإصلاح 13 مشكلة
+# خطة معالجة التقرير الأمني والمعماري
 
-## الملفات المتأثرة
-- `index.html` — إضافة لون خلفية أولي لمنع الشاشة البيضاء
-- `src/pages/Auth.tsx` — كيبورد أرقام للهاتف و OTP
-- `src/pages/Documents.tsx` — حذف البحث، نقل 3 نقاط، حذف بار الإحصائيات، فتح على أول كاتيغوري
-- `src/pages/Chat.tsx` — progress bar للتشفير، مسافة أمان لآخر رسالة
-- `src/hooks/useChat.ts` — تحسين مراحل تحميل التشفير
-- `src/pages/Map.tsx` — حجب الصفحة بطلب تفعيل اللوكيشن
-- `src/pages/Medications.tsx` + `src/hooks/useMedications.ts` — مراجعة منطق الأوفلاين
-- `src/pages/FamilyManagement.tsx` + `src/hooks/useFamilyMembers.ts` — عدم عرض بيانات حتى التحقق من السيرفر
-- `src/components/PermissionsScreen.tsx` (جديد) — شاشة طلب صلاحيات بعد المزامنة الأولى
-- `src/App.tsx` — إضافة مسار شاشة الصلاحيات
+## ملخص التحقق
+
+راجعت الكود وتحققت من النقاط الرئيسية. معظم الملاحظات صحيحة. سأرتب الخطة حسب الأولوية والتأثير الفعلي.
 
 ---
 
-### 1. الشاشة البيضاء عند فتح التطبيق
-**ملف:** `index.html`
-- إضافة `style="background-color: hsl(222.2, 84%, 4.9%)"` على `<body>` (لون الـ dark theme)
-- إضافة inline CSS في `<div id="root">` بنفس اللون
+## المرحلة 1: إصلاحات أمنية حرجة (P0)
 
-### 2. كيبورد أرقام في شاشة الهاتف
-**ملف:** `src/pages/Auth.tsx`
-- Input الهاتف (سطر ~226-238): إضافة `pattern="[0-9]*"` مع الحفاظ على `inputMode="numeric"` و `type="tel"`
+### 1. إضافة `.env` إلى `.gitignore`
+- الملف `.gitignore` لا يحتوي على `.env` فعلاً
+- سنضيف `.env` و `.env.*` للملف
 
-### 3. كيبورد أرقام في شاشة OTP
-**ملف:** `src/pages/Auth.tsx`
-- InputOTP (سطر ~324): التأكد من وجود `inputMode="numeric"` — موجود بالفعل، لكن يجب إضافة `pattern="[0-9]*"` على كل slot إذا أمكن أو على InputOTP wrapper
+### 2. مفتاح Supabase مكتوب مباشرة في `client.ts`
+- **ملاحظة**: هذا الملف يُولّد تلقائياً من Lovable ولا يمكن تعديله يدوياً. المفتاح المجهول (anon key) مصمم ليكون عاماً أصلاً — الحماية تأتي من RLS. **لن نعدل هذا.**
 
-### 4. فتح الوثائق على أول كاتيغوري (هوية)
-**ملف:** `src/pages/Documents.tsx`
-- تغيير `activeCategory` initial state من `null` إلى `"identity"`
+### 3. التشفير ليس E2EE حقيقي
+- **مؤكد**: `useChat.ts` سطر 165-168 يرسل مفتاح AES الخام للسيرفر عبر `exportAESKey()` ثم `upsert-family-key`
+- وظائف `wrapFamilyKey()` / `unwrapFamilyKey()` موجودة في `crypto.ts` لكنها لا تُستخدم أبداً
+- **الحل**: تطبيق لف ECDH الصحيح — كل عضو يحصل على نسخة ملفوفة بمفتاحه العام
+- **ملاحظة**: هذا تغيير معقد يؤثر على `useChat.ts` و `chat-api` Edge Function وقد يكسر التوافقية مع المحادثات الحالية. **يحتاج تخطيط منفصل.**
 
-### 5. حذف بار البحث
-**ملف:** `src/pages/Documents.tsx`
-- حذف الكود بين سطر ~840-851 (البحث)
-- إبقاء `searchQuery` كـ `""` دائماً أو حذف المتغير
+### 4. فحص عضوية العائلة مفقود في Edge Functions
+- إضافة `verifyFamilyMember()` لكل Edge Function تقبل `family_id` (مثل `market-api`, `chat-api`, `budget-api`, إلخ)
+- نسخ نفس النمط المستخدم في `tasks-api`
 
-### 6. نقل زر 3 نقاط إلى الهيدر
-**ملف:** `src/pages/Documents.tsx`
-- إضافة أيقونة `MoreVertical` كـ action ثاني في `PageHeader.actions[]` بجانب زر `+`
-- الزر يفتح `setShowListActions(true)` (نفس الوظيفة الحالية)
+### 5. CSP: إزالة `unsafe-eval`
+- تعديل `public/_headers` سطر 19
+- إزالة `unsafe-eval` من `script-src` (Vite production لا يحتاجه)
+- إبقاء `unsafe-inline` للأنماط فقط
 
-### 7. حذف بار الإحصائيات
-**ملف:** `src/pages/Documents.tsx`
-- حذف الكود بين سطر ~796-816 (Stats bar مع عدد المستندات و MoreVertical)
+### 6. `verify_jwt = false` على جميع الدوال
+- **ملاحظة مهمة**: هذا مقصود في مشاريع Lovable بسبب نظام signing-keys. الدوال تتحقق يدوياً عبر `getUser()`. **لن نعدل هذا** — هو نمط معتمد.
 
-### 8. شاشة طلب الصلاحيات بعد المزامنة الأولى
-**ملف جديد:** `src/components/PermissionsScreen.tsx`
-- شاشة جميلة تطلب إذن الإشعارات (`Notification.requestPermission()`) والموقع (`Geolocation`)
-- تظهر مرة واحدة بعد `first_sync_done` وقبل الدخول للتطبيق
-- تُخزن `permissions_requested` في `localStorage`
-
-**ملف:** `src/App.tsx`
-- إضافة route `/permissions` بعد `first_sync_done`
-- في `FirstSyncOverlay.onInitialSyncReady`: التحقق من `permissions_requested` وتوجيه المستخدم
-
-### 9. حجب شاشة الخريطة بدون إذن اللوكيشن
-**ملف:** `src/pages/Map.tsx`
-- إضافة فحص `navigator.permissions.query({ name: "geolocation" })` عند فتح الصفحة
-- إذا كان الإذن `denied` أو `prompt`: عرض overlay مهذب يطلب التفعيل
-- على Capacitor: محاولة استدعاء `Geolocation.requestPermissions()` مباشرة
-
-### 10. Progress bar بدل "تجهيز التشفير"
-**ملف:** `src/pages/Chat.tsx` + `src/hooks/useChat.ts`
-- إضافة state للـ progress في `useChat`: مراحل (تحميل مفاتيح → تهيئة تشفير → جلب رسائل)
-- عرض `Progress` component بدل النص الثابت مع وصف المرحلة الحالية
-- عرض الرسائل المخبأة فوراً (موجود) مع progress للجلب من السيرفر
-
-### 11. مسافة أمان بين آخر رسالة وبوكس الكتابة
-**ملف:** `src/pages/Chat.tsx`
-- تغيير `pb-28` في div الرسائل (سطر ~412) إلى `pb-40` أو أكثر لضمان مسافة كافية
-
-### 12. مشكلة الأدوية 409 والأوفلاين
-**ملف:** `src/hooks/useMedications.ts`
-- `addLog`: إضافة فحص أن الدواء موجود بالسيرفر قبل إرسال الطلب
-- إذا كان الدواء أوفلاين فقط: تخزين اللوغ محلياً فقط بدون إرسال للسيرفر
-- تعديل المنطق ليكون truly offline-first: اللوغ يُسجل محلياً أولاً ويُزامن لاحقاً
-
-**ملف:** `src/pages/Medications.tsx`
-- عدم عرض خطأ 409 للمستخدم — معالجته صامتاً مع retry تلقائي
-
-### 13. شاشة /family — عرض أسماء خاطئة مؤقتاً
-**ملف:** `src/hooks/useFamilyMembers.ts`
-- تغيير المنطق: عدم استخدام `placeholderData` من Dexie إلا إذا كانت البيانات المحلية تحتوي أسماء حقيقية (ليست "عضو" أو ROLE_LABELS)
-- إذا كانت الأسماء المحلية هي fallback names فقط: عرض skeleton/loading حتى يرد السيرفر
-
-**ملف:** `src/pages/FamilyManagement.tsx`
-- إضافة حالة loading حتى يتم التحقق من السيرفر فعلاً
+### 7. حل التعارضات كود ميت
+- **مؤكد**: `syncManager.ts` سطر 52-53 يعمل `bulkPut()` مباشرة بدون فحص تعارضات
+- إضافة استدعاء `isConflicting()` قبل `bulkPut()` أثناء Delta Sync
+- عند اكتشاف تعارض: `saveConflict()` بدلاً من الكتابة فوقه
 
 ---
 
-## ترتيب التنفيذ
-1. إصلاحات سريعة: #1, #2, #3, #4, #5, #7, #11 (تغييرات بسيطة)
-2. إصلاحات متوسطة: #6, #9, #12, #13
-3. إصلاحات كبيرة: #8, #10
+## المرحلة 2: إصلاحات متوسطة (P1)
+
+### 8. مسح مفاتيح التشفير عند تسجيل الخروج
+- إضافة `indexedDB.deleteDatabase("3ilti-keys")` في `signOut()` بـ `AuthContext.tsx`
+
+### 9. مهلة زمنية لعميل API
+- إضافة `AbortController` بمهلة 15 ثانية في `apiClient()` بـ `api.ts`
+
+### 10. معالجة أخطاء IndexedDB QuotaExceeded
+- تغليف كتابات Dexie الرئيسية (`bulkPut` في `syncManager.ts` و `fullSync.ts`) بـ try-catch
+- عند `QuotaExceededError`: إشعار المستخدم وتنظيف البيانات القديمة
+
+---
+
+## المرحلة 3: تحسينات UX وأداء (P2) — لاحقاً
+
+هذه تحسينات مهمة لكنها ليست عاجلة:
+- تحويل صور onboarding لـ WebP
+- توحيد مكتبات PDF (jspdf + pdf-lib)
+- إضافة `loading="lazy"` للصور في الألبومات
+- Virtual list للمحادثة
+- حالات فارغة مُصوّرة
+- Skeleton loading لكل صفحة
+
+---
+
+## ملاحظات على نقاط **لن نعالجها الآن**
+
+| النقطة | السبب |
+|--------|-------|
+| `verify_jwt = false` | نمط Lovable المعتمد — التحقق يتم في الكود |
+| مفتاح anon في `client.ts` | ملف يُولّد تلقائياً + المفتاح عام بطبيعته |
+| إعادة هيكلة `useChat` كاملة | تغيير ضخم يحتاج مرحلة منفصلة |
+| E2EE الحقيقي | يحتاج تخطيط migration للمحادثات الحالية |
+| ESLint strict | تحسين تدريجي وليس إصلاح أمني |
+
+---
+
+## الملفات المتأثرة في المرحلة 1 و 2
+
+```text
+.gitignore                          ← إضافة .env
+public/_headers                     ← إزالة unsafe-eval
+src/lib/syncManager.ts              ← ربط conflict detection
+src/lib/api.ts                      ← إضافة timeout
+src/contexts/AuthContext.tsx         ← مسح مفاتيح التشفير
+src/lib/fullSync.ts                 ← معالجة QuotaExceeded
+supabase/functions/market-api/      ← إضافة verifyFamilyMember
+supabase/functions/chat-api/        ← إضافة verifyFamilyMember
+supabase/functions/budget-api/      ← إضافة verifyFamilyMember
+supabase/functions/calendar-api/    ← إضافة verifyFamilyMember
+supabase/functions/debts-api/       ← إضافة verifyFamilyMember
+supabase/functions/documents-api/   ← إضافة verifyFamilyMember
+supabase/functions/albums-api/      ← إضافة verifyFamilyMember
+supabase/functions/trips-api/       ← إضافة verifyFamilyMember
+supabase/functions/health-api/      ← إضافة verifyFamilyMember
+supabase/functions/places-api/      ← إضافة verifyFamilyMember
+supabase/functions/vehicles-api/    ← إضافة verifyFamilyMember
+supabase/functions/will-api/        ← إضافة verifyFamilyMember
+supabase/functions/worship-api/     ← إضافة verifyFamilyMember
+supabase/functions/zakat-api/       ← إضافة verifyFamilyMember
+```
+
+---
+
+## ترتيب التنفيذ المقترح
+
+1. `.gitignore` + CSP (5 دقائق)
+2. API timeout (10 دقائق)
+3. مسح مفاتيح التشفير عند الخروج (5 دقائق)
+4. ربط conflict detection بـ syncManager (20 دقيقة)
+5. معالجة QuotaExceeded (10 دقائق)
+6. إضافة verifyFamilyMember لجميع Edge Functions (30 دقيقة)
+
+هل توافق على هذه الخطة؟ يمكنني البدء بالمرحلة 1 و 2 مباشرة.
 
