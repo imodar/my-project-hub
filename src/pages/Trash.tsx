@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Trash2, RotateCcw, Clock, CalendarDays, CreditCard, Users, AlertTriangle, ShoppingCart, ListChecks } from "lucide-react";
+import { ChevronRight, Trash2, RotateCcw, Clock, CalendarDays, CreditCard, Users, AlertTriangle, ShoppingCart, ListChecks, Loader2 } from "lucide-react";
 import { useTrash, TrashItem } from "@/contexts/TrashContext";
 import {
   AlertDialog,
@@ -32,16 +32,22 @@ const Trash = () => {
   const navigate = useNavigate();
   const { trashItems, restoreItem, permanentlyDelete } = useTrash();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleRestore = async (item: TrashItem) => {
     await restoreItem(item.id);
   };
 
-  const handlePermanentDelete = () => {
+  const handlePermanentDelete = async () => {
     if (deleteConfirm) {
-      permanentlyDelete(deleteConfirm);
-      setDeleteConfirm(null);
-      appToast.success("تم الحذف نهائياً");
+      setIsDeleting(true);
+      try {
+        await permanentlyDelete(deleteConfirm);
+        appToast.success("تم الحذف نهائياً");
+        setDeleteConfirm(null);
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -122,9 +128,9 @@ const Trash = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePermanentDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              حذف نهائي
+            <AlertDialogCancel disabled={isDeleting}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePermanentDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isDeleting ? <><Loader2 size={16} className="animate-spin ml-1" />جاري الحذف...</> : "حذف نهائي"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
