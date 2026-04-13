@@ -238,15 +238,29 @@ const Chat = () => {
   const [showMentions, setShowMentions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const memberNames = Object.values(profiles);
 
+  const virtualizer = useVirtualizer({
+    count: messages.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 80,
+    overscan: 10,
+  });
+
+  // Auto-scroll to bottom on new messages
+  const prevCountRef = useRef(messages.length);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (messages.length > prevCountRef.current || prevCountRef.current === 0) {
+      setTimeout(() => {
+        scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: "smooth" });
+      }, 50);
+    }
+    prevCountRef.current = messages.length;
+  }, [messages.length]);
 
   const handleSend = () => {
     if (!newMessage.trim() || !isReady) return;
