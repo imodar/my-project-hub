@@ -166,4 +166,4 @@ const BottomNav = () => {
 };
 BottomNav.displayName = "BottomNav";
 
-export default BottomNav;
+export default React.memo(BottomNav);
