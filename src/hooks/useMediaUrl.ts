@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type SupportedBucket = "chat-media" | "documents" | "album-photos" | "trip-documents";
@@ -41,6 +41,7 @@ export function useMediaUrl(
   options?: UseMediaUrlOptions
 ): MediaState {
   const bucket = options?.bucket ?? "chat-media";
+  const objectUrlRef = useRef<string | null>(null);
 
   const [state, setState] = useState<MediaState>(() => {
     if (!originalUrl) return { url: null, status: "error" };
@@ -56,6 +57,12 @@ export function useMediaUrl(
     let cancelled = false;
     const cacheName = getCacheName(bucket);
 
+    const setUrl = (blobUrl: string) => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = blobUrl;
+      setState({ url: blobUrl, status: "ready" });
+    };
+
     (async () => {
       try {
         // 1. Check Cache API first
@@ -66,9 +73,7 @@ export function useMediaUrl(
             const cached = await cache.match(storagePath);
             if (cached) {
               const blob = await cached.blob();
-              if (!cancelled) {
-                setState({ url: URL.createObjectURL(blob), status: "ready" });
-              }
+              if (!cancelled) setUrl(URL.createObjectURL(blob));
               return;
             }
           }
@@ -79,9 +84,7 @@ export function useMediaUrl(
 
         if (resp.ok) {
           const blob = await resp.blob();
-          if (!cancelled) {
-            setState({ url: URL.createObjectURL(blob), status: "ready" });
-          }
+          if (!cancelled) setUrl(URL.createObjectURL(blob));
           cacheBlob(originalUrl, blob, bucket);
           return;
         }
@@ -110,9 +113,7 @@ export function useMediaUrl(
           }
 
           const blob = await resp2.blob();
-          if (!cancelled) {
-            setState({ url: URL.createObjectURL(blob), status: "ready" });
-          }
+          if (!cancelled) setUrl(URL.createObjectURL(blob));
           cacheBlob(originalUrl, blob, bucket);
           return;
         }
@@ -126,6 +127,10 @@ export function useMediaUrl(
 
     return () => {
       cancelled = true;
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
     };
   }, [originalUrl, bucket]);
 

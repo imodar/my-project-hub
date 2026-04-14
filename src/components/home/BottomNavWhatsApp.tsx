@@ -150,4 +150,4 @@ const BottomNavWhatsApp = () => {
 };
 BottomNavWhatsApp.displayName = "BottomNav";
 
-export default BottomNavWhatsApp;
+export default React.memo(BottomNavWhatsApp);

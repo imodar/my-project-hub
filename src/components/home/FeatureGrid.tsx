@@ -71,4 +71,4 @@ const FeatureGrid = React.forwardRef<HTMLElement>((_props, ref) => {
 
 FeatureGrid.displayName = "FeatureGrid";
 
-export default FeatureGrid;
+export default React.memo(FeatureGrid);

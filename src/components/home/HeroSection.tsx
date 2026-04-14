@@ -528,4 +528,4 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
 HeroSection.displayName = "HeroSection";
 
-export default HeroSection;
+export default React.memo(HeroSection);
