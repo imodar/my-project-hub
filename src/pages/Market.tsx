@@ -145,7 +145,6 @@ const Market = () => {
       return;
     }
 
-    createdDefaultListRef.current = familyId;
     createListMutation.mutate(
       {
         name: DEFAULT_FAMILY_LIST_NAME,
@@ -154,9 +153,8 @@ const Market = () => {
         use_categories: true,
       },
       {
-        onError: () => {
-          createdDefaultListRef.current = null;
-        },
+        onSuccess: () => { createdDefaultListRef.current = familyId; },
+        onError: () => { createdDefaultListRef.current = null; },
       }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps

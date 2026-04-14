@@ -111,12 +111,17 @@ const Tasks = () => {
       createdDefaultListRef.current === familyId ||
       createListMutation.isPending
     ) return;
-    createdDefaultListRef.current = familyId;
-    createListMutation.mutate({
-      name: DEFAULT_FAMILY_LIST_NAME,
-      type: "family",
-      shared_with: [],
-    });
+    createListMutation.mutate(
+      {
+        name: DEFAULT_FAMILY_LIST_NAME,
+        type: "family",
+        shared_with: [],
+      },
+      {
+        onSuccess: () => { createdDefaultListRef.current = familyId; },
+        onError: () => { createdDefaultListRef.current = null; },
+      }
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [familyId, featureAccess.isStaff, isLoading, isSyncing, dbLists]);
 
