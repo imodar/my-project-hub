@@ -1,120 +1,161 @@
 
 
-# خطة معالجة التقرير الأمني والمعماري
-
-## ملخص التحقق
-
-راجعت الكود وتحققت من النقاط الرئيسية. معظم الملاحظات صحيحة. سأرتب الخطة حسب الأولوية والتأثير الفعلي.
+# خطة شاملة لإصلاح جميع النقاط القابلة للحل
 
 ---
 
-## المرحلة 1: إصلاحات أمنية حرجة (P0)
+## ملخص سريع
 
-### 1. إضافة `.env` إلى `.gitignore`
-- الملف `.gitignore` لا يحتوي على `.env` فعلاً
-- سنضيف `.env` و `.env.*` للملف
+بعد مراجعة الكود الفعلي، عدد من نقاط التقرير **خاطئة أو مبالغ فيها** (كما ناقشنا سابقاً). هذه الخطة تغطي فقط النقاط **الحقيقية والقابلة للتنفيذ**.
 
-### 2. مفتاح Supabase مكتوب مباشرة في `client.ts`
-- **ملاحظة**: هذا الملف يُولّد تلقائياً من Lovable ولا يمكن تعديله يدوياً. المفتاح المجهول (anon key) مصمم ليكون عاماً أصلاً — الحماية تأتي من RLS. **لن نعدل هذا.**
-
-### 3. التشفير ليس E2EE حقيقي
-- **مؤكد**: `useChat.ts` سطر 165-168 يرسل مفتاح AES الخام للسيرفر عبر `exportAESKey()` ثم `upsert-family-key`
-- وظائف `wrapFamilyKey()` / `unwrapFamilyKey()` موجودة في `crypto.ts` لكنها لا تُستخدم أبداً
-- **الحل**: تطبيق لف ECDH الصحيح — كل عضو يحصل على نسخة ملفوفة بمفتاحه العام
-- **ملاحظة**: هذا تغيير معقد يؤثر على `useChat.ts` و `chat-api` Edge Function وقد يكسر التوافقية مع المحادثات الحالية. **يحتاج تخطيط منفصل.**
-
-### 4. فحص عضوية العائلة مفقود في Edge Functions
-- إضافة `verifyFamilyMember()` لكل Edge Function تقبل `family_id` (مثل `market-api`, `chat-api`, `budget-api`, إلخ)
-- نسخ نفس النمط المستخدم في `tasks-api`
-
-### 5. CSP: إزالة `unsafe-eval`
-- تعديل `public/_headers` سطر 19
-- إزالة `unsafe-eval` من `script-src` (Vite production لا يحتاجه)
-- إبقاء `unsafe-inline` للأنماط فقط
-
-### 6. `verify_jwt = false` على جميع الدوال
-- **ملاحظة مهمة**: هذا مقصود في مشاريع Lovable بسبب نظام signing-keys. الدوال تتحقق يدوياً عبر `getUser()`. **لن نعدل هذا** — هو نمط معتمد.
-
-### 7. حل التعارضات كود ميت
-- **مؤكد**: `syncManager.ts` سطر 52-53 يعمل `bulkPut()` مباشرة بدون فحص تعارضات
-- إضافة استدعاء `isConflicting()` قبل `bulkPut()` أثناء Delta Sync
-- عند اكتشاف تعارض: `saveConflict()` بدلاً من الكتابة فوقه
+> **خطأ calendar-api 401**: هذا ليس خطأ برمجي — الكود يتحقق من JWT بشكل صحيح. السبب غالباً جلسة منتهية الصلاحية أو مشكلة اتصال. يُحل بتسجيل خروج وإعادة دخول.
 
 ---
 
-## المرحلة 2: إصلاحات متوسطة (P1)
+## الإصلاح 1: تسريب ذاكرة ObjectURL في useMediaUrl
 
-### 8. مسح مفاتيح التشفير عند تسجيل الخروج
-- إضافة `indexedDB.deleteDatabase("3ilti-keys")` في `signOut()` بـ `AuthContext.tsx`
+**الملف:** `src/hooks/useMediaUrl.ts`
 
-### 9. مهلة زمنية لعميل API
-- إضافة `AbortController` بمهلة 15 ثانية في `apiClient()` بـ `api.ts`
+**المشكلة:** كل `URL.createObjectURL(blob)` لا يتم تحريره عند تغيّر الـ URL أو عند unmount.
 
-### 10. معالجة أخطاء IndexedDB QuotaExceeded
-- تغليف كتابات Dexie الرئيسية (`bulkPut` في `syncManager.ts` و `fullSync.ts`) بـ try-catch
-- عند `QuotaExceededError`: إشعار المستخدم وتنظيف البيانات القديمة
-
----
-
-## المرحلة 3: تحسينات UX وأداء (P2) — لاحقاً
-
-هذه تحسينات مهمة لكنها ليست عاجلة:
-- تحويل صور onboarding لـ WebP
-- توحيد مكتبات PDF (jspdf + pdf-lib)
-- إضافة `loading="lazy"` للصور في الألبومات
-- Virtual list للمحادثة
-- حالات فارغة مُصوّرة
-- Skeleton loading لكل صفحة
-
----
-
-## ملاحظات على نقاط **لن نعالجها الآن**
-
-| النقطة | السبب |
-|--------|-------|
-| `verify_jwt = false` | نمط Lovable المعتمد — التحقق يتم في الكود |
-| مفتاح anon في `client.ts` | ملف يُولّد تلقائياً + المفتاح عام بطبيعته |
-| إعادة هيكلة `useChat` كاملة | تغيير ضخم يحتاج مرحلة منفصلة |
-| E2EE الحقيقي | يحتاج تخطيط migration للمحادثات الحالية |
-| ESLint strict | تحسين تدريجي وليس إصلاح أمني |
-
----
-
-## الملفات المتأثرة في المرحلة 1 و 2
+**الحل:**
+- حفظ الـ URL الحالي في `useRef`
+- في cleanup function الخاصة بـ `useEffect`: استدعاء `URL.revokeObjectURL(ref.current)` لتحرير الذاكرة
+- تحرير الـ URL القديم قبل تعيين الجديد
 
 ```text
-.gitignore                          ← إضافة .env
-public/_headers                     ← إزالة unsafe-eval
-src/lib/syncManager.ts              ← ربط conflict detection
-src/lib/api.ts                      ← إضافة timeout
-src/contexts/AuthContext.tsx         ← مسح مفاتيح التشفير
-src/lib/fullSync.ts                 ← معالجة QuotaExceeded
-supabase/functions/market-api/      ← إضافة verifyFamilyMember
-supabase/functions/chat-api/        ← إضافة verifyFamilyMember
-supabase/functions/budget-api/      ← إضافة verifyFamilyMember
-supabase/functions/calendar-api/    ← إضافة verifyFamilyMember
-supabase/functions/debts-api/       ← إضافة verifyFamilyMember
-supabase/functions/documents-api/   ← إضافة verifyFamilyMember
-supabase/functions/albums-api/      ← إضافة verifyFamilyMember
-supabase/functions/trips-api/       ← إضافة verifyFamilyMember
-supabase/functions/health-api/      ← إضافة verifyFamilyMember
-supabase/functions/places-api/      ← إضافة verifyFamilyMember
-supabase/functions/vehicles-api/    ← إضافة verifyFamilyMember
-supabase/functions/will-api/        ← إضافة verifyFamilyMember
-supabase/functions/worship-api/     ← إضافة verifyFamilyMember
-supabase/functions/zakat-api/       ← إضافة verifyFamilyMember
+useEffect cleanup:
+  if (urlRef.current) URL.revokeObjectURL(urlRef.current)
 ```
 
 ---
 
-## ترتيب التنفيذ المقترح
+## الإصلاح 2: Race Condition في إنشاء القوائم الافتراضية
 
-1. `.gitignore` + CSP (5 دقائق)
-2. API timeout (10 دقائق)
-3. مسح مفاتيح التشفير عند الخروج (5 دقائق)
-4. ربط conflict detection بـ syncManager (20 دقيقة)
-5. معالجة QuotaExceeded (10 دقائق)
-6. إضافة verifyFamilyMember لجميع Edge Functions (30 دقيقة)
+**الملفات:** `Tasks.tsx`, `Market.tsx`, `Documents.tsx`
 
-هل توافق على هذه الخطة؟ يمكنني البدء بالمرحلة 1 و 2 مباشرة.
+**المشكلة:** `createdDefaultListRef.current = familyId` يُنفذ **قبل** نجاح الـ mutation — فإذا فشلت العملية لا يُعاد المحاولة.
+
+**الحل:** في الثلاث صفحات:
+- نقل `createdDefaultListRef.current = familyId` من **قبل** `mutate()` إلى داخل `onSuccess`
+- إبقاء فحص `createListMutation.isPending` لمنع التكرار أثناء التنفيذ
+
+```text
+قبل:
+  createdDefaultListRef.current = familyId;
+  createListMutation.mutate({...}, { onError: () => { ref = null } });
+
+بعد:
+  if (createListMutation.isPending) return;
+  createListMutation.mutate({...}, {
+    onSuccess: () => { createdDefaultListRef.current = familyId; },
+  });
+```
+
+---
+
+## الإصلاح 3: إضافة `.env` إلى `.gitignore`
+
+**الملف:** `.gitignore`
+
+**المشكلة:** `.env` غير موجود في `.gitignore`
+
+**الحل:** إضافة:
+```
+.env
+.env.*
+!.env.example
+```
+
+> ملاحظة: المفاتيح الموجودة هي `anon key` العامة — ليست سرية. لكن كإجراء وقائي يُضاف `.env` للـ gitignore.
+
+---
+
+## الإصلاح 4: إزالة `unsafe-eval` من CSP (إذا كان موجوداً)
+
+**الملف:** `public/_headers`
+
+**الحالة:** بعد المراجعة، **`unsafe-eval` غير موجود أصلاً** في CSP الحالي. فقط `unsafe-inline` موجود وهو مطلوب للأنماط. **لا حاجة لتغيير.**
+
+---
+
+## الإصلاح 5: مسح مفاتيح التشفير عند تسجيل الخروج
+
+**الملف:** `src/contexts/AuthContext.tsx`
+
+**الحالة:** بعد المراجعة، **هذا مُنفّذ فعلاً** في السطر 209:
+```ts
+try { indexedDB.deleteDatabase("3ilti-keys"); } catch {}
+```
+**لا حاجة لتغيير.**
+
+---
+
+## الإصلاح 6: فحص عضوية العائلة في Edge Functions
+
+**الحالة:** بعد فحص جميع الـ 14 Edge Function، **جميعها تحتوي `verifyFamily()` بالفعل.** التقرير كان خاطئاً في هذه النقطة. **لا حاجة لتغيير.**
+
+---
+
+## الإصلاح 7: معالجة خطأ QuotaExceeded
+
+**الملف:** `src/lib/syncManager.ts`
+
+**الحالة:** بعد المراجعة، **هذا مُنفّذ فعلاً** في السطور 85-92 مع `QuotaExceededError` handling و `storage-quota-exceeded` event. **لا حاجة لتغيير.**
+
+---
+
+## الإصلاح 8: API Timeout
+
+**الملف:** `src/lib/api.ts`
+
+**الحالة:** بعد المراجعة، **هذا مُنفّذ فعلاً** — `AbortController` بمهلة 15 ثانية (السطور 9, 45-46). **لا حاجة لتغيير.**
+
+---
+
+## الإصلاح 9: ربط Conflict Detection بـ syncManager
+
+**الملف:** `src/lib/syncManager.ts`
+
+**الحالة:** بعد المراجعة، **هذا مُنفّذ فعلاً** — السطور 46-71 تفحص `isConflicting()` وتستدعي `saveConflict()`. **لا حاجة لتغيير.**
+
+---
+
+## ملخص ما يحتاج فعلاً للتنفيذ
+
+| # | الإصلاح | الملفات | الصعوبة |
+|---|---------|---------|---------|
+| 1 | تسريب ObjectURL | `useMediaUrl.ts` | منخفضة |
+| 2 | Race Condition للقوائم الافتراضية | `Tasks.tsx`, `Market.tsx`, `Documents.tsx` | منخفضة |
+| 3 | إضافة `.env` لـ `.gitignore` | `.gitignore` | منخفضة |
+
+**3 إصلاحات فقط من أصل 9** تحتاج تنفيذ فعلي — الباقي إما مُنفّذ مسبقاً أو التقرير كان خاطئاً بشأنه.
+
+---
+
+## تحسينات إضافية (ليست أخطاء لكن مفيدة)
+
+هذه من النقاط التي ناقشناها سابقاً وأكدنا صحتها:
+
+### تحسين 1: React.memo للمكونات الثقيلة
+- **الملفات:** `HeroSection.tsx`, `FeatureGrid.tsx`, `BottomNav.tsx`
+- لف كل مكون بـ `React.memo()` لمنع إعادة الرسم غير الضرورية
+
+### تحسين 2: Empty States مصوّرة
+- **الملفات:** كل صفحات القوائم (Tasks, Market, Documents, Calendar, etc.)
+- إنشاء مكون `<EmptyState icon message action />` عام واستخدامه
+
+### تحسين 3: تحسين Skeleton Loading
+- استخدام `PageSkeletons.tsx` الموجود فعلاً في كل الصفحات بدل spinner البسيط
+
+---
+
+## ترتيب التنفيذ
+
+1. إصلاح تسريب ObjectURL (5 دقائق)
+2. إصلاح Race Condition في 3 ملفات (10 دقائق)
+3. إضافة `.env` لـ `.gitignore` (دقيقة واحدة)
+4. React.memo للمكونات الثقيلة (10 دقائق)
+
+هل توافق على تنفيذ هذه الخطة؟
 
