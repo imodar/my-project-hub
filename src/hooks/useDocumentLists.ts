@@ -117,7 +117,10 @@ export function useDocumentLists() {
     },
     createList: {
       ...createList,
-      mutate: (input: any) => createList.mutate({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, document_items: [], ...input }),
+      mutate: (input: any, options?: { onSuccess?: () => void; onError?: (err: any) => void }) => {
+        const enriched = { id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, document_items: [], ...input };
+        createList.mutate(enriched, options);
+      },
       mutateAsync: async (input: any) => createList.mutateAsync({ id: crypto.randomUUID(), created_at: new Date().toISOString(), family_id: familyId, document_items: [], ...input }),
     },
     deleteList: {
