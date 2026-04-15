@@ -13,6 +13,7 @@ import {
   Star,
   GraduationCap,
   Calendar as CalendarIcon,
+  CalendarDays,
   Trash2,
   Pencil,
   Bell,
