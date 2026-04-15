@@ -310,7 +310,7 @@ const Chat = () => {
 
   // ─── Handle image pick ───
   const handleImagePick = useCallback(async (file: File) => {
-    const err = validateFile(file, { maxSizeMB: 5, allowedTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"] });
+    const err = await validateFile(file, { maxSizeMB: 5, allowedTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"] });
     if (err) { appToast.error(err); return; }
 
     setShowAttachments(false);

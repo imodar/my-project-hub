@@ -205,8 +205,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // silent — logout should always succeed
     }
-    // مسح مفاتيح التشفير
-    try { indexedDB.deleteDatabase("3ilti-keys"); } catch {}
+    // SECURITY: Await encryption key database deletion to prevent data leakage between users
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.deleteDatabase("3ilti-keys");
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+        req.onblocked = () => resolve(); // proceed even if blocked
+      });
+    } catch {
+      console.warn("[Auth] Failed to delete encryption keys database");
+    }
     // Clear all cached profile names
     Object.keys(localStorage)
       .filter(k => k.startsWith('profile_name_'))

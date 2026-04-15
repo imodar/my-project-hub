@@ -72,15 +72,23 @@ export async function syncTable<T extends { id: string; created_at?: string; upd
       }
     } else {
       // Full sync: remove stale records then upsert
+      // SECURITY: Only delete stale records if the API returned a meaningful
+      // result set. An empty or suspiciously small response (e.g. API error
+      // returning partial data) should NOT wipe out local data.
       const apiIds = new Set(data.map((item) => item.id));
       const localItems: T[] = await table.toArray();
-      const staleIds = localItems
-        .filter((item) => !apiIds.has(item.id))
-        .map((item) => item.id);
-      if (staleIds.length > 0) {
-        await table.bulkDelete(staleIds);
+
+      if (data.length > 0 || localItems.length === 0) {
+        const staleIds = localItems
+          .filter((item) => !apiIds.has(item.id))
+          .map((item) => item.id);
+        if (staleIds.length > 0) {
+          await table.bulkDelete(staleIds);
+        }
       }
-      await table.bulkPut(data);
+      if (data.length > 0) {
+        await table.bulkPut(data);
+      }
     }
   } catch (err: unknown) {
     // معالجة خطأ تجاوز حصة التخزين

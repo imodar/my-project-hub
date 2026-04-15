@@ -13,8 +13,15 @@
  */
 import { db, type ConflictItem } from "./db";
 
-/** الحد الأدنى لاعتبار السجلَين متعارضَين (5 دقائق) */
-const THRESHOLD_SECONDS = 5 * 60;
+/**
+ * SECURITY: Reduced from 5 minutes to 5 seconds.
+ * The previous 5-minute threshold silently discarded concurrent edits
+ * via last-write-wins, causing data loss for family members editing
+ * the same record within a 5-minute window.
+ * 5 seconds is enough to filter duplicate writes from the same user
+ * while catching real conflicts between different users.
+ */
+const THRESHOLD_SECONDS = 5;
 
 export interface RecordWithTimestamp {
   id: string;

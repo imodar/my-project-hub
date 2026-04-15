@@ -29,6 +29,7 @@ import { useRevenueCat } from "@/hooks/useRevenueCat";
 import BottomNav from "@/components/home/BottomNavWhatsApp";
 import SOSButton from "@/components/home/SOSButton";
 import RoleGuard from "@/components/RoleGuard";
+import AdminGuard from "@/components/AdminGuard";
 import ServiceWorkerUpdatePrompt from "@/components/ServiceWorkerUpdatePrompt";
 import ConflictResolutionDrawer from "@/components/ConflictResolutionDrawer";
 import AppUpdateBanner from "@/components/AppUpdateBanner";
@@ -252,7 +253,7 @@ const AnimatedRoutes = () => {
   if (isAdminPanel) {
     return (
       <Routes>
-        <Route path="/admin-panel" element={<AuthGuard><R route="admin"><AdminLayout /></R></AuthGuard>}>
+        <Route path="/admin-panel" element={<AuthGuard><AdminGuard><R route="admin"><AdminLayout /></R></AdminGuard></AuthGuard>}>
           <Route index element={<R route="admin-overview"><AdminOverview /></R>} />
           <Route path="users" element={<R route="admin-users"><AdminUsers /></R>} />
           <Route path="families" element={<R route="admin-families"><AdminFamilies /></R>} />

@@ -53,7 +53,9 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   const { dbRole, isAdmin, isLoading } = useMyRole();
 
   const staff = dbRole ? isStaffRole(dbRole) : false;
-  const parent = dbRole ? isParentRole(dbRole) : true;
+  // SECURITY: Default to false (not parent) when role is unknown.
+  // Fail-closed: deny elevated access until role is confirmed.
+  const parent = dbRole ? isParentRole(dbRole) : false;
 
   const featureAccess: FeatureAccess = {
     hidden: staff ? STAFF_HIDDEN_FEATURES : [],

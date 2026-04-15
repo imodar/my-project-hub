@@ -9,9 +9,18 @@ interface RoleGuardProps {
 const RoleGuard = ({ requireNonStaff, children }: RoleGuardProps) => {
   const { dbRole, isLoading } = useUserRole();
 
-  // Show children immediately — don't block with spinner
-  // Only redirect once role is confirmed as staff
-  if (requireNonStaff && !isLoading && dbRole && ["worker", "maid", "driver"].includes(dbRole)) {
+  // SECURITY: Block rendering while role is loading to prevent unauthorized content flash.
+  // Staff users must NEVER see protected content, even momentarily.
+  if (requireNonStaff && isLoading) {
+    return null;
+  }
+
+  if (requireNonStaff && dbRole && ["worker", "maid", "driver"].includes(dbRole)) {
+    return <Navigate to="/" replace />;
+  }
+
+  // SECURITY: If role is null after loading, deny access (fail-closed).
+  if (requireNonStaff && !isLoading && !dbRole) {
     return <Navigate to="/" replace />;
   }
 

@@ -2,8 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ptmhrfovbyvpewfdpejf.supabase.co";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0bWhyZm92Ynl2cGV3ZmRwZWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNjkyNzAsImV4cCI6MjA4OTc0NTI3MH0.0q-1UB9WZhmFCOXudEJ6lCUYW1ZTzC6yRUkftD6tC1Y";
+// SECURITY: Never hardcode fallback credentials. These MUST come from environment variables.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error("Missing required environment variables: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY");
+}
 
 async function callPhoneAuth(payload: Record<string, string>) {
   const url = `${SUPABASE_URL}/functions/v1/phone-auth`;
@@ -102,10 +107,7 @@ const Auth = () => {
     try {
       const data = await callPhoneAuth({ action: "send-otp", phone: fullPhone });
 
-      // مؤقت: عرض الكود بتوست (يُحذف عند ربط SMS)
-      if (data?.code) {
-        appToast.info(`رمز التحقق: ${data.code}`, `تم الإرسال إلى ${fullPhone}`);
-      }
+      // SECURITY: Never display OTP code in the UI. The server must not return it either.
       setStep("otp");
       setCountdown(60);
     } catch (err: any) {

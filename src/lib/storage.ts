@@ -83,22 +83,53 @@ export async function deleteFile(
   return !error;
 }
 
+// SECURITY: Magic number signatures for common file types.
+// MIME type alone is trivially spoofed; validate actual file content.
+const FILE_SIGNATURES: Record<string, number[][]> = {
+  "image/jpeg": [[0xFF, 0xD8, 0xFF]],
+  "image/png": [[0x89, 0x50, 0x4E, 0x47]],
+  "image/gif": [[0x47, 0x49, 0x46, 0x38]],
+  "image/webp": [[0x52, 0x49, 0x46, 0x46]], // RIFF header
+};
+
+async function validateFileSignature(file: File, allowedTypes: string[]): Promise<boolean> {
+  const signaturesForAllowed = allowedTypes.flatMap(t => (FILE_SIGNATURES[t] || []).map(sig => ({ type: t, sig })));
+  if (signaturesForAllowed.length === 0) return true; // no signatures to check
+
+  const maxLen = Math.max(...signaturesForAllowed.map(s => s.sig.length));
+  const slice = file.slice(0, maxLen);
+  const buf = await slice.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+
+  return signaturesForAllowed.some(({ sig }) =>
+    sig.every((b, i) => bytes[i] === b)
+  );
+}
+
 /**
  * Validate file before upload.
+ * Checks: size, MIME type, AND file signature (magic numbers).
  */
-export function validateFile(
+export async function validateFile(
   file: File,
   options?: {
     maxSizeMB?: number;
     allowedTypes?: string[];
   }
-): string | null {
+): Promise<string | null> {
   const maxSize = (options?.maxSizeMB || 10) * 1024 * 1024;
   if (file.size > maxSize) {
     return `حجم الملف يتجاوز ${options?.maxSizeMB || 10} ميجابايت`;
   }
   if (options?.allowedTypes && !options.allowedTypes.includes(file.type)) {
     return "نوع الملف غير مدعوم";
+  }
+  // SECURITY: Validate actual file content, not just declared MIME type
+  if (options?.allowedTypes) {
+    const validSig = await validateFileSignature(file, options.allowedTypes);
+    if (!validSig) {
+      return "محتوى الملف لا يتطابق مع النوع المعلن";
+    }
   }
   return null;
 }
@@ -111,7 +142,7 @@ export async function uploadImage(
   file: File,
   folder?: string
 ): Promise<UploadResult> {
-  const validationError = validateFile(file, {
+  const validationError = await validateFile(file, {
     maxSizeMB: 5,
     allowedTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
   });
