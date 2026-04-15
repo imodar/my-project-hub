@@ -636,9 +636,12 @@ const Debts = () => {
         })}
 
         {activeDebts.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <CreditCard size={48} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">لا توجد ديون حالياً</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="bg-muted/50 rounded-full p-4 mb-4">
+              <CreditCard className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground font-medium">لا توجد ديون حالياً</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">سجّل ديونك لتتبعها بسهولة</p>
           </div>
         )}
 

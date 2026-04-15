@@ -282,6 +282,7 @@ export function useChat() {
           filter: `family_id=eq.${familyId}`,
         },
         async (payload) => {
+          if (!decryptRef.current) return;
           try {
             const msg = await decryptRef.current(payload.new as any);
             if (msg) {

@@ -332,7 +332,13 @@ const CalendarPage = () => {
 
         <div className="space-y-3">
           {allUpcoming.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-8">لا توجد مناسبات قادمة</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="bg-muted/50 rounded-full p-4 mb-4">
+                <CalendarDays className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground font-medium">لا توجد مناسبات قادمة</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">أضف مناسبة جديدة من زر +</p>
+            </div>
           )}
 
           {allUpcoming.map((ev) => {
@@ -427,7 +433,12 @@ const CalendarPage = () => {
           </DrawerHeader>
           <div className="space-y-3 px-4 pb-6">
             {selectedDay && eventsForDay(selectedDay).length === 0 && (
-              <p className="text-center text-sm text-muted-foreground py-4">لا توجد مناسبات في هذا اليوم</p>
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="bg-muted/50 rounded-full p-3 mb-3">
+                  <CalendarDays className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium text-sm">لا توجد مناسبات في هذا اليوم</p>
+              </div>
             )}
             {selectedDay && eventsForDay(selectedDay).map((ev) => {
               const rt = getReminderLabel(ev.reminder_before);
