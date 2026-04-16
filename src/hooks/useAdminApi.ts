@@ -79,7 +79,8 @@ export function useAdminSecurity() {
   return useQuery({
     queryKey: ["admin", "security"],
     queryFn: () => adminCall("get-security"),
-    staleTime: 60_000,
+    staleTime: 10_000,
+    refetchInterval: 10_000,
   });
 }
 
