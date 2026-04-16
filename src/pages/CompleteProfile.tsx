@@ -67,7 +67,7 @@ const CompleteProfile = () => {
       }
 
       // Update profile
-      const updatePayload: Record<string, string> = { name: trimmed };
+      const updatePayload: { name: string; avatar_url?: string } = { name: trimmed };
       if (avatarUrl) updatePayload.avatar_url = avatarUrl;
 
       const { error: profileErr } = await supabase
