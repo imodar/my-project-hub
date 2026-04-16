@@ -1,46 +1,21 @@
 
 
-# نشر Edge Functions المحدّثة
+# إصلاح بوصلة القبلة على Android
 
-## الوضع الحالي
-أنا في وضع القراءة فقط (Plan Mode) ولا أستطيع نشر الـ Edge Functions مباشرة. بمجرد الموافقة على هذه الخطة، سأنتقل لوضع التنفيذ وأنشر جميع الدوال المحدّثة.
+## المشكلة
+على Android Chrome، `deviceorientation` يعطي `alpha` نسبي لاتجاه الجهاز عند فتح الصفحة — وليس نسبة للشمال الحقيقي. فقط iOS يوفر `webkitCompassHeading`.
 
-## الدوال المطلوب نشرها
+## التعديل
+ملف واحد: `src/components/home/QiblaCompass.tsx`
 
-بناءً على الإصلاحات الأمنية التي تم تطبيقها:
+### 1. تعديل useEffect (السطور 71-82)
+تسجيل على `deviceorientationabsolute` أولاً، مع fallback على `deviceorientation`:
+- إذا وصل `deviceorientationabsolute` → يُستخدم ويُتجاهل `deviceorientation`
+- إذا فقط `deviceorientation` وصل → يُستخدم كـ fallback
 
-1. **phone-auth** — إصلاح تسريب OTP (Fix 1) + Error leakage (Fix 10)
-2. **account-api** — Error leakage (Fix 10)
-3. **admin-api** — Error leakage (Fix 10)
-4. **albums-api** — Error leakage (Fix 10)
-5. **auth-management** — Error leakage (Fix 10)
-6. **budget-api** — Error leakage (Fix 10)
-7. **calendar-api** — Error leakage (Fix 10)
-8. **chat-api** — Error leakage (Fix 10)
-9. **debts-api** — Error leakage (Fix 10)
-10. **documents-api** — Error leakage (Fix 10)
-11. **family-management** — Error leakage (Fix 10)
-12. **health-api** — Error leakage (Fix 10)
-13. **location-api** — Error leakage (Fix 10)
-14. **market-api** — Error leakage (Fix 10)
-15. **notifications-api** — Error leakage (Fix 10)
-16. **places-api** — Error leakage (Fix 10)
-17. **settings-api** — Error leakage (Fix 10)
-18. **subscription-webhook** — Error leakage (Fix 10)
-19. **tasks-api** — Error leakage (Fix 10)
-20. **trash-api** — Error leakage (Fix 10)
-21. **trips-api** — Error leakage (Fix 10)
-22. **vehicles-api** — Error leakage (Fix 10)
-23. **will-api** — Error leakage (Fix 10)
-24. **worship-api** — Error leakage (Fix 10)
-25. **zakat-api** — Error leakage (Fix 10)
-26. **account-cleanup** — Error leakage (Fix 10)
-27. **trash-cleanup** — Error leakage (Fix 10)
-28. **notification-scheduler** — Error leakage (Fix 10)
-29. **notifications-generator** — Error leakage (Fix 10)
-30. **account-api** — Error leakage (Fix 10)
+### 2. تعديل requestPermission (السطور 57-68)
+نفس المنطق: عند عدم وجود `requestPermission` (أي ليس iOS)، نسجّل على كلا الـ events بنفس أولوية `absolute` أولاً.
 
-## خطوة التنفيذ
-
-استدعاء `supabase--deploy_edge_functions` لنشر جميع الدوال دفعة واحدة، ثم اختبار `phone-auth` للتأكد من عدم تسريب الـ OTP.
+### 3. handleOrientation - بدون تغيير
+المعادلة `(360 - e.alpha) % 360` تبقى صحيحة لأن `alpha` من `deviceorientationabsolute` يكون نسبة للشمال الحقيقي.
 
