@@ -157,8 +157,7 @@ Deno.serve(async (req) => {
       // Log successful send
       await logOtpAudit(adminClient, normalizedPhone, "send", true, req);
 
-      // مؤقت: إرجاع الكود للتوست (يُحذف عند ربط SMS)
-      return json({ success: true, code: otpCode });
+      return json({ success: true });
     }
 
     // ━━━━━━━━━━━━━━━ verify-otp ━━━━━━━━━━━━━━━

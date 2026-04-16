@@ -13,8 +13,8 @@
  */
 import { db, type ConflictItem } from "./db";
 
-/** الحد الأدنى لاعتبار السجلَين متعارضَين (5 دقائق) */
-const THRESHOLD_SECONDS = 5 * 60;
+/** الحد الأدنى لاعتبار السجلَين متعارضَين (60 ثانية) */
+const THRESHOLD_SECONDS = 60;
 
 export interface RecordWithTimestamp {
   id: string;

@@ -1,5 +1,6 @@
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 interface RoleGuardProps {
   requireNonStaff?: boolean;
@@ -9,10 +10,17 @@ interface RoleGuardProps {
 const RoleGuard = ({ requireNonStaff, children }: RoleGuardProps) => {
   const { dbRole, isLoading } = useUserRole();
 
-  // Show children immediately — don't block with spinner
-  // Only redirect once role is confirmed as staff
-  if (requireNonStaff && !isLoading && dbRole && ["worker", "maid", "driver"].includes(dbRole)) {
-    return <Navigate to="/" replace />;
+  if (requireNonStaff) {
+    if (isLoading || !dbRole) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+    if (["worker", "maid", "driver"].includes(dbRole)) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;

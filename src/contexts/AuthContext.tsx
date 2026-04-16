@@ -206,7 +206,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // silent — logout should always succeed
     }
     // مسح مفاتيح التشفير
-    try { indexedDB.deleteDatabase("3ilti-keys"); } catch {}
+    try {
+      await new Promise<void>((resolve) => {
+        const req = indexedDB.deleteDatabase("3ilti-keys");
+        req.onsuccess = () => resolve();
+        req.onerror = () => resolve();
+        req.onblocked = () => resolve();
+      });
+    } catch {}
     // Clear all cached profile names
     Object.keys(localStorage)
       .filter(k => k.startsWith('profile_name_'))

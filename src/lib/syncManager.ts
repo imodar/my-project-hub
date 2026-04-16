@@ -9,6 +9,7 @@ import { db } from "./db";
 import type { Table } from "dexie";
 import { projectPendingChanges } from "./syncQueue";
 import { isConflicting, saveConflict, type RecordWithTimestamp } from "./conflictResolver";
+import { reportError } from "./errorReporting";
 
 /* ────────────────────────────────────────────
  *  مزامنة جدول واحد
@@ -78,7 +79,16 @@ export async function syncTable<T extends { id: string; created_at?: string; upd
         .filter((item) => !apiIds.has(item.id))
         .map((item) => item.id);
       if (staleIds.length > 0) {
-        await table.bulkDelete(staleIds);
+        const deletionRatio = staleIds.length / (localItems.length || 1);
+        if (deletionRatio > 0.5 && localItems.length > 10) {
+          console.warn(`[SyncManager] تخطي حذف ${staleIds.length} من "${tableName}" — نسبة الحذف مرتفعة (${Math.round(deletionRatio * 100)}%)`);
+          reportError(new Error(`SyncManager anomaly: ${tableName} — ${staleIds.length}/${localItems.length} stale`), { source: "syncManager" });
+          window.dispatchEvent(new CustomEvent("sync-anomaly-detected", {
+            detail: { tableName, staleCount: staleIds.length, localCount: localItems.length }
+          }));
+        } else {
+          await table.bulkDelete(staleIds);
+        }
       }
       await table.bulkPut(data);
     }
