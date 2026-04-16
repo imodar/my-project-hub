@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
 
     return json({ success: true });
   } catch (err) {
-    console.error("Webhook error:", err);
-    console.error("[subscription-webhook]", err); return json({ error: "حدث خطأ داخلي" }, 500);
+    console.error("[subscription-webhook]", err);
+    return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });
