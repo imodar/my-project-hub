@@ -8,6 +8,24 @@ interface UploadResult {
   error: string | null;
 }
 
+/* ── File Signature (Magic Bytes) Validation ── */
+
+const FILE_SIGNATURES: Record<string, number[][]> = {
+  "image/jpeg": [[0xFF, 0xD8, 0xFF]],
+  "image/png":  [[0x89, 0x50, 0x4E, 0x47]],
+  "image/webp": [[0x52, 0x49, 0x46, 0x46]], // RIFF
+  "image/gif":  [[0x47, 0x49, 0x46]],        // GIF
+  "application/pdf": [[0x25, 0x50, 0x44, 0x46]], // %PDF
+};
+
+async function validateFileSignature(file: File): Promise<boolean> {
+  const sigs = FILE_SIGNATURES[file.type];
+  if (!sigs) return false; // unknown type → reject
+  const buffer = await file.slice(0, 8).arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  return sigs.some(sig => sig.every((b, i) => bytes[i] === b));
+}
+
 /**
  * Upload a file to Supabase Storage.
  * Returns the public/signed URL.
@@ -85,20 +103,28 @@ export async function deleteFile(
 
 /**
  * Validate file before upload.
+ * When allowedTypes is provided, also validates file signature (magic bytes).
  */
-export function validateFile(
+export async function validateFile(
   file: File,
   options?: {
     maxSizeMB?: number;
     allowedTypes?: string[];
   }
-): string | null {
+): Promise<string | null> {
   const maxSize = (options?.maxSizeMB || 10) * 1024 * 1024;
   if (file.size > maxSize) {
     return `حجم الملف يتجاوز ${options?.maxSizeMB || 10} ميجابايت`;
   }
   if (options?.allowedTypes && !options.allowedTypes.includes(file.type)) {
     return "نوع الملف غير مدعوم";
+  }
+  // Validate file signature when allowedTypes is specified
+  if (options?.allowedTypes) {
+    const signatureValid = await validateFileSignature(file);
+    if (!signatureValid) {
+      return "محتوى الملف لا يتطابق مع نوعه — قد يكون ملفاً مزيّفاً";
+    }
   }
   return null;
 }
@@ -111,7 +137,7 @@ export async function uploadImage(
   file: File,
   folder?: string
 ): Promise<UploadResult> {
-  const validationError = validateFile(file, {
+  const validationError = await validateFile(file, {
     maxSizeMB: 5,
     allowedTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
   });

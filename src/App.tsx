@@ -1,12 +1,12 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient, MutationCache } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import AppToast from "@/components/AppToast";
 import { appToast } from "@/lib/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { IslamicModeProvider } from "@/contexts/IslamicModeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { UserRoleProvider } from "@/contexts/UserRoleContext";
+import { UserRoleProvider, useUserRole } from "@/contexts/UserRoleContext";
 import { TrashProvider } from "@/contexts/TrashContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/AuthGuard";
@@ -33,6 +33,7 @@ import ServiceWorkerUpdatePrompt from "@/components/ServiceWorkerUpdatePrompt";
 import ConflictResolutionDrawer from "@/components/ConflictResolutionDrawer";
 import AppUpdateBanner from "@/components/AppUpdateBanner";
 import { useStorageQuota } from "@/hooks/useStorageQuota";
+import { Loader2 } from "lucide-react";
 
 // ── Retry wrapper for stale chunk recovery ──
 function lazyRetry(importFn: () => Promise<{ default: React.ComponentType }>) {
@@ -245,6 +246,18 @@ const R = ({ route, children }: { route: string; children: React.ReactNode }) =>
   <RouteErrorBoundary route={route}>{children}</RouteErrorBoundary>
 );
 
+/** Admin access guard — requires isAdmin role */
+const AdminGuard = ({ children }: { children: React.ReactNode }) => {
+  const { isAdmin, isLoading } = useUserRole();
+  if (isLoading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    </div>
+  );
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+};
+
 const AnimatedRoutes = () => {
   const location = useLocation();
   const isAdminPanel = location.pathname.startsWith("/admin-panel");
@@ -252,7 +265,7 @@ const AnimatedRoutes = () => {
   if (isAdminPanel) {
     return (
       <Routes>
-        <Route path="/admin-panel" element={<AuthGuard><R route="admin"><AdminLayout /></R></AuthGuard>}>
+        <Route path="/admin-panel" element={<AuthGuard><AdminGuard><R route="admin"><AdminLayout /></R></AdminGuard></AuthGuard>}>
           <Route index element={<R route="admin-overview"><AdminOverview /></R>} />
           <Route path="users" element={<R route="admin-users"><AdminUsers /></R>} />
           <Route path="families" element={<R route="admin-families"><AdminFamilies /></R>} />
