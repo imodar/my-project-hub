@@ -80,6 +80,6 @@ Deno.serve(async (req) => {
 
     return json({ error: "Unknown action" }, 400);
   } catch (err) {
-    return json({ error: err instanceof Error ? err.message : "Server error" }, 500);
+    console.error("[location-api]", err); return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });

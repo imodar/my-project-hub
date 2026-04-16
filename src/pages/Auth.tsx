@@ -102,10 +102,7 @@ const Auth = () => {
     try {
       const data = await callPhoneAuth({ action: "send-otp", phone: fullPhone });
 
-      // مؤقت: عرض الكود بتوست (يُحذف عند ربط SMS)
-      if (data?.code) {
-        appToast.info(`رمز التحقق: ${data.code}`, `تم الإرسال إلى ${fullPhone}`);
-      }
+      appToast.info("تم إرسال رمز التحقق", `إلى ${fullPhone}`);
       setStep("otp");
       setCountdown(60);
     } catch (err: any) {

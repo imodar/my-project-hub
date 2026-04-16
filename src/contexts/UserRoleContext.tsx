@@ -53,7 +53,7 @@ export const UserRoleProvider = ({ children }: { children: ReactNode }) => {
   const { dbRole, isAdmin, isLoading } = useMyRole();
 
   const staff = dbRole ? isStaffRole(dbRole) : false;
-  const parent = dbRole ? isParentRole(dbRole) : true;
+  const parent = dbRole ? isParentRole(dbRole) : false;
 
   const featureAccess: FeatureAccess = {
     hidden: staff ? STAFF_HIDDEN_FEATURES : [],

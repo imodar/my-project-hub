@@ -56,6 +56,6 @@ Deno.serve(async (req) => {
 
     return json({ message: `Cleaned ${ids.length} trash items`, count: ids.length });
   } catch (err) {
-    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+    console.error("[trash-cleanup]", err); return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });

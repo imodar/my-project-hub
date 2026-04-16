@@ -128,6 +128,6 @@ Deno.serve(async (req) => {
 
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
-    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+    console.error("[debts-api]", err); return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });

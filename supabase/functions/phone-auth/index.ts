@@ -157,8 +157,7 @@ Deno.serve(async (req) => {
       // Log successful send
       await logOtpAudit(adminClient, normalizedPhone, "send", true, req);
 
-      // مؤقت: إرجاع الكود للتوست (يُحذف عند ربط SMS)
-      return json({ success: true, code: otpCode });
+      return json({ success: true });
     }
 
     // ━━━━━━━━━━━━━━━ verify-otp ━━━━━━━━━━━━━━━
@@ -259,6 +258,6 @@ Deno.serve(async (req) => {
 
     return json({ error: `action غير معروف: ${action}` }, 400);
   } catch (err) {
-    return json({ error: getErrorMessage(err) }, 500);
+    console.error("[phone-auth]", err); return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });

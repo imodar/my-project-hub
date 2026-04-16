@@ -100,6 +100,6 @@ Deno.serve(async (req) => {
       scheduledCount,
     });
   } catch (err) {
-    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+    console.error("[notification-scheduler]", err); return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });
