@@ -58,8 +58,12 @@ export function useNotifications() {
   // Real-time subscription (kept as-is — read-only listener)
   useEffect(() => {
     if (!user) return;
+    const channelName = `user-notifications-${user.id}`;
+    // Remove any stale channel with the same name first
+    const existing = supabase.getChannels().find(c => c.topic === `realtime:${channelName}`);
+    if (existing) supabase.removeChannel(existing);
     const channel = supabase
-      .channel("user-notifications")
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
