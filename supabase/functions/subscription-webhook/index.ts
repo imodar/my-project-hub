@@ -107,6 +107,6 @@ Deno.serve(async (req) => {
     return json({ success: true });
   } catch (err) {
     console.error("Webhook error:", err);
-    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+    console.error("[subscription-webhook]", err); return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });

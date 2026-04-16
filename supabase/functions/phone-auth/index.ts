@@ -258,6 +258,6 @@ Deno.serve(async (req) => {
 
     return json({ error: `action غير معروف: ${action}` }, 400);
   } catch (err) {
-    return json({ error: getErrorMessage(err) }, 500);
+    console.error("[phone-auth]", err); return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });

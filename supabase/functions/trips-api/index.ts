@@ -222,6 +222,6 @@ Deno.serve(async (req) => {
 
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
-    return json({ error: getErrorMessage(err) }, 500);
+    console.error("[trips-api]", err); return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });
