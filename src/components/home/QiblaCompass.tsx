@@ -63,20 +63,39 @@ const QiblaCompass = React.forwardRef<HTMLDivElement>((_props, ref) => {
         }
       } catch { /* permission denied */ }
     } else {
-      window.addEventListener("deviceorientation", handleOrientation, true);
+      let gotAbsolute = false;
+      const onAbsolute = (e: Event) => {
+        gotAbsolute = true;
+        handleOrientation(e as DeviceOrientationEvent);
+      };
+      const onRelative = (e: DeviceOrientationEvent) => {
+        if (!gotAbsolute) handleOrientation(e);
+      };
+      window.addEventListener("deviceorientationabsolute", onAbsolute, true);
+      window.addEventListener("deviceorientation", onRelative, true);
       setHasPermission(true);
     }
   }, [handleOrientation]);
 
   useEffect(() => {
     if (typeof (DeviceOrientationEvent as DeviceOrientationEventStatic).requestPermission !== "function") {
-      window.addEventListener("deviceorientation", handleOrientation, true);
+      let gotAbsolute = false;
+      const onAbsolute = (e: Event) => {
+        gotAbsolute = true;
+        handleOrientation(e as DeviceOrientationEvent);
+      };
+      const onRelative = (e: DeviceOrientationEvent) => {
+        if (!gotAbsolute) handleOrientation(e);
+      };
+      window.addEventListener("deviceorientationabsolute", onAbsolute, true);
+      window.addEventListener("deviceorientation", onRelative, true);
       const timer = setTimeout(() => {
         if (hasPermission === null) setHasPermission(false);
       }, 2000);
       return () => {
         clearTimeout(timer);
-        window.removeEventListener("deviceorientation", handleOrientation, true);
+        window.removeEventListener("deviceorientationabsolute", onAbsolute, true);
+        window.removeEventListener("deviceorientation", onRelative, true);
       };
     }
   }, [handleOrientation, hasPermission]);
