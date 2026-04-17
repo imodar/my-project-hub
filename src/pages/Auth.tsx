@@ -106,7 +106,7 @@ const Auth = () => {
 
       // Wait for fly-away animation to feel complete before switching step
       if (animate) {
-        await new Promise((r) => setTimeout(r, 850));
+        await new Promise((r) => setTimeout(r, 1600));
       }
 
       appToast.info("تم إرسال رمز التحقق", `إلى ${fullPhone}`);
