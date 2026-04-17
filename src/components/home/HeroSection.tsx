@@ -554,7 +554,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
               </motion.div>
             )}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
