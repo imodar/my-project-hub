@@ -404,9 +404,9 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </div>
       </motion.header>
 
-      <section className="px-5 pt-8 relative overflow-visible">
+      <section className="relative overflow-visible">
         <motion.div
-          className="absolute top-0 right-2 w-16 h-16 z-10 pointer-events-none"
+          className="absolute -top-2 right-7 w-16 h-16 z-10 pointer-events-none"
           key={theme.label}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -450,7 +450,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </motion.div>
 
         <motion.div
-          className="rounded-2xl p-5 relative overflow-hidden text-white shadow-xl"
+          className="rounded-b-2xl px-5 pt-8 pb-5 relative overflow-hidden text-white shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
           animate={{ background: theme.gradient }}
           transition={{ duration: 1, ease: "easeInOut" }}
           style={{ background: theme.gradient }}
