@@ -1,9 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
-/* ── CORS: use wildcard as recommended by Supabase docs ──
-   Edge Functions are protected by apikey + JWT, so CORS origin
-   restriction is redundant. The wildcard fixes WebView/Capacitor
-   issues where the Origin header is unpredictable.              */
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -11,35 +7,21 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function getErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === "string") return err;
-  return "Unknown error";
-}
-
+// Normalize phone:
+// - If starts with "+" → strip "+" and use as-is (frontend already sends E.164)
+// - Else fallback to Saudi Arabia logic for backward compatibility
 const normalizePhone = (value: string): string => {
-  const digits = value.replace(/\D/g, "");
+  const trimmed = value.trim();
+  if (trimmed.startsWith("+")) {
+    return trimmed.slice(1).replace(/\D/g, "");
+  }
+  const digits = trimmed.replace(/\D/g, "");
   if (!digits) return "";
   if (digits.startsWith("966")) return digits;
   if (digits.startsWith("0")) return `966${digits.slice(1)}`;
   if (digits.startsWith("5")) return `966${digits}`;
   return digits;
 };
-
-async function hmacHex(text: string): Promise<string> {
-  const secret = Deno.env.get("OTP_HMAC_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
 
 const findUserById = async (
   adminClient: any,
@@ -89,6 +71,45 @@ async function logOtpAudit(
   }
 }
 
+// ── Twilio Verify helper ──
+async function twilioVerifyRequest(path: string, body: Record<string, string>) {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  if (!accountSid || !authToken) {
+    throw new Error("Twilio credentials not configured");
+  }
+  const credentials = btoa(`${accountSid}:${authToken}`);
+  const res = await fetch(`https://verify.twilio.com/v2${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(body).toString(),
+  });
+  const data = await res.json();
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Map Twilio error codes → friendly Arabic messages
+function twilioErrorMessage(code: number | string | undefined): string {
+  const c = String(code ?? "");
+  switch (c) {
+    case "60200":
+      return "رقم الجوال غير صالح";
+    case "60203":
+      return "تم تجاوز الحد المسموح من المحاولات. حاول لاحقاً";
+    case "60212":
+      return "تم تجاوز الحد المسموح من المحاولات. حاول لاحقاً";
+    case "60410":
+      return "تم حظر هذا الرقم مؤقتاً. حاول لاحقاً";
+    case "20429":
+      return "النظام مشغول حالياً، حاول بعد قليل";
+    default:
+      return "تعذر إرسال رمز التحقق. حاول مرة أخرى";
+  }
+}
+
 // ─── Handler ────────────────────────────────────────────
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -102,18 +123,24 @@ Deno.serve(async (req) => {
     });
 
   try {
-    const { action, phone, code } = await req.json();
+    const { action, phone, code, channel } = await req.json();
 
     if (!action || !phone) {
       return json({ error: "action و phone مطلوبان" }, 400);
     }
 
     const normalizedPhone = normalizePhone(phone);
-    if (!normalizedPhone || normalizedPhone.length < 12) {
+    if (!normalizedPhone || normalizedPhone.length < 8) {
       return json({ error: "رقم جوال غير صالح" }, 400);
     }
     const fullPhone = `+${normalizedPhone}`;
     const email = `${normalizedPhone}@phone.ailti.app`;
+
+    const verifyServiceSid = Deno.env.get("TWILIO_VERIFY_SERVICE_SID");
+    if (!verifyServiceSid) {
+      console.error("[phone-auth] TWILIO_VERIFY_SERVICE_SID not configured");
+      return json({ error: "خدمة التحقق غير مهيأة" }, 500);
+    }
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -122,88 +149,54 @@ Deno.serve(async (req) => {
 
     // ━━━━━━━━━━━━━━━ send-otp ━━━━━━━━━━━━━━━
     if (action === "send-otp") {
-      // Rate limit: max 5 codes per phone in 10 minutes
-      const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      const { count } = await adminClient
-        .from("otp_codes")
-        .select("id", { count: "exact", head: true })
-        .eq("phone", normalizedPhone)
-        .gte("created_at", tenMinAgo);
+      const sendChannel = channel === "whatsapp" ? "whatsapp" : "sms";
 
-      if ((count ?? 0) >= 5) {
-        await logOtpAudit(adminClient, normalizedPhone, "send", false, req, { reason: "rate_limit" });
-        return json({ error: "تم تجاوز الحد الأقصى. حاول بعد 10 دقائق" }, 429);
+      const { ok, status, data } = await twilioVerifyRequest(
+        `/Services/${verifyServiceSid}/Verifications`,
+        { To: fullPhone, Channel: sendChannel },
+      );
+
+      if (!ok || data?.status === "failed" || data?.status === "canceled") {
+        await logOtpAudit(adminClient, normalizedPhone, "send", false, req, {
+          twilio_status: status,
+          twilio_code: data?.code,
+          twilio_message: data?.message,
+        });
+        return json({ error: twilioErrorMessage(data?.code) }, status >= 400 ? status : 400);
       }
 
-      // Delete old OTPs for same phone
-      await adminClient.from("otp_codes").delete().eq("phone", normalizedPhone);
-
-      // Generate 6-digit code
-      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-      const codeHash = await hmacHex(otpCode);
-
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-
-      const { error: insertErr } = await adminClient.from("otp_codes").insert({
-        phone: normalizedPhone,
-        code_hash: codeHash,
-        expires_at: expiresAt,
-        attempts: 0,
-        verified: false,
+      await logOtpAudit(adminClient, normalizedPhone, "send", true, req, {
+        channel: sendChannel,
+        sid: data?.sid,
       });
-
-      if (insertErr) throw insertErr;
-
-      // Log successful send
-      await logOtpAudit(adminClient, normalizedPhone, "send", true, req);
 
       return json({ success: true });
     }
 
     // ━━━━━━━━━━━━━━━ verify-otp ━━━━━━━━━━━━━━━
     if (action === "verify-otp") {
-      if (!code || typeof code !== "string" || code.length !== 6) {
-        return json({ error: "رمز التحقق مطلوب (6 أرقام)" }, 400);
+      if (!code || typeof code !== "string" || code.length < 4 || code.length > 10) {
+        return json({ error: "رمز التحقق مطلوب" }, 400);
       }
 
-      const codeHash = await hmacHex(code);
+      const { ok, status, data } = await twilioVerifyRequest(
+        `/Services/${verifyServiceSid}/VerificationChecks`,
+        { To: fullPhone, Code: code },
+      );
 
-      // Find matching OTP
-      const { data: otpRow, error: otpErr } = await adminClient
-        .from("otp_codes")
-        .select("*")
-        .eq("phone", normalizedPhone)
-        .eq("code_hash", codeHash)
-        .eq("verified", false)
-        .gte("expires_at", new Date().toISOString())
-        .lt("attempts", 5)
-        .maybeSingle();
-
-      if (otpErr) throw otpErr;
-
-      if (!otpRow) {
-        // Increment attempts on all non-expired codes for this phone
-        const { data: rows } = await adminClient
-          .from("otp_codes")
-          .select("id, attempts")
-          .eq("phone", normalizedPhone)
-          .eq("verified", false);
-
-        if (rows && rows.length > 0) {
-          for (const r of rows) {
-            await adminClient
-              .from("otp_codes")
-              .update({ attempts: (r.attempts ?? 0) + 1 })
-              .eq("id", r.id);
-          }
-        }
-
-        await logOtpAudit(adminClient, normalizedPhone, "verify", false, req, { reason: "invalid_code" });
-        return json({ error: "رمز التحقق غير صحيح أو منتهي الصلاحية" }, 401);
+      if (!ok || data?.status !== "approved") {
+        await logOtpAudit(adminClient, normalizedPhone, "verify", false, req, {
+          twilio_status: status,
+          twilio_check_status: data?.status,
+          twilio_code: data?.code,
+          twilio_message: data?.message,
+        });
+        const errMsg =
+          data?.status === "pending"
+            ? "رمز التحقق غير صحيح"
+            : twilioErrorMessage(data?.code) || "رمز التحقق غير صحيح أو منتهي الصلاحية";
+        return json({ error: errMsg }, 401);
       }
-
-      // OTP is valid — delete it
-      await adminClient.from("otp_codes").delete().eq("id", otpRow.id);
 
       // Find or create user
       let user = await findUserById(adminClient, fullPhone, email, normalizedPhone);
@@ -247,7 +240,6 @@ Deno.serve(async (req) => {
         return json({ error: "فشل إنشاء رمز الجلسة" }, 500);
       }
 
-      // Log successful verify
       await logOtpAudit(adminClient, normalizedPhone, "verify", true, req, { user_id: user.id });
 
       return json({
@@ -258,6 +250,7 @@ Deno.serve(async (req) => {
 
     return json({ error: `action غير معروف: ${action}` }, 400);
   } catch (err) {
-    console.error("[phone-auth]", err); return json({ error: "حدث خطأ داخلي" }, 500);
+    console.error("[phone-auth]", err);
+    return json({ error: "حدث خطأ داخلي" }, 500);
   }
 });
