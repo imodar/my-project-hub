@@ -285,9 +285,10 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
   // Scroll-driven fade for Qibla + NextPrayer boxes
   const { scrollY } = useScroll();
-  const islamicOpacity = useTransform(scrollY, [0, 120], [1, 0]);
-  const islamicY = useTransform(scrollY, [0, 120], [0, -16]);
-  const islamicHeight = useTransform(scrollY, [0, 160], ["auto" as unknown as number, 0]);
+  const islamicOpacity = useTransform(scrollY, [0, 100], [1, 0]);
+  const islamicY = useTransform(scrollY, [0, 100], [0, -20]);
+  const islamicScale = useTransform(scrollY, [0, 100], [1, 0.9]);
+  const islamicMaxHeight = useTransform(scrollY, [0, 140], [240, 0]);
 
   useEffect(() => {
     if (!demoActive) return;
