@@ -384,7 +384,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   return (
     <motion.div
       ref={ref}
-      className="relative rounded-b-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
+      className="relative rounded-b-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
       animate={{ background: theme.gradient }}
       transition={{ duration: 1, ease: "easeInOut" }}
       style={{ background: theme.gradient }}
