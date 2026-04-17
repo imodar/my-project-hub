@@ -6,7 +6,7 @@ import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import NotificationsSheet from "@/components/notifications/NotificationsSheet";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
 
