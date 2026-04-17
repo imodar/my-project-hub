@@ -477,53 +477,64 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
       >
         <motion.div
           className="absolute top-0 left-2 w-16 h-16 z-10 pointer-events-none"
-          key={theme.label}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          style={{ scale: orbScale, opacity: orbOpacity, originX: 0, originY: 0 }}
         >
-          <div className="absolute inset-0 rounded-full animate-pulse" style={{
-            filter: "blur(12px)",
-            background: `radial-gradient(circle, ${theme.glowColor} 0%, transparent 70%)`
-          }} />
-          <div className="relative w-full h-full rounded-full shadow-lg flex items-center justify-center"
-            style={{
-              background: theme.orbBg,
-              border: "2px solid hsla(0,0%,100%,0.25)"
-            }}
+          <motion.div
+            key={theme.label}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="w-full h-full relative"
           >
-            <AnimatePresence mode="wait">
-              {showWeatherInfo && displayTemp !== undefined ? (
-                <motion.span
-                  key={`temp-${displayTemp}`}
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="text-white font-bold text-lg"
-                >
-                  {displayTemp}°
-                </motion.span>
-              ) : (
-                <motion.div
-                  key={theme.label}
-                  initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                  exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  {theme.decorationIcon}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+            <div className="absolute inset-0 rounded-full animate-pulse" style={{
+              filter: "blur(12px)",
+              background: `radial-gradient(circle, ${theme.glowColor} 0%, transparent 70%)`
+            }} />
+            <div className="relative w-full h-full rounded-full shadow-lg flex items-center justify-center"
+              style={{
+                background: theme.orbBg,
+                border: "2px solid hsla(0,0%,100%,0.25)"
+              }}
+            >
+              <AnimatePresence mode="wait">
+                {showWeatherInfo && displayTemp !== undefined ? (
+                  <motion.span
+                    key={`temp-${displayTemp}`}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-white font-bold text-lg"
+                  >
+                    {displayTemp}°
+                  </motion.span>
+                ) : (
+                  <motion.div
+                    key={theme.label}
+                    initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                    exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {theme.decorationIcon}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
         </motion.div>
 
         <motion.div
           className="rounded-2xl p-5 relative overflow-hidden text-white shadow-xl"
           animate={{ background: theme.gradient }}
           transition={{ duration: 1, ease: "easeInOut" }}
-          style={{ background: theme.gradient }}
+          style={{
+            background: theme.gradient,
+            opacity: heroOpacity,
+            scale: heroScale,
+            y: heroY,
+            originY: 0,
+          }}
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -568,6 +579,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
+                style={{ opacity: weatherRowOpacity }}
                 className="flex items-center gap-1.5 text-white/70 text-xs"
               >
                 <MapPin size={12} className="shrink-0" />
@@ -579,20 +591,26 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             )}
 
             {!demoActive && weather?.lastUpdated && (
-              <p className="text-[10px] text-white/35">
+              <motion.p
+                className="text-[10px] text-white/35"
+                style={{ opacity: weatherRowOpacity }}
+              >
                 {t.hero.lastUpdate} {formatLastUpdated(weather.lastUpdated)}
-              </p>
+              </motion.p>
             )}
 
             {islamicMode && (
-              <div className="grid grid-cols-2 gap-3 items-center">
+              <motion.div
+                className="grid grid-cols-2 gap-3 items-center overflow-hidden"
+                style={{ opacity: boxesOpacity, scale: boxesScale, originY: 0 }}
+              >
                 <QiblaCompass />
                 <NextPrayerBox />
-              </div>
+              </motion.div>
             )}
           </div>
         </motion.div>
-      </section>
+      </motion.section>
 
       
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
