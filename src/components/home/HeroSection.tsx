@@ -394,8 +394,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
       style={{ background: theme.gradient }}
     >
       <header
-        className="sticky top-0 z-40 px-5 pb-0 flex justify-between items-center text-white"
-        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}
+        className="sticky top-0 z-40 px-5 pb-3 flex justify-between items-center text-white"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)", background: theme.gradient }}
       >
         <div className="flex items-center gap-3">
           <button
