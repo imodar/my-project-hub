@@ -413,7 +413,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             )}
           </button>
         </div>
-      </motion.header>
+      </header>
 
       <section className="relative overflow-visible">
         <motion.div
@@ -460,12 +460,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           </div>
         </motion.div>
 
-        <motion.div
-          className="rounded-b-2xl px-5 pt-4 pb-5 relative overflow-hidden text-white shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
-          animate={{ background: theme.gradient }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-          style={{ background: theme.gradient }}
-        >
+        <div className="px-5 pt-4 pb-5 relative overflow-hidden text-white">
           <AnimatePresence mode="wait">
             <motion.div
               key={`particles-${theme.label}`}
@@ -541,13 +536,12 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
               </motion.div>
             )}
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </div>
+    </motion.div>
   );
 });
 
