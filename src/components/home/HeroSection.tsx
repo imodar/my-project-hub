@@ -6,7 +6,7 @@ import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import NotificationsSheet from "@/components/notifications/NotificationsSheet";
-import { motion, AnimatePresence, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -283,30 +283,19 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Scroll-driven smooth collapse (single eased progress for synchronized animation)
+  // Scroll-driven smooth collapse — use scroll value directly (no spring) and only
+  // animate GPU-friendly properties (opacity, transform). Avoid maxHeight/padding
+  // animations which trigger layout on every frame and cause jank.
   const { scrollY } = useScroll();
-  const collapseProgress = useTransform(scrollY, [0, 190], [0, 1], { clamp: true });
-  const smoothedProgress = useSpring(collapseProgress, {
-    stiffness: 220,
-    damping: 32,
-    mass: 0.45,
-  });
-  const easedProgress = useTransform(smoothedProgress, (v) =>
-    v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2
-  );
+  const easedProgress = useTransform(scrollY, [0, 160], [0, 1], { clamp: true });
 
-  const islamicOpacity = useTransform(easedProgress, [0, 0.7], [1, 0]);
-  const islamicY = useTransform(easedProgress, [0, 1], [0, -16]);
-  const islamicScale = useTransform(easedProgress, [0, 1], [1, 0.92]);
-  const islamicMaxHeight = useTransform(easedProgress, [0, 1], [240, 0]);
+  const islamicOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
+  const islamicScaleY = useTransform(easedProgress, [0, 1], [1, 0]);
 
-  const contentOpacity = useTransform(easedProgress, [0, 0.6], [1, 0]);
-  const contentY = useTransform(easedProgress, [0, 1], [0, -8]);
-  const contentMaxHeight = useTransform(easedProgress, [0, 1], [200, 0]);
-  const sectionPaddingTop = useTransform(easedProgress, [0, 1], [16, 0]);
-  const sectionPaddingBottom = useTransform(easedProgress, [0, 1], [20, 0]);
-  const orbScale = useTransform(easedProgress, [0, 0.7], [1, 0]);
-  const orbOpacity = useTransform(easedProgress, [0, 0.6], [1, 0]);
+  const contentOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
+  const contentScaleY = useTransform(easedProgress, [0, 1], [1, 0]);
+  const orbScale = useTransform(easedProgress, [0, 0.6], [1, 0]);
+  const orbOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
     if (!demoActive) return;
@@ -480,8 +469,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </motion.div>
 
         <motion.div
-          className="px-5 relative overflow-hidden text-white"
-          style={{ paddingTop: sectionPaddingTop, paddingBottom: sectionPaddingBottom }}
+          className="px-5 pt-4 pb-5 relative overflow-hidden text-white"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -509,8 +497,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
           <div className="relative z-20 space-y-3">
             <motion.div
-              className="space-y-3 overflow-hidden"
-              style={{ opacity: contentOpacity, y: contentY, maxHeight: contentMaxHeight }}
+              className="space-y-3 origin-top will-change-transform"
+              style={{ opacity: contentOpacity, scaleY: contentScaleY, transformOrigin: "top center" }}
             >
               <div>
                 <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
@@ -549,12 +537,10 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
             {islamicMode && (
               <motion.div
-                className="grid grid-cols-2 gap-3 items-center overflow-hidden"
+                className="grid grid-cols-2 gap-3 items-center origin-top will-change-transform"
                 style={{
                   opacity: islamicOpacity,
-                  y: islamicY,
-                  scale: islamicScale,
-                  maxHeight: islamicMaxHeight,
+                  scaleY: islamicScaleY,
                   transformOrigin: "top center",
                 }}
               >
