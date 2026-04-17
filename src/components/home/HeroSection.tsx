@@ -367,27 +367,32 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
   return (
     <div ref={ref}>
-      <header className="sticky top-0 z-40 px-5 pb-2 flex justify-between items-center bg-background/95 backdrop-blur-sm" style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}>
+      <motion.header
+        className="sticky top-0 z-40 px-5 pb-2 flex justify-between items-center backdrop-blur-sm text-white"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)", background: theme.gradient }}
+        animate={{ background: theme.gradient }}
+        transition={{ duration: 1, ease: "easeInOut" }}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/profile")}
-            className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-primary/30"
-            style={{ background: "hsl(var(--primary) / 0.1)" }}
+            className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-white/30"
+            style={{ background: "hsla(0,0%,100%,0.15)" }}
           >
-            <span className="text-sm font-bold text-primary">{currentUser.name.charAt(0)}</span>
+            <span className="text-sm font-bold text-white">{currentUser.name.charAt(0)}</span>
           </button>
-          <span className="text-xl font-bold text-primary tracking-tight">{t.appName}</span>
+          <span className="text-xl font-bold text-white tracking-tight">{t.appName}</span>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setSearchOpen(true)}
-            className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
+            className="p-2 rounded-full text-white/85 hover:bg-white/10 transition-colors"
           >
             <Search size={22} />
           </button>
           <button
             onClick={() => setNotificationsOpen(true)}
-            className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
+            className="relative p-2 rounded-full text-white/85 hover:bg-white/10 transition-colors"
           >
             <Bell size={22} />
             {unreadCount > 0 && (
@@ -397,11 +402,11 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             )}
           </button>
         </div>
-      </header>
+      </motion.header>
 
       <section className="px-5 pt-8 relative overflow-visible">
         <motion.div
-          className="absolute top-0 left-2 w-16 h-16 z-10 pointer-events-none"
+          className="absolute top-0 right-2 w-16 h-16 z-10 pointer-events-none"
           key={theme.label}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
