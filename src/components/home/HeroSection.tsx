@@ -283,17 +283,19 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Scroll-driven smooth collapse — use scroll value directly (no spring) and only
-  // animate GPU-friendly properties (opacity, transform). Avoid maxHeight/padding
-  // animations which trigger layout on every frame and cause jank.
+  // Scroll-driven smooth collapse — direct mapping (no spring) for buttery
+  // sync with finger/wheel. We animate opacity + height together so the
+  // header actually shrinks as the user scrolls.
   const { scrollY } = useScroll();
   const easedProgress = useTransform(scrollY, [0, 160], [0, 1], { clamp: true });
 
   const islamicOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
-  const islamicScaleY = useTransform(easedProgress, [0, 1], [1, 0]);
+  const islamicHeight = useTransform(easedProgress, [0, 1], [128, 0]);
 
   const contentOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
-  const contentScaleY = useTransform(easedProgress, [0, 1], [1, 0]);
+  const contentHeight = useTransform(easedProgress, [0, 1], [76, 0]);
+  const sectionPaddingTop = useTransform(easedProgress, [0, 1], [16, 4]);
+  const sectionPaddingBottom = useTransform(easedProgress, [0, 1], [20, 4]);
   const orbScale = useTransform(easedProgress, [0, 0.6], [1, 0]);
   const orbOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
 
@@ -469,7 +471,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </motion.div>
 
         <motion.div
-          className="px-5 pt-4 pb-5 relative overflow-hidden text-white"
+          className="px-5 relative overflow-hidden text-white"
+          style={{ paddingTop: sectionPaddingTop, paddingBottom: sectionPaddingBottom }}
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -497,8 +500,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
           <div className="relative z-20 space-y-3">
             <motion.div
-              className="space-y-3 origin-top will-change-transform"
-              style={{ opacity: contentOpacity, scaleY: contentScaleY, transformOrigin: "top center" }}
+              className="space-y-3 overflow-hidden"
+              style={{ opacity: contentOpacity, height: contentHeight }}
             >
               <div>
                 <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
@@ -537,11 +540,10 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
             {islamicMode && (
               <motion.div
-                className="grid grid-cols-2 gap-3 items-center origin-top will-change-transform"
+                className="grid grid-cols-2 gap-3 items-center overflow-hidden"
                 style={{
                   opacity: islamicOpacity,
-                  scaleY: islamicScaleY,
-                  transformOrigin: "top center",
+                  height: islamicHeight,
                 }}
               >
                 <QiblaCompass />

@@ -414,7 +414,7 @@ const Auth = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={sendOtp}
+                  onClick={() => sendOtp()}
                   disabled={countdown > 0 || loading}
                   className="text-muted-foreground"
                 >
