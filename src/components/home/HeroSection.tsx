@@ -373,12 +373,16 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const showWeatherInfo = demoActive || (weather && hasLocationPermission);
 
   return (
-    <div ref={ref}>
-      <motion.header
+    <motion.div
+      ref={ref}
+      className="relative rounded-b-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
+      animate={{ background: theme.gradient }}
+      transition={{ duration: 1, ease: "easeInOut" }}
+      style={{ background: theme.gradient }}
+    >
+      <header
         className="sticky top-0 z-40 px-5 pb-0 flex justify-between items-center text-white"
-        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)", background: theme.gradient }}
-        animate={{ background: theme.gradient }}
-        transition={{ duration: 1, ease: "easeInOut" }}
+        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}
       >
         <div className="flex items-center gap-3">
           <button
