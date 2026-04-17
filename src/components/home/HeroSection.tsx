@@ -290,6 +290,11 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const islamicScale = useTransform(scrollY, [0, 100], [1, 0.9]);
   const islamicMaxHeight = useTransform(scrollY, [0, 140], [240, 0]);
 
+  // Scroll-driven fade for greeting + date + weather row (keeps header + orb visible)
+  const contentOpacity = useTransform(scrollY, [0, 80], [1, 0]);
+  const contentY = useTransform(scrollY, [0, 80], [0, -10]);
+  const contentMaxHeight = useTransform(scrollY, [0, 120], [120, 0]);
+
   useEffect(() => {
     if (!demoActive) return;
     const timer = setInterval(() => {
