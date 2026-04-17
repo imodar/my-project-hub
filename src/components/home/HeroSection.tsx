@@ -6,7 +6,7 @@ import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import NotificationsSheet from "@/components/notifications/NotificationsSheet";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform, useMotionTemplate } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -365,29 +365,101 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const displayDesc = demoActive ? DEMO_STATES[demoIndex].description : weather?.description;
   const showWeatherInfo = demoActive || (weather && hasLocationPermission);
 
+  // === Scroll-linked animation ===
+  const { scrollY } = useScroll();
+  // 0 -> fully expanded, 1 -> fully collapsed (header glass)
+  const progress = useTransform(scrollY, [0, 140], [0, 1], { clamp: true });
+
+  // Header glass background opacity (fades in as we scroll)
+  const headerBgOpacity = useTransform(progress, [0, 1], [0, 0.85]);
+  const headerBg = useMotionTemplate`linear-gradient(135deg, hsla(var(--hero-gradient-from) / ${headerBgOpacity}), hsla(var(--hero-gradient-to) / ${headerBgOpacity}))`;
+  const headerBlur = useTransform(progress, [0, 1], [0, 14]);
+  const headerBackdrop = useMotionTemplate`saturate(180%) blur(${headerBlur}px)`;
+  const headerBorderOpacity = useTransform(progress, [0, 0.6, 1], [0, 0, 0.18]);
+  const headerBorder = useMotionTemplate`1px solid hsla(0, 0%, 100%, ${headerBorderOpacity})`;
+
+  // Header text/icons swap to white as glass takes over
+  const appNameColor = useTransform(progress, [0, 0.6, 1], ["hsl(var(--primary))", "hsl(var(--primary))", "hsl(0, 0%, 100%)"]);
+  const iconColor = useTransform(progress, [0, 0.6, 1], ["hsl(var(--muted-foreground))", "hsl(var(--muted-foreground))", "hsl(0, 0%, 100%)"]);
+
+  // Mini weather chip in header (slides in from right / RTL: from left)
+  const chipOpacity = useTransform(progress, [0.55, 1], [0, 1]);
+  const chipX = useTransform(progress, [0.55, 1], [language === "ar" ? -12 : 12, 0]);
+
+  // Hero card transforms
+  const heroOpacity = useTransform(progress, [0, 0.85], [1, 0]);
+  const heroScale = useTransform(progress, [0, 1], [1, 0.92]);
+  const heroY = useTransform(progress, [0, 1], [0, -20]);
+  const heroPaddingTop = useTransform(progress, [0, 1], [32, 4]);
+
+  // Weather orb shrinks
+  const orbScale = useTransform(progress, [0, 1], [1, 0.55]);
+  const orbOpacity = useTransform(progress, [0, 0.7, 1], [1, 0.5, 0]);
+
+  // Qibla + Prayer boxes collapse
+  const boxesHeight = useTransform(progress, [0, 0.7], ["auto" as unknown as number, 0]);
+  const boxesOpacity = useTransform(progress, [0, 0.5], [1, 0]);
+  const boxesScale = useTransform(progress, [0, 0.7], [1, 0.85]);
+
+  // Weather row inside card fades out (it's now in the chip)
+  const weatherRowOpacity = useTransform(progress, [0.3, 0.7], [1, 0]);
+
   return (
     <div ref={ref}>
-      <header className="sticky top-0 z-40 px-5 pb-2 flex justify-between items-center bg-background/95 backdrop-blur-sm" style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}>
-        <div className="flex items-center gap-3">
+      <motion.header
+        className="sticky top-0 z-40 px-5 pb-2 flex justify-between items-center"
+        style={{
+          paddingTop: "max(env(safe-area-inset-top), 16px)",
+          background: headerBg,
+          backdropFilter: headerBackdrop,
+          WebkitBackdropFilter: headerBackdrop,
+          borderBottom: headerBorder,
+        }}
+      >
+        <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={() => navigate("/profile")}
-            className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-primary/30"
+            className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-primary/30 shrink-0"
             style={{ background: "hsl(var(--primary) / 0.1)" }}
           >
             <span className="text-sm font-bold text-primary">{currentUser.name.charAt(0)}</span>
           </button>
-          <span className="text-xl font-bold text-primary tracking-tight">{t.appName}</span>
+          <motion.span
+            className="text-xl font-bold tracking-tight truncate"
+            style={{ color: appNameColor }}
+          >
+            {t.appName}
+          </motion.span>
+
+          {/* Mini weather chip — appears when collapsed */}
+          {showWeatherInfo && displayTemp !== undefined && displayIcon && (
+            <motion.div
+              className="flex items-center gap-1 px-2 py-1 rounded-full shrink-0"
+              style={{
+                opacity: chipOpacity,
+                x: chipX,
+                background: "hsla(0, 0%, 100%, 0.18)",
+                border: "1px solid hsla(0, 0%, 100%, 0.25)",
+                pointerEvents: "none",
+              }}
+            >
+              <WeatherIcon icon={displayIcon} />
+              <span className="text-white text-xs font-semibold">{displayTemp}°</span>
+            </motion.div>
+          )}
         </div>
-        <div className="flex items-center gap-1">
-          <button
+        <div className="flex items-center gap-1 shrink-0">
+          <motion.button
             onClick={() => setSearchOpen(true)}
-            className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
+            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+            style={{ color: iconColor }}
           >
             <Search size={22} />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             onClick={() => setNotificationsOpen(true)}
-            className="relative p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
+            className="relative p-2 rounded-full hover:bg-white/10 transition-colors"
+            style={{ color: iconColor }}
           >
             <Bell size={22} />
             {unreadCount > 0 && (
@@ -395,11 +467,14 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
-          </button>
+          </motion.button>
         </div>
-      </header>
+      </motion.header>
 
-      <section className="px-5 pt-8 relative overflow-visible">
+      <motion.section
+        className="px-5 relative overflow-visible"
+        style={{ paddingTop: heroPaddingTop }}
+      >
         <motion.div
           className="absolute top-0 left-2 w-16 h-16 z-10 pointer-events-none"
           key={theme.label}
