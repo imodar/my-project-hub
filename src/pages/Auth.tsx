@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { appToast } from "@/lib/toast";
-import { Phone, ArrowRight, Loader2, Globe, ChevronDown } from "lucide-react";
+import { Phone, ArrowRight, Loader2, Globe, ChevronDown, Mail } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -76,6 +76,7 @@ const Auth = () => {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
   const [showCountryDrawer, setShowCountryDrawer] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -93,14 +94,20 @@ const Auth = () => {
 
   const fullPhone = phone.startsWith("+") ? phone : `${selectedCountry.dial}${phone.replace(/^0/, "")}`;
 
-  const sendOtp = async () => {
+  const sendOtp = async (animate = true) => {
     if (!phone || phone.replace(/\D/g, "").length < 9) {
       appToast.error("أدخل رقم جوال صحيح");
       return;
     }
+    if (animate) setSending(true);
     setLoading(true);
     try {
       const data = await callPhoneAuth({ action: "send-otp", phone: fullPhone });
+
+      // Wait for fly-away animation to feel complete before switching step
+      if (animate) {
+        await new Promise((r) => setTimeout(r, 850));
+      }
 
       appToast.info("تم إرسال رمز التحقق", `إلى ${fullPhone}`);
       setStep("otp");
@@ -109,6 +116,7 @@ const Auth = () => {
       appToast.error("خطأ في إرسال الرمز", err.message);
     } finally {
       setLoading(false);
+      setSending(false);
     }
   };
 
@@ -236,20 +244,64 @@ const Auth = () => {
                 />
               </div>
 
-              <Button
-                onClick={sendOtp}
-                disabled={loading || phone.replace(/\D/g, "").length < 9}
-                className="w-full h-14 rounded-xl text-base font-semibold gap-2 shadow-md active:scale-[0.97] transition-transform"
-              >
-                {loading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <>
-                    <Phone className="h-5 w-5" />
-                    {t.auth.sendOtp}
-                  </>
-                )}
-              </Button>
+              <div className="relative h-14 flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                  {!sending ? (
+                    <motion.div
+                      key="btn"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1, width: "100%" }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="w-full"
+                    >
+                      <Button
+                        onClick={() => sendOtp()}
+                        disabled={loading || phone.replace(/\D/g, "").length < 9}
+                        className="w-full h-14 rounded-xl text-base font-semibold gap-2 shadow-md active:scale-[0.97] transition-transform"
+                      >
+                        <Phone className="h-5 w-5" />
+                        {t.auth.sendOtp}
+                      </Button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="circle"
+                      initial={{ width: "100%", borderRadius: "0.75rem" }}
+                      animate={{
+                        width: 56,
+                        borderRadius: "9999px",
+                        y: [0, 0, -400],
+                        opacity: [1, 1, 0],
+                        scale: [1, 1, 0.6],
+                      }}
+                      transition={{
+                        width: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                        borderRadius: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                        y: { duration: 0.85, times: [0, 0.45, 1], ease: [0.5, 0, 0.75, 0] },
+                        opacity: { duration: 0.85, times: [0, 0.6, 1] },
+                        scale: { duration: 0.85, times: [0, 0.45, 1], ease: [0.5, 0, 0.75, 0] },
+                      }}
+                      className="h-14 bg-primary text-primary-foreground shadow-lg flex items-center justify-center overflow-hidden"
+                    >
+                      <motion.div
+                        initial={{ scale: 0, rotate: -20 }}
+                        animate={{
+                          scale: [0, 1.15, 1],
+                          rotate: [0, 0, 0],
+                          x: [0, 0, 60],
+                        }}
+                        transition={{
+                          scale: { duration: 0.5, times: [0, 0.7, 1], ease: "easeOut" },
+                          x: { duration: 0.85, times: [0, 0.45, 1], ease: "easeIn" },
+                        }}
+                      >
+                        <Mail className="h-5 w-5" />
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Divider */}
               <div className="relative py-1">
