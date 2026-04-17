@@ -283,17 +283,19 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Scroll-driven smooth collapse — use scroll value directly (no spring) and only
-  // animate GPU-friendly properties (opacity, transform). Avoid maxHeight/padding
-  // animations which trigger layout on every frame and cause jank.
+  // Scroll-driven smooth collapse — direct mapping (no spring) for buttery
+  // sync with finger/wheel. We animate opacity + height together so the
+  // header actually shrinks as the user scrolls.
   const { scrollY } = useScroll();
   const easedProgress = useTransform(scrollY, [0, 160], [0, 1], { clamp: true });
 
   const islamicOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
-  const islamicScaleY = useTransform(easedProgress, [0, 1], [1, 0]);
+  const islamicHeight = useTransform(easedProgress, [0, 1], [128, 0]);
 
   const contentOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
-  const contentScaleY = useTransform(easedProgress, [0, 1], [1, 0]);
+  const contentHeight = useTransform(easedProgress, [0, 1], [76, 0]);
+  const sectionPaddingTop = useTransform(easedProgress, [0, 1], [16, 4]);
+  const sectionPaddingBottom = useTransform(easedProgress, [0, 1], [20, 4]);
   const orbScale = useTransform(easedProgress, [0, 0.6], [1, 0]);
   const orbOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
 
