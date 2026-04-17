@@ -264,42 +264,49 @@ const Auth = () => {
                         {t.auth.sendOtp}
                       </Button>
                     </motion.div>
-                  ) : (
+                  ) : (() => {
+                    // Random upper corner target (left or right)
+                    const goLeft = Math.random() < 0.5;
+                    const cornerX = goLeft ? -160 : 160;
+                    const cornerY = -520;
+                    // Fly-like wandering path before escaping to a corner
+                    const xPath = [0, 0, 40, -50, 70, -30, cornerX * 0.6, cornerX];
+                    const yPath = [0, 0, -40, -90, -160, -240, -380, cornerY];
+                    const rotPath = [0, 0, 15, -20, 25, -15, goLeft ? -30 : 30, goLeft ? -45 : 45];
+                    return (
                     <motion.div
                       key="circle"
                       initial={{ width: "100%", borderRadius: "0.75rem" }}
                       animate={{
                         width: 56,
                         borderRadius: "9999px",
-                        y: [0, 0, -400],
-                        opacity: [1, 1, 0],
-                        scale: [1, 1, 0.6],
+                        x: xPath,
+                        y: yPath,
+                        rotate: rotPath,
+                        opacity: [1, 1, 1, 1, 1, 1, 0.8, 0],
+                        scale: [1, 1, 1, 0.95, 0.9, 0.8, 0.65, 0.4],
                       }}
                       transition={{
                         width: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
                         borderRadius: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
-                        y: { duration: 0.85, times: [0, 0.45, 1], ease: [0.5, 0, 0.75, 0] },
-                        opacity: { duration: 0.85, times: [0, 0.6, 1] },
-                        scale: { duration: 0.85, times: [0, 0.45, 1], ease: [0.5, 0, 0.75, 0] },
+                        x: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1], ease: "easeInOut" },
+                        y: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1], ease: [0.45, 0, 0.55, 1] },
+                        rotate: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1], ease: "easeInOut" },
+                        opacity: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1] },
+                        scale: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1], ease: "easeIn" },
                       }}
                       className="h-14 bg-primary text-primary-foreground shadow-lg flex items-center justify-center overflow-hidden"
                     >
                       <motion.div
-                        initial={{ scale: 0, rotate: -20 }}
-                        animate={{
-                          scale: [0, 1.15, 1],
-                          rotate: [0, 0, 0],
-                          x: [0, 0, 60],
-                        }}
-                        transition={{
-                          scale: { duration: 0.5, times: [0, 0.7, 1], ease: "easeOut" },
-                          x: { duration: 0.85, times: [0, 0.45, 1], ease: "easeIn" },
-                        }}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: [0, 1.15, 1] }}
+                        transition={{ duration: 0.5, times: [0, 0.7, 1], ease: "easeOut" }}
                       >
                         <Mail className="h-5 w-5" />
                       </motion.div>
                     </motion.div>
-                  )}
+                    );
+                  })()}
                 </AnimatePresence>
               </div>
 
