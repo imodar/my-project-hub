@@ -283,11 +283,11 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Scroll-driven smooth collapse — direct mapping (no spring) for buttery
-  // sync with finger/wheel. We animate opacity + height together so the
-  // header actually shrinks as the user scrolls.
+  // Scroll-driven smooth collapse — keep the collapse range comfortably larger
+  // than the total removed header height to avoid scroll/layout feedback flicker
+  // on mobile while the sticky header shrinks.
   const { scrollY } = useScroll();
-  const easedProgress = useTransform(scrollY, [0, 160], [0, 1], { clamp: true });
+  const easedProgress = useTransform(scrollY, [0, 360], [0, 1], { clamp: true });
 
   const islamicOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
   const islamicHeight = useTransform(easedProgress, [0, 1], [128, 0]);
