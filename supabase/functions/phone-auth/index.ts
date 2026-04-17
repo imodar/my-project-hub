@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
       }
 
       const { ok, status, data } = await twilioVerifyRequest(
-        `/Services/${verifyServiceSid}/VerificationChecks`,
+        `/Services/${verifyServiceSid}/VerificationCheck`,
         { To: fullPhone, Code: code },
       );
 
