@@ -291,9 +291,13 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const islamicMaxHeight = useTransform(scrollY, [0, 140], [240, 0]);
 
   // Scroll-driven fade for greeting + date + weather row (keeps header + orb visible)
-  const contentOpacity = useTransform(scrollY, [0, 80], [1, 0]);
+  const contentOpacity = useTransform(scrollY, [0, 60], [1, 0]);
   const contentY = useTransform(scrollY, [0, 80], [0, -10]);
-  const contentMaxHeight = useTransform(scrollY, [0, 120], [120, 0]);
+  const contentMaxHeight = useTransform(scrollY, [0, 120], [200, 0]);
+  const sectionPaddingTop = useTransform(scrollY, [0, 120], [16, 0]);
+  const sectionPaddingBottom = useTransform(scrollY, [0, 120], [20, 0]);
+  const orbScale = useTransform(scrollY, [0, 80], [1, 0]);
+  const orbOpacity = useTransform(scrollY, [0, 80], [1, 0]);
 
   useEffect(() => {
     if (!demoActive) return;
@@ -427,6 +431,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          style={{ scale: orbScale, opacity: orbOpacity, transformOrigin: "top center" }}
         >
           <div className="absolute inset-0 rounded-full animate-pulse" style={{
             filter: "blur(12px)",
@@ -465,7 +470,10 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           </div>
         </motion.div>
 
-        <div className="px-5 pt-4 pb-5 relative overflow-hidden text-white">
+        <motion.div
+          className="px-5 relative overflow-hidden text-white"
+          style={{ paddingTop: sectionPaddingTop, paddingBottom: sectionPaddingBottom }}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={`particles-${theme.label}`}
@@ -546,7 +554,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
               </motion.div>
             )}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
