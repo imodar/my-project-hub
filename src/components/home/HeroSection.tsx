@@ -490,14 +490,14 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           </AnimatePresence>
 
           {(!weather || (weather && weather.weatherCode <= 3)) && !demoActive && (
-            <>
+            <motion.div style={{ opacity: decorOpacity }}>
               <div className="absolute top-3 left-10 opacity-20">
                 <Cloud size={52} />
               </div>
               <div className="absolute bottom-3 right-16 opacity-15">
                 <Cloud size={36} />
               </div>
-            </>
+            </motion.div>
           )}
 
           <div className="relative z-20 space-y-3">
@@ -554,7 +554,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             )}
           </div>
         </motion.div>
-      </section>
+      </motion.section>
 
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
