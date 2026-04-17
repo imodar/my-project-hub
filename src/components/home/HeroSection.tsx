@@ -283,21 +283,25 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Scroll-driven fade for Qibla + NextPrayer boxes
+  // Scroll-driven smooth collapse (single eased progress for synchronized animation)
   const { scrollY } = useScroll();
-  const islamicOpacity = useTransform(scrollY, [0, 100], [1, 0]);
-  const islamicY = useTransform(scrollY, [0, 100], [0, -20]);
-  const islamicScale = useTransform(scrollY, [0, 100], [1, 0.9]);
-  const islamicMaxHeight = useTransform(scrollY, [0, 140], [240, 0]);
+  const collapseProgress = useTransform(scrollY, [0, 160], [0, 1], { clamp: true });
+  const easedProgress = useTransform(collapseProgress, (v) =>
+    v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2
+  );
 
-  // Scroll-driven fade for greeting + date + weather row (keeps header + orb visible)
-  const contentOpacity = useTransform(scrollY, [0, 60], [1, 0]);
-  const contentY = useTransform(scrollY, [0, 80], [0, -10]);
-  const contentMaxHeight = useTransform(scrollY, [0, 120], [200, 0]);
-  const sectionPaddingTop = useTransform(scrollY, [0, 120], [16, 0]);
-  const sectionPaddingBottom = useTransform(scrollY, [0, 120], [20, 0]);
-  const orbScale = useTransform(scrollY, [0, 80], [1, 0]);
-  const orbOpacity = useTransform(scrollY, [0, 80], [1, 0]);
+  const islamicOpacity = useTransform(easedProgress, [0, 0.7], [1, 0]);
+  const islamicY = useTransform(easedProgress, [0, 1], [0, -16]);
+  const islamicScale = useTransform(easedProgress, [0, 1], [1, 0.92]);
+  const islamicMaxHeight = useTransform(easedProgress, [0, 1], [240, 0]);
+
+  const contentOpacity = useTransform(easedProgress, [0, 0.6], [1, 0]);
+  const contentY = useTransform(easedProgress, [0, 1], [0, -8]);
+  const contentMaxHeight = useTransform(easedProgress, [0, 1], [200, 0]);
+  const sectionPaddingTop = useTransform(easedProgress, [0, 1], [16, 0]);
+  const sectionPaddingBottom = useTransform(easedProgress, [0, 1], [20, 0]);
+  const orbScale = useTransform(easedProgress, [0, 0.7], [1, 0]);
+  const orbOpacity = useTransform(easedProgress, [0, 0.6], [1, 0]);
 
   useEffect(() => {
     if (!demoActive) return;
@@ -390,8 +394,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
       style={{ background: theme.gradient }}
     >
       <header
-        className="sticky top-0 z-40 px-5 pb-0 flex justify-between items-center text-white"
-        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}
+        className="sticky top-0 z-40 px-5 pb-3 flex justify-between items-center text-white"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)", background: theme.gradient }}
       >
         <div className="flex items-center gap-3">
           <button
