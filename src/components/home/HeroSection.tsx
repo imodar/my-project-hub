@@ -294,8 +294,10 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
   const contentOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
   const contentHeight = useTransform(easedProgress, [0, 1], [76, 0]);
-  const sectionPaddingTop = useTransform(easedProgress, [0, 1], [16, 4]);
-  const sectionPaddingBottom = useTransform(easedProgress, [0, 1], [20, 4]);
+  const sectionPaddingTop = useTransform(easedProgress, [0, 1], [16, 0]);
+  const sectionPaddingBottom = useTransform(easedProgress, [0, 1], [20, 0]);
+  const sectionOpacity = useTransform(easedProgress, [0.6, 1], [1, 0]);
+  const decorOpacity = useTransform(easedProgress, [0, 0.4], [1, 0]);
   const orbScale = useTransform(easedProgress, [0, 0.6], [1, 0]);
   const orbOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
 
@@ -424,7 +426,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </div>
       </header>
 
-      <section className="relative overflow-hidden">
+      <motion.section className="relative overflow-hidden" style={{ opacity: sectionOpacity }}>
         <motion.div
           className="absolute -top-2 left-7 w-16 h-16 z-10 pointer-events-none"
           key={theme.label}
@@ -488,14 +490,14 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           </AnimatePresence>
 
           {(!weather || (weather && weather.weatherCode <= 3)) && !demoActive && (
-            <>
+            <motion.div style={{ opacity: decorOpacity }}>
               <div className="absolute top-3 left-10 opacity-20">
                 <Cloud size={52} />
               </div>
               <div className="absolute bottom-3 right-16 opacity-15">
                 <Cloud size={36} />
               </div>
-            </>
+            </motion.div>
           )}
 
           <div className="relative z-20 space-y-3">
@@ -552,7 +554,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             )}
           </div>
         </motion.div>
-      </section>
+      </motion.section>
 
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
