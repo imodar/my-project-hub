@@ -6,7 +6,7 @@ import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import NotificationsSheet from "@/components/notifications/NotificationsSheet";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -285,8 +285,13 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
   // Scroll-driven smooth collapse (single eased progress for synchronized animation)
   const { scrollY } = useScroll();
-  const collapseProgress = useTransform(scrollY, [0, 160], [0, 1], { clamp: true });
-  const easedProgress = useTransform(collapseProgress, (v) =>
+  const collapseProgress = useTransform(scrollY, [0, 190], [0, 1], { clamp: true });
+  const smoothedProgress = useSpring(collapseProgress, {
+    stiffness: 220,
+    damping: 32,
+    mass: 0.45,
+  });
+  const easedProgress = useTransform(smoothedProgress, (v) =>
     v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2
   );
 
@@ -388,14 +393,14 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   return (
     <motion.div
       ref={ref}
-      className="relative rounded-b-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
+      className="sticky top-0 z-40 relative rounded-b-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
       animate={{ background: theme.gradient }}
       transition={{ duration: 1, ease: "easeInOut" }}
       style={{ background: theme.gradient }}
     >
       <header
-        className="sticky top-0 z-40 px-5 pb-3 flex justify-between items-center text-white"
-        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)", background: theme.gradient }}
+        className="relative z-20 px-5 pb-3 flex justify-between items-center text-white"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}
       >
         <div className="flex items-center gap-3">
           <button
@@ -428,7 +433,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </div>
       </header>
 
-      <section className="relative overflow-visible">
+      <section className="relative overflow-hidden">
         <motion.div
           className="absolute -top-2 left-7 w-16 h-16 z-10 pointer-events-none"
           key={theme.label}
