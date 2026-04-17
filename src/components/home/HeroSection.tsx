@@ -283,6 +283,12 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
+  // Scroll-driven fade for Qibla + NextPrayer boxes
+  const { scrollY } = useScroll();
+  const islamicOpacity = useTransform(scrollY, [0, 120], [1, 0]);
+  const islamicY = useTransform(scrollY, [0, 120], [0, -16]);
+  const islamicHeight = useTransform(scrollY, [0, 160], ["auto" as unknown as number, 0]);
+
   useEffect(() => {
     if (!demoActive) return;
     const timer = setInterval(() => {
