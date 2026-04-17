@@ -373,12 +373,16 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const showWeatherInfo = demoActive || (weather && hasLocationPermission);
 
   return (
-    <div ref={ref}>
-      <motion.header
+    <motion.div
+      ref={ref}
+      className="relative rounded-b-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
+      animate={{ background: theme.gradient }}
+      transition={{ duration: 1, ease: "easeInOut" }}
+      style={{ background: theme.gradient }}
+    >
+      <header
         className="sticky top-0 z-40 px-5 pb-0 flex justify-between items-center text-white"
-        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)", background: theme.gradient }}
-        animate={{ background: theme.gradient }}
-        transition={{ duration: 1, ease: "easeInOut" }}
+        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}
       >
         <div className="flex items-center gap-3">
           <button
@@ -409,7 +413,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             )}
           </button>
         </div>
-      </motion.header>
+      </header>
 
       <section className="relative overflow-visible">
         <motion.div
@@ -456,12 +460,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           </div>
         </motion.div>
 
-        <motion.div
-          className="rounded-b-2xl px-5 pt-4 pb-5 relative overflow-hidden text-white shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
-          animate={{ background: theme.gradient }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-          style={{ background: theme.gradient }}
-        >
+        <div className="px-5 pt-4 pb-5 relative overflow-hidden text-white">
           <AnimatePresence mode="wait">
             <motion.div
               key={`particles-${theme.label}`}
@@ -537,13 +536,12 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
               </motion.div>
             )}
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </div>
+    </motion.div>
   );
 });
 
