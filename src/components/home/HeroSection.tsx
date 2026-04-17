@@ -497,8 +497,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
           <div className="relative z-20 space-y-3">
             <motion.div
-              className="space-y-3 overflow-hidden"
-              style={{ opacity: contentOpacity, y: contentY, maxHeight: contentMaxHeight }}
+              className="space-y-3 origin-top will-change-transform"
+              style={{ opacity: contentOpacity, scaleY: contentScaleY, transformOrigin: "top center" }}
             >
               <div>
                 <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
