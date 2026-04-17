@@ -491,39 +491,44 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           )}
 
           <div className="relative z-20 space-y-3">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
-                <span className="inline-flex" style={{ filter: `drop-shadow(0 0 6px ${timeIcon.glow})` }}>
-                  {timeIcon.icon}
-                </span>
-                {greeting}{currentUser.name ? `، ${currentUser.name}` : ""}
-              </h1>
-              <p className="text-white/75 font-medium text-xs whitespace-nowrap">
-                {gregorianDate} {islamicMode && `• ${hijriDate}`}
-              </p>
-            </div>
+            <motion.div
+              className="space-y-3 overflow-hidden"
+              style={{ opacity: contentOpacity, y: contentY, maxHeight: contentMaxHeight }}
+            >
+              <div>
+                <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
+                  <span className="inline-flex" style={{ filter: `drop-shadow(0 0 6px ${timeIcon.glow})` }}>
+                    {timeIcon.icon}
+                  </span>
+                  {greeting}{currentUser.name ? `، ${currentUser.name}` : ""}
+                </h1>
+                <p className="text-white/75 font-medium text-xs whitespace-nowrap">
+                  {gregorianDate} {islamicMode && `• ${hijriDate}`}
+                </p>
+              </div>
 
-            {showWeatherInfo && displayCity && displayIcon && displayDesc && (
-              <motion.div
-                key={`weather-row-${demoActive ? demoIndex : 'real'}`}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="flex items-center gap-1.5 text-white/70 text-xs"
-              >
-                <MapPin size={12} className="shrink-0" />
-                <span className="font-medium">{displayCity}</span>
-                <span className="text-white/30">•</span>
-                <WeatherIcon icon={displayIcon} />
-                <span>{displayDesc}</span>
-              </motion.div>
-            )}
+              {showWeatherInfo && displayCity && displayIcon && displayDesc && (
+                <motion.div
+                  key={`weather-row-${demoActive ? demoIndex : 'real'}`}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-1.5 text-white/70 text-xs"
+                >
+                  <MapPin size={12} className="shrink-0" />
+                  <span className="font-medium">{displayCity}</span>
+                  <span className="text-white/30">•</span>
+                  <WeatherIcon icon={displayIcon} />
+                  <span>{displayDesc}</span>
+                </motion.div>
+              )}
 
-            {!demoActive && weather?.lastUpdated && (
-              <p className="text-[10px] text-white/35">
-                {t.hero.lastUpdate} {formatLastUpdated(weather.lastUpdated)}
-              </p>
-            )}
+              {!demoActive && weather?.lastUpdated && (
+                <p className="text-[10px] text-white/35">
+                  {t.hero.lastUpdate} {formatLastUpdated(weather.lastUpdated)}
+                </p>
+              )}
+            </motion.div>
 
             {islamicMode && (
               <motion.div
