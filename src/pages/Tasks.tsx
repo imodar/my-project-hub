@@ -59,7 +59,7 @@ const Tasks = () => {
   const navigate = useNavigate();
   const { featureAccess } = useUserRole();
   const { user } = useAuth();
-  const { members: rawMembers } = useFamilyMembers();
+  const { members: rawMembers } = useFamilyMembers({ excludeSelf: false });
   const FAMILY_MEMBERS = useMemo(() => {
     if (!user?.id) return rawMembers;
     return [...rawMembers].sort((a, b) => (a.id === user.id ? -1 : b.id === user.id ? 1 : 0));
