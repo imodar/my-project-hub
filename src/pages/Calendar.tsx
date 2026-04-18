@@ -122,18 +122,15 @@ const CalendarPage = () => {
   // Scroll active item to "second from right" in RTL
   const scrollToSecondFromRight = (btn: HTMLButtonElement | null) => {
     if (!btn) return;
-    const container = btn.parentElement?.parentElement; // scroll container
+    const container = btn.parentElement?.parentElement;
     if (!container) return;
     const containerRect = container.getBoundingClientRect();
     const btnRect = btn.getBoundingClientRect();
-    // Target: place btn so its right edge is at (container right - one item width - gap)
-    // Compute next sibling width as the "one slot" offset
-    const next = btn.nextElementSibling as HTMLElement | null;
-    const slot = next ? next.getBoundingClientRect().width + 24 /* gap */ : btnRect.width + 24;
-    // In RTL, scrollLeft is negative. We want btn to shift left (toward right edge minus one slot).
+    const prev = btn.previousElementSibling as HTMLElement | null;
+    const slot = (prev ? prev.getBoundingClientRect().width : btnRect.width) + 24;
     const targetRight = containerRect.right - slot - 8;
-    const delta = btnRect.right - targetRight; // positive => need to scroll content to the left (in RTL: subtract)
-    container.scrollBy({ left: -delta, behavior: "smooth" });
+    const delta = btnRect.right - targetRight;
+    container.scrollBy({ left: delta, behavior: "smooth" });
   };
 
   React.useEffect(() => {
