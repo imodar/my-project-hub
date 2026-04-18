@@ -170,7 +170,8 @@ export function useTrips() {
       mutateAsync: async (input: any) => {
         const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), trip_activities: [], ...input };
         optimisticTripSub(input.trip_id, "trip_day_plans", (dps) => [...dps, item]);
-        return addDayPlan.mutateAsync(item);
+        addDayPlan.mutateAsync(item).catch(() => {});
+        return item;
       },
     },
     addActivity: {

@@ -347,10 +347,30 @@ const Trips = () => {
     appToast.success("تم إضافة اليوم");
   };
 
-  const handleAddActivity = () => {
+  const handleAddActivity = async () => {
     if (!selectedTrip || !selectedDayId || !activityName.trim()) return;
+
+    let dayPlanId = selectedDayId;
+
+    // If user selected a synthetic day (not yet saved), create the day plan first
+    if (selectedDayId.startsWith("new-day-")) {
+      const dayNumber = parseInt(selectedDayId.replace("new-day-", ""), 10);
+      if (!Number.isFinite(dayNumber)) return;
+      const existing = selectedTrip.days.find((d) => d.dayNumber === dayNumber);
+      if (existing) {
+        dayPlanId = existing.id;
+      } else {
+        const created: any = await addDayPlan.mutateAsync({
+          trip_id: selectedTrip.id,
+          day_number: dayNumber,
+          city: "",
+        });
+        dayPlanId = created?.id || created?.data?.id || dayPlanId;
+      }
+    }
+
     addActivity.mutate({
-      day_plan_id: selectedDayId,
+      day_plan_id: dayPlanId,
       name: activityName,
       time: activityTime || undefined,
       location: activityLocation || undefined,
