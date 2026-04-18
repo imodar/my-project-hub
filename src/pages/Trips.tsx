@@ -1724,12 +1724,6 @@ const Trips = () => {
                       })()}
                     </div>
                   </div>
-                  {trip.participants.length > 0 && (
-                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border/40">
-                      <Users size={12} className="text-muted-foreground" />
-                      <span className="text-[12px] text-muted-foreground font-medium truncate">{trip.participants.join(" · ")}</span>
-                    </div>
-                  )}
                 </button>
 
               </SwipeableCard>
