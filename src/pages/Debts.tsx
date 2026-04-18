@@ -494,30 +494,31 @@ const Debts = () => {
         <CardContentSkeleton />
       ) : (
       <>
-      {/* Tabs */}
-      <div className="flex mx-5 mt-5 gap-2">
-        <button
-          onClick={() => setActiveTab("given")}
-          className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 border-2 ${
-            activeTab === "given"
-              ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400 shadow-sm"
-              : "bg-transparent border-border text-muted-foreground"
-          }`}
-        >
-          <HandCoins size={16} />
-          ديون لي
-        </button>
-        <button
-          onClick={() => setActiveTab("taken")}
-          className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 border-2 ${
-            activeTab === "taken"
-              ? "bg-red-500/10 border-red-500/40 text-red-600 dark:text-red-400 shadow-sm"
-              : "bg-transparent border-border text-muted-foreground"
-          }`}
-        >
-          <CreditCard size={16} />
-          ديون عليّ
-        </button>
+      {/* Sticky segmented tabs — Underline */}
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-md px-5 pt-2 border-b border-border/40">
+        <div className="relative flex items-center h-12">
+          {[
+            { value: "given" as const, icon: HandCoins, label: "ديون لي" },
+            { value: "taken" as const, icon: CreditCard, label: "ديون عليّ" },
+          ].map(({ value, icon: Icon, label }) => {
+            const active = activeTab === value;
+            return (
+              <button
+                key={value}
+                onClick={() => setActiveTab(value)}
+                className={`relative flex-1 h-full flex items-center justify-center gap-1.5 text-sm font-bold transition-colors duration-200 ${
+                  active ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
+                }`}
+              >
+                <Icon size={16} strokeWidth={active ? 2.5 : 2} />
+                {label}
+                {active && (
+                  <span className="absolute -bottom-px left-1/2 -translate-x-1/2 h-[3px] w-16 rounded-t-full bg-accent transition-all duration-300" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Debts List */}
