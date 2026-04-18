@@ -380,12 +380,13 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const showWeatherInfo = demoActive || (weather && hasLocationPermission);
 
   return (
-    <motion.div
+    <div
       ref={ref}
       className="sticky top-0 z-40 rounded-b-[28px] shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
-      animate={{ background: theme.gradient }}
-      transition={{ duration: 1, ease: "easeInOut" }}
-      style={{ background: theme.gradient }}
+      style={{
+        background: theme.gradient,
+        transition: "background 1s ease-in-out",
+      }}
     >
       <header
         className="relative z-30 px-5 pb-3 flex justify-between items-center text-white"
@@ -424,14 +425,13 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </div>
       </header>
 
-      <motion.section
+      <div
         className="relative overflow-hidden"
-        initial={false}
-        animate={{
-          height: isCollapsed ? 0 : expandedSectionHeight,
+        style={{
+          maxHeight: isCollapsed ? 0 : expandedSectionHeight,
           opacity: isCollapsed ? 0 : 1,
+          transition: "max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease",
         }}
-        transition={{ type: "spring", stiffness: 220, damping: 30, mass: 0.8 }}
       >
         <motion.div
           className="absolute -top-2 left-7 w-16 h-16 z-10 pointer-events-none"
@@ -561,11 +561,11 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             )}
           </div>
         </motion.div>
-      </motion.section>
+      </div>
 
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </motion.div>
+    </div>
   );
 });
 
