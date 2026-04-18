@@ -647,12 +647,13 @@ const Tasks = () => {
 
         <FAB onClick={() => {
           haptic.medium();
-          // تحميل المسودة إن وجدت
           const draft = taskDraft.loadDraft();
+          const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          const safeAssigned = draft?.assignedTo && UUID_RE.test(draft.assignedTo) ? draft.assignedTo : "";
           setNewItemName(draft?.name ?? "");
           setNewItemNote(draft?.note ?? "");
           setNewItemPriority(draft?.priority ?? "none");
-          setNewItemAssignedTo(draft?.assignedTo ?? "");
+          setNewItemAssignedTo(safeAssigned);
           setShowAddItem(true);
         }} />
 
