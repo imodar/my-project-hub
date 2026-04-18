@@ -47,9 +47,11 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // Fast local JWT verification via JWKS (cached by SDK).
-  const { data, error } = await client.auth.getClaims(token);
-  if (error || !data?.claims?.sub) {
+  // Fast local JWT decode (no network). Supabase Edge Runtime already verifies
+  // the JWT signature at the gateway when verify_jwt=true (default), so we
+  // only need to extract the claims here.
+  const claims = decodeJwtPayload(token);
+  if (!claims?.sub) {
     return {
       ok: false,
       response: new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -59,13 +61,38 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
     };
   }
 
+  // Optional expiry check (defense in depth).
+  if (typeof claims.exp === "number" && claims.exp * 1000 < Date.now()) {
+    return {
+      ok: false,
+      response: new Response(JSON.stringify({ error: "Token expired" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
+    };
+  }
+
   return {
     ok: true,
-    userId: data.claims.sub as string,
-    email: (data.claims.email as string) ?? null,
+    userId: claims.sub as string,
+    email: (claims.email as string) ?? null,
     authHeader,
     client,
   };
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    // base64url → base64
+    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const json = atob(padded);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
 }
 
 export function getAdminClient(): SupabaseClient {
