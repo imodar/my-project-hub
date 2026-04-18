@@ -289,7 +289,7 @@ const Market = () => {
     newItemNameRef.current = "";
     setNewItemName("");
     setNewItemQuantity("");
-    setNewItemCategory("أخرى");
+    setNewItemCategory("بدون تصنيف");
     setShowAddItem(false);
   }, [activeList, newItemName, newItemCategory, newItemQuantity, addItemMutation, familyId]);
 
@@ -832,7 +832,7 @@ const Market = () => {
         if (!open) {
           setNewItemName("");
           setNewItemQuantity("");
-          setNewItemCategory("أخرى");
+          setNewItemCategory("بدون تصنيف");
         }
       }}>
         <DrawerContent dir="rtl">
