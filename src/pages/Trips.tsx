@@ -25,6 +25,9 @@ import { appToast } from "@/lib/toast";
 import { useTrips as useTripsHook } from "@/hooks/useTrips";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 // Types
 interface Activity {
