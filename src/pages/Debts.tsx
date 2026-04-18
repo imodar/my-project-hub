@@ -9,6 +9,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "
 import { Button } from "@/components/ui/button";
 import { useDebts } from "@/hooks/useDebts";
 import { appToast } from "@/lib/toast";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { required, numericPositive } from "@/lib/validators";
 
 type PaymentType = "cash" | "item" | "installment";
 
@@ -248,6 +250,17 @@ const Debts = () => {
   const [postponeData, setPostponeData] = useState({ newDate: "", reason: "" });
   const [editingDebtId, setEditingDebtId] = useState<string | null>(null);
 
+  // Form validation for the add/edit debt drawer
+  const debtForm = useFormValidation<"personName" | "amount" | "dueDate">(
+    { personName: required, amount: numericPositive, dueDate: required },
+    { resetKey: showAddForm }
+  );
+  // Form validation for payment drawer
+  const paymentForm = useFormValidation<"amount">(
+    { amount: numericPositive },
+    { resetKey: showPaymentDrawer }
+  );
+
   // ── Map Supabase data to UI model ──
   const allDebts = useMemo(() => rawDebts.map(mapRawToDebt), [rawDebts]);
   const givenDebts = useMemo(() => allDebts.filter((d) => d.direction === "given"), [allDebts]);
@@ -291,7 +304,9 @@ const Debts = () => {
 
   const handleAddDebt = async () => {
     const validAmounts = newDebtAmounts.filter((a) => a.amount && Number(a.amount) > 0);
-    if (!newDebt.personName || validAmounts.length === 0 || !newDebt.dueDate) return;
+    const firstAmount = newDebtAmounts[0]?.amount ?? "";
+    if (!debtForm.validate({ personName: newDebt.personName, amount: firstAmount, dueDate: newDebt.dueDate })) return;
+    if (validAmounts.length === 0) { debtForm.setError("amount", debtForm.errors.amount || ""); return; }
 
     const amountsData = validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency }));
     const multiCurrency = amountsData.length > 1 ? { amounts: amountsData } : null;
@@ -346,6 +361,8 @@ const Debts = () => {
   const handleAddPayment = async () => {
     if (!paymentDebtId) return;
     const validAmounts = newPaymentAmounts.filter((a) => a.amount && Number(a.amount) > 0);
+    const firstAmount = newPaymentAmounts[0]?.amount ?? "";
+    if (!paymentForm.validate({ amount: firstAmount })) return;
     if (validAmounts.length === 0) return;
 
     const amountsData = validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency }));
@@ -710,17 +727,21 @@ const Debts = () => {
               </div>
             )}
 
-            <input
-              type="text"
-              placeholder="اسم الشخص"
-              value={newDebt.personName}
-              onChange={(e) => setNewDebt({ ...newDebt, personName: e.target.value })}
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
-            />
+            <div>
+              <input
+                type="text"
+                placeholder="اسم الشخص"
+                value={newDebt.personName}
+                onChange={(e) => { setNewDebt({ ...newDebt, personName: e.target.value }); debtForm.clearError("personName"); }}
+                className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
+              />
+              {debtForm.errors.personName && <p className="text-xs text-destructive mt-1">{debtForm.errors.personName}</p>}
+            </div>
 
             <div>
               <label className="text-xs font-bold text-foreground mb-2 block">المبالغ والعملات</label>
-              <AmountEditor amounts={newDebtAmounts} setAmounts={setNewDebtAmounts} />
+              <AmountEditor amounts={newDebtAmounts} setAmounts={(a) => { setNewDebtAmounts(a); debtForm.clearError("amount"); }} />
+              {debtForm.errors.amount && <p className="text-xs text-destructive mt-1">{debtForm.errors.amount}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -738,9 +759,10 @@ const Debts = () => {
                 <input
                   type="date"
                   value={newDebt.dueDate}
-                  onChange={(e) => setNewDebt({ ...newDebt, dueDate: e.target.value })}
+                  onChange={(e) => { setNewDebt({ ...newDebt, dueDate: e.target.value }); debtForm.clearError("dueDate"); }}
                   className="w-full rounded-xl border border-input bg-background px-3 py-3 text-sm"
                 />
+                {debtForm.errors.dueDate && <p className="text-xs text-destructive mt-1">{debtForm.errors.dueDate}</p>}
               </div>
             </div>
 

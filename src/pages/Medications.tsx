@@ -33,6 +33,8 @@ import {
   getTimeUntilNext,
 } from "@/data/medicationData";
 import { appToast } from "@/lib/toast";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { required } from "@/lib/validators";
 
 // Using shared SwipeableCard component
 import SwipeableCard from "@/components/SwipeableCard";
@@ -47,6 +49,11 @@ const Medications = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Medication | null>(null);
   const [showDetailSheet, setShowDetailSheet] = useState<Medication | null>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
+
+  const medForm = useFormValidation<"name" | "dosage">(
+    { name: required, dosage: required },
+    { resetKey: showAddDrawer }
+  );
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -172,8 +179,7 @@ const Medications = () => {
   };
 
   const handleSave = () => {
-    if (!formName.trim()) { appToast.error("يرجى إدخال اسم الدواء"); return; }
-    if (!formDosage.trim()) { appToast.error("يرجى إدخال الجرعة"); return; }
+    if (!medForm.validate({ name: formName, dosage: formDosage })) return;
 
     const baseMed = {
       name: formName.trim(), dosage: formDosage.trim(), memberId: formMemberId,
@@ -555,11 +561,13 @@ const Medications = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-right block">اسم الدواء</Label>
-                <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="مثل: بنادول" className="text-right" />
+                <Input value={formName} onChange={(e) => { setFormName(e.target.value); medForm.clearError("name"); }} placeholder="مثل: بنادول" className="text-right" />
+                {medForm.errors.name && <p className="text-xs text-destructive">{medForm.errors.name}</p>}
               </div>
               <div className="space-y-2">
                 <Label className="text-right block">الجرعة</Label>
-                <Input value={formDosage} onChange={(e) => setFormDosage(e.target.value)} placeholder="مثل: 500mg" className="text-right" />
+                <Input value={formDosage} onChange={(e) => { setFormDosage(e.target.value); medForm.clearError("dosage"); }} placeholder="مثل: 500mg" className="text-right" />
+                {medForm.errors.dosage && <p className="text-xs text-destructive">{medForm.errors.dosage}</p>}
               </div>
             </div>
 

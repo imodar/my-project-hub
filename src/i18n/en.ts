@@ -401,6 +401,17 @@ const en: Translations = {
     settings: "Settings",
     addPlace: "Add Place",
   },
+
+  // Validation messages
+  validation: {
+    required: "This field is required",
+    invalidNumber: "Invalid number",
+    positiveNumber: "Must be greater than zero",
+    invalidDate: "Invalid date",
+    invalidPhone: "Invalid phone number",
+    minLength: "Text is too short",
+    maxLength: "Text is too long",
+  },
 };
 
 export default en;

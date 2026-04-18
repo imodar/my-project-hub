@@ -21,6 +21,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { numericPositive, validDate } from "@/lib/validators";
 
 const CASH_CURRENCIES = [
   { code: "SAR", label: "ريال سعودي", symbol: "ر.س" },
@@ -195,8 +197,13 @@ const Zakat = () => {
 
   const { goldPricePerGram, silverPricePerGram, rates, loading: priceLoading, lastUpdated } = useGoldPrice();
 
+  const assetForm = useFormValidation<"amount" | "purchaseDate">(
+    { amount: numericPositive, purchaseDate: validDate },
+    { resetKey: showAdd }
+  );
+
   const handleAdd = () => {
-    if (!addAmount || Number(addAmount) <= 0) return;
+    if (!assetForm.validate({ amount: addAmount, purchaseDate: addDate })) return;
     const currencyToSave = (addType === "cash" || addType === "stocks" || addType === "funds") ? addCurrency : "SAR";
     if (editingAssetId) {
       updateAssetMut.mutate({
@@ -594,7 +601,7 @@ const Zakat = () => {
                 <Input
                   type="number"
                   value={addAmount}
-                  onChange={e => setAddAmount(e.target.value)}
+                  onChange={e => { setAddAmount(e.target.value); assetForm.clearError("amount"); }}
                   placeholder={addType === "gold" ? "مثال: 100" : "مثال: 50000"}
                   className="flex-1 min-w-0 text-right"
                   inputMode="decimal"
@@ -611,6 +618,7 @@ const Zakat = () => {
                   </select>
                 )}
               </div>
+              {assetForm.errors.amount && <p className="text-xs text-destructive mt-1">{assetForm.errors.amount}</p>}
             </div>
 
             {/* Karat for gold */}
@@ -669,10 +677,11 @@ const Zakat = () => {
               <Input
                 type="date"
                 value={addDate}
-                onChange={(e) => setAddDate(e.target.value)}
+                onChange={(e) => { setAddDate(e.target.value); assetForm.clearError("purchaseDate"); }}
                 className="w-full rounded-xl"
                 dir="ltr"
               />
+              {assetForm.errors.purchaseDate && <p className="text-xs text-destructive mt-1">{assetForm.errors.purchaseDate}</p>}
               <p className="text-[10px] text-muted-foreground mt-1">يُحسب الحول (354 يوم) من هذا التاريخ</p>
             </div>
 
