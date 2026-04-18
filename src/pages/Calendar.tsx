@@ -67,7 +67,7 @@ const ARABIC_MONTHS = [
 
 const ARABIC_DAYS = ["أح", "إث", "ث", "أر", "خ", "ج", "س"];
 
-const toArabicNum = (n: number) => n.toLocaleString("ar-EG");
+const toEnglishNum = (n: number) => n.toString();
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
