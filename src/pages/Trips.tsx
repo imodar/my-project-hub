@@ -121,6 +121,7 @@ const Trips = () => {
     trips: dbTrips, isLoading: tripsLoading,
     createTrip, updateTrip, deleteTrip: deleteTripMut,
     addDayPlan, addActivity, updateActivity,
+    deleteDayPlan, deleteActivity,
     addExpense, deleteExpense,
     addPackingItem, updatePackingItem,
     addSuggestion, updateSuggestion,
@@ -266,6 +267,10 @@ const Trips = () => {
   // Drag state
   const [draggedActivity, setDraggedActivity] = useState<string | null>(null);
 
+  // Over-budget warning drawer (when adding an activity that pushes total over trip budget)
+  const [budgetWarnDrawer, setBudgetWarnDrawer] = useState(false);
+  const [pendingActivity, setPendingActivity] = useState<{ overBy: number } | null>(null);
+
   // Trip form errors
   const [tripErrors, setTripErrors] = useState<{ name?: boolean; budget?: boolean; start?: boolean; end?: boolean; dateOrder?: boolean }>({});
 
@@ -370,7 +375,7 @@ const Trips = () => {
     appToast.success("تم إضافة اليوم");
   };
 
-  const handleAddActivity = async () => {
+  const persistActivity = async () => {
     if (!selectedTrip || !selectedDayId || !activityName.trim()) return;
 
     const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -413,7 +418,30 @@ const Trips = () => {
     });
     setActivityName(""); setActivityTime(""); setActivityLocation(""); setActivityCost("");
     setNewActivityDrawer(false);
+    setBudgetWarnDrawer(false);
+    setPendingActivity(null);
     appToast.success("تم إضافة النشاط");
+  };
+
+  const handleAddActivity = async () => {
+    if (!selectedTrip || !selectedDayId || !activityName.trim()) return;
+
+    // Check if adding this activity exceeds the trip budget
+    const newCost = Number(activityCost) || 0;
+    if (selectedTrip.budget > 0 && newCost > 0) {
+      const currentActivitiesTotal = selectedTrip.days.reduce(
+        (sum, d) => sum + d.activities.reduce((s, a) => s + (a.cost || 0), 0),
+        0
+      );
+      const projectedTotal = currentActivitiesTotal + newCost;
+      if (projectedTotal > selectedTrip.budget) {
+        setPendingActivity({ overBy: projectedTotal - selectedTrip.budget });
+        setBudgetWarnDrawer(true);
+        return;
+      }
+    }
+
+    await persistActivity();
   };
 
   const handleAddSuggestion = () => {
@@ -639,62 +667,107 @@ const Trips = () => {
               </div>
             )}
 
-            {selectedTrip.days.map((day) => (
-              <div key={day.id} className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
-                <div className="flex items-center justify-between p-4 border-b border-border/30">
-                  <div>
-                    <span className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>
-                      اليوم {day.dayNumber}
-                      {selectedTrip.startDate && ` — ${format(addDays(new Date(selectedTrip.startDate), day.dayNumber - 1), "EEEE d MMM", { locale: ar })}`}
-                    </span>
-                    <p className="text-sm font-bold text-foreground mt-0.5">{day.city}</p>
-                  </div>
-                  <button
-                    onClick={() => { setSelectedDayId(day.id); setNewActivityDrawer(true); }}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
-                    style={{ background: "hsl(var(--accent) / 0.15)", color: "hsl(var(--accent))" }}
-                  >
-                    <Plus size={14} />
-                    <span>نشاط</span>
-                  </button>
-                </div>
-                <div className="divide-y divide-border/20">
-                  {day.activities.map((act, idx) => (
-                    <div
-                      key={act.id}
-                      draggable
-                      onDragStart={() => handleDragStart(act.id)}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={() => handleDrop(day.id, idx)}
-                      className="flex items-center gap-3 p-3 hover:bg-muted/30 cursor-grab active:cursor-grabbing"
+            {selectedTrip.days.map((day) => {
+              const isUuidDay = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(day.id);
+              const dayCard = (
+                <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
+                  <div className="flex items-center justify-between p-4 border-b border-border/30">
+                    <div>
+                      <span className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>
+                        اليوم {day.dayNumber}
+                        {selectedTrip.startDate && ` — ${format(addDays(new Date(selectedTrip.startDate), day.dayNumber - 1), "EEEE d MMM", { locale: ar })}`}
+                      </span>
+                      <p className="text-sm font-bold text-foreground mt-0.5">{day.city}</p>
+                    </div>
+                    <button
+                      onClick={() => { setSelectedDayId(day.id); setNewActivityDrawer(true); }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                      style={{ background: "hsl(var(--accent) / 0.15)", color: "hsl(var(--accent))" }}
                     >
-                      <GripVertical size={14} className="text-muted-foreground/40 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">{act.name}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          {act.time && (
-                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <Clock size={10} /> {act.time}
-                            </span>
-                          )}
-                          {act.location && (
-                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <MapPin size={10} /> {act.location}
-                            </span>
+                      <Plus size={14} />
+                      <span>نشاط</span>
+                    </button>
+                  </div>
+                  <div className="divide-y divide-border/20">
+                    {day.activities.map((act, idx) => {
+                      const activityRow = (
+                        <div
+                          draggable
+                          onDragStart={() => handleDragStart(act.id)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => handleDrop(day.id, idx)}
+                          className="flex items-center gap-3 p-3 bg-card hover:bg-muted/30 cursor-grab active:cursor-grabbing"
+                        >
+                          <GripVertical size={14} className="text-muted-foreground/40 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">{act.name}</p>
+                            <div className="flex items-center gap-3 mt-1">
+                              {act.time && (
+                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                  <Clock size={10} /> {act.time}
+                                </span>
+                              )}
+                              {act.location && (
+                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                  <MapPin size={10} /> {act.location}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {act.cost > 0 && (
+                            <span className="text-xs font-bold text-primary whitespace-nowrap">{act.cost.toLocaleString()}</span>
                           )}
                         </div>
-                      </div>
-                      {act.cost > 0 && (
-                        <span className="text-xs font-bold text-primary whitespace-nowrap">{act.cost.toLocaleString()}</span>
-                      )}
-                    </div>
-                  ))}
-                  {day.activities.length === 0 && (
-                    <p className="text-center text-xs text-muted-foreground py-4">لا أنشطة</p>
-                  )}
+                      );
+                      return (
+                        <SwipeableCard
+                          key={act.id}
+                          actions={[
+                            {
+                              icon: <Trash2 size={18} />,
+                              label: "حذف",
+                              color: "bg-destructive",
+                              onClick: () => {
+                                deleteActivity.mutate(act.id, day.id);
+                                appToast.success("تم حذف النشاط");
+                              },
+                            },
+                          ]}
+                        >
+                          {activityRow}
+                        </SwipeableCard>
+                      );
+                    })}
+                    {day.activities.length === 0 && (
+                      <p className="text-center text-xs text-muted-foreground py-4">لا أنشطة</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+
+              // Only allow swipe-to-delete on real (persisted) days
+              if (!isUuidDay) {
+                return <div key={day.id}>{dayCard}</div>;
+              }
+              return (
+                <SwipeableCard
+                  key={day.id}
+                  actions={[
+                    {
+                      icon: <Trash2 size={18} />,
+                      label: "حذف اليوم",
+                      color: "bg-destructive",
+                      onClick: () => {
+                        deleteDayPlan.mutate(day.id, selectedTrip.id);
+                        appToast.success("تم حذف اليوم");
+                      },
+                    },
+                  ]}
+                >
+                  {dayCard}
+                </SwipeableCard>
+              );
+            })}
           </div>
         )}
 
@@ -1232,7 +1305,35 @@ const Trips = () => {
           </DrawerContent>
         </Drawer>
 
-        {/* Add Suggestion Drawer */}
+        {/* Over-Budget Warning Drawer */}
+        <Drawer open={budgetWarnDrawer} onOpenChange={(o) => { setBudgetWarnDrawer(o); if (!o) setPendingActivity(null); }}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle className="text-destructive">تنبيه: تجاوز الميزانية</DrawerTitle>
+              <DrawerDescription>
+                إضافة هذا النشاط ستجعل إجمالي تكاليف الأنشطة يتجاوز ميزانية الرحلة بمقدار{" "}
+                <span className="font-bold text-destructive">{pendingActivity?.overBy.toLocaleString()}</span>.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="flex flex-col gap-2 px-5 pb-8">
+              <Button
+                variant="outline"
+                className="w-full rounded-xl"
+                onClick={() => { setBudgetWarnDrawer(false); setPendingActivity(null); }}
+              >
+                <ChevronLeft size={16} /> العودة والتعديل
+              </Button>
+              <Button
+                variant="destructive"
+                className="w-full rounded-xl"
+                onClick={() => { void persistActivity(); }}
+              >
+                المتابعة على أي حال
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+
         <Drawer open={newSuggestionDrawer} onOpenChange={setNewSuggestionDrawer}>
           <DrawerContent>
             <DrawerHeader><DrawerTitle>إضافة مقترح</DrawerTitle></DrawerHeader>

@@ -108,6 +108,16 @@ export function useTrips() {
     apiFn: async (input) => { const { id, ...updates } = input; return invoke("toggle-activity", { id, ...updates }); },
   });
 
+  const deleteDayPlan = useOfflineMutation<any, any>({
+    table: "trip_day_plans", operation: "DELETE",
+    apiFn: async (input) => invoke("delete-day-plan", { id: input.id }),
+  });
+
+  const deleteActivity = useOfflineMutation<any, any>({
+    table: "trip_activities", operation: "DELETE",
+    apiFn: async (input) => invoke("delete-activity", { id: input.id }),
+  });
+
   const addExpense = useOfflineMutation<any, any>({
     table: "trip_expenses", operation: "INSERT",
     apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-expense", { trip_id: rest.trip_id, name: rest.name, amount: rest.amount }); },
@@ -230,6 +240,28 @@ export function useTrips() {
       mutateAsync: async (id: string, tripId?: string) => {
         if (tripId) optimisticTripSub(tripId, "trip_expenses", (exps) => exps.filter((e: any) => e.id !== id));
         return deleteExpense.mutateAsync({ id });
+      },
+    },
+    deleteDayPlan: {
+      ...deleteDayPlan,
+      mutate: (id: string, tripId?: string) => {
+        if (tripId) optimisticTripSub(tripId, "trip_day_plans", (dps) => dps.filter((d: any) => d.id !== id));
+        deleteDayPlan.mutate({ id });
+      },
+      mutateAsync: async (id: string, tripId?: string) => {
+        if (tripId) optimisticTripSub(tripId, "trip_day_plans", (dps) => dps.filter((d: any) => d.id !== id));
+        return deleteDayPlan.mutateAsync({ id });
+      },
+    },
+    deleteActivity: {
+      ...deleteActivity,
+      mutate: (id: string, dayPlanId?: string) => {
+        if (dayPlanId) optimisticActivitySub(dayPlanId, (acts) => acts.filter((a: any) => a.id !== id));
+        deleteActivity.mutate({ id });
+      },
+      mutateAsync: async (id: string, dayPlanId?: string) => {
+        if (dayPlanId) optimisticActivitySub(dayPlanId, (acts) => acts.filter((a: any) => a.id !== id));
+        return deleteActivity.mutateAsync({ id });
       },
     },
     addPackingItem: {

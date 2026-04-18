@@ -148,6 +148,22 @@ Deno.serve(async (req) => {
       return json({ data });
     }
 
+    if (action === "delete-day-plan") {
+      const { id } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      const { error } = await adminClient.from("trip_day_plans").delete().eq("id", id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
+    if (action === "delete-activity") {
+      const { id } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      const { error } = await adminClient.from("trip_activities").delete().eq("id", id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
     if (action === "delete-expense") {
       const { id } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
