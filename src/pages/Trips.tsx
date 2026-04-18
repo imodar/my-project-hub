@@ -1264,7 +1264,7 @@ const Trips = () => {
                 <Icon size={16} strokeWidth={active ? 2.5 : 2} />
                 {label}
                 {active && (
-                  <span className="absolute -bottom-px left-1/2 -translate-x-1/2 h-[3px] w-16 rounded-t-full bg-gradient-to-r from-primary/60 via-primary to-primary/60 shadow-[0_0_8px_hsl(var(--primary)/0.5)] transition-all duration-300" />
+                  <span className="absolute -bottom-px left-1/2 -translate-x-1/2 h-[3px] w-16 rounded-t-full bg-accent transition-all duration-300" />
                 )}
               </button>
             );
