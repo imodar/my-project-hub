@@ -265,14 +265,35 @@ const Auth = () => {
                       </Button>
                     </motion.div>
                   ) : (() => {
-                    // Random upper corner target (left or right)
+                    // Pick an upper corner of the blue area above the white sheet
                     const goLeft = Math.random() < 0.5;
-                    const cornerX = goLeft ? -160 : 160;
-                    const cornerY = -520;
-                    // Fly-like wandering path before escaping to a corner
-                    const xPath = [0, 0, 40, -50, 70, -30, cornerX * 0.6, cornerX];
-                    const yPath = [0, 0, -40, -90, -160, -240, -380, cornerY];
-                    const rotPath = [0, 0, 15, -20, 25, -15, goLeft ? -30 : 30, goLeft ? -45 : 45];
+                    // Incomplete-circle orbit (≈ 280°) then a straight dart to the corner
+                    // Orbit center is slightly above the button
+                    const R = 26; // small orbit radius — looks like a hovering fly
+                    const orbitSteps = 8;
+                    const startAngle = Math.PI / 2; // start at bottom of orbit (button position)
+                    const sweep = (280 * Math.PI) / 180; // incomplete circle
+                    const dir = goLeft ? -1 : 1;
+                    const orbitX: number[] = [];
+                    const orbitY: number[] = [];
+                    for (let i = 0; i <= orbitSteps; i++) {
+                      const a = startAngle + dir * (sweep * (i / orbitSteps));
+                      orbitX.push(Math.cos(a) * R);
+                      orbitY.push(-R + Math.sin(a) * R); // shift so orbit sits just above button
+                    }
+                    // Final straight-line dart to corner of blue area
+                    const cornerX = goLeft ? -170 : 170;
+                    const cornerY = -360;
+                    const xPath = [0, ...orbitX, cornerX];
+                    const yPath = [0, ...orbitY, cornerY];
+                    const n = xPath.length;
+                    const times = xPath.map((_, i) => i / (n - 1));
+                    const opacityPath = xPath.map((_, i) =>
+                      i === 0 ? 1 : i < n - 1 ? 1 : 0
+                    );
+                    const scalePath = xPath.map((_, i) =>
+                      i === 0 ? 1 : i < n - 1 ? 1 : 0.4
+                    );
                     return (
                     <motion.div
                       key="circle"
@@ -282,25 +303,23 @@ const Auth = () => {
                         borderRadius: "9999px",
                         x: xPath,
                         y: yPath,
-                        rotate: rotPath,
-                        opacity: [1, 1, 1, 1, 1, 1, 0.8, 0],
-                        scale: [1, 1, 1, 0.95, 0.9, 0.8, 0.65, 0.4],
+                        opacity: opacityPath,
+                        scale: scalePath,
                       }}
                       transition={{
-                        width: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
-                        borderRadius: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
-                        x: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1], ease: "easeInOut" },
-                        y: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1], ease: [0.45, 0, 0.55, 1] },
-                        rotate: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1], ease: "easeInOut" },
-                        opacity: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1] },
-                        scale: { duration: 1.6, times: [0, 0.22, 0.35, 0.5, 0.65, 0.78, 0.9, 1], ease: "easeIn" },
+                        width: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                        borderRadius: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                        x: { duration: 1.5, times, ease: "linear", delay: 0.25 },
+                        y: { duration: 1.5, times, ease: "linear", delay: 0.25 },
+                        opacity: { duration: 1.5, times, delay: 0.25 },
+                        scale: { duration: 1.5, times, delay: 0.25, ease: "easeIn" },
                       }}
                       className="h-14 bg-primary text-primary-foreground shadow-lg flex items-center justify-center overflow-hidden"
                     >
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: [0, 1.15, 1] }}
-                        transition={{ duration: 0.5, times: [0, 0.7, 1], ease: "easeOut" }}
+                        transition={{ duration: 0.4, times: [0, 0.7, 1], ease: "easeOut" }}
                       >
                         <Mail className="h-5 w-5" />
                       </motion.div>
