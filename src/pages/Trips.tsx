@@ -1418,54 +1418,125 @@ const Trips = () => {
 
       {/* New/Edit Trip Drawer */}
       <Drawer open={newTripDrawer} onOpenChange={(o) => { setNewTripDrawer(o); if (!o) resetTripForm(); }}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>{editingTripId ? "تعديل الرحلة" : "رحلة جديدة"}</DrawerTitle>
+        <DrawerContent dir="rtl">
+          <DrawerHeader className="text-right pb-1">
+            <DrawerTitle className="text-lg">{editingTripId ? "تعديل الرحلة" : "رحلة جديدة"}</DrawerTitle>
+            <DrawerDescription className="text-xs">اكتب اسم الرحلة، الميزانية، التواريخ، واختر المشاركين</DrawerDescription>
           </DrawerHeader>
-          <div className="px-5 pb-8 space-y-4">
-            <Input placeholder="اسم الرحلة" value={tripName} onChange={(e) => setTripName(e.target.value)} />
-            <Input placeholder="الوجهة الرئيسية" value={tripDest} onChange={(e) => setTripDest(e.target.value)} />
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">تاريخ البداية</label>
-                <Input type="date" value={tripStart} onChange={(e) => setTripStart(e.target.value)} dir="ltr" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">تاريخ النهاية</label>
-                <Input type="date" value={tripEnd} onChange={(e) => setTripEnd(e.target.value)} dir="ltr" />
+          <div className="flex-1 overflow-y-auto space-y-5 px-4 pb-3">
+            {/* اسم الرحلة */}
+            <div className="space-y-2 px-1">
+              <div className="relative">
+                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">اسم الرحلة</label>
+                <Input
+                  placeholder="مثال: رحلة إسطنبول"
+                  value={tripName}
+                  onChange={(e) => setTripName(e.target.value)}
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+                />
               </div>
             </div>
-            <Input type="number" inputMode="decimal" placeholder="الميزانية الإجمالية" value={tripBudget} onChange={(e) => setTripBudget(e.target.value)} dir="ltr" />
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">المشاركون</label>
-              {familyMembers.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {familyMembers.map((m) => {
-                    const selected = tripParticipants.includes(m.id);
+
+            {/* مصاريف الرحلة */}
+            <div className="space-y-2 px-1">
+              <div className="relative">
+                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">مصاريف الرحلة</label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={tripBudget}
+                  onChange={(e) => setTripBudget(e.target.value)}
+                  dir="ltr"
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal text-right"
+                />
+              </div>
+            </div>
+
+            {/* التواريخ */}
+            <div className="grid grid-cols-2 gap-4 px-1">
+              <div className="relative">
+                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">من</label>
+                <Input
+                  type="date"
+                  value={tripStart}
+                  onChange={(e) => setTripStart(e.target.value)}
+                  dir="ltr"
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors"
+                />
+              </div>
+              <div className="relative">
+                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">إلى</label>
+                <Input
+                  type="date"
+                  value={tripEnd}
+                  onChange={(e) => setTripEnd(e.target.value)}
+                  dir="ltr"
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* مشاركة مع — دوائر */}
+            {familyMembers.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <p className="text-sm font-bold text-foreground">مشاركة مع</p>
+                  {tripParticipants.length > 0 && (
+                    <button
+                      onClick={() => setTripParticipants([])}
+                      className="text-[11px] text-muted-foreground hover:text-foreground font-medium"
+                    >
+                      إلغاء التحديد
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-3 overflow-x-auto py-3 -mx-1 px-2 scrollbar-hide">
+                  {familyMembers.map((member) => {
+                    const isActive = tripParticipants.includes(member.id);
+                    const initial = (member.name || "?").trim().charAt(0);
                     return (
-                      <button key={m.id} type="button"
-                        onClick={() => setTripParticipants((prev) => selected ? prev.filter((id) => id !== m.id) : [...prev, m.id])}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95"
-                        style={{
-                          background: selected ? "hsl(var(--primary))" : "hsl(var(--muted))",
-                          color: selected ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))",
-                        }}
+                      <button
+                        key={member.id}
+                        type="button"
+                        onClick={() => setTripParticipants((prev) => isActive ? prev.filter((id) => id !== member.id) : [...prev, member.id])}
+                        className={`shrink-0 flex flex-col items-center gap-1.5 transition-all duration-300 focus:outline-none ${
+                          isActive ? "" : "opacity-60 hover:opacity-100"
+                        }`}
                       >
-                        {selected && <Check size={12} />}
-                        <Users size={12} />
-                        {m.name}
+                        <div
+                          className={`relative w-12 h-12 rounded-full flex items-center justify-center text-base font-black bg-gradient-to-br from-primary/15 to-primary/5 text-primary transition-all duration-300 ${
+                            isActive
+                              ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md"
+                              : "ring-0"
+                          }`}
+                        >
+                          {initial}
+                          {isActive && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md animate-in zoom-in duration-200">
+                              <Check size={12} className="text-primary-foreground" strokeWidth={3} />
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] leading-tight text-center max-w-[60px] truncate ${
+                          isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
+                        }`}>
+                          {member.name}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">أضف أفراد العائلة أولاً من إدارة العائلة</p>
-              )}
-            </div>
-            <Button className="w-full rounded-xl" onClick={handleSaveTrip}>
+              </div>
+            )}
+          </div>
+          <DrawerFooter className="flex-row gap-2 pt-3">
+            <Button onClick={handleSaveTrip} className="flex-[2] rounded-2xl h-12 font-bold text-base shadow-md">
+              <Plus size={18} className="ml-1" />
               {editingTripId ? "حفظ التعديلات" : "إنشاء الرحلة"}
             </Button>
-          </div>
+            <Button variant="outline" onClick={() => { setNewTripDrawer(false); resetTripForm(); }} className="flex-1 rounded-2xl h-12">إلغاء</Button>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
 
