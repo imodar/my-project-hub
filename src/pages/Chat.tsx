@@ -230,6 +230,7 @@ const Chat = () => {
     isLoadingMore,
     loadOlderMessages,
     initProgress,
+    isSyncing,
   } = useChat();
 
   const [newMessage, setNewMessage] = useState("");
@@ -251,12 +252,24 @@ const Chat = () => {
     overscan: 10,
   });
 
-  // Auto-scroll to bottom on new messages
-  const prevCountRef = useRef(messages.length);
+  // Auto-scroll to bottom on new messages (instant on first load, smooth after)
+  const prevCountRef = useRef(0);
+  const didInitialScrollRef = useRef(false);
   useEffect(() => {
-    if (messages.length > prevCountRef.current || prevCountRef.current === 0) {
+    if (messages.length === 0) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    if (!didInitialScrollRef.current) {
+      // Instant jump on first render so the newest message is visible immediately
+      const scrollNow = () => { el.scrollTop = el.scrollHeight; };
+      scrollNow();
+      requestAnimationFrame(scrollNow);
+      setTimeout(scrollNow, 100);
+      didInitialScrollRef.current = true;
+    } else if (messages.length > prevCountRef.current) {
       setTimeout(() => {
-        scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: "smooth" });
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
       }, 50);
     }
     prevCountRef.current = messages.length;
@@ -408,6 +421,17 @@ const Chat = () => {
           },
         ]}
       />
+
+      {/* Sync progress bar */}
+      {isSyncing && (
+        <div className="h-0.5 w-full bg-primary/10 overflow-hidden">
+          <div
+            className="h-full w-1/3 bg-primary"
+            style={{ animation: "chatSyncSlide 1.2s ease-in-out infinite" }}
+          />
+          <style>{`@keyframes chatSyncSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }`}</style>
+        </div>
+      )}
 
       {/* Pinned messages bar */}
       {pinnedMessages.length > 0 && (

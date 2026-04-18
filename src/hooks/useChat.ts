@@ -203,10 +203,12 @@ export function useChat() {
   }, [familyId]);
 
   // ─── 3. Load messages via chat-api & cache locally ───
+  const [isSyncing, setIsSyncing] = useState(false);
   useEffect(() => {
     if (!familyId || !isReady || !user) return;
     loadMessages();
     async function loadMessages() {
+      setIsSyncing(true);
       try {
         const { data: result } = await supabase.functions.invoke("chat-api", {
           body: { action: "get-messages", family_id: familyId, limit: PAGE_SIZE },
@@ -235,6 +237,8 @@ export function useChat() {
         }
       } catch (err) {
         console.error("Load messages exception:", err);
+      } finally {
+        setIsSyncing(false);
       }
     }
   }, [familyId, isReady, familyKey, profiles, user]);
@@ -579,5 +583,6 @@ export function useChat() {
     isLoadingMore,
     loadOlderMessages,
     initProgress,
+    isSyncing,
   };
 }

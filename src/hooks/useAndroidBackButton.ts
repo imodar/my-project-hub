@@ -27,6 +27,27 @@ export function useAndroidBackButton() {
       }
     })();
 
-    return () => { cleanup?.(); };
+    // منع زر Backspace في لوحة المفاتيح الفيزيائية من إثارة "رجوع"
+    // عندما يكون التركيز خارج حقل إدخال (يحدث في بعض WebViews القديمة على الأندرويد).
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Backspace") return;
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      const tag = t.tagName;
+      const isEditable =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        t.isContentEditable;
+      if (!isEditable) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      cleanup?.();
+      window.removeEventListener("keydown", onKeyDown);
+    };
   }, [navigate]);
 }
