@@ -466,26 +466,30 @@ const Market = () => {
           },
         ]}
       >
-        {/* Lists tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 pt-3 scrollbar-hide">
-          {lists.map((list) => (
-            <button
-              key={list.id}
-              onClick={() => {
-                haptic.light();
-                setActiveListId(list.id);
-                setActiveCategory("الكل");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold max-w-[140px] transition-all ${
-                activeListId === list.id
-                  ? "bg-white dark:bg-white/20 text-foreground dark:text-white shadow-md"
-                  : "bg-white/15 text-white/80 hover:bg-white/25"
-              }`}
-            >
-              <span className="shrink-0">{getListIcon(list.type, activeListId === list.id)}</span>
-              <span className="truncate">{list.name}</span>
-            </button>
-          ))}
+        {/* Lists tabs — underline style */}
+        <div className="flex gap-5 overflow-x-auto pt-3 scrollbar-hide">
+          {lists.map((list) => {
+            const isActive = activeListId === list.id;
+            return (
+              <button
+                key={list.id}
+                onClick={() => {
+                  haptic.light();
+                  setActiveListId(list.id);
+                  setActiveCategory("الكل");
+                }}
+                className={`relative shrink-0 flex items-center gap-1.5 pb-2 text-sm transition-colors ${
+                  isActive ? "text-white font-bold" : "text-white/60 font-medium hover:text-white/80"
+                }`}
+              >
+                <span className="shrink-0">{getListIcon(list.type, false)}</span>
+                <span className="truncate max-w-[140px]">{list.name}</span>
+                {isActive && (
+                  <span className="absolute -bottom-0.5 left-0 right-0 h-[3px] rounded-full bg-pink-500" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </PageHeader>
 
