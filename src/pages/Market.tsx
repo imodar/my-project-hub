@@ -386,7 +386,7 @@ const Market = () => {
   };
 
   const renderItem = (item: MarketItem, isChecked: boolean) => {
-    const catInfo = CATEGORY_COLORS[item.category] || CATEGORY_COLORS["أخرى"];
+    const catInfo = CATEGORY_COLORS[item.category] || CATEGORY_COLORS["بدون تصنيف"];
 
     return (
       <SwipeableCard
