@@ -28,7 +28,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
     return (
       <div
         ref={ref}
-        className="sticky top-0 z-50 px-4 pb-3 rounded-b-3xl"
+        className="sticky top-0 z-50 px-4 pb-3 rounded-b-[28px]"
         style={{
           background: "linear-gradient(135deg, hsl(var(--hero-gradient-from)), hsl(var(--hero-gradient-to)))",
           paddingTop: "max(env(safe-area-inset-top), 16px)",
