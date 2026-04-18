@@ -347,7 +347,6 @@ const Budget = () => {
                   key={exp.id}
                   onSwipeOpen={() => setOpenCardId(exp.id)}
                   actions={[
-                    { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteExpense({ budgetId: b.id, expenseId: exp.id }) },
                     { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
                       setEditExpenseName(exp.name);
                       setEditExpenseAmount(exp.amount.toString());
