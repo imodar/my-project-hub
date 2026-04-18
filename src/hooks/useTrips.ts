@@ -231,6 +231,17 @@ export function useTrips() {
         return addExpense.mutateAsync(item);
       },
     },
+    deleteExpense: {
+      ...deleteExpense,
+      mutate: (id: string, tripId?: string) => {
+        if (tripId) optimisticTripSub(tripId, "trip_expenses", (exps) => exps.filter((e: any) => e.id !== id));
+        deleteExpense.mutate({ id });
+      },
+      mutateAsync: async (id: string, tripId?: string) => {
+        if (tripId) optimisticTripSub(tripId, "trip_expenses", (exps) => exps.filter((e: any) => e.id !== id));
+        return deleteExpense.mutateAsync({ id });
+      },
+    },
     deleteDayPlan: {
       ...deleteDayPlan,
       mutate: (id: string, tripId?: string) => {
