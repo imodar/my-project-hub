@@ -403,12 +403,12 @@ const Tasks = () => {
   }, [deleteListMutation, dbLists, addToTrash]);
 
   const shareList = useCallback(() => {
-    if (selectedShareMembers.length === 0 || !activeListId) return;
+    if (!activeListId) return;
     haptic.medium();
     updateListMutation.mutate({
       id: activeListId,
       shared_with: selectedShareMembers,
-      type: "shared",
+      type: selectedShareMembers.length === 0 ? "personal" : "shared",
     });
     setSelectedShareMembers([]);
     setShowShareDialog(false);
