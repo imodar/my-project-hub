@@ -18,6 +18,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerC
 import { appToast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
+import { CAR_BRANDS, POPULAR_COUNT, carLogoUrl, type CarBrand } from "@/data/carBrands";
 
 // ─── Types ───
 interface MaintenanceRecord {
