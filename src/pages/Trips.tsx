@@ -116,6 +116,7 @@ const INITIAL_TRIPS: Trip[] = [];
 
 const Trips = () => {
   const navigate = useNavigate();
+  const { language, isRTL } = useLanguage();
   const {
     trips: dbTrips, isLoading: tripsLoading,
     createTrip, updateTrip, deleteTrip: deleteTripMut,
