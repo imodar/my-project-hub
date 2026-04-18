@@ -693,7 +693,7 @@ const Vehicle = () => {
           ) : (
             <div className="space-y-3">
               {cars.map(car => {
-                const carInfo = CAR_MANUFACTURERS[car.manufacturer] || CAR_MANUFACTURERS.other;
+                const carInfo = { name: getBrandName(car.manufacturer) };
                 const overdueCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "overdue").length;
                 const soonCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "soon").length;
 
