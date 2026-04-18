@@ -137,10 +137,10 @@ const Trips = () => {
       destination: t.destination || "",
       startDate: t.start_date || "",
       endDate: t.end_date || "",
-      participants: [],
+      participants: Array.isArray(t.shared_with) ? t.shared_with : [],
       budget: t.budget || 0,
       status: t.status || "planning",
-      type: "family" as const,
+      type: (Array.isArray(t.shared_with) && t.shared_with.length > 0 ? "family" : "personal") as "family" | "personal",
       days: (t.trip_day_plans || []).map((d: any) => ({
         id: d.id,
         dayNumber: d.day_number,
