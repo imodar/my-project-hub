@@ -87,8 +87,8 @@ function daysUntil(dateStr: string) {
 function daysLabel(d: number) {
   if (d === 0) return "اليوم";
   if (d === 1) return "غداً";
-  if (d < 0) return `قبل ${toArabicNum(Math.abs(d))} يوم`;
-  return `${toArabicNum(d)} يوم`;
+  if (d < 0) return `قبل ${toEnglishNum(Math.abs(d))} يوم`;
+  return `${toEnglishNum(d)} يوم`;
 }
 
 // initialEvents removed - data now comes from Supabase via useCalendarEvents hook
@@ -307,7 +307,7 @@ const CalendarPage = () => {
                 className={`shrink-0 transition-all ${isActive ? "text-foreground font-bold text-base" : "text-muted-foreground/50 text-sm"}`}
                 style={{ scrollSnapAlign: "center" }}
               >
-                {toArabicNum(year)}
+                {toEnglishNum(year)}
               </button>
             );
           })}
@@ -352,7 +352,7 @@ const CalendarPage = () => {
                 return (
                   <button key={ci} onClick={() => handleDayClick(day)}
                     className={`relative py-2.5 flex flex-col items-center justify-center transition-colors rounded-xl mx-0.5 my-0.5 ${isToday ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
-                    <span className={`text-lg font-bold ${isToday ? "text-primary-foreground" : "text-foreground"}`}>{toArabicNum(day)}</span>
+                    <span className={`text-lg font-bold ${isToday ? "text-primary-foreground" : "text-foreground"}`}>{toEnglishNum(day)}</span>
                     {hasEvent && (
                       <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isToday ? "bg-primary-foreground" : "bg-red-500"}`} />
                     )}
@@ -431,7 +431,7 @@ const CalendarPage = () => {
                   onPointerCancel={() => closeSwipe(ev.id)}
                 >
                   <div className="w-14 h-14 rounded-2xl bg-accent flex flex-col items-center justify-center shrink-0">
-                    <span className="text-lg font-black text-accent-foreground leading-none">{toArabicNum(dayNum)}</span>
+                    <span className="text-lg font-black text-accent-foreground leading-none">{toEnglishNum(dayNum)}</span>
                     <span className="text-[10px] font-semibold text-accent-foreground/80 mt-0.5">{getMonthShort(ev.date)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
