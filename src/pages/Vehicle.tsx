@@ -396,7 +396,7 @@ const Vehicle = () => {
 
   // ─── Car Detail View ───
   if (selectedCar) {
-    const carInfo = CAR_MANUFACTURERS[selectedCar.manufacturer] || CAR_MANUFACTURERS.other;
+    const carInfo = { name: getBrandName(selectedCar.manufacturer) };
     const lastMaintenance = selectedCar.maintenance.length > 0 ? selectedCar.maintenance[0] : null;
     const lastMileage = lastMaintenance ? lastMaintenance.mileageAtService : selectedCar.mileage;
     return (
