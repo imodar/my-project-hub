@@ -2164,6 +2164,7 @@ export type Database = {
           family_id: string
           id: string
           name: string
+          shared_with: string[] | null
           start_date: string | null
           status: string
         }
@@ -2176,6 +2177,7 @@ export type Database = {
           family_id: string
           id?: string
           name: string
+          shared_with?: string[] | null
           start_date?: string | null
           status?: string
         }
@@ -2188,6 +2190,7 @@ export type Database = {
           family_id?: string
           id?: string
           name?: string
+          shared_with?: string[] | null
           start_date?: string | null
           status?: string
         }

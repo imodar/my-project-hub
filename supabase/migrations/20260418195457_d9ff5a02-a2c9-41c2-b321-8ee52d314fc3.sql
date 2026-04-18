@@ -1,0 +1,1 @@
+ALTER TABLE public.trips ADD COLUMN IF NOT EXISTS shared_with uuid[] DEFAULT '{}'::uuid[];

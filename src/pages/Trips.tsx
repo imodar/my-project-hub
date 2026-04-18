@@ -137,10 +137,10 @@ const Trips = () => {
       destination: t.destination || "",
       startDate: t.start_date || "",
       endDate: t.end_date || "",
-      participants: [],
+      participants: Array.isArray(t.shared_with) ? t.shared_with : [],
       budget: t.budget || 0,
       status: t.status || "planning",
-      type: "family" as const,
+      type: (Array.isArray(t.shared_with) && t.shared_with.length > 0 ? "family" : "personal") as "family" | "personal",
       days: (t.trip_day_plans || []).map((d: any) => ({
         id: d.id,
         dayNumber: d.day_number,
@@ -325,6 +325,7 @@ const Trips = () => {
         start_date: tripStart,
         end_date: tripEnd,
         budget: Number(tripBudget) || 0,
+        shared_with: tripParticipants,
       });
       appToast.success(language === "en" ? "Trip updated" : "تم تعديل الرحلة");
     } else {
@@ -335,7 +336,9 @@ const Trips = () => {
         end_date: tripEnd,
         budget: Number(tripBudget) || 0,
         status: "planning",
+        shared_with: tripParticipants,
       });
+      setActiveTab(tripParticipants.length > 0 ? "family" : "personal");
       appToast.success(language === "en" ? "Trip created" : "تم إنشاء الرحلة");
     }
     resetTripForm();
