@@ -648,10 +648,6 @@ const Trips = () => {
               {selectedTrip.endDate && format(new Date(selectedTrip.endDate), "d MMM yyyy", { locale: ar })}
             </span>
           </div>
-          <div className="flex items-center gap-1 mt-1 pb-1">
-            <Users size={14} className="text-white/60" />
-            <span className="text-white/70 text-xs">{selectedTrip.participants.join(" · ")}</span>
-          </div>
         </PageHeader>
 
         {/* Sub tabs */}
