@@ -439,7 +439,7 @@ const Tasks = () => {
           ]}
         >
           <div
-            className={`rounded-2xl p-3 flex items-center gap-3 transition-colors ${isDone ? "bg-muted" : "bg-card"}`}
+            className={`rounded-2xl p-3 flex items-center gap-3 transition-colors border ${isDone ? "bg-muted border-dashed border-border" : "bg-card border-border/60"}`}
             style={{ touchAction: "pan-y" }}
             onPointerDown={(e) => handlePointerDown(e, item.id)}
             onPointerMove={(e) => handlePointerMove(e)}
