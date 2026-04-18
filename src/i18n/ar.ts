@@ -399,6 +399,17 @@ const ar = {
     settings: "الإعدادات",
     addPlace: "إضافة مكان",
   },
+
+  // Validation messages
+  validation: {
+    required: "هذا الحقل مطلوب",
+    invalidNumber: "رقم غير صحيح",
+    positiveNumber: "يجب أن يكون أكبر من صفر",
+    invalidDate: "تاريخ غير صحيح",
+    invalidPhone: "رقم هاتف غير صحيح",
+    minLength: "النص قصير جداً",
+    maxLength: "النص طويل جداً",
+  },
 };
 
 export default ar;
