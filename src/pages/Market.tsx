@@ -797,40 +797,75 @@ const Market = () => {
         }
       }}>
         <DrawerContent dir="rtl">
-          <DrawerHeader className="text-right">
-            <DrawerTitle>إضافة منتج جديد</DrawerTitle>
-            <DrawerDescription>أضف المنتج مع التصنيف والكمية</DrawerDescription>
+          <DrawerHeader className="text-right pb-2">
+            <DrawerTitle className="text-lg">إضافة منتج جديد</DrawerTitle>
+            <DrawerDescription className="text-xs">أضف المنتج مع التصنيف والكمية</DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 overflow-y-auto space-y-3 px-4">
-            <Input placeholder="اسم المنتج" value={newItemName}
-              onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }}
-              onInput={(e) => { const v = (e.target as HTMLInputElement).value; newItemNameRef.current = v; }}
-              className="rounded-xl" />
-            <Input placeholder="الكمية (مثال: 2 كيلو)" value={newItemQuantity} onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }} className="rounded-xl" />
-            {activeList?.useCategories && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">التصنيف</p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(CATEGORY_COLORS).map(([cat, info]) => (
-                  <button
-                    key={cat}
-                    onClick={() => setNewItemCategory(cat)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      newItemCategory === cat
-                        ? "bg-primary text-primary-foreground"
-                        : `${info.bg} ${info.text} border border-border`
-                    }`}
-                  >
-                    {info.emoji} {cat}
-                  </button>
-                ))}
+          <div className="flex-1 overflow-y-auto space-y-4 px-4 pb-2">
+            {/* Inputs */}
+            <div className="space-y-2.5">
+              <div className="relative">
+                <ShoppingCart className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input
+                  placeholder="اسم المنتج"
+                  value={newItemName}
+                  onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }}
+                  onInput={(e) => { const v = (e.target as HTMLInputElement).value; newItemNameRef.current = v; }}
+                  className="rounded-xl pr-9 h-11 text-sm"
+                />
+              </div>
+              <div className="relative">
+                <Plus className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input
+                  placeholder="الكمية (مثال: 2 كيلو)"
+                  value={newItemQuantity}
+                  onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }}
+                  className="rounded-xl pr-9 h-11 text-sm"
+                />
               </div>
             </div>
+
+            {activeList?.useCategories && (
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="text-xs font-semibold text-foreground">اختر التصنيف</p>
+                  <span className="text-[10px] text-muted-foreground">{Object.keys(CATEGORY_COLORS).length} تصنيف</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {Object.entries(CATEGORY_COLORS).map(([cat, info]) => {
+                    const isActive = newItemCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setNewItemCategory(cat)}
+                        className={`relative flex flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-2xl border-2 transition-all ${
+                          isActive
+                            ? "border-primary bg-primary/10 shadow-sm scale-[1.02]"
+                            : "border-border bg-card hover:border-primary/40"
+                        }`}
+                      >
+                        <span className="text-xl leading-none">{info.emoji}</span>
+                        <span className={`text-[10px] font-medium leading-tight text-center ${isActive ? "text-primary" : "text-foreground"}`}>
+                          {cat}
+                        </span>
+                        {isActive && (
+                          <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                            <Check size={10} className="text-primary-foreground" strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
-          <DrawerFooter className="flex-row gap-2">
-            <Button onClick={() => { marketDraft.clearDraft(); addItem(); }} className="flex-1 rounded-xl">إضافة</Button>
-            <Button variant="outline" onClick={() => { marketDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-xl">إلغاء</Button>
+          <DrawerFooter className="flex-row gap-2 pt-3">
+            <Button variant="outline" onClick={() => { marketDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-xl h-11">إلغاء</Button>
+            <Button onClick={() => { marketDraft.clearDraft(); addItem(); }} className="flex-[2] rounded-xl h-11 font-semibold">
+              <Plus size={16} className="ml-1" />
+              إضافة المنتج
+            </Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
