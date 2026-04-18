@@ -267,6 +267,10 @@ const Trips = () => {
   // Drag state
   const [draggedActivity, setDraggedActivity] = useState<string | null>(null);
 
+  // Over-budget warning drawer (when adding an activity that pushes total over trip budget)
+  const [budgetWarnDrawer, setBudgetWarnDrawer] = useState(false);
+  const [pendingActivity, setPendingActivity] = useState<{ overBy: number } | null>(null);
+
   // Trip form errors
   const [tripErrors, setTripErrors] = useState<{ name?: boolean; budget?: boolean; start?: boolean; end?: boolean; dateOrder?: boolean }>({});
 
