@@ -258,6 +258,17 @@ export function useTrips() {
         return deleteDayPlan.mutateAsync({ id });
       },
     },
+    updateDayPlan: {
+      ...updateDayPlan,
+      mutate: (input: any) => {
+        if (input.trip_id) {
+          optimisticTripSub(input.trip_id, "trip_day_plans", (dps) =>
+            dps.map((d: any) => (d.id === input.id ? { ...d, ...input } : d))
+          );
+        }
+        updateDayPlan.mutate(input);
+      },
+    },
     deleteActivity: {
       ...deleteActivity,
       mutate: (id: string, dayPlanId?: string) => {
