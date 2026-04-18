@@ -24,6 +24,7 @@ import { appToast } from "@/lib/toast";
 // tripBudgetSync removed — trips & budgets are synced via Supabase hooks
 import { useTrips as useTripsHook } from "@/hooks/useTrips";
 import { useAlbums } from "@/hooks/useAlbums";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Types
 interface Activity {
@@ -115,6 +116,7 @@ const INITIAL_TRIPS: Trip[] = [];
 
 const Trips = () => {
   const navigate = useNavigate();
+  const { language, isRTL } = useLanguage();
   const {
     trips: dbTrips, isLoading: tripsLoading,
     createTrip, updateTrip, deleteTrip: deleteTripMut,
@@ -241,15 +243,52 @@ const Trips = () => {
   // Drag state
   const [draggedActivity, setDraggedActivity] = useState<string | null>(null);
 
+  // Trip form errors
+  const [tripErrors, setTripErrors] = useState<{ name?: boolean; budget?: boolean; start?: boolean; end?: boolean; dateOrder?: boolean }>({});
+
   const filteredTrips = trips.filter((t) => t.type === activeTab);
 
   const resetTripForm = () => {
     setTripName(""); setTripDest(""); setTripStart(""); setTripEnd(""); setTripBudget(""); setTripParticipants([]);
     setEditingTripId(null);
+    setTripErrors({});
   };
 
   const handleSaveTrip = () => {
-    if (!tripName.trim()) return;
+    const errors: typeof tripErrors = {};
+    const messages: string[] = [];
+    const ar_msgs = {
+      name: "اسم الرحلة مطلوب",
+      budget: "الميزانية يجب أن تكون رقمًا موجبًا",
+      start: "تاريخ البداية مطلوب",
+      end: "تاريخ النهاية مطلوب",
+      dateOrder: "تاريخ النهاية يجب أن يكون بعد تاريخ البداية",
+    };
+    const en_msgs = {
+      name: "Trip name is required",
+      budget: "Budget must be a positive number",
+      start: "Start date is required",
+      end: "End date is required",
+      dateOrder: "End date must be after start date",
+    };
+    const m = language === "en" ? en_msgs : ar_msgs;
+
+    if (!tripName.trim()) { errors.name = true; messages.push(m.name); }
+    if (tripBudget.trim() !== "" && (isNaN(Number(tripBudget)) || Number(tripBudget) < 0)) {
+      errors.budget = true; messages.push(m.budget);
+    }
+    if (tripStart && tripEnd && new Date(tripEnd) < new Date(tripStart)) {
+      errors.dateOrder = true; errors.start = true; errors.end = true;
+      messages.push(m.dateOrder);
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setTripErrors(errors);
+      appToast.error(messages[0]);
+      return;
+    }
+
+    setTripErrors({});
     if (editingTripId) {
       updateTrip.mutate({
         id: editingTripId,
@@ -259,7 +298,7 @@ const Trips = () => {
         end_date: tripEnd,
         budget: Number(tripBudget) || 0,
       });
-      appToast.success("تم تعديل الرحلة");
+      appToast.success(language === "en" ? "Trip updated" : "تم تعديل الرحلة");
     } else {
       createTrip.mutate({
         name: tripName,
@@ -269,11 +308,12 @@ const Trips = () => {
         budget: Number(tripBudget) || 0,
         status: "planning",
       });
-      appToast.success("تم إنشاء الرحلة");
+      appToast.success(language === "en" ? "Trip created" : "تم إنشاء الرحلة");
     }
     resetTripForm();
     setNewTripDrawer(false);
   };
+
 
   const handleEditTrip = (trip: Trip) => {
     setEditingTripId(trip.id);
@@ -1427,12 +1467,12 @@ const Trips = () => {
             {/* اسم الرحلة */}
             <div className="space-y-2 px-1">
               <div className="relative">
-                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">اسم الرحلة</label>
+                <label className={`absolute right-0 top-2 text-[10px] font-bold uppercase tracking-wider ${tripErrors.name ? "text-destructive" : "text-muted-foreground/70"}`}>{language === "en" ? "Trip name" : "اسم الرحلة"}</label>
                 <Input
-                  placeholder="مثال: رحلة إسطنبول"
+                  placeholder={language === "en" ? "e.g. Istanbul trip" : "مثال: رحلة إسطنبول"}
                   value={tripName}
-                  onChange={(e) => setTripName(e.target.value)}
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+                  onChange={(e) => { setTripName(e.target.value); if (tripErrors.name) setTripErrors((p) => ({ ...p, name: false })); }}
+                  className={`h-[60px] border-0 border-b-2 rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal ${tripErrors.name ? "border-destructive focus-visible:border-destructive" : "border-border focus-visible:border-primary"}`}
                 />
               </div>
             </div>
@@ -1440,15 +1480,15 @@ const Trips = () => {
             {/* مصاريف الرحلة */}
             <div className="space-y-2 px-1">
               <div className="relative">
-                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">مصاريف الرحلة</label>
+                <label className={`absolute right-0 top-2 text-[10px] font-bold uppercase tracking-wider ${tripErrors.budget ? "text-destructive" : "text-muted-foreground/70"}`}>{language === "en" ? "Budget" : "مصاريف الرحلة"}</label>
                 <Input
                   type="number"
                   inputMode="decimal"
                   placeholder="0"
                   value={tripBudget}
-                  onChange={(e) => setTripBudget(e.target.value)}
+                  onChange={(e) => { setTripBudget(e.target.value); if (tripErrors.budget) setTripErrors((p) => ({ ...p, budget: false })); }}
                   dir="ltr"
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal text-right"
+                  className={`h-[60px] border-0 border-b-2 rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal text-right ${tripErrors.budget ? "border-destructive focus-visible:border-destructive" : "border-border focus-visible:border-primary"}`}
                 />
               </div>
             </div>
@@ -1456,23 +1496,23 @@ const Trips = () => {
             {/* التواريخ */}
             <div className="grid grid-cols-2 gap-4 px-1">
               <div className="relative">
-                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">من</label>
+                <label className={`absolute right-0 top-2 text-[10px] font-bold uppercase tracking-wider ${tripErrors.start || tripErrors.dateOrder ? "text-destructive" : "text-muted-foreground/70"}`}>{language === "en" ? "From" : "من"}</label>
                 <Input
                   type="date"
                   value={tripStart}
-                  onChange={(e) => setTripStart(e.target.value)}
+                  onChange={(e) => { setTripStart(e.target.value); if (tripErrors.start || tripErrors.dateOrder) setTripErrors((p) => ({ ...p, start: false, dateOrder: false })); }}
                   dir="ltr"
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors"
+                  className={`h-[60px] border-0 border-b-2 rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors ${tripErrors.start || tripErrors.dateOrder ? "border-destructive focus-visible:border-destructive" : "border-border focus-visible:border-primary"}`}
                 />
               </div>
               <div className="relative">
-                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">إلى</label>
+                <label className={`absolute right-0 top-2 text-[10px] font-bold uppercase tracking-wider ${tripErrors.end || tripErrors.dateOrder ? "text-destructive" : "text-muted-foreground/70"}`}>{language === "en" ? "To" : "إلى"}</label>
                 <Input
                   type="date"
                   value={tripEnd}
-                  onChange={(e) => setTripEnd(e.target.value)}
+                  onChange={(e) => { setTripEnd(e.target.value); if (tripErrors.end || tripErrors.dateOrder) setTripErrors((p) => ({ ...p, end: false, dateOrder: false })); }}
                   dir="ltr"
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors"
+                  className={`h-[60px] border-0 border-b-2 rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors ${tripErrors.end || tripErrors.dateOrder ? "border-destructive focus-visible:border-destructive" : "border-border focus-visible:border-primary"}`}
                 />
               </div>
             </div>
