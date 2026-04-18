@@ -104,13 +104,20 @@ Deno.serve(async (req) => {
     }
 
     if (action === "add-day-plan") {
-      const { trip_id, day_number, city } = body;
+      const { trip_id, id: clientId, day_number, city } = body;
       if (!validUuid(trip_id)) return json({ error: "trip_id غير صالح" }, 400);
       if (typeof day_number !== "number" || day_number < 1 || day_number > 365) return json({ error: "رقم اليوم غير صالح" }, 400);
       if (city && typeof city === "string" && city.length > MAX_NAME) return json({ error: "اسم المدينة طويل جداً" }, 400);
-      const { data: trip } = await supabase.from("trips").select("id").eq("id", trip_id).maybeSingle();
+      const { data: trip } = await adminClient.from("trips").select("id").eq("id", trip_id).maybeSingle();
       if (!trip) return json({ error: "الرحلة غير موجودة بعد، يرجى المحاولة لاحقاً", retry: true }, 409);
-      const { data, error } = await adminClient.from("trip_day_plans").insert({ trip_id, day_number, city: city ? sanitize(city, MAX_NAME) : null }).select().single();
+      // Idempotent: if client supplied UUID and row exists, return it
+      if (clientId && validUuid(clientId)) {
+        const { data: existing } = await adminClient.from("trip_day_plans").select("*").eq("id", clientId).maybeSingle();
+        if (existing) return json({ data: existing });
+      }
+      const insertData: Record<string, unknown> = { trip_id, day_number, city: city ? sanitize(city, MAX_NAME) : null };
+      if (clientId && validUuid(clientId)) insertData.id = clientId;
+      const { data, error } = await adminClient.from("trip_day_plans").insert(insertData).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
