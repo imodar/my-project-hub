@@ -41,6 +41,11 @@ const Vaccinations = () => {
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showEditSheet, setShowEditSheet] = useState(false);
+
+  const childForm = useFormValidation<"name" | "birthDate">(
+    { name: required, birthDate: [required, validDate] },
+    { resetKey: showAddSheet || showEditSheet }
+  );
   const [editingChild, setEditingChild] = useState<Child | null>(null);
   const [showReminderSheet, setShowReminderSheet] = useState(false);
   const [reminderChild, setReminderChild] = useState<Child | null>(null);
@@ -61,8 +66,7 @@ const Vaccinations = () => {
   const resolvedReminder = resolvedSelected?.reminderSettings || { beforeDay: true, beforeWeek: true, beforeMonth: true };
 
   const handleAddChild = async () => {
-    if (!newName.trim()) { appToast.error("يرجى إدخال اسم الطفل"); return; }
-    if (!newBirthDate) { appToast.error("يرجى إدخال تاريخ الميلاد"); return; }
+    if (!childForm.validate({ name: newName, birthDate: newBirthDate })) return;
 
     try {
       await addChild.mutateAsync({ name: newName.trim(), gender: newGender, birthDate: newBirthDate });
@@ -78,8 +82,7 @@ const Vaccinations = () => {
 
   const handleEditChild = async () => {
     if (!editingChild) return;
-    if (!newName.trim()) { appToast.error("يرجى إدخال اسم الطفل"); return; }
-    if (!newBirthDate) { appToast.error("يرجى إدخال تاريخ الميلاد"); return; }
+    if (!childForm.validate({ name: newName, birthDate: newBirthDate })) return;
 
     try {
       await updateChild.mutateAsync({

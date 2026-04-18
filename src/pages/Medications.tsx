@@ -50,6 +50,11 @@ const Medications = () => {
   const [showDetailSheet, setShowDetailSheet] = useState<Medication | null>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
 
+  const medForm = useFormValidation<"name" | "dosage">(
+    { name: required, dosage: required },
+    { resetKey: showAddDrawer }
+  );
+
   // Form state
   const [formName, setFormName] = useState("");
   const [formDosage, setFormDosage] = useState("");
@@ -174,8 +179,7 @@ const Medications = () => {
   };
 
   const handleSave = () => {
-    if (!formName.trim()) { appToast.error("يرجى إدخال اسم الدواء"); return; }
-    if (!formDosage.trim()) { appToast.error("يرجى إدخال الجرعة"); return; }
+    if (!medForm.validate({ name: formName, dosage: formDosage })) return;
 
     const baseMed = {
       name: formName.trim(), dosage: formDosage.trim(), memberId: formMemberId,
