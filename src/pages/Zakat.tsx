@@ -618,6 +618,7 @@ const Zakat = () => {
                   </select>
                 )}
               </div>
+              {assetForm.errors.amount && <p className="text-xs text-destructive mt-1">{assetForm.errors.amount}</p>}
             </div>
 
             {/* Karat for gold */}
@@ -676,10 +677,11 @@ const Zakat = () => {
               <Input
                 type="date"
                 value={addDate}
-                onChange={(e) => setAddDate(e.target.value)}
+                onChange={(e) => { setAddDate(e.target.value); assetForm.clearError("purchaseDate"); }}
                 className="w-full rounded-xl"
                 dir="ltr"
               />
+              {assetForm.errors.purchaseDate && <p className="text-xs text-destructive mt-1">{assetForm.errors.purchaseDate}</p>}
               <p className="text-[10px] text-muted-foreground mt-1">يُحسب الحول (354 يوم) من هذا التاريخ</p>
             </div>
 
