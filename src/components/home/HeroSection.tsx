@@ -283,21 +283,16 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Scroll-driven smooth collapse — keep the collapse range comfortably larger
-  // than the total removed header height to avoid scroll/layout feedback flicker
-  // on mobile while the sticky header shrinks.
+  // Scroll-driven smooth collapse — short range for snappy collapse,
+  // section fully collapses to 0 height (only top header bar remains).
   const { scrollY } = useScroll();
-  const easedProgress = useTransform(scrollY, [0, 360], [0, 1], { clamp: true });
+  const easedProgress = useTransform(scrollY, [0, 140], [0, 1], { clamp: true });
 
+  const expandedSectionHeight = islamicMode ? 260 : 132;
+  const sectionHeight = useTransform(easedProgress, [0, 1], [expandedSectionHeight, 0]);
+  const sectionOpacity = useTransform(easedProgress, [0.5, 1], [1, 0]);
+  const contentOpacity = useTransform(easedProgress, [0, 0.6], [1, 0]);
   const islamicOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
-  const islamicHeight = useTransform(easedProgress, [0, 1], [128, 0]);
-
-  const contentOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
-  const contentHeight = useTransform(easedProgress, [0, 1], [76, 0]);
-  const sectionPaddingTop = useTransform(easedProgress, [0, 1], [16, 0]);
-  const sectionPaddingBottom = useTransform(easedProgress, [0, 1], [20, 0]);
-  const sectionOpacity = useTransform(easedProgress, [0.6, 1], [1, 0]);
-  const sectionHeight = useTransform(easedProgress, [0, 1], [islamicMode ? 280 : 152, 0]);
   const decorOpacity = useTransform(easedProgress, [0, 0.4], [1, 0]);
   const orbScale = useTransform(easedProgress, [0, 0.6], [1, 0]);
   const orbOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
