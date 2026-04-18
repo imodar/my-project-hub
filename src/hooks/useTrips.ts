@@ -180,7 +180,7 @@ export function useTrips() {
           ...input,
         };
         optimisticTripSub(input.trip_id, "trip_day_plans", (dps) => [...dps, item]);
-        addDayPlan.mutateAsync(item).catch(() => {});
+        await addDayPlan.mutateAsync(item);
         return item;
       },
     },
