@@ -589,21 +589,32 @@ const Tasks = () => {
           </div>
         )}
 
-        {/* Shared/Assigned tabs */}
+        {/* Sticky segmented tabs — Underline (نفس تصميم الرحلات) */}
         {isSharedList && (
-          <div className="px-4 pt-2 flex gap-2">
-            <button
-              onClick={() => setTaskTab("all")}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${taskTab === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-            >
-              مهام مشتركة
-            </button>
-            <button
-              onClick={() => setTaskTab("mine")}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${taskTab === "mine" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-            >
-              مهام مسندة إلي
-            </button>
+          <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-md px-5 pt-2 border-b border-border/40">
+            <div className="relative flex items-center h-12">
+              {[
+                { value: "all" as const, icon: Users, label: "مهام مشتركة" },
+                { value: "mine" as const, icon: UserCheck, label: "مهام مسندة إليّ" },
+              ].map(({ value, icon: Icon, label }) => {
+                const active = taskTab === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setTaskTab(value)}
+                    className={`relative flex-1 h-full flex items-center justify-center gap-1.5 text-sm font-bold transition-colors duration-200 ${
+                      active ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
+                    }`}
+                  >
+                    <Icon size={16} strokeWidth={active ? 2.5 : 2} />
+                    {label}
+                    {active && (
+                      <span className="absolute -bottom-px left-1/2 -translate-x-1/2 h-[3px] w-16 rounded-t-full bg-accent transition-all duration-300" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
