@@ -561,11 +561,13 @@ const Medications = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-right block">اسم الدواء</Label>
-                <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="مثل: بنادول" className="text-right" />
+                <Input value={formName} onChange={(e) => { setFormName(e.target.value); medForm.clearError("name"); }} placeholder="مثل: بنادول" className="text-right" />
+                {medForm.errors.name && <p className="text-xs text-destructive">{medForm.errors.name}</p>}
               </div>
               <div className="space-y-2">
                 <Label className="text-right block">الجرعة</Label>
-                <Input value={formDosage} onChange={(e) => setFormDosage(e.target.value)} placeholder="مثل: 500mg" className="text-right" />
+                <Input value={formDosage} onChange={(e) => { setFormDosage(e.target.value); medForm.clearError("dosage"); }} placeholder="مثل: 500mg" className="text-right" />
+                {medForm.errors.dosage && <p className="text-xs text-destructive">{medForm.errors.dosage}</p>}
               </div>
             </div>
 

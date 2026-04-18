@@ -601,7 +601,7 @@ const Zakat = () => {
                 <Input
                   type="number"
                   value={addAmount}
-                  onChange={e => setAddAmount(e.target.value)}
+                  onChange={e => { setAddAmount(e.target.value); assetForm.clearError("amount"); }}
                   placeholder={addType === "gold" ? "مثال: 100" : "مثال: 50000"}
                   className="flex-1 min-w-0 text-right"
                   inputMode="decimal"
