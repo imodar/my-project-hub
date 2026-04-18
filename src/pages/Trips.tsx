@@ -1075,7 +1075,7 @@ const Trips = () => {
               <Input placeholder="اسم النشاط" value={activityName} onChange={(e) => setActivityName(e.target.value)} />
               <Input type="time" placeholder="الوقت" value={activityTime} onChange={(e) => setActivityTime(e.target.value)} />
               <Input placeholder="الموقع" value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} />
-              <Input type="number" placeholder="التكلفة التقديرية" value={activityCost} onChange={(e) => setActivityCost(e.target.value)} dir="ltr" />
+              <Input type="number" inputMode="decimal" placeholder="التكلفة التقديرية" value={activityCost} onChange={(e) => setActivityCost(e.target.value)} dir="ltr" />
               {selectedTrip.startDate && selectedTrip.endDate && (() => {
                 const start = new Date(selectedTrip.startDate);
                 const end = new Date(selectedTrip.endDate);
@@ -1178,7 +1178,7 @@ const Trips = () => {
             <DrawerHeader><DrawerTitle>إضافة مصروف</DrawerTitle></DrawerHeader>
             <div className="px-5 pb-8 space-y-4">
               <Input placeholder="اسم المصروف (إقامة، طيران، طعام...)" value={expenseName} onChange={(e) => setExpenseName(e.target.value)} />
-              <Input type="number" placeholder="المبلغ" value={expenseAmount} onChange={(e) => setExpenseAmount(e.target.value)} dir="ltr" />
+              <Input type="number" inputMode="decimal" placeholder="المبلغ" value={expenseAmount} onChange={(e) => setExpenseAmount(e.target.value)} dir="ltr" />
               <Button className="w-full rounded-xl" onClick={handleAddExpense}>إضافة</Button>
             </div>
           </DrawerContent>
@@ -1203,7 +1203,7 @@ const Trips = () => {
                   <Input type="date" value={tripEnd} onChange={(e) => setTripEnd(e.target.value)} dir="ltr" />
                 </div>
               </div>
-              <Input type="number" placeholder="الميزانية الإجمالية" value={tripBudget} onChange={(e) => setTripBudget(e.target.value)} dir="ltr" />
+              <Input type="number" inputMode="decimal" placeholder="الميزانية الإجمالية" value={tripBudget} onChange={(e) => setTripBudget(e.target.value)} dir="ltr" />
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-2 block">المشاركون</label>
                 {familyMembers.length > 0 ? (
@@ -1351,7 +1351,7 @@ const Trips = () => {
                 <Input type="date" value={tripEnd} onChange={(e) => setTripEnd(e.target.value)} dir="ltr" />
               </div>
             </div>
-            <Input type="number" placeholder="الميزانية الإجمالية" value={tripBudget} onChange={(e) => setTripBudget(e.target.value)} dir="ltr" />
+            <Input type="number" inputMode="decimal" placeholder="الميزانية الإجمالية" value={tripBudget} onChange={(e) => setTripBudget(e.target.value)} dir="ltr" />
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-2 block">المشاركون</label>
               {familyMembers.length > 0 ? (

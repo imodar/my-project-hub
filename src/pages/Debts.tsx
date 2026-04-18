@@ -176,6 +176,7 @@ const AmountEditor = ({
       <div key={i} className="flex gap-2 items-center">
         <input
           type="number"
+          inputMode="decimal"
           placeholder="المبلغ"
           value={entry.amount}
           onChange={(e) => {
