@@ -325,6 +325,7 @@ const Trips = () => {
         start_date: tripStart,
         end_date: tripEnd,
         budget: Number(tripBudget) || 0,
+        shared_with: tripParticipants,
       });
       appToast.success(language === "en" ? "Trip updated" : "تم تعديل الرحلة");
     } else {
@@ -335,7 +336,9 @@ const Trips = () => {
         end_date: tripEnd,
         budget: Number(tripBudget) || 0,
         status: "planning",
+        shared_with: tripParticipants,
       });
+      setActiveTab(tripParticipants.length > 0 ? "family" : "personal");
       appToast.success(language === "en" ? "Trip created" : "تم إنشاء الرحلة");
     }
     resetTripForm();
