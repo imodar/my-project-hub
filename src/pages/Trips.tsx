@@ -667,62 +667,107 @@ const Trips = () => {
               </div>
             )}
 
-            {selectedTrip.days.map((day) => (
-              <div key={day.id} className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
-                <div className="flex items-center justify-between p-4 border-b border-border/30">
-                  <div>
-                    <span className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>
-                      اليوم {day.dayNumber}
-                      {selectedTrip.startDate && ` — ${format(addDays(new Date(selectedTrip.startDate), day.dayNumber - 1), "EEEE d MMM", { locale: ar })}`}
-                    </span>
-                    <p className="text-sm font-bold text-foreground mt-0.5">{day.city}</p>
-                  </div>
-                  <button
-                    onClick={() => { setSelectedDayId(day.id); setNewActivityDrawer(true); }}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
-                    style={{ background: "hsl(var(--accent) / 0.15)", color: "hsl(var(--accent))" }}
-                  >
-                    <Plus size={14} />
-                    <span>نشاط</span>
-                  </button>
-                </div>
-                <div className="divide-y divide-border/20">
-                  {day.activities.map((act, idx) => (
-                    <div
-                      key={act.id}
-                      draggable
-                      onDragStart={() => handleDragStart(act.id)}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={() => handleDrop(day.id, idx)}
-                      className="flex items-center gap-3 p-3 hover:bg-muted/30 cursor-grab active:cursor-grabbing"
+            {selectedTrip.days.map((day) => {
+              const isUuidDay = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(day.id);
+              const dayCard = (
+                <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
+                  <div className="flex items-center justify-between p-4 border-b border-border/30">
+                    <div>
+                      <span className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>
+                        اليوم {day.dayNumber}
+                        {selectedTrip.startDate && ` — ${format(addDays(new Date(selectedTrip.startDate), day.dayNumber - 1), "EEEE d MMM", { locale: ar })}`}
+                      </span>
+                      <p className="text-sm font-bold text-foreground mt-0.5">{day.city}</p>
+                    </div>
+                    <button
+                      onClick={() => { setSelectedDayId(day.id); setNewActivityDrawer(true); }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                      style={{ background: "hsl(var(--accent) / 0.15)", color: "hsl(var(--accent))" }}
                     >
-                      <GripVertical size={14} className="text-muted-foreground/40 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">{act.name}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          {act.time && (
-                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <Clock size={10} /> {act.time}
-                            </span>
-                          )}
-                          {act.location && (
-                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <MapPin size={10} /> {act.location}
-                            </span>
+                      <Plus size={14} />
+                      <span>نشاط</span>
+                    </button>
+                  </div>
+                  <div className="divide-y divide-border/20">
+                    {day.activities.map((act, idx) => {
+                      const activityRow = (
+                        <div
+                          draggable
+                          onDragStart={() => handleDragStart(act.id)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => handleDrop(day.id, idx)}
+                          className="flex items-center gap-3 p-3 bg-card hover:bg-muted/30 cursor-grab active:cursor-grabbing"
+                        >
+                          <GripVertical size={14} className="text-muted-foreground/40 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">{act.name}</p>
+                            <div className="flex items-center gap-3 mt-1">
+                              {act.time && (
+                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                  <Clock size={10} /> {act.time}
+                                </span>
+                              )}
+                              {act.location && (
+                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                  <MapPin size={10} /> {act.location}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {act.cost > 0 && (
+                            <span className="text-xs font-bold text-primary whitespace-nowrap">{act.cost.toLocaleString()}</span>
                           )}
                         </div>
-                      </div>
-                      {act.cost > 0 && (
-                        <span className="text-xs font-bold text-primary whitespace-nowrap">{act.cost.toLocaleString()}</span>
-                      )}
-                    </div>
-                  ))}
-                  {day.activities.length === 0 && (
-                    <p className="text-center text-xs text-muted-foreground py-4">لا أنشطة</p>
-                  )}
+                      );
+                      return (
+                        <SwipeableCard
+                          key={act.id}
+                          actions={[
+                            {
+                              icon: <Trash2 size={18} />,
+                              label: "حذف",
+                              color: "bg-destructive",
+                              onClick: () => {
+                                deleteActivity.mutate(act.id, day.id);
+                                appToast.success("تم حذف النشاط");
+                              },
+                            },
+                          ]}
+                        >
+                          {activityRow}
+                        </SwipeableCard>
+                      );
+                    })}
+                    {day.activities.length === 0 && (
+                      <p className="text-center text-xs text-muted-foreground py-4">لا أنشطة</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+
+              // Only allow swipe-to-delete on real (persisted) days
+              if (!isUuidDay) {
+                return <div key={day.id}>{dayCard}</div>;
+              }
+              return (
+                <SwipeableCard
+                  key={day.id}
+                  actions={[
+                    {
+                      icon: <Trash2 size={18} />,
+                      label: "حذف اليوم",
+                      color: "bg-destructive",
+                      onClick: () => {
+                        deleteDayPlan.mutate(day.id, selectedTrip.id);
+                        appToast.success("تم حذف اليوم");
+                      },
+                    },
+                  ]}
+                >
+                  {dayCard}
+                </SwipeableCard>
+              );
+            })}
           </div>
         )}
 
