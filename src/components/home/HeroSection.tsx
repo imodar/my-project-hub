@@ -537,11 +537,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
             {islamicMode && (
               <motion.div
-                className="grid grid-cols-2 gap-3 items-center overflow-hidden"
-                style={{
-                  opacity: islamicOpacity,
-                  height: islamicHeight,
-                }}
+                className="grid grid-cols-2 gap-3 items-center"
+                style={{ opacity: islamicOpacity }}
               >
                 <QiblaCompass />
                 <NextPrayerBox />
