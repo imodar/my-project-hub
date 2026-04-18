@@ -358,7 +358,7 @@ const Auth = () => {
               <div className="flex-1" />
 
               {/* Language switch + Terms */}
-              <div className="flex flex-col items-center gap-3 pt-2 pb-2">
+              <div className="flex flex-col items-center gap-3 pt-2 pb-2" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
                 <p className="text-[11px] text-muted-foreground/60 text-center leading-relaxed">
                   <button
                     type="button"
