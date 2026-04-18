@@ -64,14 +64,15 @@ Deno.serve(async (req) => {
     }
 
     if (action === "create-trip") {
-      const { family_id, name, destination, start_date, end_date, budget, status } = body;
+      const { family_id, name, destination, start_date, end_date, budget, status, shared_with } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
       const denied = await verifyFamily(family_id); if (denied) return denied;
       if (!validStr(name, MAX_NAME)) return json({ error: "الاسم مطلوب (حد أقصى 200)" }, 400);
       if (destination && typeof destination === "string" && destination.length > MAX_DEST) return json({ error: "الوجهة طويلة جداً" }, 400);
       if (budget !== undefined && budget !== null && !validAmount(budget)) return json({ error: "الميزانية غير صالحة" }, 400);
       if (status && !ALLOWED_STATUS.includes(status)) return json({ error: "حالة غير صالحة" }, 400);
-      const { data, error } = await supabase.from("trips").insert({ family_id, name: sanitize(name, MAX_NAME), destination: destination ? sanitize(destination, MAX_DEST) : null, start_date, end_date, budget, status: status || "planning", created_by: userId }).select().single();
+      const sharedArr = Array.isArray(shared_with) ? shared_with.filter((x: unknown) => typeof x === "string" && validUuid(x)) : [];
+      const { data, error } = await supabase.from("trips").insert({ family_id, name: sanitize(name, MAX_NAME), destination: destination ? sanitize(destination, MAX_DEST) : null, start_date, end_date, budget, status: status || "planning", shared_with: sharedArr, created_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
