@@ -121,12 +121,12 @@ const Trips = () => {
     trips: dbTrips, isLoading: tripsLoading,
     createTrip, updateTrip, deleteTrip: deleteTripMut,
     addDayPlan, addActivity, updateActivity,
-    deleteDayPlan, deleteActivity,
+    deleteDayPlan, deleteActivity, updateDayPlan,
     addExpense, deleteExpense,
     addPackingItem, updatePackingItem,
     addSuggestion, updateSuggestion,
     addDocument, deleteDocument,
-  } = useTripsHook();
+  } = useTripsHook() as any;
   const { albums: tripAlbums } = useAlbums();
 
   // Map DB trips to UI format
