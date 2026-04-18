@@ -114,6 +114,20 @@ const CalendarPage = () => {
   const touchStartXRef = useRef(0);
   const activeSwipeRef = useRef<string | null>(null);
 
+  // Refs for month/year sliders (auto-center active)
+  const monthBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const yearBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const yearList = useMemo(() => Array.from({ length: 11 }, (_, i) => today.getFullYear() - 5 + i), []);
+
+  React.useEffect(() => {
+    monthBtnRefs.current[currentMonth]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [currentMonth]);
+
+  React.useEffect(() => {
+    const idx = yearList.indexOf(currentYear);
+    if (idx >= 0) yearBtnRefs.current[idx]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [currentYear, yearList]);
+
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<FamilyEvent | null>(null);
 
