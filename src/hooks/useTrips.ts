@@ -231,15 +231,26 @@ export function useTrips() {
         return addExpense.mutateAsync(item);
       },
     },
-    deleteExpense: {
-      ...deleteExpense,
+    deleteDayPlan: {
+      ...deleteDayPlan,
       mutate: (id: string, tripId?: string) => {
-        if (tripId) optimisticTripSub(tripId, "trip_expenses", (exps) => exps.filter((e: any) => e.id !== id));
-        deleteExpense.mutate({ id });
+        if (tripId) optimisticTripSub(tripId, "trip_day_plans", (dps) => dps.filter((d: any) => d.id !== id));
+        deleteDayPlan.mutate({ id });
       },
       mutateAsync: async (id: string, tripId?: string) => {
-        if (tripId) optimisticTripSub(tripId, "trip_expenses", (exps) => exps.filter((e: any) => e.id !== id));
-        return deleteExpense.mutateAsync({ id });
+        if (tripId) optimisticTripSub(tripId, "trip_day_plans", (dps) => dps.filter((d: any) => d.id !== id));
+        return deleteDayPlan.mutateAsync({ id });
+      },
+    },
+    deleteActivity: {
+      ...deleteActivity,
+      mutate: (id: string, dayPlanId?: string) => {
+        if (dayPlanId) optimisticActivitySub(dayPlanId, (acts) => acts.filter((a: any) => a.id !== id));
+        deleteActivity.mutate({ id });
+      },
+      mutateAsync: async (id: string, dayPlanId?: string) => {
+        if (dayPlanId) optimisticActivitySub(dayPlanId, (acts) => acts.filter((a: any) => a.id !== id));
+        return deleteActivity.mutateAsync({ id });
       },
     },
     addPackingItem: {
