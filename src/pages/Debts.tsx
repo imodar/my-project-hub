@@ -185,7 +185,6 @@ const AmountEditor = ({
             setAmounts(updated);
           }}
           className="flex-1 min-w-0 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
-          inputMode="decimal"
         />
         <select
           value={entry.currency}

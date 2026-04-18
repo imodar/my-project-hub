@@ -481,7 +481,6 @@ const Budget = () => {
                 onChange={e => setEditExpenseAmount(e.target.value)}
                 className="text-right"
                 inputMode="decimal"
-                inputMode="decimal"
               />
               {/* Date picker (optional) */}
               <div>
@@ -728,7 +727,6 @@ const Budget = () => {
                 onChange={e => setNewIncome(e.target.value)}
                 className="text-right"
                 inputMode="decimal"
-                inputMode="decimal"
               />
             </div>
 
@@ -808,7 +806,6 @@ const Budget = () => {
                 value={newIncome}
                 onChange={e => setNewIncome(e.target.value)}
                 className="text-right"
-                inputMode="decimal"
                 inputMode="decimal"
               />
             </div>
