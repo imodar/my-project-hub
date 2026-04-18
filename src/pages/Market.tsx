@@ -848,25 +848,25 @@ const Market = () => {
               </div>
             )}
 
-            {/* Big stacked inputs — bordered card style, equal heights */}
-            <div className="rounded-3xl border-2 border-border bg-card overflow-hidden divide-y divide-border">
+            {/* Underline-only inputs — clean white, colored bottom line on focus */}
+            <div className="bg-card space-y-2 px-1">
               <div className="relative">
-                <label className="absolute right-4 top-2.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">المنتج</label>
+                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">المنتج</label>
                 <Input
                   placeholder="مثال: طماطم طازجة"
                   value={newItemName}
                   onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }}
                   onInput={(e) => { const v = (e.target as HTMLInputElement).value; newItemNameRef.current = v; }}
-                  className="h-[68px] border-0 rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-4 focus-visible:ring-0 placeholder:text-muted-foreground/50 placeholder:font-normal"
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 focus-visible:ring-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
                 />
               </div>
-              <div className="relative">
-                <label className="absolute right-4 top-2.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">الكمية</label>
+              <div className="relative pt-2">
+                <label className="absolute right-0 top-4 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">الكمية</label>
                 <Input
                   placeholder="مثال: 2 كيلو"
                   value={newItemQuantity}
                   onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }}
-                  className="h-[68px] border-0 rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-4 focus-visible:ring-0 placeholder:text-muted-foreground/50 placeholder:font-normal"
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 focus-visible:ring-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
                 />
               </div>
             </div>
