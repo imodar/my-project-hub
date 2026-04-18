@@ -45,6 +45,7 @@ const DrawerContent = React.forwardRef<
       <div
         data-vaul-no-drag
         className="flex flex-col flex-1 min-h-0"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         onKeyDown={(e) => {
           if (e.key === " " && e.target instanceof HTMLElement && e.target.tagName === "BUTTON") {
             e.preventDefault();
@@ -73,7 +74,7 @@ const DrawerFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn("mt-auto flex flex-col gap-2 p-4 shrink-0", className)}
-    style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))", ...style }}
+    style={style}
     {...props}
   />
 ));

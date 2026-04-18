@@ -106,7 +106,7 @@ const Tasbih = () => {
               <DrawerHeader>
                 <DrawerTitle className="text-center">إحصائيات التسبيح</DrawerTitle>
               </DrawerHeader>
-              <div className="px-5 pb-8 max-h-[60vh] overflow-y-auto" dir="rtl">
+              <div className="px-5 max-h-[60vh] overflow-y-auto" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }} dir="rtl">
                 {/* Summary */}
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-primary/10 mb-4">
                   <div className="text-center flex-1">
@@ -183,7 +183,7 @@ const Tasbih = () => {
               <DrawerHeader>
                 <DrawerTitle className="text-center">الإعدادات</DrawerTitle>
               </DrawerHeader>
-              <div className="px-5 pb-8 space-y-4" dir="rtl">
+              <div className="px-5 space-y-4" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }} dir="rtl">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
                   <span className="text-sm font-medium text-foreground">صوت النقر</span>
                   <Switch checked={soundEnabled} onCheckedChange={setSoundEnabled} />

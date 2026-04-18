@@ -396,7 +396,25 @@ const Vehicle = () => {
       updateVehicleMut.mutate({ id: selectedCar.id, mileage: Number(maintMileage) });
     }
 
-    setSelectedCar(null); // will re-select from refreshed data
+    // optimistic update — keep user on the vehicle detail page
+    if (!editMaintenanceRecord) {
+      const optimisticRecord: MaintenanceRecord = {
+        id: crypto.randomUUID(),
+        type: maintType,
+        label: mainRecord.label,
+        date: maintDate,
+        mileageAtService: Number(maintMileage) || 0,
+        nextMileage: Number(maintNextMileage) || 0,
+        nextDate: maintNextDate,
+        notes: maintNotes || undefined,
+      };
+      setSelectedCar(prev => prev ? { ...prev, maintenance: [optimisticRecord, ...prev.maintenance] } : null);
+    } else {
+      setSelectedCar(prev => prev ? {
+        ...prev,
+        maintenance: prev.maintenance.map(m => m.id === editMaintenanceRecord.id ? { ...m, ...mainRecord, mileageAtService: Number(maintMileage) || 0, nextMileage: Number(maintNextMileage) || 0 } : m)
+      } : null);
+    }
     setAddMaintenanceOpen(false);
     resetMaintForm();
     appToast.success(editMaintenanceRecord ? "تم تعديل السجل" : "تمت إضافة سجل الصيانة");

@@ -26,7 +26,7 @@ const LanguageSheet = ({ open, onOpenChange }: LanguageSheetProps) => {
               {t.settings.selectLanguage}
             </SheetTitle>
           </SheetHeader>
-          <div className="px-6 py-5 space-y-3">
+          <div className="px-6 py-5 space-y-3" style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}>
             {[
               { code: "ar" as const, label: "العربية", desc: "Arabic", flag: "🇸🇦" },
               { code: "en" as const, label: "English", desc: "الإنجليزية", flag: "🇺🇸" },

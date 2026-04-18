@@ -810,7 +810,7 @@ const Places = () => {
             </div>
             <DrawerFooter className="flex-row gap-2">
               <Button onClick={() => setShowFilters(false)} className="flex-1 rounded-xl">عرض النتائج</Button>
-              <Button variant="outline" onClick={() => { resetFilters(); }} className="flex-1 rounded-xl">إعادة ضبط</Button>
+              <Button variant="outline" onClick={() => { resetFilters(); setShowFilters(false); }} className="flex-1 rounded-xl">إعادة ضبط</Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>

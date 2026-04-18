@@ -131,7 +131,7 @@ export const RESOURCE_REGISTRY: ResourceEntry[] = [
   { table: "album_photos", queryKeyPrefix: "albums", familyScoped: false, warm: false, warmPriority: "deferred", realtime: false, fullSync: null },
 
   // ── المركبات ──
-  { table: "vehicles", queryKeyPrefix: "vehicles", familyScoped: true, warm: true, warmPriority: "deferred", realtime: true,
+  { table: "vehicles", queryKeyPrefix: "vehicles", familyScoped: true, warm: true, warmPriority: "critical", realtime: true,
     fullSync: { action: "get-vehicles", fn: "vehicles-api", label: "المركبات" } },
 
   // ── التطعيمات ──
@@ -147,11 +147,11 @@ export const RESOURCE_REGISTRY: ResourceEntry[] = [
   { table: "chat_messages", queryKeyPrefix: "chat-messages", familyScoped: true, warm: true, warmPriority: "deferred", realtime: false, fullSync: null },
 
   // ── الزكاة ──
-  { table: "zakat_assets", queryKeyPrefix: "zakat-assets", familyScoped: false, warm: true, warmPriority: "deferred", realtime: true,
+  { table: "zakat_assets", queryKeyPrefix: "zakat-assets", familyScoped: false, warm: true, warmPriority: "critical", realtime: true,
     fullSync: { action: "get-assets", fn: "zakat-api", label: "الزكاة" } },
 
   // ── الوصية ──
-  { table: "will_sections", queryKeyPrefix: "will", familyScoped: false, warm: true, warmPriority: "deferred", realtime: true,
+  { table: "will_sections", queryKeyPrefix: "will", familyScoped: false, warm: true, warmPriority: "critical", realtime: true,
     fullSync: { action: "get-will", fn: "will-api", label: "الوصية" } },
 
   // ── العبادات ──
