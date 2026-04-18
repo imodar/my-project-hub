@@ -1245,14 +1245,9 @@ const Trips = () => {
     <div className="min-h-screen bg-background pb-32" dir="rtl">
       <PageHeader title="الرحلات" subtitle="خطط لرحلاتك العائلية والشخصية" />
 
-      {/* Sticky segmented tabs — Gradient Pill */}
-      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-md px-5 pt-3 pb-3">
-        <div className="relative flex items-center bg-muted/50 rounded-2xl p-1.5 h-12 border border-border/40 shadow-inner">
-          <span
-            className="absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30 transition-all duration-300 ease-out"
-            style={{ transform: activeTab === "family" ? "translateX(0)" : "translateX(-100%)" }}
-            aria-hidden
-          />
+      {/* Sticky segmented tabs — Underline */}
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-md px-5 pt-2 border-b border-border/40">
+        <div className="relative flex items-center h-12">
           {[
             { value: "family", icon: Users, label: "رحلات عائلية" },
             { value: "personal", icon: Plane, label: "رحلات شخصية" },
@@ -1262,12 +1257,15 @@ const Trips = () => {
               <button
                 key={value}
                 onClick={() => setActiveTab(value)}
-                className={`relative z-10 flex-1 h-full flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-colors duration-200 ${
-                  active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                className={`relative flex-1 h-full flex items-center justify-center gap-1.5 text-sm font-bold transition-colors duration-200 ${
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Icon size={15} strokeWidth={active ? 2.5 : 2} />
+                <Icon size={16} strokeWidth={active ? 2.5 : 2} />
                 {label}
+                {active && (
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] w-12 rounded-full bg-primary transition-all duration-300" />
+                )}
               </button>
             );
           })}
