@@ -8,7 +8,7 @@ import { appToast } from "@/lib/toast";
 import { useDraftPersistence } from "@/hooks/useDraftPersistence";
 import FAB from "@/components/FAB";
 import SwipeableCard from "@/components/SwipeableCard";
-import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil } from "lucide-react";
+import { Plus, Search, ShoppingCart, Check, Users, Lock, Share2, Trash2, MoreVertical, Pencil, GripVertical } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useNavigate } from "react-router-dom";
@@ -397,7 +397,7 @@ const Market = () => {
           { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget(item) },
         ]}
       >
-        <div className="bg-card rounded-2xl p-3 flex items-center gap-3">
+        <div className={`rounded-2xl p-3 flex items-center gap-3 transition-colors ${isChecked ? "bg-muted" : "bg-white"}`}>
           <div className="relative shrink-0 w-7 h-7">
             {pendingItemIds.includes(item.id) && (
               <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
@@ -411,17 +411,17 @@ const Market = () => {
               className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                 isChecked
                   ? "bg-primary"
-                  : "border-2 border-border hover:border-primary"
+                  : "bg-white border-2 border-border hover:border-primary"
               }`}
             >
-              {isChecked && <Check size={14} className="text-primary-foreground" />}
+              {isChecked && <Check size={14} className="text-primary-foreground" strokeWidth={3} />}
             </button>
           </div>
           <div className="flex-1 min-w-0">
-            <p className={`font-semibold text-sm text-foreground truncate ${isChecked ? "line-through" : ""}`}>
+            <p className={`font-semibold text-base text-foreground truncate ${isChecked ? "line-through" : ""}`}>
               {item.name}
             </p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {item.quantity ? (isChecked ? item.quantity : `الكمية: ${item.quantity}`) : null}
             </p>
           </div>
@@ -430,6 +430,9 @@ const Market = () => {
               {item.category}
             </span>
             <span className="text-[10px] text-muted-foreground">{item.addedBy}</span>
+          </div>
+          <div className="shrink-0 text-muted-foreground/50 cursor-grab active:cursor-grabbing touch-none" aria-label="سحب لإعادة الترتيب">
+            <GripVertical size={18} />
           </div>
         </div>
       </SwipeableCard>
