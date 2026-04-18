@@ -131,7 +131,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
       {/* Action buttons — revealed on left when swiping right */}
       <div
         className="absolute inset-y-0 left-0 flex items-stretch"
-        style={{ width: ACTION_WIDTH }}
+        style={{ width: ACTION_WIDTH, opacity: offset > 0 ? 1 : 0, pointerEvents: offset > 0 ? "auto" : "none" }}
       >
         {actions.map((action, i) => (
           <button
