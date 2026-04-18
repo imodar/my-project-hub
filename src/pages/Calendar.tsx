@@ -119,13 +119,30 @@ const CalendarPage = () => {
   const yearBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const yearList = useMemo(() => Array.from({ length: 11 }, (_, i) => today.getFullYear() - 5 + i), []);
 
+  // Scroll active item to "second from right" in RTL
+  const scrollToSecondFromRight = (btn: HTMLButtonElement | null) => {
+    if (!btn) return;
+    const container = btn.parentElement?.parentElement; // scroll container
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    // Target: place btn so its right edge is at (container right - one item width - gap)
+    // Compute next sibling width as the "one slot" offset
+    const next = btn.nextElementSibling as HTMLElement | null;
+    const slot = next ? next.getBoundingClientRect().width + 24 /* gap */ : btnRect.width + 24;
+    // In RTL, scrollLeft is negative. We want btn to shift left (toward right edge minus one slot).
+    const targetRight = containerRect.right - slot - 8;
+    const delta = btnRect.right - targetRight; // positive => need to scroll content to the left (in RTL: subtract)
+    container.scrollBy({ left: -delta, behavior: "smooth" });
+  };
+
   React.useEffect(() => {
-    monthBtnRefs.current[currentMonth]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    scrollToSecondFromRight(monthBtnRefs.current[currentMonth]);
   }, [currentMonth]);
 
   React.useEffect(() => {
     const idx = yearList.indexOf(currentYear);
-    if (idx >= 0) yearBtnRefs.current[idx]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    if (idx >= 0) scrollToSecondFromRight(yearBtnRefs.current[idx]);
   }, [currentYear, yearList]);
 
   // Delete confirmation
