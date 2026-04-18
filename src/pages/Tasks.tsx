@@ -6,7 +6,7 @@ import { useTrash } from "@/contexts/TrashContext";
 import { useDraftPersistence } from "@/hooks/useDraftPersistence";
 import { useAuth } from "@/contexts/AuthContext";
 import FAB from "@/components/FAB";
-import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, UserCheck } from "lucide-react";
+import { Plus, Search, ListChecks, Check, Users, Lock, Share2, Trash2, Pencil, MoreVertical, UserCheck, GripVertical } from "lucide-react";
 import SwipeableCard from "@/components/SwipeableCard";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useFamilyId } from "@/hooks/useFamilyId";
@@ -439,7 +439,7 @@ const Tasks = () => {
           ]}
         >
           <div
-            className="bg-card rounded-2xl p-3 flex items-center gap-3"
+            className={`rounded-2xl p-3 flex items-center gap-3 transition-colors ${isDone ? "bg-muted" : "bg-card"}`}
             style={{ touchAction: "pan-y" }}
             onPointerDown={(e) => handlePointerDown(e, item.id)}
             onPointerMove={(e) => handlePointerMove(e)}
@@ -459,18 +459,18 @@ const Tasks = () => {
                 className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                   isDone
                     ? "bg-primary"
-                    : "border-2 border-border hover:border-primary"
+                    : "bg-card border-2 border-border hover:border-primary"
                 }`}
               >
-                {isDone && <Check size={14} className="text-primary-foreground" />}
+                {isDone && <Check size={14} className="text-primary-foreground" strokeWidth={3} />}
               </button>
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`font-semibold text-sm text-foreground break-words overflow-hidden ${isDone ? "line-through" : ""}`} style={{ overflowWrap: "anywhere" }}>
+              <p className={`font-semibold text-base text-foreground break-words overflow-hidden ${isDone ? "line-through" : ""}`} style={{ overflowWrap: "anywhere" }}>
                 {item.name}
               </p>
               {item.note && (
-                <p className="text-[11px] text-muted-foreground truncate">{item.note}</p>
+                <p className="text-xs text-muted-foreground truncate">{item.note}</p>
               )}
               {item.addedBy && (
                 <p className="text-[10px] text-muted-foreground mt-0.5">{item.addedBy}</p>
@@ -491,6 +491,9 @@ const Tasks = () => {
                 )}
               </div>
             )}
+            <div className="shrink-0 text-muted-foreground/50 cursor-grab active:cursor-grabbing" aria-label="سحب لإعادة الترتيب">
+              <GripVertical size={18} />
+            </div>
           </div>
         </SwipeableCard>
       </div>
