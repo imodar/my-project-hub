@@ -176,6 +176,7 @@ const AmountEditor = ({
       <div key={i} className="flex gap-2 items-center">
         <input
           type="number"
+          inputMode="decimal"
           placeholder="المبلغ"
           value={entry.amount}
           onChange={(e) => {
@@ -184,7 +185,6 @@ const AmountEditor = ({
             setAmounts(updated);
           }}
           className="flex-1 min-w-0 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
-          inputMode="decimal"
         />
         <select
           value={entry.currency}
@@ -515,8 +515,8 @@ const Debts = () => {
               key={debt.id}
               onSwipeOpen={() => setOpenCardId(debt.id)}
               actions={[
-                { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget({ id: debt.id, name: debt.personName }) },
                 { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleStartEdit(debt) },
+                { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget({ id: debt.id, name: debt.personName }) },
               ]}
             >
               <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>

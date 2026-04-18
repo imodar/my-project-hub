@@ -463,6 +463,8 @@ const Zakat = () => {
                       key={asset.id}
                       onSwipeOpen={() => setOpenCardId(asset.id)}
                       actions={[
+                        { icon: <Check size={16} />, label: "زكّيت", color: "bg-emerald-600", onClick: () => setZakatPaidAsset(asset.id) },
+                        { icon: <Bell size={16} />, label: "تذكير", color: "bg-amber-500", onClick: () => setReminderAsset(asset.id) },
                         { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
                           setAddType(asset.type);
                           setAddLabel(asset.label);
@@ -473,8 +475,6 @@ const Zakat = () => {
                           setEditingAssetId(asset.id);
                           setShowAdd(true);
                         }},
-                        { icon: <Bell size={16} />, label: "تذكير", color: "bg-amber-500", onClick: () => setReminderAsset(asset.id) },
-                        { icon: <Check size={16} />, label: "زكّيت", color: "bg-emerald-600", onClick: () => setZakatPaidAsset(asset.id) },
                         { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteConfirm(asset.id) },
                       ]}
                      >
@@ -666,29 +666,13 @@ const Zakat = () => {
             {/* Purchase date */}
             <div>
               <label className="text-xs font-bold text-foreground mb-1.5 block">تاريخ الاقتناء / الشراء</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-right font-normal rounded-xl",
-                      !addDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
-                    {addDate ? format(new Date(addDate), "d MMMM yyyy", { locale: ar }) : "اختر التاريخ"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={addDate ? new Date(addDate) : undefined}
-                    onSelect={(date) => date && setAddDate(date.toISOString().split("T")[0])}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                type="date"
+                value={addDate}
+                onChange={(e) => setAddDate(e.target.value)}
+                className="w-full rounded-xl"
+                dir="ltr"
+              />
               <p className="text-[10px] text-muted-foreground mt-1">يُحسب الحول (354 يوم) من هذا التاريخ</p>
             </div>
 

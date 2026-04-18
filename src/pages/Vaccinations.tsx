@@ -181,21 +181,21 @@ const Vaccinations = () => {
                 key={child.id}
                 actions={[
                   {
-                    icon: <Pencil size={16} />,
-                    label: "تعديل",
-                    color: "bg-primary",
-                    onClick: () => openEditSheet(child),
-                  },
-                  {
                     icon: <Bell size={16} />,
                     label: "تذكير",
                     color: "bg-amber-500",
                     onClick: () => openReminderFromSwipe(child),
                   },
                   {
+                    icon: <Pencil size={16} />,
+                    label: "تعديل",
+                    color: "bg-primary",
+                    onClick: () => openEditSheet(child),
+                  },
+                  {
                     icon: <Trash2 size={16} />,
                     label: "حذف",
-                    color: "bg-red-500",
+                    color: "bg-destructive",
                     onClick: () => setDeleteConfirmChild(child),
                   },
                 ]}
