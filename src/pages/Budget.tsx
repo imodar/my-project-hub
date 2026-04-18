@@ -154,6 +154,7 @@ const Budget = () => {
   const [showEditBudget, setShowEditBudget] = useState<MonthBudget | null>(null);
   const [showEditExpense, setShowEditExpense] = useState<{ budgetId: string; expense: ExpenseItem } | null>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"shared" | "personal">("shared");
 
   const [budgetType, setBudgetType] = useState<BudgetType>("month");
   const [newMonthIdx, setNewMonthIdx] = useState(String(new Date().getMonth()));
@@ -542,94 +543,103 @@ const Budget = () => {
   // List view
   return (
     <div className="min-h-screen bg-background pb-28" dir="rtl">
-      <PageHeader title="الميزانية" subtitle="تخطيط ميزانيتك الشهرية" onBack={() => navigate("/")}>
-        <div className="flex items-center gap-1.5 mt-2 px-1 pb-1">
-          <span className="text-[10px] text-white/60">🔒 ميزانيتك خاصة ولا يراها أفراد العائلة إلا إذا شاركتها معهم</span>
+      <PageHeader title="الميزانية" subtitle="تخطيط ميزانيتك الشهرية" onBack={() => navigate("/")} />
+
+      {/* Sticky segmented tabs — Underline */}
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-md px-5 pt-2 border-b border-border/40">
+        <div className="relative flex items-center h-12">
+          {[
+            { value: "shared" as const, icon: Users, label: "ميزانيات مشتركة" },
+            { value: "personal" as const, icon: Wallet, label: "ميزانيات شخصية" },
+          ].map(({ value, icon: Icon, label }) => {
+            const active = activeTab === value;
+            return (
+              <button
+                key={value}
+                onClick={() => { haptic.light(); setActiveTab(value); }}
+                className={`relative flex-1 h-full flex items-center justify-center gap-1.5 text-sm font-bold transition-colors duration-200 ${
+                  active ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
+                }`}
+              >
+                <Icon size={16} strokeWidth={active ? 2.5 : 2} />
+                {label}
+                {active && (
+                  <span className="absolute -bottom-px left-1/2 -translate-x-1/2 h-[3px] w-16 rounded-t-full bg-accent transition-all duration-300" />
+                )}
+              </button>
+            );
+          })}
         </div>
-      </PageHeader>
+      </div>
 
       {isLoading ? (
         <CardContentSkeleton />
       ) : (
       <PullToRefresh onRefresh={onRefresh}>
         <div className="px-4 mt-4 space-y-3">
-          {budgets.length === 0 ? (
-            <div className="rounded-2xl bg-card border border-border p-12 text-center mt-8">
-              <Wallet size={48} className="mx-auto mb-3 text-muted-foreground/30" />
-              <p className="text-base font-semibold text-foreground">لا توجد ميزانيات</p>
-              <p className="text-sm text-muted-foreground mt-1">اضغط + لإضافة ميزانية جديدة</p>
-            </div>
-          ) : (
-            <>
-              {/* Trip Budgets */}
-              {budgets.some(b => b.type === "trip") && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 px-1">
-                    <Plane size={14} style={{ color: "hsl(215 70% 50%)" }} />
-                    <h3 className="text-xs font-bold text-foreground">ميزانيات الرحلات</h3>
-                    <span className="text-[9px] text-muted-foreground">(تُدار تلقائياً)</span>
-                  </div>
-                  {budgets.filter(b => b.type === "trip").map(b => (
-                    <BudgetCard key={b.id} b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
-                  ))}
-                </div>
-              )}
+          {(() => {
+            const tripBudgets = budgets.filter(b => b.type === "trip");
+            const sharedBudgets = budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length > 0);
+            const personalBudgets = budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length === 0);
+            const visibleNonTrip = activeTab === "shared" ? sharedBudgets : personalBudgets;
+            const isEmpty = visibleNonTrip.length === 0 && (activeTab === "personal" || tripBudgets.length === 0);
 
-              {/* Shared Budgets */}
-              {budgets.some(b => b.type !== "trip" && (b.sharedWith ?? []).length > 0) && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 px-1">
-                    <Users size={14} className="text-primary" />
-                    <h3 className="text-xs font-bold text-foreground">ميزانيات مشتركة</h3>
-                  </div>
-                  {budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length > 0).map(b => (
-                    <SwipeableCard
-                      key={b.id}
-                      onSwipeOpen={() => setOpenCardId(b.id)}
-                      actions={[
-                        { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
-                          setShowEditBudget(b);
-                          setNewIncome(b.income.toString());
-                          setProjectLabel(b.label || "");
-                          setShareIds([...b.sharedWith]);
-                        }},
-                        { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteBudget(b.id) },
-                      ]}
-                    >
-                      <BudgetCard b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
-                    </SwipeableCard>
-                  ))}
+            if (isEmpty) {
+              return (
+                <div className="rounded-2xl bg-card border border-border p-12 text-center mt-8">
+                  <Wallet size={48} className="mx-auto mb-3 text-muted-foreground/30" />
+                  <p className="text-base font-semibold text-foreground">
+                    {activeTab === "shared" ? "لا توجد ميزانيات مشتركة" : "لا توجد ميزانيات شخصية"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">اضغط + لإضافة ميزانية جديدة</p>
                 </div>
-              )}
+              );
+            }
 
-              {/* Personal Budgets */}
-              {budgets.some(b => b.type !== "trip" && (b.sharedWith ?? []).length === 0) && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 px-1">
-                    <Wallet size={14} className="text-primary" />
-                    <h3 className="text-xs font-bold text-foreground">ميزانيات شخصية</h3>
+            return (
+              <>
+                {/* Trip Budgets (only on shared tab) */}
+                {activeTab === "shared" && tripBudgets.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-1">
+                      <Plane size={14} style={{ color: "hsl(215 70% 50%)" }} />
+                      <h3 className="text-xs font-bold text-foreground">ميزانيات الرحلات</h3>
+                      <span className="text-[9px] text-muted-foreground">(تُدار تلقائياً)</span>
+                    </div>
+                    {tripBudgets.map(b => (
+                      <BudgetCard key={b.id} b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
+                    ))}
                   </div>
-                  {budgets.filter(b => b.type !== "trip" && (b.sharedWith ?? []).length === 0).map(b => (
-                    <SwipeableCard
-                      key={b.id}
-                      onSwipeOpen={() => setOpenCardId(b.id)}
-                      actions={[
-                        { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
-                          setShowEditBudget(b);
-                          setNewIncome(b.income.toString());
-                          setProjectLabel(b.label || "");
-                          setShareIds([...b.sharedWith]);
-                        }},
-                        { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteBudget(b.id) },
-                      ]}
-                    >
-                      <BudgetCard b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
-                    </SwipeableCard>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+                )}
+
+                {visibleNonTrip.length > 0 && (
+                  <div className="space-y-2">
+                    {visibleNonTrip.map(b => (
+                      <SwipeableCard
+                        key={b.id}
+                        onSwipeOpen={() => setOpenCardId(b.id)}
+                        actions={[
+                          { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
+                            setShowEditBudget(b);
+                            setNewIncome(b.income.toString());
+                            setProjectLabel(b.label || "");
+                            setShareIds([...b.sharedWith]);
+                          }},
+                          { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteBudget(b.id) },
+                        ]}
+                      >
+                        <BudgetCard b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
+                      </SwipeableCard>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === "personal" && (
+                  <p className="text-[10px] text-center text-muted-foreground mt-3 px-4">🔒 ميزانياتك الشخصية خاصة ولا يراها أحد</p>
+                )}
+              </>
+            );
+          })()}
         </div>
       </PullToRefresh>
       )}
