@@ -131,6 +131,8 @@ const Trips = () => {
     addDocument, deleteDocument,
   } = useTripsHook() as any;
   const { albums: tripAlbums } = useAlbums();
+  const familyId = useFamilyId();
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   // Map DB trips to UI format
   const trips: Trip[] = useMemo(() => {
