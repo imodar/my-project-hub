@@ -114,6 +114,20 @@ const CalendarPage = () => {
   const touchStartXRef = useRef(0);
   const activeSwipeRef = useRef<string | null>(null);
 
+  // Refs for month/year sliders (auto-center active)
+  const monthBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const yearBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const yearList = useMemo(() => Array.from({ length: 11 }, (_, i) => today.getFullYear() - 5 + i), []);
+
+  React.useEffect(() => {
+    monthBtnRefs.current[currentMonth]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [currentMonth]);
+
+  React.useEffect(() => {
+    const idx = yearList.indexOf(currentYear);
+    if (idx >= 0) yearBtnRefs.current[idx]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [currentYear, yearList]);
+
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<FamilyEvent | null>(null);
 
@@ -281,13 +295,14 @@ const CalendarPage = () => {
 
       <PullToRefresh>
       {/* Years horizontal slider */}
-      <div className="mt-4 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
-        <div className="flex items-center gap-5 px-[40%] py-1">
-          {Array.from({ length: 11 }, (_, i) => today.getFullYear() - 5 + i).map((year) => {
+      <div className="mt-4 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
+        <div className="flex items-center gap-5 py-1" style={{ paddingInline: "calc(50% - 1.5rem)" }}>
+          {yearList.map((year, i) => {
             const isActive = year === currentYear;
             return (
               <button
                 key={year}
+                ref={(el) => (yearBtnRefs.current[i] = el)}
                 onClick={() => setCurrentYear(year)}
                 className={`shrink-0 transition-all ${isActive ? "text-foreground font-bold text-base" : "text-muted-foreground/50 text-sm"}`}
                 style={{ scrollSnapAlign: "center" }}
@@ -300,13 +315,14 @@ const CalendarPage = () => {
       </div>
 
       {/* Months horizontal slider */}
-      <div className="mt-2 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
-        <div className="flex items-end gap-6 px-[35%] py-2">
+      <div className="mt-2 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
+        <div className="flex items-end gap-6 py-2" style={{ paddingInline: "calc(50% - 3rem)" }}>
           {ARABIC_MONTHS.map((name, idx) => {
             const isActive = idx === currentMonth;
             return (
               <button
                 key={name}
+                ref={(el) => (monthBtnRefs.current[idx] = el)}
                 onClick={() => setCurrentMonth(idx)}
                 className={`shrink-0 transition-all leading-none ${isActive ? "text-foreground font-black text-4xl" : "text-muted-foreground/40 font-bold text-2xl"}`}
                 style={{ scrollSnapAlign: "center" }}
