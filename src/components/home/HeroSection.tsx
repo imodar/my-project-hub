@@ -382,16 +382,15 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   return (
     <motion.div
       ref={ref}
-      className="relative z-40 rounded-b-[28px] shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
+      className="sticky top-0 z-40 rounded-b-[28px] shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
       animate={{ background: theme.gradient }}
       transition={{ duration: 1, ease: "easeInOut" }}
       style={{ background: theme.gradient }}
     >
       <header
-        className="sticky top-0 z-30 px-5 pb-3 flex justify-between items-center text-white rounded-b-[28px]"
+        className="relative z-30 px-5 pb-3 flex justify-between items-center text-white"
         style={{
           paddingTop: "max(env(safe-area-inset-top), 16px)",
-          background: theme.gradient,
         }}
       >
         <div className="flex items-center gap-3">
