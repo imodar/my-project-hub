@@ -425,14 +425,13 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </div>
       </header>
 
-      <motion.section
+      <div
         className="relative overflow-hidden"
-        initial={false}
-        animate={{
-          height: isCollapsed ? 0 : expandedSectionHeight,
+        style={{
+          maxHeight: isCollapsed ? 0 : expandedSectionHeight,
           opacity: isCollapsed ? 0 : 1,
+          transition: "max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease",
         }}
-        transition={{ type: "spring", stiffness: 220, damping: 30, mass: 0.8 }}
       >
         <motion.div
           className="absolute -top-2 left-7 w-16 h-16 z-10 pointer-events-none"
