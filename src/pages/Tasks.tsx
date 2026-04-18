@@ -1047,7 +1047,7 @@ const Tasks = () => {
               <DrawerDescription>اختر أفراد العائلة لمشاركة هذه القائمة معهم</DrawerDescription>
             </DrawerHeader>
             <div className="space-y-2 px-4">
-              {FAMILY_MEMBERS.map((member) => {
+              {FAMILY_MEMBERS.filter(m => m.id !== user?.id).map((member) => {
                 const isSelected = selectedShareMembers.includes(member.id);
                 return (
                   <button
