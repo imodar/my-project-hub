@@ -139,3 +139,7 @@
 @keyframes vt-slide-out-rtl { to   { transform: translateX(20px); } }
 @keyframes vt-slide-in-ltr  { from { transform: translateX(20px); } }
 @keyframes vt-slide-out-ltr { to   { transform: translateX(-20px); } }
+
+/* Hide scrollbars utility */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
