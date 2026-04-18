@@ -95,7 +95,7 @@ export function useTrips() {
 
   const addDayPlan = useOfflineMutation<any, any>({
     table: "trip_day_plans", operation: "INSERT",
-    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-day-plan", { trip_id: rest.trip_id, day_number: rest.day_number, city: rest.city }); },
+    apiFn: async (input) => { const { id, created_at, ...rest } = input; return invoke("add-day-plan", { id, trip_id: rest.trip_id, day_number: rest.day_number, city: rest.city }); },
   });
 
   const addActivity = useOfflineMutation<any, any>({
