@@ -56,7 +56,17 @@ async function extractErrorDetails(
 
   // Fallback: استخرج الـ status من رسالة Supabase إن وُجدت بنمط محدد جداً
   // مثال: "Edge Function returned a non-2xx status code: 426"
-  const message = error instanceof Error ? error.message : "خطأ غير متوقع";
+  let message = "خطأ غير متوقع";
+  if (error instanceof Error) {
+    message = error.message;
+  } else if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
+    message = (error as { message: string }).message;
+  }
   const statusMatch = message.match(/non-2xx status code[:\s]+(\d{3})/);
   const status = statusMatch ? parseInt(statusMatch[1], 10) : 500;
   return { status, message, body: null };
