@@ -792,6 +792,11 @@ const Vehicle = () => {
                       <span className="text-[10px] font-medium text-foreground leading-tight">{b.name}</span>
                     </button>
                   ))}
+                  {filteredManufacturers.length === 0 && (
+                    <p className="col-span-3 text-center text-muted-foreground text-sm py-4">لا توجد نتائج</p>
+                  )}
+                </div>
+              </div>
 
               {/* Model & Year */}
               <div className="flex gap-3">
