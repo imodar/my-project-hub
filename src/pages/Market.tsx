@@ -289,7 +289,7 @@ const Market = () => {
     newItemNameRef.current = "";
     setNewItemName("");
     setNewItemQuantity("");
-    setNewItemCategory("أخرى");
+    setNewItemCategory("بدون تصنيف");
     setShowAddItem(false);
   }, [activeList, newItemName, newItemCategory, newItemQuantity, addItemMutation, familyId]);
 
@@ -655,10 +655,10 @@ const Market = () => {
 
       <FAB onClick={() => {
         haptic.medium();
-        const draft = marketDraft.loadDraft();
-        setNewItemName(draft?.name ?? "");
-        setNewItemCategory(draft?.category ?? "أخرى");
-        setNewItemQuantity(draft?.quantity ?? "");
+        marketDraft.clearDraft();
+        setNewItemName("");
+        setNewItemCategory("بدون تصنيف");
+        setNewItemQuantity("");
         setShowAddItem(true);
       }} />
 
@@ -832,7 +832,7 @@ const Market = () => {
         if (!open) {
           setNewItemName("");
           setNewItemQuantity("");
-          setNewItemCategory("أخرى");
+          setNewItemCategory("بدون تصنيف");
         }
       }}>
         <DrawerContent dir="rtl">
