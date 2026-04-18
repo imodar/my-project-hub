@@ -261,6 +261,19 @@ const Trips = () => {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [dayCity, setDayCity] = useState("");
 
+  // Edit state for day & activity
+  const [editDayDrawer, setEditDayDrawer] = useState(false);
+  const [editingDayId, setEditingDayId] = useState<string | null>(null);
+  const [editDayCity, setEditDayCity] = useState("");
+
+  const [editActivityDrawer, setEditActivityDrawer] = useState(false);
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [editingActivityDayId, setEditingActivityDayId] = useState<string | null>(null);
+  const [editActName, setEditActName] = useState("");
+  const [editActTime, setEditActTime] = useState("");
+  const [editActLocation, setEditActLocation] = useState("");
+  const [editActCost, setEditActCost] = useState("");
+
   const [editingTripId, setEditingTripId] = useState<string | null>(null);
   const [reviewingSuggestion, setReviewingSuggestion] = useState<Suggestion | null>(null);
 
