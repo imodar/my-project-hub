@@ -249,7 +249,7 @@ const Trips = () => {
   };
 
   const handleSaveTrip = () => {
-    if (!tripName.trim() || !tripDest.trim()) return;
+    if (!tripName.trim()) return;
     if (editingTripId) {
       updateTrip.mutate({
         id: editingTripId,
