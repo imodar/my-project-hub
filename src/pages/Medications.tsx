@@ -33,6 +33,8 @@ import {
   getTimeUntilNext,
 } from "@/data/medicationData";
 import { appToast } from "@/lib/toast";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { required } from "@/lib/validators";
 
 // Using shared SwipeableCard component
 import SwipeableCard from "@/components/SwipeableCard";

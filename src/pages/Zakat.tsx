@@ -21,6 +21,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { numericPositive, validDate } from "@/lib/validators";
 
 const CASH_CURRENCIES = [
   { code: "SAR", label: "ريال سعودي", symbol: "ر.س" },
@@ -195,8 +197,13 @@ const Zakat = () => {
 
   const { goldPricePerGram, silverPricePerGram, rates, loading: priceLoading, lastUpdated } = useGoldPrice();
 
+  const assetForm = useFormValidation<"amount" | "purchaseDate">(
+    { amount: numericPositive, purchaseDate: validDate },
+    { resetKey: showAdd }
+  );
+
   const handleAdd = () => {
-    if (!addAmount || Number(addAmount) <= 0) return;
+    if (!assetForm.validate({ amount: addAmount, purchaseDate: addDate })) return;
     const currencyToSave = (addType === "cash" || addType === "stocks" || addType === "funds") ? addCurrency : "SAR";
     if (editingAssetId) {
       updateAssetMut.mutate({
