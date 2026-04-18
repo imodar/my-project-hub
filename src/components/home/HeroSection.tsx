@@ -283,13 +283,14 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Scroll-driven smooth collapse — short range for snappy collapse,
-  // section fully collapses to 0 height (only top header bar remains).
+  // Scroll-driven smooth collapse using GPU-accelerated transforms only.
+  // Avoid animating `height` (causes layout/reflow each frame → flicker on sticky header).
   const { scrollY } = useScroll();
   const easedProgress = useTransform(scrollY, [0, 140], [0, 1], { clamp: true });
 
   const expandedSectionHeight = islamicMode ? 260 : 132;
-  const sectionHeight = useTransform(easedProgress, [0, 1], [expandedSectionHeight, 0]);
+  const sectionTranslateY = useTransform(easedProgress, [0, 1], [0, -expandedSectionHeight]);
+  const wrapperMarginBottom = useTransform(easedProgress, [0, 1], [0, -expandedSectionHeight]);
   const sectionOpacity = useTransform(easedProgress, [0.5, 1], [1, 0]);
   const contentOpacity = useTransform(easedProgress, [0, 0.6], [1, 0]);
   const islamicOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
