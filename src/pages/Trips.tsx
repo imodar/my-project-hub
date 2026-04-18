@@ -1112,10 +1112,34 @@ const Trips = () => {
           <DrawerContent>
             <DrawerHeader><DrawerTitle>إضافة نشاط</DrawerTitle></DrawerHeader>
             <div className="px-5 pb-8 space-y-4">
-              <Input placeholder="اسم النشاط" value={activityName} onChange={(e) => setActivityName(e.target.value)} />
-              <Input type="time" placeholder="الوقت" value={activityTime} onChange={(e) => setActivityTime(e.target.value)} />
-              <Input placeholder="الموقع" value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} />
-              <Input type="number" inputMode="decimal" placeholder="التكلفة التقديرية" value={activityCost} onChange={(e) => setActivityCost(e.target.value)} dir="ltr" />
+              <Input
+                placeholder="اسم النشاط"
+                value={activityName}
+                onChange={(e) => setActivityName(e.target.value)}
+                className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+              />
+              <Input
+                type="time"
+                placeholder="الوقت"
+                value={activityTime}
+                onChange={(e) => setActivityTime(e.target.value)}
+                className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+              />
+              <Input
+                placeholder="الموقع"
+                value={activityLocation}
+                onChange={(e) => setActivityLocation(e.target.value)}
+                className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+              />
+              <Input
+                type="number"
+                inputMode="decimal"
+                placeholder="التكلفة التقديرية"
+                value={activityCost}
+                onChange={(e) => setActivityCost(e.target.value)}
+                dir="ltr"
+                className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+              />
               {selectedTrip.startDate && selectedTrip.endDate && (() => {
                 const start = new Date(selectedTrip.startDate);
                 const end = new Date(selectedTrip.endDate);
@@ -1127,20 +1151,20 @@ const Trips = () => {
                 }));
                 return (
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">اختر اليوم</label>
-                    <div className="flex gap-2 flex-wrap">
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">اختر اليوم</label>
+                    <div className="flex gap-2 flex-wrap max-h-[200px] overflow-y-auto p-1 -m-1">
                       {allDays.map((d) => {
                         const dayId = d.dayPlan?.id || `new-day-${d.index + 1}`;
                         return (
                           <button
                             key={dayId}
                             onClick={() => setSelectedDayId(dayId)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center ${
-                              selectedDayId === dayId ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all text-center min-w-[72px] ${
+                              selectedDayId === dayId ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground"
                             }`}
                           >
-                            <span className="block">{format(d.date, "EEEE", { locale: ar })}</span>
-                            <span className="block text-[10px] opacity-75">{format(d.date, "d MMM", { locale: ar })}</span>
+                            <span className="block text-sm">{format(d.date, "EEEE", { locale: ar })}</span>
+                            <span className="block text-xs opacity-75 mt-0.5">{format(d.date, "d MMM", { locale: ar })}</span>
                           </button>
                         );
                       })}
