@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from "@supabase/supabase-js";
 
 /**
  * إصدار التطبيق — يُرسَل مع كل طلب API.
@@ -23,12 +24,48 @@ interface ApiResponse<T = unknown> {
 }
 
 /**
+ * يستخرج الـ status بشكل موثوق من أخطاء Supabase Functions.
+ * - FunctionsHttpError يحوي context.status (HTTP status حقيقي).
+ * - fallback لـ regex فقط كحل أخير.
+ */
+async function extractErrorDetails(
+  error: unknown
+): Promise<{ status: number; message: string; body: unknown }> {
+  if (error instanceof FunctionsHttpError) {
+    const status = error.context?.status ?? 500;
+    let body: unknown = null;
+    try {
+      body = await error.context.json();
+    } catch {
+      try {
+        body = await error.context.text();
+      } catch {
+        /* ignore */
+      }
+    }
+    const message =
+      (typeof body === "object" && body && "error" in body && typeof (body as any).error === "string"
+        ? (body as any).error
+        : null) || error.message || `HTTP ${status}`;
+    return { status, message, body };
+  }
+
+  if (error instanceof FunctionsRelayError || error instanceof FunctionsFetchError) {
+    return { status: 0, message: error.message || "Network error", body: null };
+  }
+
+  // Fallback آمن: لا نعتمد على regex لأنه يلتقط أرقاماً من اسم الوظيفة.
+  const message = error instanceof Error ? error.message : "خطأ غير متوقع";
+  return { status: 500, message, body: null };
+}
+
+/**
  * Unified API client for Supabase Edge Functions.
  *
- * - Automatically includes JWT auth header
+ * - Automatically includes JWT auth header (via supabase client)
  * - Sends X-App-Version for API versioning
  * - Handles offline detection
- * - AbortController timeout (default 15s)
+ * - AbortController timeout موصول فعلياً بـ invoke (default 15s)
  * - Returns app_update_required error for status 426
  */
 export async function apiClient<T = unknown>(
@@ -48,27 +85,28 @@ export async function apiClient<T = unknown>(
   try {
     const { data, error } = await supabase.functions.invoke(functionName, {
       method,
-      body: body ? JSON.stringify(body) : undefined,
+      // مرّر الـ object مباشرة — SDK يقوم بالـ stringify ويضبط Content-Type تلقائياً.
+      body,
       headers: {
-        "Content-Type": "application/json",
         "X-App-Version": APP_VERSION,
         ...headers,
       },
+      // الإصلاح الجوهري: ربط الـ signal لتفعيل الـ timeout فعلياً.
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
     if (error) {
-      const statusMatch = error.message?.match(/(\d{3})/);
-      const httpStatus = statusMatch ? parseInt(statusMatch[1], 10) : 500;
+      const { status, message } = await extractErrorDetails(error);
 
       // 426 = الـ API يطلب تحديث التطبيق
-      if (httpStatus === 426) {
+      if (status === 426) {
         window.dispatchEvent(new CustomEvent("app-update-required"));
         return { data: null, error: "app_update_required", status: 426 };
       }
 
-      return { data: data as T, error: error.message, status: httpStatus };
+      return { data: (data as T) ?? null, error: message, status };
     }
 
     return { data: data as T, error: null, status: 200 };
@@ -79,8 +117,8 @@ export async function apiClient<T = unknown>(
       return { data: null, error: "انتهت مهلة الطلب. تحقق من اتصالك وحاول مرة أخرى.", status: 408 };
     }
 
-    const message = err instanceof Error ? err.message : "خطأ غير متوقع";
-    return { data: null, error: message, status: 500 };
+    const { status, message } = await extractErrorDetails(err);
+    return { data: null, error: message, status };
   }
 }
 
