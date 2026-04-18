@@ -121,6 +121,7 @@ const Trips = () => {
     trips: dbTrips, isLoading: tripsLoading,
     createTrip, updateTrip, deleteTrip: deleteTripMut,
     addDayPlan, addActivity, updateActivity,
+    deleteDayPlan, deleteActivity,
     addExpense, deleteExpense,
     addPackingItem, updatePackingItem,
     addSuggestion, updateSuggestion,
