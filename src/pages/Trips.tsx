@@ -1417,36 +1417,34 @@ const Trips = () => {
                     }
                     handleSelectTrip(trip);
                   }}
-                  className="w-full text-right p-4 bg-muted active:bg-muted/80 transition-colors"
+                  className="w-full text-right p-4 bg-card hover:bg-card/80 active:bg-muted/60 rounded-2xl border border-border/60 shadow-sm transition-all"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-foreground">{trip.name}</h3>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <MapPin size={11} /> {trip.destination}
-                      </p>
+                      <h3 className="text-base font-bold text-foreground truncate">{trip.name}</h3>
                       {trip.startDate && (
-                        <p className="text-[11px] mt-1 flex items-center gap-1" style={{ color: "hsl(145 45% 35%)" }}>
-                          <Calendar size={11} />
+                        <p className="text-[13px] mt-1.5 flex items-center gap-1.5 font-medium" style={{ color: "hsl(145 45% 35%)" }}>
+                          <Calendar size={13} />
                           {format(new Date(trip.startDate), "d MMM", { locale: ar })}
                           {trip.endDate && ` — ${format(new Date(trip.endDate), "d MMM", { locale: ar })}`}
                         </p>
                       )}
                     </div>
-                    <div className="text-left shrink-0">
-                      <p className="text-xs font-bold" style={{ color: "hsl(var(--accent))" }}>{trip.budget > 0 ? trip.budget.toLocaleString() : ""}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{trip.days.length} أيام</p>
+                    <div className="text-left shrink-0 flex flex-col items-end">
+                      {trip.budget > 0 && (
+                        <p className="text-base font-extrabold" style={{ color: "hsl(var(--accent))" }}>{trip.budget.toLocaleString()}</p>
+                      )}
+                      <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{trip.days.length} {language === "en" ? "days" : "أيام"}</p>
                     </div>
                   </div>
                   {trip.participants.length > 0 && (
-                    <div className="flex items-center gap-1 mt-2">
-                      <Users size={11} className="text-muted-foreground" />
-                      <span className="text-[11px] text-muted-foreground">{trip.participants.join(" · ")}</span>
+                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border/40">
+                      <Users size={12} className="text-muted-foreground" />
+                      <span className="text-[12px] text-muted-foreground font-medium truncate">{trip.participants.join(" · ")}</span>
                     </div>
                   )}
                 </button>
+
               </SwipeableCard>
             );
           })}
