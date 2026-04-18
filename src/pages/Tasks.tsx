@@ -1048,21 +1048,25 @@ const Tasks = () => {
               <DrawerDescription>اختر أفراد العائلة لمشاركة هذه القائمة معهم</DrawerDescription>
             </DrawerHeader>
             <div className="space-y-2 px-4">
-              {FAMILY_MEMBERS.map((member) => (
-                <button
-                  key={member.id}                  onClick={() =>
-                    setSelectedShareMembers((prev) =>
-                      prev.includes(member.name) ? prev.filter((m) => m !== member.name) : [...prev, member.name]
-                    )
-                  }
-                  className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-all ${
-                    selectedShareMembers.includes(member.name) ? "border-primary bg-primary/10" : "border-border bg-card"
-                  }`}
-                >
-                  <span className="font-medium text-foreground">{member.name}</span>
-                  {selectedShareMembers.includes(member.name) && <Check size={16} className="text-primary" />}
-                </button>
-              ))}
+              {FAMILY_MEMBERS.map((member) => {
+                const isSelected = selectedShareMembers.includes(member.id);
+                return (
+                  <button
+                    key={member.id}
+                    onClick={() =>
+                      setSelectedShareMembers((prev) =>
+                        prev.includes(member.id) ? prev.filter((m) => m !== member.id) : [...prev, member.id]
+                      )
+                    }
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm transition-all ${
+                      isSelected ? "border-primary bg-primary/10" : "border-border bg-card"
+                    }`}
+                  >
+                    <span className="font-medium text-foreground">{member.name}</span>
+                    {isSelected && <Check size={16} className="text-primary" />}
+                  </button>
+                );
+              })}
             </div>
             <DrawerFooter className="flex-row gap-2">
               <Button onClick={shareList} className="flex-1 rounded-xl">مشاركة</Button>
