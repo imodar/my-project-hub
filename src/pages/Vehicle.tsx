@@ -18,6 +18,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerC
 import { appToast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
+import { CAR_BRANDS, POPULAR_COUNT, carLogoUrl, type CarBrand } from "@/data/carBrands";
 
 // ─── Types ───
 interface MaintenanceRecord {
@@ -45,104 +46,13 @@ interface CarData {
   createdAt: string;
 }
 
-// ─── Car Logos (local SVG assets) ───
-const CAR_LOGOS: Record<string, string> = {
-  toyota:      "/car-logos/toyota.png",
-  honda:       "/car-logos/honda.png",
-  nissan:      "/car-logos/nissan.png",
-  hyundai:     "/car-logos/hyundai.png",
-  kia:         "/car-logos/kia.png",
-  bmw:         "/car-logos/bmw.png",
-  mercedes:    "/car-logos/mercedes.png",
-  audi:        "/car-logos/audi.png",
-  lexus:       "/car-logos/lexus.png",
-  ford:        "/car-logos/ford.png",
-  chevrolet:   "/car-logos/chevrolet.png",
-  volkswagen:  "/car-logos/volkswagen.png",
-  mazda:       "/car-logos/mazda.png",
-  subaru:      "/car-logos/subaru.png",
-  porsche:     "/car-logos/porsche.png",
-  landrover:   "/car-logos/landrover.png",
-  jeep:        "/car-logos/jeep.png",
-  gmc:         "/car-logos/gmc.png",
-  dodge:       "/car-logos/dodge.png",
-  mitsubishi:  "/car-logos/mitsubishi.png",
-  infiniti:    "/car-logos/infiniti.png",
-  acura:       "/car-logos/acura.png",
-  volvo:       "/car-logos/volvo.png",
-  jaguar:      "/car-logos/jaguar.png",
-  maserati:    "/car-logos/maserati.png",
-  bentley:     "/car-logos/bentley.png",
-  rollsroyce:  "/car-logos/rollsroyce.png",
-  ferrari:     "/car-logos/ferrari.png",
-  lamborghini: "/car-logos/lamborghini.png",
-  tesla:       "/car-logos/tesla.png",
-  genesis:     "/car-logos/genesis.png",
-  cadillac:    "/car-logos/cadillac.png",
-  lincoln:     "/car-logos/lincoln.png",
-  peugeot:     "/car-logos/peugeot.png",
-  renault:     "/car-logos/renault.png",
-  fiat:        "/car-logos/fiat.png",
-  suzuki:      "/car-logos/suzuki.png",
-  isuzu:       "/car-logos/isuzu.png",
-  chery:       "/car-logos/chery.png",
-  geely:       "/car-logos/geely.png",
-  haval:       "/car-logos/haval.png",
-  mg:          "/car-logos/mg.png",
-  gac:         "/car-logos/gac.svg",
-  changan:     "/car-logos/changan.png",
-  byd:         "/car-logos/byd.png",
-};
+// ─── Car Brand Lookup Maps (built once from carBrands.ts) ───
+const BRAND_BY_SLUG: Record<string, CarBrand> = Object.fromEntries(
+  CAR_BRANDS.map((b) => [b.slug, b])
+);
 
-// ─── Constants ───
-const CAR_MANUFACTURERS: Record<string, { name: string; nameAr?: string }> = {
-  toyota: { name: "Toyota", nameAr: "تويوتا" },
-  honda: { name: "Honda", nameAr: "هوندا" },
-  nissan: { name: "Nissan", nameAr: "نيسان" },
-  hyundai: { name: "Hyundai", nameAr: "هيونداي" },
-  kia: { name: "Kia", nameAr: "كيا" },
-  bmw: { name: "BMW", nameAr: "بي إم دبليو" },
-  mercedes: { name: "Mercedes-Benz", nameAr: "مرسيدس" },
-  audi: { name: "Audi", nameAr: "أودي" },
-  lexus: { name: "Lexus", nameAr: "لكزس" },
-  ford: { name: "Ford", nameAr: "فورد" },
-  chevrolet: { name: "Chevrolet", nameAr: "شيفروليه" },
-  volkswagen: { name: "Volkswagen", nameAr: "فولكس واجن" },
-  mazda: { name: "Mazda", nameAr: "مازدا" },
-  subaru: { name: "Subaru", nameAr: "سوبارو" },
-  porsche: { name: "Porsche", nameAr: "بورشه" },
-  landrover: { name: "Land Rover", nameAr: "لاند روفر" },
-  jeep: { name: "Jeep", nameAr: "جيب" },
-  gmc: { name: "GMC", nameAr: "جي إم سي" },
-  dodge: { name: "Dodge", nameAr: "دودج" },
-  mitsubishi: { name: "Mitsubishi", nameAr: "ميتسوبيشي" },
-  infiniti: { name: "Infiniti", nameAr: "إنفينيتي" },
-  acura: { name: "Acura", nameAr: "أكيورا" },
-  volvo: { name: "Volvo", nameAr: "فولفو" },
-  jaguar: { name: "Jaguar", nameAr: "جاكوار" },
-  maserati: { name: "Maserati", nameAr: "مازيراتي" },
-  bentley: { name: "Bentley", nameAr: "بنتلي" },
-  rollsroyce: { name: "Rolls-Royce", nameAr: "رولز رويس" },
-  ferrari: { name: "Ferrari", nameAr: "فيراري" },
-  lamborghini: { name: "Lamborghini", nameAr: "لامبورغيني" },
-  tesla: { name: "Tesla", nameAr: "تيسلا" },
-  genesis: { name: "Genesis", nameAr: "جينيسيس" },
-  cadillac: { name: "Cadillac", nameAr: "كاديلاك" },
-  lincoln: { name: "Lincoln", nameAr: "لينكولن" },
-  peugeot: { name: "Peugeot", nameAr: "بيجو" },
-  renault: { name: "Renault", nameAr: "رينو" },
-  fiat: { name: "Fiat", nameAr: "فيات" },
-  suzuki: { name: "Suzuki", nameAr: "سوزوكي" },
-  isuzu: { name: "Isuzu", nameAr: "إيسوزو" },
-  chery: { name: "Chery", nameAr: "شيري" },
-  geely: { name: "Geely", nameAr: "جيلي" },
-  haval: { name: "Haval", nameAr: "هافال" },
-  mg: { name: "MG", nameAr: "إم جي" },
-  gac: { name: "GAC", nameAr: "جاك" },
-  changan: { name: "Changan", nameAr: "شانجان" },
-  byd: { name: "BYD", nameAr: "بي واي دي" },
-  other: { name: "أخرى", nameAr: "أخرى" },
-};
+const getBrandName = (slug: string): string =>
+  BRAND_BY_SLUG[slug]?.name || slug;
 
 const MAINTENANCE_TYPES = [
   { id: "oil_change", label: "تغيير زيت المحرك", icon: Droplets, color: "hsl(35 85% 50%)", hasFilter: true },
@@ -164,12 +74,12 @@ const MAINTENANCE_TYPES = [
 
 // ─── Car Logo Component ───
 const CarLogo = ({ manufacturer, size = 40 }: { manufacturer: string; size?: number }) => {
-  const logoUrl = CAR_LOGOS[manufacturer];
-  if (logoUrl) {
+  const brand = BRAND_BY_SLUG[manufacturer];
+  if (brand) {
     return (
       <img
-        src={logoUrl}
-        alt={`شعار ${CAR_MANUFACTURERS[manufacturer]?.nameAr || CAR_MANUFACTURERS[manufacturer]?.name || manufacturer}`}
+        src={carLogoUrl(brand.slug)}
+        alt={`شعار ${brand.name}`}
         className="object-contain"
         style={{ width: size, height: size }}
         loading="lazy"
@@ -253,12 +163,13 @@ const Vehicle = () => {
 
   const filteredManufacturers = useMemo(() => {
     const search = manufacturerSearch.toLowerCase().trim();
-    if (!search) return Object.entries(CAR_MANUFACTURERS);
-    return Object.entries(CAR_MANUFACTURERS).filter(([key, val]) =>
-      val.name.toLowerCase().includes(search) ||
-      (val.nameAr && val.nameAr.includes(manufacturerSearch.trim())) ||
-      key.includes(search)
-    );
+    const list = !search
+      ? CAR_BRANDS
+      : CAR_BRANDS.filter((b) =>
+          b.name.toLowerCase().includes(search) || b.slug.includes(search)
+        );
+    // Always keep manual "other" option at the end
+    return list;
   }, [manufacturerSearch]);
 
   const resetAddForm = () => {
@@ -346,7 +257,7 @@ const Vehicle = () => {
   };
 
   const handleDeleteCar = (car: CarData) => {
-    const carInfo = CAR_MANUFACTURERS[car.manufacturer] || CAR_MANUFACTURERS.other;
+    const carInfo = { name: getBrandName(car.manufacturer) };
     // Add to trash with all maintenance records
     addToTrash({
       type: "vehicle" as any,
@@ -485,7 +396,7 @@ const Vehicle = () => {
 
   // ─── Car Detail View ───
   if (selectedCar) {
-    const carInfo = CAR_MANUFACTURERS[selectedCar.manufacturer] || CAR_MANUFACTURERS.other;
+    const carInfo = { name: getBrandName(selectedCar.manufacturer) };
     const lastMaintenance = selectedCar.maintenance.length > 0 ? selectedCar.maintenance[0] : null;
     const lastMileage = lastMaintenance ? lastMaintenance.mileageAtService : selectedCar.mileage;
     return (
@@ -782,7 +693,7 @@ const Vehicle = () => {
           ) : (
             <div className="space-y-3">
               {cars.map(car => {
-                const carInfo = CAR_MANUFACTURERS[car.manufacturer] || CAR_MANUFACTURERS.other;
+                const carInfo = { name: getBrandName(car.manufacturer) };
                 const overdueCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "overdue").length;
                 const soonCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "soon").length;
 
@@ -865,20 +776,20 @@ const Vehicle = () => {
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                  {filteredManufacturers.map(([key, val]) => (
+                  {filteredManufacturers.map((b) => (
                     <button
-                      key={key}
-                      onClick={() => { setNewManufacturer(key); setManufacturerSearch(""); }}
+                      key={b.slug}
+                      onClick={() => { setNewManufacturer(b.slug); setManufacturerSearch(""); }}
                       className={`p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 ${
-                        newManufacturer === key
+                        newManufacturer === b.slug
                           ? "border-primary bg-primary/5 ring-1 ring-primary"
                           : "border-border bg-card"
                       }`}
                     >
                       <div className="w-8 h-8 flex items-center justify-center">
-                        <CarLogo manufacturer={key} size={28} />
+                        <CarLogo manufacturer={b.slug} size={28} />
                       </div>
-                      <span className="text-[10px] font-medium text-foreground leading-tight">{val.name}</span>
+                      <span className="text-[10px] font-medium text-foreground leading-tight">{b.name}</span>
                     </button>
                   ))}
                   {filteredManufacturers.length === 0 && (
@@ -999,20 +910,20 @@ const Vehicle = () => {
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                  {filteredManufacturers.map(([key, val]) => (
+                  {filteredManufacturers.map((b) => (
                     <button
-                      key={key}
-                      onClick={() => { setNewManufacturer(key); setManufacturerSearch(""); }}
+                      key={b.slug}
+                      onClick={() => { setNewManufacturer(b.slug); setManufacturerSearch(""); }}
                       className={`p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 ${
-                        newManufacturer === key
+                        newManufacturer === b.slug
                           ? "border-primary bg-primary/5 ring-1 ring-primary"
                           : "border-border bg-card"
                       }`}
                     >
                       <div className="w-8 h-8 flex items-center justify-center">
-                        <CarLogo manufacturer={key} size={28} />
+                        <CarLogo manufacturer={b.slug} size={28} />
                       </div>
-                      <span className="text-[10px] font-medium text-foreground leading-tight">{val.name}</span>
+                      <span className="text-[10px] font-medium text-foreground leading-tight">{b.name}</span>
                     </button>
                   ))}
                 </div>
@@ -1120,7 +1031,7 @@ const Vehicle = () => {
               {deleteConfirmCar && (
                 <>
                   <p className="font-bold text-foreground">
-                    {CAR_MANUFACTURERS[deleteConfirmCar.manufacturer]?.name || deleteConfirmCar.manufacturer} {deleteConfirmCar.model}
+                    {getBrandName(deleteConfirmCar.manufacturer)} {deleteConfirmCar.model}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     سيتم نقل المركبة مع كل سجلات صيانتها ({deleteConfirmCar.maintenance.length} سجل) إلى سلة المحذوفات
