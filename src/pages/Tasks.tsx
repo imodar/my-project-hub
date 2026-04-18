@@ -1068,7 +1068,7 @@ const Tasks = () => {
               })}
             </div>
             <DrawerFooter className="flex-row gap-2">
-              <Button onClick={shareList} className="flex-1 rounded-xl">مشاركة</Button>
+              <Button onClick={shareList} className="flex-1 rounded-xl">{selectedShareMembers.length === 0 ? "حفظ" : "مشاركة"}</Button>
               <Button variant="outline" onClick={() => setShowShareDialog(false)} className="flex-1 rounded-xl">إلغاء</Button>
             </DrawerFooter>
           </DrawerContent>
