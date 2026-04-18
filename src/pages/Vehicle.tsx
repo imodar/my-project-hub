@@ -74,12 +74,12 @@ const MAINTENANCE_TYPES = [
 
 // ─── Car Logo Component ───
 const CarLogo = ({ manufacturer, size = 40 }: { manufacturer: string; size?: number }) => {
-  const logoUrl = CAR_LOGOS[manufacturer];
-  if (logoUrl) {
+  const brand = BRAND_BY_SLUG[manufacturer];
+  if (brand) {
     return (
       <img
-        src={logoUrl}
-        alt={`شعار ${CAR_MANUFACTURERS[manufacturer]?.nameAr || CAR_MANUFACTURERS[manufacturer]?.name || manufacturer}`}
+        src={carLogoUrl(brand.slug)}
+        alt={`شعار ${brand.name}`}
         className="object-contain"
         style={{ width: size, height: size }}
         loading="lazy"
