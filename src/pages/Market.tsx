@@ -625,11 +625,8 @@ const Market = () => {
         )}
 
         {checkedItems.length > 0 && (
-          <div className="pt-3">
-            <p className="text-xs text-muted-foreground mb-2 font-medium">✅ تم شراؤها</p>
-            <div className="space-y-2">
-              {visibleCheckedItems.map((item) => renderItem(item, true))}
-            </div>
+          <div className="space-y-2">
+            {visibleCheckedItems.map((item) => renderItem(item, true))}
             {checkedItems.length > visibleCheckedCount && (
               <button
                 onClick={() => setVisibleCheckedCount((n) => n + PAGE_SIZE)}
