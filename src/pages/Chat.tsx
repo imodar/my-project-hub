@@ -230,6 +230,7 @@ const Chat = () => {
     isLoadingMore,
     loadOlderMessages,
     initProgress,
+    isSyncing,
   } = useChat();
 
   const [newMessage, setNewMessage] = useState("");
