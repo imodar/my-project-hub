@@ -857,7 +857,7 @@ const Market = () => {
                   value={newItemName}
                   onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }}
                   onInput={(e) => { const v = (e.target as HTMLInputElement).value; newItemNameRef.current = v; }}
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 focus-visible:ring-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
                 />
               </div>
               <div className="relative pt-2">
@@ -866,7 +866,7 @@ const Market = () => {
                   placeholder="مثال: 2 كيلو"
                   value={newItemQuantity}
                   onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }}
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 focus-visible:ring-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
                 />
               </div>
             </div>
