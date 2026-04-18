@@ -466,8 +466,32 @@ const Market = () => {
           },
         ]}
       >
-        {/* Lists tabs — underline style */}
-        <div className="flex gap-5 overflow-x-auto pt-3 scrollbar-hide">
+        {/* Lists tabs — underline style with mouse drag-to-scroll */}
+        <div
+          className="flex gap-5 overflow-x-auto pt-3 scrollbar-hide cursor-grab active:cursor-grabbing select-none"
+          onMouseDown={(e) => {
+            const el = e.currentTarget;
+            const startX = e.pageX;
+            const startScroll = el.scrollLeft;
+            let moved = false;
+            const onMove = (ev: MouseEvent) => {
+              const dx = ev.pageX - startX;
+              if (Math.abs(dx) > 3) moved = true;
+              el.scrollLeft = startScroll - dx;
+            };
+            const onUp = (ev: MouseEvent) => {
+              document.removeEventListener("mousemove", onMove);
+              document.removeEventListener("mouseup", onUp);
+              if (moved) {
+                ev.preventDefault();
+                const blockClick = (e: MouseEvent) => { e.stopPropagation(); e.preventDefault(); document.removeEventListener("click", blockClick, true); };
+                document.addEventListener("click", blockClick, true);
+              }
+            };
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+          }}
+        >
           {lists.map((list) => {
             const isActive = activeListId === list.id;
             return (
