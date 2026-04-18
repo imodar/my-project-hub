@@ -744,45 +744,83 @@ const Market = () => {
 
       <Drawer open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
         <DrawerContent dir="rtl">
-          <DrawerHeader className="text-right">
-            <DrawerTitle>تعديل المنتج</DrawerTitle>
-            <DrawerDescription>عدّل اسم المنتج والكمية والتصنيف</DrawerDescription>
+          <DrawerHeader className="text-right pb-1">
+            <DrawerTitle className="text-lg">تعديل المنتج</DrawerTitle>
+            <DrawerDescription className="text-xs">عدّل الاسم والكمية واختر التصنيف</DrawerDescription>
           </DrawerHeader>
-          <div className="space-y-3 px-4">
-            <Input
-              placeholder="اسم المنتج"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="rounded-xl"
-            />
-            <Input
-              placeholder="الكمية"
-              value={editQuantity}
-              onChange={(e) => setEditQuantity(e.target.value)}
-              className="rounded-xl"
-            />
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">التصنيف</p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(CATEGORY_COLORS).map(([cat, info]) => (
-                  <button
-                    key={cat}
-                    onClick={() => setEditCategory(cat)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      editCategory === cat
-                        ? "bg-primary text-primary-foreground"
-                        : `${info.bg} ${info.text} border border-border`
-                    }`}
-                  >
-                    {info.emoji} {cat}
-                  </button>
-                ))}
+          <div className="flex-1 overflow-y-auto space-y-5 px-4 pb-3">
+            {activeList?.useCategories && (
+              <div>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <p className="text-sm font-bold text-foreground">التصنيف</p>
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">
+                    {CATEGORY_COLORS[editCategory]?.emoji} {editCategory}
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-2.5">
+                  {Object.entries(CATEGORY_COLORS).map(([cat, info]) => {
+                    const isActive = editCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setEditCategory(cat)}
+                        className={`group relative flex flex-col items-center gap-1.5 py-2 transition-all duration-300 ${
+                          isActive ? "scale-105" : "opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <div
+                          className={`relative w-14 h-14 rounded-[20px] flex items-center justify-center text-2xl transition-all duration-300 ${
+                            isActive
+                              ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
+                              : "ring-0"
+                          }`}
+                        >
+                          {info.emoji}
+                          {isActive && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md animate-in zoom-in duration-200">
+                              <Check size={12} className="text-primary-foreground" strokeWidth={3} />
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] leading-tight text-center transition-all ${
+                          isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
+                        }`}>
+                          {cat}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2 px-1">
+              <div className="relative">
+                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">المنتج</label>
+                <Input
+                  placeholder="مثال: طماطم طازجة"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+                />
+              </div>
+              <div className="relative pt-2">
+                <label className="absolute right-0 top-4 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">الكمية</label>
+                <Input
+                  placeholder="مثال: 2 كيلو"
+                  value={editQuantity}
+                  onChange={(e) => setEditQuantity(e.target.value)}
+                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+                />
               </div>
             </div>
           </div>
-          <DrawerFooter className="flex-row gap-2">
-            <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
-            <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1 rounded-xl">إلغاء</Button>
+          <DrawerFooter className="flex-row gap-2 pt-3">
+            <Button onClick={saveEdit} className="flex-[2] rounded-2xl h-12 font-bold text-base shadow-md">
+              <Check size={18} className="ml-1" />
+              حفظ التعديلات
+            </Button>
+            <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1 rounded-2xl h-12">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
