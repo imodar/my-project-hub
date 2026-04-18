@@ -423,7 +423,11 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </div>
       </header>
 
-      <motion.section className="relative overflow-hidden" style={{ opacity: sectionOpacity, height: sectionHeight }}>
+      <motion.div style={{ marginBottom: wrapperMarginBottom }}>
+      <motion.section
+        className="relative overflow-hidden will-change-transform"
+        style={{ opacity: sectionOpacity, y: sectionTranslateY, height: expandedSectionHeight }}
+      >
         <motion.div
           className="absolute -top-2 left-7 w-16 h-16 z-10 pointer-events-none"
           key={theme.label}
