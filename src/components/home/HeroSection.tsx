@@ -561,11 +561,11 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             )}
           </div>
         </motion.div>
-      </motion.section>
+      </div>
 
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </motion.div>
+    </div>
   );
 });
 
