@@ -1,7 +1,7 @@
 import { Bell, Cloud, Sun, CloudRain, CloudSun, MapPin, Moon, Wind, Snowflake, Search } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import QiblaCompass from "./QiblaCompass";
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import NotificationsSheet from "@/components/notifications/NotificationsSheet";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
+
 import NextPrayerBox from "./NextPrayerBox";
 
 interface WeatherData {
@@ -26,13 +27,34 @@ const getGreeting = (hour: number, t: { hero: { goodMorning: string; goodEvening
 };
 
 const getTimeIcon = (hour: number): { icon: React.ReactNode; glow: string } => {
-  if (hour >= 5 && hour < 7) return { icon: <Sun size={20} className="text-orange-300" />, glow: "rgba(255,180,80,0.3)" };
-  if (hour >= 7 && hour < 11) return { icon: <Sun size={20} className="text-yellow-200" />, glow: "rgba(255,245,158,0.4)" };
-  if (hour >= 11 && hour < 15) return { icon: <Sun size={20} className="text-yellow-100" />, glow: "rgba(255,255,200,0.5)" };
-  if (hour >= 15 && hour < 18) return { icon: <Sun size={20} className="text-amber-300" />, glow: "rgba(255,200,100,0.35)" };
-  if (hour >= 18 && hour < 20) return { icon: <Moon size={20} className="text-orange-200" />, glow: "rgba(255,160,80,0.3)" };
-  if (hour >= 20 && hour < 23) return { icon: <Moon size={20} className="text-blue-100" />, glow: "rgba(200,210,255,0.25)" };
-  return { icon: <Moon size={20} className="text-indigo-200/80" />, glow: "rgba(180,180,255,0.2)" };
+  if (hour >= 5 && hour < 7) return {
+    icon: <Sun size={20} className="text-orange-300" />,
+    glow: "rgba(255,180,80,0.3)",
+  };
+  if (hour >= 7 && hour < 11) return {
+    icon: <Sun size={20} className="text-yellow-200" />,
+    glow: "rgba(255,245,158,0.4)",
+  };
+  if (hour >= 11 && hour < 15) return {
+    icon: <Sun size={20} className="text-yellow-100" />,
+    glow: "rgba(255,255,200,0.5)",
+  };
+  if (hour >= 15 && hour < 18) return {
+    icon: <Sun size={20} className="text-amber-300" />,
+    glow: "rgba(255,200,100,0.35)",
+  };
+  if (hour >= 18 && hour < 20) return {
+    icon: <Moon size={20} className="text-orange-200" />,
+    glow: "rgba(255,160,80,0.3)",
+  };
+  if (hour >= 20 && hour < 23) return {
+    icon: <Moon size={20} className="text-blue-100" />,
+    glow: "rgba(200,210,255,0.25)",
+  };
+  return {
+    icon: <Moon size={20} className="text-indigo-200/80" />,
+    glow: "rgba(180,180,255,0.2)",
+  };
 };
 
 const isNightTime = (hour: number) => hour >= 19 || hour < 5;
@@ -46,27 +68,29 @@ type WeatherTheme = {
   particles?: React.ReactNode;
 };
 
-const DEMO_STATES = [
-  { code: 0, hour: 10, label: "صافي نهار", temp: 34, description: "صافي", icon: "clear", city: "الرياض" },
-  { code: 0, hour: 22, label: "صافي ليل", temp: 22, description: "صافي", icon: "clear", city: "الرياض" },
-  { code: 2, hour: 14, label: "غائم جزئياً", temp: 28, description: "غائم جزئياً", icon: "cloudsun", city: "جدة" },
-  { code: 3, hour: 15, label: "غائم", temp: 24, description: "غائم", icon: "cloud", city: "أبها" },
-  { code: 45, hour: 12, label: "ضبابي", temp: 19, description: "ضبابي", icon: "fog", city: "الطائف" },
-  { code: 61, hour: 16, label: "ممطر", temp: 16, description: "ممطر", icon: "rain", city: "تبوك" },
-  { code: 71, hour: 11, label: "ثلوج", temp: -2, description: "ثلوج", icon: "snow", city: "طريف" },
+const DEMO_STATES: { code: number; hour: number; label: string; temp: number; description: string; icon: string; city: string }[] = [
+  { code: 0, hour: 10, label: "☀️ صافي - نهار", temp: 34, description: "صافي", icon: "clear", city: "الرياض" },
+  { code: 0, hour: 22, label: "🌙 صافي - ليل", temp: 22, description: "صافي", icon: "clear", city: "الرياض" },
+  { code: 2, hour: 14, label: "⛅ غائم جزئياً", temp: 28, description: "غائم جزئياً", icon: "cloudsun", city: "جدة" },
+  { code: 3, hour: 15, label: "☁️ غائم", temp: 24, description: "غائم", icon: "cloud", city: "أبها" },
+  { code: 45, hour: 12, label: "🌫️ ضبابي", temp: 19, description: "ضبابي", icon: "fog", city: "الطائف" },
+  { code: 61, hour: 16, label: "🌧️ ممطر", temp: 16, description: "ممطر", icon: "rain", city: "تبوك" },
+  { code: 71, hour: 11, label: "❄️ ثلوج", temp: -2, description: "ثلوج", icon: "snow", city: "طريف" },
 ];
 
 const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme => {
   const night = isNightTime(hour);
 
   if (weatherCode === null) {
-    if (night) return {
-      gradient: "linear-gradient(135deg, hsl(230 40% 18%), hsl(250 35% 25%))",
-      decorationIcon: <Moon size={28} className="text-yellow-100" />,
-      glowColor: "rgba(200,200,255,0.25)",
-      orbBg: "linear-gradient(135deg, hsl(230 40% 25%), hsl(250 35% 35%))",
-      label: "ليل",
-    };
+    if (night) {
+      return {
+        gradient: "linear-gradient(135deg, hsl(230 40% 18%), hsl(250 35% 25%))",
+        decorationIcon: <Moon size={28} className="text-yellow-100" />,
+        glowColor: "rgba(200,200,255,0.25)",
+        orbBg: "linear-gradient(135deg, hsl(230 40% 25%), hsl(250 35% 35%))",
+        label: "ليل",
+      };
+    }
     return {
       gradient: "linear-gradient(135deg, hsl(205 80% 60%), hsl(185 90% 55%))",
       decorationIcon: <Sun size={28} className="text-yellow-200" />,
@@ -76,82 +100,102 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
     };
   }
 
-  if (weatherCode >= 71 && weatherCode <= 77) return {
-    gradient: night
-      ? "linear-gradient(135deg, hsl(210 25% 22%), hsl(220 30% 32%))"
-      : "linear-gradient(135deg, hsl(210 30% 75%), hsl(200 25% 85%))",
-    decorationIcon: <Snowflake size={28} className="text-blue-100 animate-pulse" />,
-    glowColor: "rgba(200,220,255,0.3)",
-    orbBg: "linear-gradient(135deg, hsl(210 40% 80%), hsl(200 30% 90%))",
-    label: "ثلوج",
-    particles: (
-      <>
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={`snow-${i}`}
-            className="absolute rounded-full bg-white/30"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: [0, 0.6, 0], y: [0, 60] }}
-            transition={{ duration: 2 + Math.random(), repeat: Infinity, delay: i * 0.3 }}
-            style={{ width: 4 + Math.random() * 4, height: 4 + Math.random() * 4, left: `${10 + Math.random() * 80}%`, top: `${5 + Math.random() * 30}%` }}
-          />
-        ))}
-      </>
-    ),
-  };
+  if (weatherCode >= 71 && weatherCode <= 77) {
+    return {
+      gradient: night
+        ? "linear-gradient(135deg, hsl(210 25% 22%), hsl(220 30% 32%))"
+        : "linear-gradient(135deg, hsl(210 30% 75%), hsl(200 25% 85%))",
+      decorationIcon: <Snowflake size={28} className="text-blue-100 animate-pulse" />,
+      glowColor: "rgba(200,220,255,0.3)",
+      orbBg: "linear-gradient(135deg, hsl(210 40% 80%), hsl(200 30% 90%))",
+      label: "ثلوج",
+      particles: (
+        <>
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={`snow-${i}`}
+              className="absolute rounded-full bg-white/30"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: [0, 0.6, 0], y: [0, 60] }}
+              transition={{ duration: 2 + Math.random(), repeat: Infinity, delay: i * 0.3 }}
+              style={{
+                width: 4 + Math.random() * 4,
+                height: 4 + Math.random() * 4,
+                left: `${10 + Math.random() * 80}%`,
+                top: `${5 + Math.random() * 30}%`,
+              }}
+            />
+          ))}
+        </>
+      ),
+    };
+  }
 
-  if ((weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82) || weatherCode >= 95) return {
-    gradient: night
-      ? "linear-gradient(135deg, hsl(215 35% 15%), hsl(220 40% 22%))"
-      : "linear-gradient(135deg, hsl(215 50% 45%), hsl(210 45% 55%))",
-    decorationIcon: <CloudRain size={28} className="text-blue-200" />,
-    glowColor: "rgba(100,150,220,0.25)",
-    orbBg: "linear-gradient(135deg, hsl(215 40% 50%), hsl(220 35% 60%))",
-    label: "ممطر",
-    particles: (
-      <>
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={`rain-${i}`}
-            className="absolute w-[2px] bg-white/25 rounded-full"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: [0, 0.5, 0], y: [0, 50] }}
-            transition={{ duration: 0.7 + Math.random() * 0.3, repeat: Infinity, delay: i * 0.12 }}
-            style={{ height: 10 + Math.random() * 10, left: `${5 + Math.random() * 90}%`, top: `${Math.random() * 40}%`, transform: "rotate(15deg)" }}
-          />
-        ))}
-      </>
-    ),
-  };
+  if ((weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82) || weatherCode >= 95) {
+    return {
+      gradient: night
+        ? "linear-gradient(135deg, hsl(215 35% 15%), hsl(220 40% 22%))"
+        : "linear-gradient(135deg, hsl(215 50% 45%), hsl(210 45% 55%))",
+      decorationIcon: <CloudRain size={28} className="text-blue-200" />,
+      glowColor: "rgba(100,150,220,0.25)",
+      orbBg: "linear-gradient(135deg, hsl(215 40% 50%), hsl(220 35% 60%))",
+      label: "ممطر",
+      particles: (
+        <>
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={`rain-${i}`}
+              className="absolute w-[2px] bg-white/25 rounded-full"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: [0, 0.5, 0], y: [0, 50] }}
+              transition={{ duration: 0.7 + Math.random() * 0.3, repeat: Infinity, delay: i * 0.12 }}
+              style={{
+                height: 10 + Math.random() * 10,
+                left: `${5 + Math.random() * 90}%`,
+                top: `${Math.random() * 40}%`,
+                transform: "rotate(15deg)",
+              }}
+            />
+          ))}
+        </>
+      ),
+    };
+  }
 
-  if (weatherCode >= 45 && weatherCode <= 48) return {
-    gradient: night
-      ? "linear-gradient(135deg, hsl(35 30% 18%), hsl(30 25% 25%))"
-      : "linear-gradient(135deg, hsl(40 45% 65%), hsl(35 40% 55%))",
-    decorationIcon: <Wind size={28} className="text-amber-200/80" />,
-    glowColor: "rgba(220,190,120,0.3)",
-    orbBg: "linear-gradient(135deg, hsl(40 50% 60%), hsl(35 45% 50%))",
-    label: "ضبابي",
-  };
+  if (weatherCode >= 45 && weatherCode <= 48) {
+    return {
+      gradient: night
+        ? "linear-gradient(135deg, hsl(35 30% 18%), hsl(30 25% 25%))"
+        : "linear-gradient(135deg, hsl(40 45% 65%), hsl(35 40% 55%))",
+      decorationIcon: <Wind size={28} className="text-amber-200/80" />,
+      glowColor: "rgba(220,190,120,0.3)",
+      orbBg: "linear-gradient(135deg, hsl(40 50% 60%), hsl(35 45% 50%))",
+      label: "ضبابي",
+    };
+  }
 
-  if (weatherCode === 3) return {
-    gradient: night
-      ? "linear-gradient(135deg, hsl(220 25% 20%), hsl(215 30% 28%))"
-      : "linear-gradient(135deg, hsl(210 30% 60%), hsl(215 25% 70%))",
-    decorationIcon: <Cloud size={28} className="text-white/80" />,
-    glowColor: "rgba(180,200,220,0.25)",
-    orbBg: "linear-gradient(135deg, hsl(210 30% 65%), hsl(215 25% 75%))",
-    label: "غائم",
-  };
+  if (weatherCode === 3) {
+    return {
+      gradient: night
+        ? "linear-gradient(135deg, hsl(220 25% 20%), hsl(215 30% 28%))"
+        : "linear-gradient(135deg, hsl(210 30% 60%), hsl(215 25% 70%))",
+      decorationIcon: <Cloud size={28} className="text-white/80" />,
+      glowColor: "rgba(180,200,220,0.25)",
+      orbBg: "linear-gradient(135deg, hsl(210 30% 65%), hsl(215 25% 75%))",
+      label: "غائم",
+    };
+  }
 
   if (weatherCode >= 1 && weatherCode <= 2) {
-    if (night) return {
-      gradient: "linear-gradient(135deg, hsl(225 35% 20%), hsl(235 30% 28%))",
-      decorationIcon: <CloudSun size={28} className="text-white/70" />,
-      glowColor: "rgba(180,190,220,0.2)",
-      orbBg: "linear-gradient(135deg, hsl(225 35% 30%), hsl(235 30% 38%))",
-      label: "غائم جزئياً",
-    };
+    if (night) {
+      return {
+        gradient: "linear-gradient(135deg, hsl(225 35% 20%), hsl(235 30% 28%))",
+        decorationIcon: <CloudSun size={28} className="text-white/70" />,
+        glowColor: "rgba(180,190,220,0.2)",
+        orbBg: "linear-gradient(135deg, hsl(225 35% 30%), hsl(235 30% 38%))",
+        label: "غائم جزئياً",
+      };
+    }
     return {
       gradient: "linear-gradient(135deg, hsl(205 70% 58%), hsl(195 60% 62%))",
       decorationIcon: <CloudSun size={28} className="text-white/90" />,
@@ -161,27 +205,33 @@ const getWeatherTheme = (weatherCode: number | null, hour: number): WeatherTheme
     };
   }
 
-  if (night) return {
-    gradient: "linear-gradient(135deg, hsl(230 45% 15%), hsl(250 40% 22%))",
-    decorationIcon: <Moon size={28} className="text-yellow-100" />,
-    glowColor: "rgba(255,255,200,0.3)",
-    orbBg: "linear-gradient(135deg, hsl(230 40% 25%), hsl(250 35% 35%))",
-    label: "صافي ليلاً",
-    particles: (
-      <>
-        {[...Array(5)].map((_, i) => (
-          <motion.div
-            key={`star-${i}`}
-            className="absolute rounded-full bg-white/50"
-            animate={{ opacity: [0.2, 1, 0.2] }}
-            transition={{ duration: 2 + Math.random(), repeat: Infinity, delay: i * 0.4 }}
-            style={{ width: 2, height: 2, top: `${15 + Math.random() * 50}%`, left: `${10 + Math.random() * 80}%` }}
-          />
-        ))}
-      </>
-    ),
-  };
-
+  if (night) {
+    return {
+      gradient: "linear-gradient(135deg, hsl(230 45% 15%), hsl(250 40% 22%))",
+      decorationIcon: <Moon size={28} className="text-yellow-100" />,
+      glowColor: "rgba(255,255,200,0.3)",
+      orbBg: "linear-gradient(135deg, hsl(230 40% 25%), hsl(250 35% 35%))",
+      label: "صافي ليلاً",
+      particles: (
+        <>
+          {[...Array(5)].map((_, i) => (
+            <motion.div
+              key={`star-${i}`}
+              className="absolute rounded-full bg-white/50"
+              animate={{ opacity: [0.2, 1, 0.2] }}
+              transition={{ duration: 2 + Math.random(), repeat: Infinity, delay: i * 0.4 }}
+              style={{
+                width: 2,
+                height: 2,
+                top: `${15 + Math.random() * 50}%`,
+                left: `${10 + Math.random() * 80}%`,
+              }}
+            />
+          ))}
+        </>
+      ),
+    };
+  }
   return {
     gradient: "linear-gradient(135deg, hsl(205 80% 60%), hsl(185 90% 55%))",
     decorationIcon: <Sun size={28} className="text-yellow-200" />,
@@ -233,28 +283,12 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // -------------------------------------------------------------------
-  // Scroll collapse — single source of truth, no competing animations
-  // -------------------------------------------------------------------
+  // Stable collapse: avoid scroll-linked layout mutation on every frame.
+  // We switch between expanded/collapsed states with hysteresis + spring.
   const { scrollY } = useScroll();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const expandedSectionHeight = islamicMode ? 260 : 132;
 
-  // Measure actual content height so max-height is always accurate
-  const innerRef = useRef<HTMLDivElement>(null);
-  const [contentHeight, setContentHeight] = useState(0);
-
-  useEffect(() => {
-    if (!innerRef.current) return;
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContentHeight(entry.contentRect.height);
-      }
-    });
-    ro.observe(innerRef.current);
-    return () => ro.disconnect();
-  }, [islamicMode]); // re-observe when islamic mode toggles
-
-  // Hysteresis: collapse at 72px, expand back at 24px — prevents jitter at threshold
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsCollapsed((prev) => {
       if (!prev && latest > 72) return true;
@@ -263,23 +297,20 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
     });
   });
 
-  // -------------------------------------------------------------------
-  // Demo cycle
-  // -------------------------------------------------------------------
   useEffect(() => {
     if (!demoActive) return;
     const timer = setInterval(() => {
       setDemoIndex((prev) => {
-        if (prev >= DEMO_STATES.length - 1) { setDemoActive(false); return 0; }
+        if (prev >= DEMO_STATES.length - 1) {
+          setDemoActive(false);
+          return 0;
+        }
         return prev + 1;
       });
     }, 2500);
     return () => clearInterval(timer);
   }, [demoActive]);
 
-  // -------------------------------------------------------------------
-  // Weather fetch
-  // -------------------------------------------------------------------
   useEffect(() => {
     try {
       const cached = sessionStorage.getItem("weather_cache");
@@ -291,7 +322,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           return;
         }
       }
-    } catch { /* ignore */ }
+    } catch { /* ignore cached parse error */ }
 
     navigator.geolocation?.getCurrentPosition(
       async (pos) => {
@@ -310,7 +341,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             );
             const reverseData = await reverseRes.json();
             cityName = reverseData.address?.city || reverseData.address?.town || reverseData.address?.suburb || reverseData.address?.state || "موقعك";
-          } catch { /* ignore */ }
+          } catch { /* ignore reverse geocoding failure */ }
 
           const weatherCode = data.current?.weather_code || 0;
           let description = "صافي";
@@ -322,12 +353,23 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           else if (weatherCode === 3) { description = "غائم"; icon = "cloud"; }
           else if (weatherCode >= 1) { description = "غائم جزئياً"; icon = "cloudsun"; }
 
-          const weatherData = { temp: Math.round(data.current?.temperature_2m || 0), description, city: cityName, icon, weatherCode, lastUpdated: new Date() };
+          const weatherData = {
+            temp: Math.round(data.current?.temperature_2m || 0),
+            description,
+            city: cityName,
+            icon,
+            weatherCode,
+            lastUpdated: new Date(),
+          };
           setWeather(weatherData);
           try { sessionStorage.setItem("weather_cache", JSON.stringify(weatherData)); } catch { /* ignore */ }
-        } catch (e) { console.error("Weather fetch failed:", e); }
+        } catch (e) {
+          console.error("Weather fetch failed:", e);
+        }
       },
-      () => setHasLocationPermission(false)
+      () => {
+        setHasLocationPermission(false);
+      }
     );
   }, []);
 
@@ -342,16 +384,15 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
       ref={ref}
       className="sticky top-0 z-40 rounded-b-[28px] shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
       style={{
-        // CSS transition handles the gradient — no Framer Motion needed here.
-        // This runs on the compositor thread and never blocks JS.
         background: theme.gradient,
-        transition: "background 0.9s ease-in-out",
+        transition: "background 1s ease-in-out",
       }}
     >
-      {/* ── Top bar (always visible) ── */}
       <header
         className="relative z-30 px-5 pb-3 flex justify-between items-center text-white"
-        style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}
+        style={{
+          paddingTop: "max(env(safe-area-inset-top), 16px)",
+        }}
       >
         <div className="flex items-center gap-3">
           <button
@@ -364,10 +405,16 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           <span className="text-xl font-bold text-white tracking-tight">{t.appName}</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setSearchOpen(true)} className="p-2 rounded-full text-white/85 hover:bg-white/10 transition-colors">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="p-2 rounded-full text-white/85 hover:bg-white/10 transition-colors"
+          >
             <Search size={22} />
           </button>
-          <button onClick={() => setNotificationsOpen(true)} className="relative p-2 rounded-full text-white/85 hover:bg-white/10 transition-colors">
+          <button
+            onClick={() => setNotificationsOpen(true)}
+            className="relative p-2 rounded-full text-white/85 hover:bg-white/10 transition-colors"
+          >
             <Bell size={22} />
             {unreadCount > 0 && (
               <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-[10px] font-bold text-white flex items-center justify-center">
@@ -378,72 +425,62 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </div>
       </header>
 
-      {/* ── Collapsible section ──
-          Single CSS transition on max-height + opacity.
-          No Framer Motion on this wrapper — one animation source only.
-          contentHeight is measured from the actual DOM so it works for
-          both islamicMode=true and islamicMode=false without hardcoding. */}
       <div
+        className="relative overflow-hidden"
         style={{
-          maxHeight: isCollapsed ? 0 : contentHeight || 400,
+          maxHeight: isCollapsed ? 0 : expandedSectionHeight,
           opacity: isCollapsed ? 0 : 1,
-          overflow: "hidden",
-          // ease-out: snappy collapse matches scroll feel.
-          // opacity fades slightly faster so content doesn't linger.
-          transition: isCollapsed
-            ? "max-height 0.28s cubic-bezier(0.4,0,1,1), opacity 0.18s ease-out"
-            : "max-height 0.32s cubic-bezier(0,0,0.2,1), opacity 0.22s ease-in",
+          transition: "max-height 0.22s ease-out, opacity 0.15s ease-out",
         }}
       >
-        {/* Inner div — measured by ResizeObserver */}
-        <div ref={innerRef} className="relative overflow-hidden text-white px-5 pt-4 pb-5">
-
-          {/* Weather orb — still uses Framer for the key-change pop animation,
-              but its collapse fade is handled by the parent opacity above */}
-          <motion.div
-            className="absolute -top-2 left-7 w-16 h-16 z-10 pointer-events-none"
-            key={theme.label}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 280, damping: 28 }}
-            style={{ transformOrigin: "top center" }}
+        <motion.div
+          className="absolute -top-2 left-7 w-16 h-16 z-10 pointer-events-none"
+          key={theme.label}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: isCollapsed ? 0.82 : 1, opacity: isCollapsed ? 0 : 1 }}
+          transition={{ type: "spring", stiffness: 220, damping: 26 }}
+          style={{ transformOrigin: "top center" }}
+        >
+          <div className="absolute inset-0 rounded-full animate-pulse" style={{
+            filter: "blur(12px)",
+            background: `radial-gradient(circle, ${theme.glowColor} 0%, transparent 70%)`
+          }} />
+          <div className="relative w-full h-full rounded-full shadow-lg flex items-center justify-center"
+            style={{
+              background: theme.orbBg,
+              border: "2px solid hsla(0,0%,100%,0.25)"
+            }}
           >
-            <div
-              className="absolute inset-0 rounded-full animate-pulse"
-              style={{ filter: "blur(12px)", background: `radial-gradient(circle, ${theme.glowColor} 0%, transparent 70%)` }}
-            />
-            <div
-              className="relative w-full h-full rounded-full shadow-lg flex items-center justify-center"
-              style={{ background: theme.orbBg, border: "2px solid hsla(0,0%,100%,0.25)" }}
-            >
-              <AnimatePresence mode="wait">
-                {showWeatherInfo && displayTemp !== undefined ? (
-                  <motion.span
-                    key={`temp-${displayTemp}`}
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.5, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-white font-bold text-lg"
-                  >
-                    {displayTemp}°
-                  </motion.span>
-                ) : (
-                  <motion.div
-                    key={theme.label}
-                    initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                    exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    {theme.decorationIcon}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
+            <AnimatePresence mode="wait">
+              {showWeatherInfo && displayTemp !== undefined ? (
+                <motion.span
+                  key={`temp-${displayTemp}`}
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-white font-bold text-lg"
+                >
+                  {displayTemp}°
+                </motion.span>
+              ) : (
+                <motion.div
+                  key={theme.label}
+                  initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  {theme.decorationIcon}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
 
-          {/* Particles — weather-driven, no collapse logic needed */}
+        <motion.div
+          className="px-5 pt-4 pb-5 relative overflow-hidden text-white"
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={`particles-${theme.label}`}
@@ -451,23 +488,32 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
-              className="absolute inset-0 z-0 pointer-events-none"
+              className="absolute inset-0 z-0"
             >
               {theme.particles}
             </motion.div>
           </AnimatePresence>
 
-          {/* Cloud decorations (clear weather only) — static, no Framer needed */}
-          {(!weather || weather.weatherCode <= 3) && !demoActive && (
-            <div className="pointer-events-none">
-              <div className="absolute top-3 left-10 opacity-20"><Cloud size={52} /></div>
-              <div className="absolute bottom-3 right-16 opacity-15"><Cloud size={36} /></div>
-            </div>
+          {(!weather || (weather && weather.weatherCode <= 3)) && !demoActive && (
+            <motion.div
+              animate={{ opacity: isCollapsed ? 0 : 1 }}
+              transition={{ duration: 0.18 }}
+            >
+              <div className="absolute top-3 left-10 opacity-20">
+                <Cloud size={52} />
+              </div>
+              <div className="absolute bottom-3 right-16 opacity-15">
+                <Cloud size={36} />
+              </div>
+            </motion.div>
           )}
 
-          {/* Content — plain div, no Framer. Parent handles the fade. */}
           <div className="relative z-20 space-y-3">
-            <div className="space-y-3">
+            <motion.div
+              className="space-y-3"
+              animate={{ opacity: isCollapsed ? 0 : 1, y: isCollapsed ? -12 : 0 }}
+              transition={{ duration: 0.18 }}
+            >
               <div>
                 <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
                   <span className="inline-flex" style={{ filter: `drop-shadow(0 0 6px ${timeIcon.glow})` }}>
@@ -482,7 +528,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
               {showWeatherInfo && displayCity && displayIcon && displayDesc && (
                 <motion.div
-                  key={`weather-row-${demoActive ? demoIndex : "real"}`}
+                  key={`weather-row-${demoActive ? demoIndex : 'real'}`}
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
@@ -501,20 +547,20 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
                   {t.hero.lastUpdate} {formatLastUpdated(weather.lastUpdated)}
                 </p>
               )}
-            </div>
+            </motion.div>
 
-            {/* Islamic section — plain div. Appears/disappears with parent collapse.
-                When islamicMode toggles, ResizeObserver updates contentHeight so
-                the max-height target is always correct and the expand/collapse
-                works smoothly for both states. */}
             {islamicMode && (
-              <div className="grid grid-cols-2 gap-3 items-center">
+              <motion.div
+                className="grid grid-cols-2 gap-3 items-center"
+                animate={{ opacity: isCollapsed ? 0 : 1, y: isCollapsed ? -8 : 0 }}
+                transition={{ duration: 0.16 }}
+              >
                 <QiblaCompass />
                 <NextPrayerBox />
-              </div>
+              </motion.div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       <NotificationsSheet open={notificationsOpen} onOpenChange={setNotificationsOpen} />
