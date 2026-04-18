@@ -9,6 +9,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "
 import { Button } from "@/components/ui/button";
 import { useDebts } from "@/hooks/useDebts";
 import { appToast } from "@/lib/toast";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { required, numericPositive } from "@/lib/validators";
 
 type PaymentType = "cash" | "item" | "installment";
 
