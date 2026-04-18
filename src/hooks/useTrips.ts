@@ -163,12 +163,22 @@ export function useTrips() {
     addDayPlan: {
       ...addDayPlan,
       mutate: (input: any) => {
-        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), trip_activities: [], ...input };
+        const item = {
+          id: input.id ?? crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+          trip_activities: [],
+          ...input,
+        };
         optimisticTripSub(input.trip_id, "trip_day_plans", (dps) => [...dps, item]);
         addDayPlan.mutate(item);
       },
       mutateAsync: async (input: any) => {
-        const item = { id: crypto.randomUUID(), created_at: new Date().toISOString(), trip_activities: [], ...input };
+        const item = {
+          id: input.id ?? crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+          trip_activities: [],
+          ...input,
+        };
         optimisticTripSub(input.trip_id, "trip_day_plans", (dps) => [...dps, item]);
         addDayPlan.mutateAsync(item).catch(() => {});
         return item;
