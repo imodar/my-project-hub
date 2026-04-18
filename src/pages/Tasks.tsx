@@ -311,12 +311,14 @@ const Tasks = () => {
   const saveEdit = useCallback(() => {
     if (!editTarget || !editName.trim()) return;
     haptic.medium();
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const assigned = editAssignedTo && UUID_RE.test(editAssignedTo) ? editAssignedTo : null;
     updateItemMutation.mutate({
       id: editTarget.id,
       name: editName.trim(),
       note: editNote.trim(),
       priority: editPriority,
-      assigned_to: editAssignedTo || null,
+      assigned_to: assigned,
     });
     setEditTarget(null);
   }, [editTarget, editName, editNote, editPriority, editAssignedTo, updateItemMutation]);
@@ -325,12 +327,14 @@ const Tasks = () => {
     const name = (newItemNameRef.current || newItemName).trim();
     if (!name || !activeListId) return;
     haptic.medium();
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const assigned = newItemAssignedTo && UUID_RE.test(newItemAssignedTo) ? newItemAssignedTo : null;
     addItemMutation.mutate({
       list_id: activeListId,
       name,
       note: newItemNote.trim(),
       priority: newItemPriority,
-      assigned_to: newItemAssignedTo || null,
+      assigned_to: assigned,
     });
     newItemNameRef.current = "";
     setNewItemName("");
@@ -647,12 +651,13 @@ const Tasks = () => {
 
         <FAB onClick={() => {
           haptic.medium();
-          // تحميل المسودة إن وجدت
           const draft = taskDraft.loadDraft();
+          const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          const safeAssigned = draft?.assignedTo && UUID_RE.test(draft.assignedTo) ? draft.assignedTo : "";
           setNewItemName(draft?.name ?? "");
           setNewItemNote(draft?.note ?? "");
           setNewItemPriority(draft?.priority ?? "none");
-          setNewItemAssignedTo(draft?.assignedTo ?? "");
+          setNewItemAssignedTo(safeAssigned);
           setShowAddItem(true);
         }} />
 
