@@ -498,10 +498,18 @@ const Market = () => {
             return (
               <button
                 key={list.id}
-                onClick={() => {
+                ref={(el) => {
+                  if (el && isActive) {
+                    requestAnimationFrame(() => {
+                      el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+                    });
+                  }
+                }}
+                onClick={(e) => {
                   haptic.light();
                   setActiveListId(list.id);
                   setActiveCategory("الكل");
+                  (e.currentTarget as HTMLButtonElement).scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
                 }}
                 className={`relative shrink-0 flex items-center gap-1.5 pb-2 text-sm transition-colors ${
                   isActive ? "text-white font-bold" : "text-white/60 font-medium hover:text-white/80"
