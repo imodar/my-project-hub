@@ -92,8 +92,9 @@ Deno.serve(async (req) => {
       if (shared_with !== undefined) updates.shared_with = Array.isArray(shared_with) ? shared_with.filter((x: unknown) => typeof x === "string" && validUuid(x)) : [];
       for (const k of ["start_date", "end_date"]) { if (rest[k] !== undefined) updates[k] = rest[k]; }
       delete updates.action;
-      const { data, error } = await supabase.from("trips").update(updates).eq("id", id).select().single();
+      const { data, error } = await supabase.from("trips").update(updates).eq("id", id).select().maybeSingle();
       if (error) return json({ error: error.message }, 400);
+      if (!data) return json({ error: "الرحلة غير موجودة بعد، سيُعاد لاحقاً", retry: true }, 409);
       return json({ data });
     }
 
