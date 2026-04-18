@@ -163,12 +163,13 @@ const Vehicle = () => {
 
   const filteredManufacturers = useMemo(() => {
     const search = manufacturerSearch.toLowerCase().trim();
-    if (!search) return Object.entries(CAR_MANUFACTURERS);
-    return Object.entries(CAR_MANUFACTURERS).filter(([key, val]) =>
-      val.name.toLowerCase().includes(search) ||
-      (val.nameAr && val.nameAr.includes(manufacturerSearch.trim())) ||
-      key.includes(search)
-    );
+    const list = !search
+      ? CAR_BRANDS
+      : CAR_BRANDS.filter((b) =>
+          b.name.toLowerCase().includes(search) || b.slug.includes(search)
+        );
+    // Always keep manual "other" option at the end
+    return list;
   }, [manufacturerSearch]);
 
   const resetAddForm = () => {
