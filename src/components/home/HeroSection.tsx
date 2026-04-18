@@ -380,12 +380,13 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const showWeatherInfo = demoActive || (weather && hasLocationPermission);
 
   return (
-    <motion.div
+    <div
       ref={ref}
       className="sticky top-0 z-40 rounded-b-[28px] shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
-      animate={{ background: theme.gradient }}
-      transition={{ duration: 1, ease: "easeInOut" }}
-      style={{ background: theme.gradient }}
+      style={{
+        background: theme.gradient,
+        transition: "background 1s ease-in-out",
+      }}
     >
       <header
         className="relative z-30 px-5 pb-3 flex justify-between items-center text-white"
