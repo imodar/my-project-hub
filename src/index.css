@@ -105,6 +105,25 @@
     direction: rtl;
   }
 
+  /* Position number input spinners on the left in RTL mode */
+  input[type="number"] {
+    direction: ltr;
+    text-align: right;
+  }
+  [dir="rtl"] input[type="number"]::-webkit-inner-spin-button,
+  [dir="rtl"] input[type="number"]::-webkit-outer-spin-button {
+    right: auto;
+    left: 2px;
+  }
+  /* Firefox support */
+  [dir="rtl"] input[type="number"] {
+    -moz-appearance: textfield;
+  }
+  [dir="rtl"] input[type="number"]:hover,
+  [dir="rtl"] input[type="number"]:focus {
+    -moz-appearance: number-input;
+  }
+
 }
 
 /* === View Transitions === */
