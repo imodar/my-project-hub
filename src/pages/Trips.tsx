@@ -1261,6 +1261,31 @@ const Trips = () => {
         </Drawer>
 
 
+        {/* Edit Day Drawer */}
+        <Drawer open={editDayDrawer} onOpenChange={setEditDayDrawer}>
+          <DrawerContent>
+            <DrawerHeader><DrawerTitle>تعديل اليوم</DrawerTitle></DrawerHeader>
+            <div className="px-5 pb-8 space-y-4">
+              <Input placeholder="المدينة / المنطقة" value={editDayCity} onChange={(e) => setEditDayCity(e.target.value)} />
+              <Button className="w-full rounded-xl" onClick={handleSaveDayEdit}>حفظ</Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        {/* Edit Activity Drawer */}
+        <Drawer open={editActivityDrawer} onOpenChange={setEditActivityDrawer}>
+          <DrawerContent>
+            <DrawerHeader><DrawerTitle>تعديل النشاط</DrawerTitle></DrawerHeader>
+            <div className="px-5 pb-8 space-y-4">
+              <Input placeholder="اسم النشاط" value={editActName} onChange={(e) => setEditActName(e.target.value)} />
+              <Input type="time" placeholder="الوقت" value={editActTime} onChange={(e) => setEditActTime(e.target.value)} />
+              <Input placeholder="الموقع" value={editActLocation} onChange={(e) => setEditActLocation(e.target.value)} />
+              <Input type="number" inputMode="decimal" placeholder="التكلفة" value={editActCost} onChange={(e) => setEditActCost(e.target.value)} dir="ltr" />
+              <Button className="w-full rounded-xl" onClick={handleSaveActivityEdit}>حفظ</Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
         <Drawer open={newDayDrawer} onOpenChange={setNewDayDrawer}>
           <DrawerContent>
             <DrawerHeader><DrawerTitle>إضافة يوم جديد</DrawerTitle></DrawerHeader>
