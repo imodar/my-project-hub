@@ -397,7 +397,7 @@ const Market = () => {
           { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget(item) },
         ]}
       >
-        <div className={`rounded-2xl p-3 flex items-center gap-3 transition-colors border ${isChecked ? "bg-muted border-dashed border-border" : "bg-white border-border/60"}`}>
+        <div className={`min-h-[68px] rounded-2xl px-3 py-3 flex items-center gap-3 transition-colors border ${isChecked ? "bg-muted border-dashed border-border" : "bg-white border-border/60"}`}>
           <div className="relative shrink-0 w-7 h-7">
             {pendingItemIds.includes(item.id) && (
               <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
@@ -418,11 +418,11 @@ const Market = () => {
             </button>
           </div>
           <div className="flex-1 min-w-0">
-            <p className={`font-semibold text-base text-foreground truncate ${isChecked ? "line-through" : ""}`}>
+            <p className={`font-semibold text-[17px] leading-tight text-foreground truncate ${isChecked ? "line-through" : ""}`}>
               {item.name}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {item.quantity ? (isChecked ? item.quantity : `الكمية: ${item.quantity}`) : null}
+            <p className="text-[13px] text-muted-foreground mt-0.5 min-h-[18px]">
+              {item.quantity ? (isChecked ? item.quantity : `الكمية: ${item.quantity}`) : "\u00A0"}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
