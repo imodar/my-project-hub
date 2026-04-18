@@ -276,29 +276,54 @@ const CalendarPage = () => {
 
       <PageHeader
         title="تقويم العائلة"
-        subtitle={`${ARABIC_MONTHS[currentMonth]} ${toArabicNum(currentYear)}`}
         onBack={() => navigate("/")}
-        actions={[
-          {
-            icon: <ChevronRight size={18} className="text-white" />,
-            onClick: nextMonth,
-            className: "w-9 h-9 flex items-center justify-center",
-          },
-          {
-            icon: <ChevronLeft size={18} className="text-white" />,
-            onClick: prevMonth,
-            className: "w-9 h-9 flex items-center justify-center",
-          },
-        ]}
       />
 
       <PullToRefresh>
+      {/* Years horizontal slider */}
+      <div className="mt-4 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
+        <div className="flex items-center gap-5 px-[40%] py-1">
+          {Array.from({ length: 11 }, (_, i) => today.getFullYear() - 5 + i).map((year) => {
+            const isActive = year === currentYear;
+            return (
+              <button
+                key={year}
+                onClick={() => setCurrentYear(year)}
+                className={`shrink-0 transition-all ${isActive ? "text-foreground font-bold text-base" : "text-muted-foreground/50 text-sm"}`}
+                style={{ scrollSnapAlign: "center" }}
+              >
+                {toArabicNum(year)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Months horizontal slider */}
+      <div className="mt-2 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
+        <div className="flex items-end gap-6 px-[35%] py-2">
+          {ARABIC_MONTHS.map((name, idx) => {
+            const isActive = idx === currentMonth;
+            return (
+              <button
+                key={name}
+                onClick={() => setCurrentMonth(idx)}
+                className={`shrink-0 transition-all leading-none ${isActive ? "text-foreground font-black text-4xl" : "text-muted-foreground/40 font-bold text-2xl"}`}
+                style={{ scrollSnapAlign: "center" }}
+              >
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Calendar Grid */}
       <div className="px-4 mt-4">
-        <div className="bg-card rounded-2xl p-4 border border-border" style={{ boxShadow: "0 2px 12px hsla(0,0%,0%,0.04)" }}>
+        <div className="bg-card rounded-2xl p-4">
           <div className="grid grid-cols-7 mb-3">
             {[...ARABIC_DAYS].reverse().map((d) => (
-              <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1">{d}</div>
+              <div key={d} className="text-center text-sm font-bold text-muted-foreground py-1">{d}</div>
             ))}
           </div>
           {rows.map((row, ri) => (
@@ -310,8 +335,8 @@ const CalendarPage = () => {
                 const hasEvent = dayHasEvent(day);
                 return (
                   <button key={ci} onClick={() => handleDayClick(day)}
-                    className={`relative py-2 flex flex-col items-center justify-center transition-colors rounded-xl mx-0.5 my-0.5 ${isToday ? "bg-primary text-primary-foreground font-black" : "hover:bg-muted"}`}>
-                    <span className={`text-sm ${isToday ? "font-black" : "font-semibold text-foreground"}`}>{toArabicNum(day)}</span>
+                    className={`relative py-2.5 flex flex-col items-center justify-center transition-colors rounded-xl mx-0.5 my-0.5 ${isToday ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
+                    <span className={`text-lg font-bold ${isToday ? "text-primary-foreground" : "text-foreground"}`}>{toArabicNum(day)}</span>
                     {hasEvent && (
                       <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isToday ? "bg-primary-foreground" : "bg-red-500"}`} />
                     )}
