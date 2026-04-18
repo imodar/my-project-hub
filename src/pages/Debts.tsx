@@ -250,6 +250,17 @@ const Debts = () => {
   const [postponeData, setPostponeData] = useState({ newDate: "", reason: "" });
   const [editingDebtId, setEditingDebtId] = useState<string | null>(null);
 
+  // Form validation for the add/edit debt drawer
+  const debtForm = useFormValidation<"personName" | "amount" | "dueDate">(
+    { personName: required, amount: numericPositive, dueDate: required },
+    { resetKey: showAddForm }
+  );
+  // Form validation for payment drawer
+  const paymentForm = useFormValidation<"amount">(
+    { amount: numericPositive },
+    { resetKey: showPaymentDrawer }
+  );
+
   // ── Map Supabase data to UI model ──
   const allDebts = useMemo(() => rawDebts.map(mapRawToDebt), [rawDebts]);
   const givenDebts = useMemo(() => allDebts.filter((d) => d.direction === "given"), [allDebts]);
