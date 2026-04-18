@@ -251,12 +251,24 @@ const Chat = () => {
     overscan: 10,
   });
 
-  // Auto-scroll to bottom on new messages
-  const prevCountRef = useRef(messages.length);
+  // Auto-scroll to bottom on new messages (instant on first load, smooth after)
+  const prevCountRef = useRef(0);
+  const didInitialScrollRef = useRef(false);
   useEffect(() => {
-    if (messages.length > prevCountRef.current || prevCountRef.current === 0) {
+    if (messages.length === 0) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    if (!didInitialScrollRef.current) {
+      // Instant jump on first render so the newest message is visible immediately
+      const scrollNow = () => { el.scrollTop = el.scrollHeight; };
+      scrollNow();
+      requestAnimationFrame(scrollNow);
+      setTimeout(scrollNow, 100);
+      didInitialScrollRef.current = true;
+    } else if (messages.length > prevCountRef.current) {
       setTimeout(() => {
-        scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: "smooth" });
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
       }, 50);
     }
     prevCountRef.current = messages.length;
