@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "update-trip") {
-      const { id, name, destination, budget, status, ...rest } = body;
+      const { id, name, destination, budget, status, shared_with, ...rest } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       if (name !== undefined && !validStr(name, MAX_NAME)) return json({ error: "الاسم غير صالح" }, 400);
       if (destination !== undefined && destination !== null && typeof destination === "string" && destination.length > MAX_DEST) return json({ error: "الوجهة طويلة جداً" }, 400);
@@ -89,6 +89,7 @@ Deno.serve(async (req) => {
       if (destination !== undefined) updates.destination = destination;
       if (budget !== undefined) updates.budget = budget;
       if (status !== undefined) updates.status = status;
+      if (shared_with !== undefined) updates.shared_with = Array.isArray(shared_with) ? shared_with.filter((x: unknown) => typeof x === "string" && validUuid(x)) : [];
       for (const k of ["start_date", "end_date"]) { if (rest[k] !== undefined) updates[k] = rest[k]; }
       delete updates.action;
       const { data, error } = await supabase.from("trips").update(updates).eq("id", id).select().single();
