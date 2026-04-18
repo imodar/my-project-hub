@@ -430,7 +430,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         style={{
           maxHeight: isCollapsed ? 0 : expandedSectionHeight,
           opacity: isCollapsed ? 0 : 1,
-          transition: "max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease",
+          transition: "max-height 0.22s ease-out, opacity 0.15s ease-out",
         }}
       >
         <motion.div
