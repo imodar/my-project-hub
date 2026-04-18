@@ -357,15 +357,22 @@ const Trips = () => {
       const dayNumber = parseInt(selectedDayId.replace("new-day-", ""), 10);
       if (!Number.isFinite(dayNumber)) return;
       const existing = selectedTrip.days.find((d) => d.dayNumber === dayNumber);
-      if (existing) {
+      if (existing && !String(existing.id).startsWith("new-day-")) {
         dayPlanId = existing.id;
       } else {
-        const created: any = await addDayPlan.mutateAsync({
-          trip_id: selectedTrip.id,
-          day_number: dayNumber,
-          city: "",
-        });
-        dayPlanId = created?.id || created?.data?.id || dayPlanId;
+        // Create with a real UUID so server + queue use the same id
+        const newDayId = crypto.randomUUID();
+        try {
+          await addDayPlan.mutateAsync({
+            id: newDayId,
+            trip_id: selectedTrip.id,
+            day_number: dayNumber,
+            city: "",
+          });
+        } catch {
+          /* queued — sync queue will retry in order */
+        }
+        dayPlanId = newDayId;
       }
     }
 
