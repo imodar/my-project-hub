@@ -1253,7 +1253,9 @@ const Trips = () => {
                 </label>
               </div>
               <Input placeholder="ملاحظات (اختياري)" value={docNotes} onChange={(e) => setDocNotes(e.target.value)} />
-              <Button className="w-full rounded-xl" onClick={handleAddDocument}>إضافة المستند</Button>
+              <Button className="w-full rounded-xl" onClick={handleAddDocument} disabled={isUploadingDoc || !docName.trim()}>
+                {isUploadingDoc ? (<><Loader2 size={16} className="ml-1 animate-spin" /> جارٍ رفع الملف...</>) : "إضافة المستند"}
+              </Button>
             </div>
           </DrawerContent>
         </Drawer>
