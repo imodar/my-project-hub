@@ -243,15 +243,52 @@ const Trips = () => {
   // Drag state
   const [draggedActivity, setDraggedActivity] = useState<string | null>(null);
 
+  // Trip form errors
+  const [tripErrors, setTripErrors] = useState<{ name?: boolean; budget?: boolean; start?: boolean; end?: boolean; dateOrder?: boolean }>({});
+
   const filteredTrips = trips.filter((t) => t.type === activeTab);
 
   const resetTripForm = () => {
     setTripName(""); setTripDest(""); setTripStart(""); setTripEnd(""); setTripBudget(""); setTripParticipants([]);
     setEditingTripId(null);
+    setTripErrors({});
   };
 
   const handleSaveTrip = () => {
-    if (!tripName.trim()) return;
+    const errors: typeof tripErrors = {};
+    const messages: string[] = [];
+    const ar_msgs = {
+      name: "اسم الرحلة مطلوب",
+      budget: "الميزانية يجب أن تكون رقمًا موجبًا",
+      start: "تاريخ البداية مطلوب",
+      end: "تاريخ النهاية مطلوب",
+      dateOrder: "تاريخ النهاية يجب أن يكون بعد تاريخ البداية",
+    };
+    const en_msgs = {
+      name: "Trip name is required",
+      budget: "Budget must be a positive number",
+      start: "Start date is required",
+      end: "End date is required",
+      dateOrder: "End date must be after start date",
+    };
+    const m = language === "en" ? en_msgs : ar_msgs;
+
+    if (!tripName.trim()) { errors.name = true; messages.push(m.name); }
+    if (tripBudget.trim() !== "" && (isNaN(Number(tripBudget)) || Number(tripBudget) < 0)) {
+      errors.budget = true; messages.push(m.budget);
+    }
+    if (tripStart && tripEnd && new Date(tripEnd) < new Date(tripStart)) {
+      errors.dateOrder = true; errors.start = true; errors.end = true;
+      messages.push(m.dateOrder);
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setTripErrors(errors);
+      appToast.error(messages[0]);
+      return;
+    }
+
+    setTripErrors({});
     if (editingTripId) {
       updateTrip.mutate({
         id: editingTripId,
@@ -261,7 +298,7 @@ const Trips = () => {
         end_date: tripEnd,
         budget: Number(tripBudget) || 0,
       });
-      appToast.success("تم تعديل الرحلة");
+      appToast.success(language === "en" ? "Trip updated" : "تم تعديل الرحلة");
     } else {
       createTrip.mutate({
         name: tripName,
@@ -271,11 +308,12 @@ const Trips = () => {
         budget: Number(tripBudget) || 0,
         status: "planning",
       });
-      appToast.success("تم إنشاء الرحلة");
+      appToast.success(language === "en" ? "Trip created" : "تم إنشاء الرحلة");
     }
     resetTripForm();
     setNewTripDrawer(false);
   };
+
 
   const handleEditTrip = (trip: Trip) => {
     setEditingTripId(trip.id);
