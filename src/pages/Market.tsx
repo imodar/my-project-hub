@@ -849,7 +849,7 @@ const Market = () => {
             )}
 
             {/* Underline-only inputs — clean white, colored bottom line on focus */}
-            <div className="bg-card space-y-2 px-1">
+            <div className="space-y-2 px-1">
               <div className="relative">
                 <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">المنتج</label>
                 <Input
