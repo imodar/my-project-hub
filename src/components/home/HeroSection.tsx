@@ -469,8 +469,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </motion.div>
 
         <motion.div
-          className="px-5 relative overflow-hidden text-white"
-          style={{ paddingTop: sectionPaddingTop, paddingBottom: sectionPaddingBottom }}
+          className="px-5 pt-4 pb-5 relative overflow-hidden text-white"
         >
           <AnimatePresence mode="wait">
             <motion.div
