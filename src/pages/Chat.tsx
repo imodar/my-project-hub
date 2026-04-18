@@ -422,6 +422,17 @@ const Chat = () => {
         ]}
       />
 
+      {/* Sync progress bar */}
+      {isSyncing && (
+        <div className="h-0.5 w-full bg-primary/10 overflow-hidden">
+          <div
+            className="h-full w-1/3 bg-primary"
+            style={{ animation: "chatSyncSlide 1.2s ease-in-out infinite" }}
+          />
+          <style>{`@keyframes chatSyncSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }`}</style>
+        </div>
+      )}
+
       {/* Pinned messages bar */}
       {pinnedMessages.length > 0 && (
         <div className="px-4 py-2 border-b border-border bg-accent/10 flex items-center gap-2">
