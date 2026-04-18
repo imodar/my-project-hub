@@ -1258,13 +1258,13 @@ const Trips = () => {
                 key={value}
                 onClick={() => setActiveTab(value)}
                 className={`relative flex-1 h-full flex items-center justify-center gap-1.5 text-sm font-bold transition-colors duration-200 ${
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  active ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
                 }`}
               >
                 <Icon size={16} strokeWidth={active ? 2.5 : 2} />
                 {label}
                 {active && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] w-12 rounded-full bg-primary transition-all duration-300" />
+                  <span className="absolute -bottom-px left-1/2 -translate-x-1/2 h-[3px] w-16 rounded-t-full bg-gradient-to-r from-primary/60 via-primary to-primary/60 shadow-[0_0_8px_hsl(var(--primary)/0.5)] transition-all duration-300" />
                 )}
               </button>
             );
