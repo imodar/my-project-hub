@@ -121,12 +121,12 @@ const Trips = () => {
     trips: dbTrips, isLoading: tripsLoading,
     createTrip, updateTrip, deleteTrip: deleteTripMut,
     addDayPlan, addActivity, updateActivity,
-    deleteDayPlan, deleteActivity,
+    deleteDayPlan, deleteActivity, updateDayPlan,
     addExpense, deleteExpense,
     addPackingItem, updatePackingItem,
     addSuggestion, updateSuggestion,
     addDocument, deleteDocument,
-  } = useTripsHook();
+  } = useTripsHook() as any;
   const { albums: tripAlbums } = useAlbums();
 
   // Map DB trips to UI format
@@ -261,6 +261,19 @@ const Trips = () => {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [dayCity, setDayCity] = useState("");
 
+  // Edit state for day & activity
+  const [editDayDrawer, setEditDayDrawer] = useState(false);
+  const [editingDayId, setEditingDayId] = useState<string | null>(null);
+  const [editDayCity, setEditDayCity] = useState("");
+
+  const [editActivityDrawer, setEditActivityDrawer] = useState(false);
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [editingActivityDayId, setEditingActivityDayId] = useState<string | null>(null);
+  const [editActName, setEditActName] = useState("");
+  const [editActTime, setEditActTime] = useState("");
+  const [editActLocation, setEditActLocation] = useState("");
+  const [editActCost, setEditActCost] = useState("");
+
   const [editingTripId, setEditingTripId] = useState<string | null>(null);
   const [reviewingSuggestion, setReviewingSuggestion] = useState<Suggestion | null>(null);
 
@@ -376,6 +389,45 @@ const Trips = () => {
     setDayCity("");
     setNewDayDrawer(false);
     appToast.success("تم إضافة اليوم");
+  };
+
+  const openEditDay = (day: DayPlan) => {
+    setEditingDayId(day.id);
+    setEditDayCity(day.city || "");
+    setEditDayDrawer(true);
+  };
+
+  const handleSaveDayEdit = () => {
+    if (!selectedTrip || !editingDayId) return;
+    updateDayPlan.mutate({ id: editingDayId, trip_id: selectedTrip.id, city: editDayCity });
+    setEditDayDrawer(false);
+    setEditingDayId(null);
+    appToast.success("تم تعديل اليوم");
+  };
+
+  const openEditActivity = (act: Activity, dayId: string) => {
+    setEditingActivityId(act.id);
+    setEditingActivityDayId(dayId);
+    setEditActName(act.name);
+    setEditActTime(act.time || "");
+    setEditActLocation(act.location || "");
+    setEditActCost(act.cost ? String(act.cost) : "");
+    setEditActivityDrawer(true);
+  };
+
+  const handleSaveActivityEdit = () => {
+    if (!editingActivityId || !editActName.trim()) return;
+    updateActivity.mutate({
+      id: editingActivityId,
+      day_plan_id: editingActivityDayId,
+      name: editActName,
+      time: editActTime || null,
+      location: editActLocation || null,
+      cost: Number(editActCost) || 0,
+    });
+    setEditActivityDrawer(false);
+    setEditingActivityId(null);
+    appToast.success("تم تعديل النشاط");
   };
 
   const persistActivity = async () => {
@@ -727,6 +779,12 @@ const Trips = () => {
                           key={act.id}
                           actions={[
                             {
+                              icon: <Pencil size={18} />,
+                              label: "تعديل",
+                              color: "bg-primary",
+                              onClick: () => openEditActivity(act, day.id),
+                            },
+                            {
                               icon: <Trash2 size={18} />,
                               label: "حذف",
                               color: "bg-destructive",
@@ -757,8 +815,14 @@ const Trips = () => {
                   key={day.id}
                   actions={[
                     {
+                      icon: <Pencil size={18} />,
+                      label: "تعديل",
+                      color: "bg-primary",
+                      onClick: () => openEditDay(day),
+                    },
+                    {
                       icon: <Trash2 size={18} />,
-                      label: "حذف اليوم",
+                      label: "حذف",
                       color: "bg-destructive",
                       onClick: () => {
                         deleteDayPlan.mutate(day.id, selectedTrip.id);
@@ -1196,6 +1260,31 @@ const Trips = () => {
           </DrawerContent>
         </Drawer>
 
+
+        {/* Edit Day Drawer */}
+        <Drawer open={editDayDrawer} onOpenChange={setEditDayDrawer}>
+          <DrawerContent>
+            <DrawerHeader><DrawerTitle>تعديل اليوم</DrawerTitle></DrawerHeader>
+            <div className="px-5 pb-8 space-y-4">
+              <Input placeholder="المدينة / المنطقة" value={editDayCity} onChange={(e) => setEditDayCity(e.target.value)} />
+              <Button className="w-full rounded-xl" onClick={handleSaveDayEdit}>حفظ</Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        {/* Edit Activity Drawer */}
+        <Drawer open={editActivityDrawer} onOpenChange={setEditActivityDrawer}>
+          <DrawerContent>
+            <DrawerHeader><DrawerTitle>تعديل النشاط</DrawerTitle></DrawerHeader>
+            <div className="px-5 pb-8 space-y-4">
+              <Input placeholder="اسم النشاط" value={editActName} onChange={(e) => setEditActName(e.target.value)} />
+              <Input type="time" placeholder="الوقت" value={editActTime} onChange={(e) => setEditActTime(e.target.value)} />
+              <Input placeholder="الموقع" value={editActLocation} onChange={(e) => setEditActLocation(e.target.value)} />
+              <Input type="number" inputMode="decimal" placeholder="التكلفة" value={editActCost} onChange={(e) => setEditActCost(e.target.value)} dir="ltr" />
+              <Button className="w-full rounded-xl" onClick={handleSaveActivityEdit}>حفظ</Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         <Drawer open={newDayDrawer} onOpenChange={setNewDayDrawer}>
           <DrawerContent>

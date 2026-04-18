@@ -105,7 +105,12 @@ export function useTrips() {
 
   const updateActivity = useOfflineMutation<any, any>({
     table: "trip_activities", operation: "UPDATE",
-    apiFn: async (input) => { const { id, ...updates } = input; return invoke("toggle-activity", { id, ...updates }); },
+    apiFn: async (input) => { const { id, day_plan_id, ...updates } = input; return invoke("update-activity", { id, ...updates }); },
+  });
+
+  const updateDayPlan = useOfflineMutation<any, any>({
+    table: "trip_day_plans", operation: "UPDATE",
+    apiFn: async (input) => { const { id, trip_id, ...updates } = input; return invoke("update-day-plan", { id, ...updates }); },
   });
 
   const deleteDayPlan = useOfflineMutation<any, any>({
@@ -251,6 +256,17 @@ export function useTrips() {
       mutateAsync: async (id: string, tripId?: string) => {
         if (tripId) optimisticTripSub(tripId, "trip_day_plans", (dps) => dps.filter((d: any) => d.id !== id));
         return deleteDayPlan.mutateAsync({ id });
+      },
+    },
+    updateDayPlan: {
+      ...updateDayPlan,
+      mutate: (input: any) => {
+        if (input.trip_id) {
+          optimisticTripSub(input.trip_id, "trip_day_plans", (dps) =>
+            dps.map((d: any) => (d.id === input.id ? { ...d, ...input } : d))
+          );
+        }
+        updateDayPlan.mutate(input);
       },
     },
     deleteActivity: {
