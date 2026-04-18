@@ -1467,12 +1467,12 @@ const Trips = () => {
             {/* اسم الرحلة */}
             <div className="space-y-2 px-1">
               <div className="relative">
-                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">اسم الرحلة</label>
+                <label className={`absolute right-0 top-2 text-[10px] font-bold uppercase tracking-wider ${tripErrors.name ? "text-destructive" : "text-muted-foreground/70"}`}>{language === "en" ? "Trip name" : "اسم الرحلة"}</label>
                 <Input
-                  placeholder="مثال: رحلة إسطنبول"
+                  placeholder={language === "en" ? "e.g. Istanbul trip" : "مثال: رحلة إسطنبول"}
                   value={tripName}
-                  onChange={(e) => setTripName(e.target.value)}
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+                  onChange={(e) => { setTripName(e.target.value); if (tripErrors.name) setTripErrors((p) => ({ ...p, name: false })); }}
+                  className={`h-[60px] border-0 border-b-2 rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal ${tripErrors.name ? "border-destructive focus-visible:border-destructive" : "border-border focus-visible:border-primary"}`}
                 />
               </div>
             </div>
@@ -1480,15 +1480,15 @@ const Trips = () => {
             {/* مصاريف الرحلة */}
             <div className="space-y-2 px-1">
               <div className="relative">
-                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">مصاريف الرحلة</label>
+                <label className={`absolute right-0 top-2 text-[10px] font-bold uppercase tracking-wider ${tripErrors.budget ? "text-destructive" : "text-muted-foreground/70"}`}>{language === "en" ? "Budget" : "مصاريف الرحلة"}</label>
                 <Input
                   type="number"
                   inputMode="decimal"
                   placeholder="0"
                   value={tripBudget}
-                  onChange={(e) => setTripBudget(e.target.value)}
+                  onChange={(e) => { setTripBudget(e.target.value); if (tripErrors.budget) setTripErrors((p) => ({ ...p, budget: false })); }}
                   dir="ltr"
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal text-right"
+                  className={`h-[60px] border-0 border-b-2 rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal text-right ${tripErrors.budget ? "border-destructive focus-visible:border-destructive" : "border-border focus-visible:border-primary"}`}
                 />
               </div>
             </div>
@@ -1496,23 +1496,23 @@ const Trips = () => {
             {/* التواريخ */}
             <div className="grid grid-cols-2 gap-4 px-1">
               <div className="relative">
-                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">من</label>
+                <label className={`absolute right-0 top-2 text-[10px] font-bold uppercase tracking-wider ${tripErrors.start || tripErrors.dateOrder ? "text-destructive" : "text-muted-foreground/70"}`}>{language === "en" ? "From" : "من"}</label>
                 <Input
                   type="date"
                   value={tripStart}
-                  onChange={(e) => setTripStart(e.target.value)}
+                  onChange={(e) => { setTripStart(e.target.value); if (tripErrors.start || tripErrors.dateOrder) setTripErrors((p) => ({ ...p, start: false, dateOrder: false })); }}
                   dir="ltr"
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors"
+                  className={`h-[60px] border-0 border-b-2 rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors ${tripErrors.start || tripErrors.dateOrder ? "border-destructive focus-visible:border-destructive" : "border-border focus-visible:border-primary"}`}
                 />
               </div>
               <div className="relative">
-                <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">إلى</label>
+                <label className={`absolute right-0 top-2 text-[10px] font-bold uppercase tracking-wider ${tripErrors.end || tripErrors.dateOrder ? "text-destructive" : "text-muted-foreground/70"}`}>{language === "en" ? "To" : "إلى"}</label>
                 <Input
                   type="date"
                   value={tripEnd}
-                  onChange={(e) => setTripEnd(e.target.value)}
+                  onChange={(e) => { setTripEnd(e.target.value); if (tripErrors.end || tripErrors.dateOrder) setTripErrors((p) => ({ ...p, end: false, dateOrder: false })); }}
                   dir="ltr"
-                  className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors"
+                  className={`h-[60px] border-0 border-b-2 rounded-none bg-transparent text-sm font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors ${tripErrors.end || tripErrors.dateOrder ? "border-destructive focus-visible:border-destructive" : "border-border focus-visible:border-primary"}`}
                 />
               </div>
             </div>
