@@ -258,6 +258,14 @@ const AdminGuard = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const PUBLIC_ROUTES = ["/get-started", "/auth", "/complete-profile", "/join-or-create"];
+
+const RouteFallback = () => {
+  const { pathname } = useLocation();
+  if (PUBLIC_ROUTES.includes(pathname)) return null;
+  return <ListPageSkeleton />;
+};
+
 const AnimatedRoutes = () => {
   const location = useLocation();
   const isAdminPanel = location.pathname.startsWith("/admin-panel");
@@ -345,7 +353,7 @@ const App = () => (
                     <StorageQuotaGuard />
                     <ScrollToTop />
                     <WarmCacheProvider>
-                      <Suspense fallback={<ListPageSkeleton />}>
+                      <Suspense fallback={<RouteFallback />}>
                         <AnimatedRoutes />
                       </Suspense>
                       <BottomNav />
