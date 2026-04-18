@@ -375,7 +375,7 @@ const Trips = () => {
     appToast.success("تم إضافة اليوم");
   };
 
-  const handleAddActivity = async () => {
+  const persistActivity = async () => {
     if (!selectedTrip || !selectedDayId || !activityName.trim()) return;
 
     const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -418,7 +418,30 @@ const Trips = () => {
     });
     setActivityName(""); setActivityTime(""); setActivityLocation(""); setActivityCost("");
     setNewActivityDrawer(false);
+    setBudgetWarnDrawer(false);
+    setPendingActivity(null);
     appToast.success("تم إضافة النشاط");
+  };
+
+  const handleAddActivity = async () => {
+    if (!selectedTrip || !selectedDayId || !activityName.trim()) return;
+
+    // Check if adding this activity exceeds the trip budget
+    const newCost = Number(activityCost) || 0;
+    if (selectedTrip.budget > 0 && newCost > 0) {
+      const currentActivitiesTotal = selectedTrip.days.reduce(
+        (sum, d) => sum + d.activities.reduce((s, a) => s + (a.cost || 0), 0),
+        0
+      );
+      const projectedTotal = currentActivitiesTotal + newCost;
+      if (projectedTotal > selectedTrip.budget) {
+        setPendingActivity({ overBy: projectedTotal - selectedTrip.budget });
+        setBudgetWarnDrawer(true);
+        return;
+      }
+    }
+
+    await persistActivity();
   };
 
   const handleAddSuggestion = () => {
