@@ -1706,7 +1706,22 @@ const Trips = () => {
                       {trip.budget > 0 && (
                         <p className="text-base font-extrabold" style={{ color: "hsl(var(--accent))" }}>{trip.budget.toLocaleString()}</p>
                       )}
-                      <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{trip.days.length} {language === "en" ? "days" : "أيام"}</p>
+                      {(() => {
+                        let daysCount = trip.days.length;
+                        if (trip.startDate && trip.endDate) {
+                          const start = new Date(trip.startDate);
+                          const end = new Date(trip.endDate);
+                          if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                            const diff = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+                            if (diff > 0) daysCount = diff;
+                          }
+                        } else if (trip.startDate && !trip.endDate) {
+                          daysCount = Math.max(daysCount, 1);
+                        }
+                        return (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{daysCount} {language === "en" ? "days" : "أيام"}</p>
+                        );
+                      })()}
                     </div>
                   </div>
                   {trip.participants.length > 0 && (
