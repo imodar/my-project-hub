@@ -1152,19 +1152,19 @@ const Trips = () => {
                 return (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground mb-2 block">اختر اليوم</label>
-                    <div className="flex gap-2 flex-wrap max-h-[200px] overflow-y-auto p-1 -m-1">
+                    <div className="grid grid-cols-4 gap-2 max-h-[240px] overflow-y-auto p-1 -m-1">
                       {allDays.map((d) => {
                         const dayId = d.dayPlan?.id || `new-day-${d.index + 1}`;
                         return (
                           <button
                             key={dayId}
                             onClick={() => setSelectedDayId(dayId)}
-                            className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all text-center min-w-[72px] ${
+                            className={`px-2 py-2.5 rounded-xl text-sm font-bold transition-all text-center w-full ${
                               selectedDayId === dayId ? "bg-primary text-primary-foreground shadow-md" : "bg-muted text-muted-foreground"
                             }`}
                           >
-                            <span className="block text-sm">{format(d.date, "EEEE", { locale: ar })}</span>
-                            <span className="block text-xs opacity-75 mt-0.5">{format(d.date, "d MMM", { locale: ar })}</span>
+                            <span className="block text-xs truncate">{format(d.date, "EEEE", { locale: ar })}</span>
+                            <span className="block text-[11px] opacity-75 mt-0.5 truncate">{format(d.date, "d MMM", { locale: ar })}</span>
                           </button>
                         );
                       })}
