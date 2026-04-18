@@ -24,6 +24,7 @@ import { appToast } from "@/lib/toast";
 // tripBudgetSync removed — trips & budgets are synced via Supabase hooks
 import { useTrips as useTripsHook } from "@/hooks/useTrips";
 import { useAlbums } from "@/hooks/useAlbums";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Types
 interface Activity {
