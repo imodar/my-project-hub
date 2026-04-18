@@ -283,21 +283,16 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Scroll-driven smooth collapse — keep the collapse range comfortably larger
-  // than the total removed header height to avoid scroll/layout feedback flicker
-  // on mobile while the sticky header shrinks.
+  // Scroll-driven smooth collapse — short range for snappy collapse,
+  // section fully collapses to 0 height (only top header bar remains).
   const { scrollY } = useScroll();
-  const easedProgress = useTransform(scrollY, [0, 360], [0, 1], { clamp: true });
+  const easedProgress = useTransform(scrollY, [0, 140], [0, 1], { clamp: true });
 
+  const expandedSectionHeight = islamicMode ? 260 : 132;
+  const sectionHeight = useTransform(easedProgress, [0, 1], [expandedSectionHeight, 0]);
+  const sectionOpacity = useTransform(easedProgress, [0.5, 1], [1, 0]);
+  const contentOpacity = useTransform(easedProgress, [0, 0.6], [1, 0]);
   const islamicOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
-  const islamicHeight = useTransform(easedProgress, [0, 1], [128, 0]);
-
-  const contentOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
-  const contentHeight = useTransform(easedProgress, [0, 1], [76, 0]);
-  const sectionPaddingTop = useTransform(easedProgress, [0, 1], [16, 0]);
-  const sectionPaddingBottom = useTransform(easedProgress, [0, 1], [20, 0]);
-  const sectionOpacity = useTransform(easedProgress, [0.6, 1], [1, 0]);
-  const sectionHeight = useTransform(easedProgress, [0, 1], [islamicMode ? 280 : 152, 0]);
   const decorOpacity = useTransform(easedProgress, [0, 0.4], [1, 0]);
   const orbScale = useTransform(easedProgress, [0, 0.6], [1, 0]);
   const orbOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
@@ -474,8 +469,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
         </motion.div>
 
         <motion.div
-          className="px-5 relative overflow-hidden text-white"
-          style={{ paddingTop: sectionPaddingTop, paddingBottom: sectionPaddingBottom }}
+          className="px-5 pt-4 pb-5 relative overflow-hidden text-white"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -503,8 +497,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
           <div className="relative z-20 space-y-3">
             <motion.div
-              className="space-y-3 overflow-hidden"
-              style={{ opacity: contentOpacity, height: contentHeight }}
+              className="space-y-3"
+              style={{ opacity: contentOpacity }}
             >
               <div>
                 <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
@@ -543,11 +537,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
 
             {islamicMode && (
               <motion.div
-                className="grid grid-cols-2 gap-3 items-center overflow-hidden"
-                style={{
-                  opacity: islamicOpacity,
-                  height: islamicHeight,
-                }}
+                className="grid grid-cols-2 gap-3 items-center"
+                style={{ opacity: islamicOpacity }}
               >
                 <QiblaCompass />
                 <NextPrayerBox />
