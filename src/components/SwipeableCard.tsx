@@ -84,16 +84,19 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
     }
   }, [ACTION_WIDTH, onSwipeOpen]);
 
-  // Touch handlers
+  // Touch handlers — stopPropagation so nested SwipeableCards don't both react to the same gesture
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
     onDragStart(e.touches[0].clientX, e.touches[0].clientY, "touch");
   }, [onDragStart]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
     onDragMove(e.touches[0].clientX, e.touches[0].clientY);
   }, [onDragMove]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
     if (hadDrag.current) {
       e.preventDefault(); // block the synthesized click that follows touchend
       hadDrag.current = false;
