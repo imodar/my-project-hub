@@ -46,14 +46,14 @@ interface MarketList {
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; emoji: string }> = {
+  "بدون تصنيف": { bg: "bg-muted", text: "text-muted-foreground", emoji: "📦" },
   "خضار وفاكهة": { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", emoji: "🥬" },
-  "لحوم": { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300", emoji: "❤️" },
+  "لحوم": { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300", emoji: "🥩" },
   "ألبان": { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-300", emoji: "🥛" },
   "مخبوزات": { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", emoji: "🍞" },
   "مشروبات": { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-300", emoji: "🥤" },
   "مؤونة": { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-300", emoji: "🫒" },
   "تنظيف": { bg: "bg-cyan-100 dark:bg-cyan-900/30", text: "text-cyan-700 dark:text-cyan-300", emoji: "🧹" },
-  "أخرى": { bg: "bg-muted", text: "text-muted-foreground", emoji: "📦" },
 };
 
 const CATEGORIES = ["الكل", ...Object.keys(CATEGORY_COLORS)];
@@ -802,6 +802,52 @@ const Market = () => {
             <DrawerDescription className="text-xs">اكتب الاسم والكمية واختر التصنيف</DrawerDescription>
           </DrawerHeader>
           <div className="flex-1 overflow-y-auto space-y-5 px-4 pb-3">
+            {activeList?.useCategories && (
+              <div>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <p className="text-sm font-bold text-foreground">التصنيف</p>
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">
+                    {CATEGORY_COLORS[newItemCategory]?.emoji} {newItemCategory}
+                  </span>
+                </div>
+                {/* Grid — all categories visible at once */}
+                <div className="grid grid-cols-4 gap-2.5">
+                  {Object.entries(CATEGORY_COLORS).map(([cat, info]) => {
+                    const isActive = newItemCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setNewItemCategory(cat)}
+                        className={`group relative flex flex-col items-center gap-1.5 py-2 transition-all duration-300 ${
+                          isActive ? "scale-105" : "opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <div
+                          className={`relative w-14 h-14 rounded-[20px] flex items-center justify-center text-2xl transition-all duration-300 ${info.bg} ${
+                            isActive
+                              ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
+                              : "ring-0"
+                          }`}
+                        >
+                          {info.emoji}
+                          {isActive && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md animate-in zoom-in duration-200">
+                              <Check size={12} className="text-primary-foreground" strokeWidth={3} />
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] leading-tight text-center transition-all ${
+                          isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
+                        }`}>
+                          {cat}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Big stacked inputs — bordered card style, equal heights */}
             <div className="rounded-3xl border-2 border-border bg-card overflow-hidden divide-y divide-border">
               <div className="relative">
@@ -824,52 +870,6 @@ const Market = () => {
                 />
               </div>
             </div>
-
-            {activeList?.useCategories && (
-              <div>
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <p className="text-sm font-bold text-foreground">التصنيف</p>
-                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">
-                    {CATEGORY_COLORS[newItemCategory]?.emoji} {newItemCategory}
-                  </span>
-                </div>
-                {/* Horizontal scroll capsules with big colored emoji bubble */}
-                <div className="flex gap-2.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2">
-                  {Object.entries(CATEGORY_COLORS).map(([cat, info]) => {
-                    const isActive = newItemCategory === cat;
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() => setNewItemCategory(cat)}
-                        className={`group relative shrink-0 flex flex-col items-center gap-1.5 transition-all duration-300 ${
-                          isActive ? "scale-105" : "opacity-60 hover:opacity-100"
-                        }`}
-                      >
-                        <div
-                          className={`w-16 h-16 rounded-[22px] flex items-center justify-center text-3xl transition-all duration-300 ${info.bg} ${
-                            isActive
-                              ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
-                              : "ring-0"
-                          }`}
-                        >
-                          {info.emoji}
-                          {isActive && (
-                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md animate-in zoom-in duration-200">
-                              <Check size={12} className="text-primary-foreground" strokeWidth={3} />
-                            </span>
-                          )}
-                        </div>
-                        <span className={`text-[11px] leading-tight whitespace-nowrap transition-all ${
-                          isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
-                        }`}>
-                          {cat}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
           <DrawerFooter className="flex-row gap-2 pt-3">
             <Button variant="outline" onClick={() => { marketDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-2xl h-12">إلغاء</Button>
