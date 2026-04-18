@@ -1028,8 +1028,9 @@ const Tasks = () => {
                       >
                         <span className="font-medium text-foreground">{member.name}</span>
                         {isSelected && <Check size={14} className="text-primary" />}
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
