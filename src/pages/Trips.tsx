@@ -779,6 +779,12 @@ const Trips = () => {
                           key={act.id}
                           actions={[
                             {
+                              icon: <Pencil size={18} />,
+                              label: "تعديل",
+                              color: "bg-primary",
+                              onClick: () => openEditActivity(act, day.id),
+                            },
+                            {
                               icon: <Trash2 size={18} />,
                               label: "حذف",
                               color: "bg-destructive",
