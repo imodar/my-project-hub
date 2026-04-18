@@ -1209,14 +1209,14 @@ const Trips = () => {
                   return (
                     <div>
                       <label className="text-xs font-medium text-muted-foreground mb-2 block">اختر اليوم</label>
-                      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" dir="rtl">
+                      <div className="grid grid-cols-4 gap-2 max-h-[200px] overflow-y-auto scrollbar-hide">
                         {availableDays.map((dayNum) => {
                           const date = addDays(start, dayNum - 1);
                           return (
                             <button
                               key={dayNum}
                               onClick={() => setDayCity(prev => prev || selectedTrip.destination)}
-                              className="flex-shrink-0 w-[72px] py-2 rounded-lg text-xs font-bold transition-all bg-muted text-muted-foreground text-center"
+                              className="py-2 rounded-lg text-xs font-bold transition-all bg-muted text-muted-foreground text-center"
                             >
                               <span className="block">{format(date, "EEEE", { locale: ar })}</span>
                               <span className="block text-[10px] opacity-75">{format(date, "d MMM", { locale: ar })}</span>
