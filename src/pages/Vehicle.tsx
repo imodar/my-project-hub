@@ -257,7 +257,7 @@ const Vehicle = () => {
   };
 
   const handleDeleteCar = (car: CarData) => {
-    const carInfo = CAR_MANUFACTURERS[car.manufacturer] || CAR_MANUFACTURERS.other;
+    const carInfo = { name: getBrandName(car.manufacturer) };
     // Add to trash with all maintenance records
     addToTrash({
       type: "vehicle" as any,
