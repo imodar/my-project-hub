@@ -797,62 +797,73 @@ const Market = () => {
         }
       }}>
         <DrawerContent dir="rtl">
-          <DrawerHeader className="text-right pb-2">
+          <DrawerHeader className="text-right pb-1">
             <DrawerTitle className="text-lg">إضافة منتج جديد</DrawerTitle>
-            <DrawerDescription className="text-xs">أضف المنتج مع التصنيف والكمية</DrawerDescription>
+            <DrawerDescription className="text-xs">اكتب الاسم والكمية واختر التصنيف</DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 overflow-y-auto space-y-4 px-4 pb-2">
-            {/* Inputs */}
-            <div className="space-y-2.5">
+          <div className="flex-1 overflow-y-auto space-y-5 px-4 pb-3">
+            {/* Big stacked inputs — bordered card style, equal heights */}
+            <div className="rounded-3xl border-2 border-border bg-card overflow-hidden divide-y divide-border">
               <div className="relative">
-                <ShoppingCart className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <label className="absolute right-4 top-2.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">المنتج</label>
                 <Input
-                  placeholder="اسم المنتج"
+                  placeholder="مثال: طماطم طازجة"
                   value={newItemName}
                   onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); marketDraft.saveDraft({ name: e.target.value, category: newItemCategory, quantity: newItemQuantity }); }}
                   onInput={(e) => { const v = (e.target as HTMLInputElement).value; newItemNameRef.current = v; }}
-                  className="rounded-xl pr-9 h-11 text-sm"
+                  className="h-[68px] border-0 rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-4 focus-visible:ring-0 placeholder:text-muted-foreground/50 placeholder:font-normal"
                 />
               </div>
               <div className="relative">
-                <Plus className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <label className="absolute right-4 top-2.5 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">الكمية</label>
                 <Input
-                  placeholder="الكمية (مثال: 2 كيلو)"
+                  placeholder="مثال: 2 كيلو"
                   value={newItemQuantity}
                   onChange={(e) => { setNewItemQuantity(e.target.value); marketDraft.saveDraft({ name: newItemName, category: newItemCategory, quantity: e.target.value }); }}
-                  className="rounded-xl pr-9 h-11 text-sm"
+                  className="h-[68px] border-0 rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-4 focus-visible:ring-0 placeholder:text-muted-foreground/50 placeholder:font-normal"
                 />
               </div>
             </div>
 
             {activeList?.useCategories && (
               <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <p className="text-xs font-semibold text-foreground">اختر التصنيف</p>
-                  <span className="text-[10px] text-muted-foreground">{Object.keys(CATEGORY_COLORS).length} تصنيف</span>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <p className="text-sm font-bold text-foreground">التصنيف</p>
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">
+                    {CATEGORY_COLORS[newItemCategory]?.emoji} {newItemCategory}
+                  </span>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                {/* Horizontal scroll capsules with big colored emoji bubble */}
+                <div className="flex gap-2.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2">
                   {Object.entries(CATEGORY_COLORS).map(([cat, info]) => {
                     const isActive = newItemCategory === cat;
                     return (
                       <button
                         key={cat}
                         onClick={() => setNewItemCategory(cat)}
-                        className={`relative flex flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-2xl border-2 transition-all ${
-                          isActive
-                            ? "border-primary bg-primary/10 shadow-sm scale-[1.02]"
-                            : "border-border bg-card hover:border-primary/40"
+                        className={`group relative shrink-0 flex flex-col items-center gap-1.5 transition-all duration-300 ${
+                          isActive ? "scale-105" : "opacity-60 hover:opacity-100"
                         }`}
                       >
-                        <span className="text-xl leading-none">{info.emoji}</span>
-                        <span className={`text-[10px] font-medium leading-tight text-center ${isActive ? "text-primary" : "text-foreground"}`}>
+                        <div
+                          className={`w-16 h-16 rounded-[22px] flex items-center justify-center text-3xl transition-all duration-300 ${info.bg} ${
+                            isActive
+                              ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
+                              : "ring-0"
+                          }`}
+                        >
+                          {info.emoji}
+                          {isActive && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md animate-in zoom-in duration-200">
+                              <Check size={12} className="text-primary-foreground" strokeWidth={3} />
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-[11px] leading-tight whitespace-nowrap transition-all ${
+                          isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
+                        }`}>
                           {cat}
                         </span>
-                        {isActive && (
-                          <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                            <Check size={10} className="text-primary-foreground" strokeWidth={3} />
-                          </span>
-                        )}
                       </button>
                     );
                   })}
@@ -861,9 +872,9 @@ const Market = () => {
             )}
           </div>
           <DrawerFooter className="flex-row gap-2 pt-3">
-            <Button variant="outline" onClick={() => { marketDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-xl h-11">إلغاء</Button>
-            <Button onClick={() => { marketDraft.clearDraft(); addItem(); }} className="flex-[2] rounded-xl h-11 font-semibold">
-              <Plus size={16} className="ml-1" />
+            <Button variant="outline" onClick={() => { marketDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-2xl h-12">إلغاء</Button>
+            <Button onClick={() => { marketDraft.clearDraft(); addItem(); }} className="flex-[2] rounded-2xl h-12 font-bold text-base shadow-md">
+              <Plus size={18} className="ml-1" />
               إضافة المنتج
             </Button>
           </DrawerFooter>
