@@ -397,7 +397,7 @@ const Market = () => {
           { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget(item) },
         ]}
       >
-        <div className={`rounded-2xl p-3 flex items-center gap-3 transition-colors ${isChecked ? "bg-muted" : "bg-white"}`}>
+        <div className={`rounded-2xl p-3 flex items-center gap-3 transition-colors ${isChecked ? "bg-muted" : "bg-card"}`}>
           <div className="relative shrink-0 w-7 h-7">
             {pendingItemIds.includes(item.id) && (
               <div className="absolute inset-[-3px] rounded-full border-2 border-transparent border-t-primary animate-spin" />
@@ -411,7 +411,7 @@ const Market = () => {
               className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                 isChecked
                   ? "bg-primary"
-                  : "bg-white border-2 border-border hover:border-primary"
+                  : "bg-card border-2 border-border hover:border-primary"
               }`}
             >
               {isChecked && <Check size={14} className="text-primary-foreground" strokeWidth={3} />}

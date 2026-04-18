@@ -439,7 +439,7 @@ const Tasks = () => {
           ]}
         >
           <div
-            className={`rounded-2xl p-3 flex items-center gap-3 transition-colors ${isDone ? "bg-muted" : "bg-white"}`}
+            className={`rounded-2xl p-3 flex items-center gap-3 transition-colors ${isDone ? "bg-muted" : "bg-card"}`}
             style={{ touchAction: "pan-y" }}
             onPointerDown={(e) => handlePointerDown(e, item.id)}
             onPointerMove={(e) => handlePointerMove(e)}
@@ -459,7 +459,7 @@ const Tasks = () => {
                 className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                   isDone
                     ? "bg-primary"
-                    : "bg-white border-2 border-border hover:border-primary"
+                    : "bg-card border-2 border-border hover:border-primary"
                 }`}
               >
                 {isDone && <Check size={14} className="text-primary-foreground" strokeWidth={3} />}
