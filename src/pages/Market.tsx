@@ -468,7 +468,7 @@ const Market = () => {
       >
         {/* Lists tabs — underline style with mouse drag-to-scroll */}
         <div
-          className="flex gap-5 overflow-x-auto pt-3 scrollbar-hide cursor-grab active:cursor-grabbing select-none"
+          className="flex gap-5 overflow-x-auto mt-4 pt-1 scrollbar-hide cursor-grab active:cursor-grabbing select-none"
           onMouseDown={(e) => {
             const el = e.currentTarget;
             const startX = e.pageX;
