@@ -373,24 +373,29 @@ const Trips = () => {
   const handleAddActivity = async () => {
     if (!selectedTrip || !selectedDayId || !activityName.trim()) return;
 
+    const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
     let dayPlanId = selectedDayId;
 
-    // If user selected a synthetic day (not yet saved), create the day plan first
-    if (selectedDayId.startsWith("new-day-")) {
-      const dayNumber = parseInt(selectedDayId.replace("new-day-", ""), 10);
+    // If the chosen day is a synthetic placeholder, create the real day plan first
+    if (!isUuid(selectedDayId)) {
+      const selectedSyntheticDay = selectedTrip.days.find((d) => d.id === selectedDayId);
+      const fallbackDayNumber = selectedDayId.startsWith("new-day-")
+        ? parseInt(selectedDayId.replace("new-day-", ""), 10)
+        : NaN;
+      const dayNumber = selectedSyntheticDay?.dayNumber ?? fallbackDayNumber;
       if (!Number.isFinite(dayNumber)) return;
-      const existing = selectedTrip.days.find((d) => d.dayNumber === dayNumber);
-      if (existing && !String(existing.id).startsWith("new-day-")) {
+
+      const existing = selectedTrip.days.find((d) => d.dayNumber === dayNumber && isUuid(d.id));
+      if (existing) {
         dayPlanId = existing.id;
       } else {
-        // Create with a real UUID so server + queue use the same id
         const newDayId = crypto.randomUUID();
         try {
           await addDayPlan.mutateAsync({
             id: newDayId,
             trip_id: selectedTrip.id,
             day_number: dayNumber,
-            city: "",
+            city: selectedSyntheticDay?.city || "",
           });
         } catch {
           /* queued — sync queue will retry in order */
