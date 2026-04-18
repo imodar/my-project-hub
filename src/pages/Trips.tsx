@@ -25,6 +25,9 @@ import { appToast } from "@/lib/toast";
 import { useTrips as useTripsHook } from "@/hooks/useTrips";
 import { useAlbums } from "@/hooks/useAlbums";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useFamilyId } from "@/hooks/useFamilyId";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 // Types
 interface Activity {
@@ -128,6 +131,8 @@ const Trips = () => {
     addDocument, deleteDocument,
   } = useTripsHook() as any;
   const { albums: tripAlbums } = useAlbums();
+  const familyId = useFamilyId();
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   // Map DB trips to UI format
   const trips: Trip[] = useMemo(() => {
@@ -542,14 +547,67 @@ const Trips = () => {
     appToast.success("تم إضافة المصروف");
   };
 
-  const handleAddDocument = () => {
-    if (!selectedTrip || !docName.trim()) return;
+  const handleAddDocument = async () => {
+    if (!selectedTrip || !docName.trim() || isUploadingDoc) return;
+    if (!familyId) {
+      appToast.error("لا توجد عائلة نشطة");
+      return;
+    }
+
+    let uploadedUrl: string | undefined;
+    let uploadedFileName = docFileInput?.name || "مستند";
+
+    if (docFileInput) {
+      setIsUploadingDoc(true);
+      try {
+        // Validate size (20MB max)
+        if (docFileInput.size > 20 * 1024 * 1024) {
+          appToast.error("حجم الملف يتجاوز 20 ميجابايت");
+          setIsUploadingDoc(false);
+          return;
+        }
+        const ext = docFileInput.name.split(".").pop() || "bin";
+        const storagePath = `${familyId}/${selectedTrip.id}/${crypto.randomUUID()}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("trip-documents")
+          .upload(storagePath, docFileInput, { contentType: docFileInput.type, upsert: false });
+
+        if (uploadError) {
+          console.error("[Trips] Upload failed:", uploadError);
+          appToast.error("فشل رفع الملف");
+          setIsUploadingDoc(false);
+          return;
+        }
+
+        // Cache locally for offline use
+        try {
+          if ("caches" in window) {
+            const cache = await caches.open("trip-documents-cache-v1");
+            await cache.put(storagePath, new Response(docFileInput));
+          }
+        } catch {}
+
+        // Signed URL valid for 2 hours; will be re-signed on demand
+        const { data: signedData } = await supabase.storage
+          .from("trip-documents")
+          .createSignedUrl(storagePath, 60 * 60 * 2);
+        uploadedUrl = signedData?.signedUrl || storagePath;
+      } catch (err) {
+        console.error("[Trips] Upload exception:", err);
+        appToast.error("فشل رفع الملف");
+        setIsUploadingDoc(false);
+        return;
+      }
+      setIsUploadingDoc(false);
+    }
+
     addDocument.mutate({
       trip_id: selectedTrip.id,
       name: docName,
       type: docType,
-      file_url: docFileInput ? URL.createObjectURL(docFileInput) : undefined,
-      file_name: docFileInput?.name || "مستند",
+      file_url: uploadedUrl,
+      file_name: uploadedFileName,
       notes: docNotes || undefined,
     });
     setDocName(""); setDocType("ticket"); setDocNotes(""); setDocFileInput(null);
@@ -1195,7 +1253,9 @@ const Trips = () => {
                 </label>
               </div>
               <Input placeholder="ملاحظات (اختياري)" value={docNotes} onChange={(e) => setDocNotes(e.target.value)} />
-              <Button className="w-full rounded-xl" onClick={handleAddDocument}>إضافة المستند</Button>
+              <Button className="w-full rounded-xl" onClick={handleAddDocument} disabled={isUploadingDoc || !docName.trim()}>
+                {isUploadingDoc ? (<><Loader2 size={16} className="ml-1 animate-spin" /> جارٍ رفع الملف...</>) : "إضافة المستند"}
+              </Button>
             </div>
           </DrawerContent>
         </Drawer>
