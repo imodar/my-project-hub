@@ -46,14 +46,14 @@ interface MarketList {
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; emoji: string }> = {
+  "بدون تصنيف": { bg: "bg-muted", text: "text-muted-foreground", emoji: "📦" },
   "خضار وفاكهة": { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", emoji: "🥬" },
-  "لحوم": { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300", emoji: "❤️" },
+  "لحوم": { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300", emoji: "🥩" },
   "ألبان": { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-300", emoji: "🥛" },
   "مخبوزات": { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", emoji: "🍞" },
   "مشروبات": { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-300", emoji: "🥤" },
   "مؤونة": { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-300", emoji: "🫒" },
   "تنظيف": { bg: "bg-cyan-100 dark:bg-cyan-900/30", text: "text-cyan-700 dark:text-cyan-300", emoji: "🧹" },
-  "أخرى": { bg: "bg-muted", text: "text-muted-foreground", emoji: "📦" },
 };
 
 const CATEGORIES = ["الكل", ...Object.keys(CATEGORY_COLORS)];
