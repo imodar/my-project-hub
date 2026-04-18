@@ -823,7 +823,7 @@ const Market = () => {
                         }`}
                       >
                         <div
-                          className={`relative w-14 h-14 rounded-[20px] flex items-center justify-center text-2xl transition-all duration-300 ${info.bg} ${
+                          className={`relative w-14 h-14 rounded-[20px] flex items-center justify-center text-2xl transition-all duration-300 ${
                             isActive
                               ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
                               : "ring-0"
