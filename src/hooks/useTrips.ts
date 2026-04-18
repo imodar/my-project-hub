@@ -76,7 +76,7 @@ export function useTrips() {
     table: "trips", operation: "INSERT",
     apiFn: async (input) => {
       const { id, created_at, ...rest } = input;
-      return invoke("create-trip", { family_id: familyId, name: rest.name, destination: rest.destination, start_date: rest.start_date, end_date: rest.end_date, budget: rest.budget || 0, status: rest.status || "planning" });
+      return invoke("create-trip", { family_id: familyId, name: rest.name, destination: rest.destination, start_date: rest.start_date, end_date: rest.end_date, budget: rest.budget || 0, status: rest.status || "planning", shared_with: rest.shared_with || [] });
     },
     queryKey: key,
   });
