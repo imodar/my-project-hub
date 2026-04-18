@@ -403,12 +403,12 @@ const Tasks = () => {
   }, [deleteListMutation, dbLists, addToTrash]);
 
   const shareList = useCallback(() => {
-    if (selectedShareMembers.length === 0 || !activeListId) return;
+    if (!activeListId) return;
     haptic.medium();
     updateListMutation.mutate({
       id: activeListId,
       shared_with: selectedShareMembers,
-      type: "shared",
+      type: selectedShareMembers.length === 0 ? "personal" : "shared",
     });
     setSelectedShareMembers([]);
     setShowShareDialog(false);
@@ -669,19 +669,17 @@ const Tasks = () => {
               <DrawerDescription>{activeList?.name}</DrawerDescription>
             </DrawerHeader>
             <div className="px-4 space-y-2 pb-4">
-              {activeList?.type !== "family" && (
-                <button
-                  onClick={() => {
-                    setShowListActions(false);
-                    setSelectedShareMembers(activeList?.sharedWith || []);
-                    setShowShareDialog(true);
-                  }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <Share2 size={16} className="text-primary" />
-                  <span className="text-sm font-medium text-foreground">مشاركة القائمة</span>
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setShowListActions(false);
+                  setSelectedShareMembers(activeList?.sharedWith || []);
+                  setShowShareDialog(true);
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <Share2 size={16} className="text-primary" />
+                <span className="text-sm font-medium text-foreground">مشاركة القائمة</span>
+              </button>
               <button
                 onClick={() => { setShowListActions(false); if (activeList) setDeleteListTarget(activeList.id); }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors"
@@ -1070,7 +1068,7 @@ const Tasks = () => {
               })}
             </div>
             <DrawerFooter className="flex-row gap-2">
-              <Button onClick={shareList} className="flex-1 rounded-xl">مشاركة</Button>
+              <Button onClick={shareList} className="flex-1 rounded-xl">{selectedShareMembers.length === 0 ? "حفظ" : "مشاركة"}</Button>
               <Button variant="outline" onClick={() => setShowShareDialog(false)} className="flex-1 rounded-xl">إلغاء</Button>
             </DrawerFooter>
           </DrawerContent>
