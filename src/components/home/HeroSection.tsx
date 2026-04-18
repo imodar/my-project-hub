@@ -6,7 +6,7 @@ import { useIslamicMode } from "@/contexts/IslamicModeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import NotificationsSheet from "@/components/notifications/NotificationsSheet";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -283,20 +283,19 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const activeHour = demoActive ? DEMO_STATES[demoIndex].hour : currentHour;
   const theme = useMemo(() => getWeatherTheme(activeCode, activeHour), [activeCode, activeHour]);
 
-  // Scroll-driven smooth collapse using GPU-accelerated transforms only.
-  // Avoid animating `height` (causes layout/reflow each frame → flicker on sticky header).
+  // Stable collapse: avoid scroll-linked layout mutation on every frame.
+  // We switch between expanded/collapsed states with hysteresis + spring.
   const { scrollY } = useScroll();
-  const easedProgress = useTransform(scrollY, [0, 140], [0, 1], { clamp: true });
-
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const expandedSectionHeight = islamicMode ? 260 : 132;
-  const sectionTranslateY = useTransform(easedProgress, [0, 1], [0, -expandedSectionHeight]);
-  const wrapperMarginBottom = useTransform(easedProgress, [0, 1], [0, -expandedSectionHeight]);
-  const sectionOpacity = useTransform(easedProgress, [0.5, 1], [1, 0]);
-  const contentOpacity = useTransform(easedProgress, [0, 0.6], [1, 0]);
-  const islamicOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
-  const decorOpacity = useTransform(easedProgress, [0, 0.4], [1, 0]);
-  const orbScale = useTransform(easedProgress, [0, 0.6], [1, 0]);
-  const orbOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setIsCollapsed((prev) => {
+      if (!prev && latest > 72) return true;
+      if (prev && latest < 24) return false;
+      return prev;
+    });
+  });
 
   useEffect(() => {
     if (!demoActive) return;
@@ -424,21 +423,21 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
       </header>
 
       <motion.section
-        className="relative overflow-hidden will-change-transform"
-        style={{
-          opacity: sectionOpacity,
-          y: sectionTranslateY,
-          marginBottom: wrapperMarginBottom,
-          height: expandedSectionHeight,
+        className="relative overflow-hidden"
+        initial={false}
+        animate={{
+          height: isCollapsed ? 0 : expandedSectionHeight,
+          opacity: isCollapsed ? 0 : 1,
         }}
+        transition={{ type: "spring", stiffness: 240, damping: 32, mass: 0.7 }}
       >
         <motion.div
           className="absolute -top-2 left-7 w-16 h-16 z-10 pointer-events-none"
           key={theme.label}
           initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          style={{ scale: orbScale, opacity: orbOpacity, transformOrigin: "top center" }}
+          animate={{ scale: isCollapsed ? 0.82 : 1, opacity: isCollapsed ? 0 : 1 }}
+          transition={{ type: "spring", stiffness: 220, damping: 26 }}
+          style={{ transformOrigin: "top center" }}
         >
           <div className="absolute inset-0 rounded-full animate-pulse" style={{
             filter: "blur(12px)",
@@ -494,7 +493,10 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           </AnimatePresence>
 
           {(!weather || (weather && weather.weatherCode <= 3)) && !demoActive && (
-            <motion.div style={{ opacity: decorOpacity }}>
+            <motion.div
+              animate={{ opacity: isCollapsed ? 0 : 1 }}
+              transition={{ duration: 0.18 }}
+            >
               <div className="absolute top-3 left-10 opacity-20">
                 <Cloud size={52} />
               </div>
@@ -507,7 +509,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
           <div className="relative z-20 space-y-3">
             <motion.div
               className="space-y-3"
-              style={{ opacity: contentOpacity }}
+              animate={{ opacity: isCollapsed ? 0 : 1, y: isCollapsed ? -12 : 0 }}
+              transition={{ duration: 0.18 }}
             >
               <div>
                 <h1 className="text-xl font-bold tracking-tight mb-1 flex items-center gap-2">
@@ -547,7 +550,8 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
             {islamicMode && (
               <motion.div
                 className="grid grid-cols-2 gap-3 items-center"
-                style={{ opacity: islamicOpacity }}
+                animate={{ opacity: isCollapsed ? 0 : 1, y: isCollapsed ? -8 : 0 }}
+                transition={{ duration: 0.16 }}
               >
                 <QiblaCompass />
                 <NextPrayerBox />
