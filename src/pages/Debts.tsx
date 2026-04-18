@@ -304,7 +304,9 @@ const Debts = () => {
 
   const handleAddDebt = async () => {
     const validAmounts = newDebtAmounts.filter((a) => a.amount && Number(a.amount) > 0);
-    if (!newDebt.personName || validAmounts.length === 0 || !newDebt.dueDate) return;
+    const firstAmount = newDebtAmounts[0]?.amount ?? "";
+    if (!debtForm.validate({ personName: newDebt.personName, amount: firstAmount, dueDate: newDebt.dueDate })) return;
+    if (validAmounts.length === 0) { debtForm.setError("amount", debtForm.errors.amount || ""); return; }
 
     const amountsData = validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency }));
     const multiCurrency = amountsData.length > 1 ? { amounts: amountsData } : null;
@@ -359,6 +361,8 @@ const Debts = () => {
   const handleAddPayment = async () => {
     if (!paymentDebtId) return;
     const validAmounts = newPaymentAmounts.filter((a) => a.amount && Number(a.amount) > 0);
+    const firstAmount = newPaymentAmounts[0]?.amount ?? "";
+    if (!paymentForm.validate({ amount: firstAmount })) return;
     if (validAmounts.length === 0) return;
 
     const amountsData = validAmounts.map((a) => ({ amount: Number(a.amount), currency: a.currency }));
