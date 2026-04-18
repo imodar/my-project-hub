@@ -776,27 +776,22 @@ const Vehicle = () => {
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                  {filteredManufacturers.map(([key, val]) => (
+                  {filteredManufacturers.map((b) => (
                     <button
-                      key={key}
-                      onClick={() => { setNewManufacturer(key); setManufacturerSearch(""); }}
+                      key={b.slug}
+                      onClick={() => { setNewManufacturer(b.slug); setManufacturerSearch(""); }}
                       className={`p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 ${
-                        newManufacturer === key
+                        newManufacturer === b.slug
                           ? "border-primary bg-primary/5 ring-1 ring-primary"
                           : "border-border bg-card"
                       }`}
                     >
                       <div className="w-8 h-8 flex items-center justify-center">
-                        <CarLogo manufacturer={key} size={28} />
+                        <CarLogo manufacturer={b.slug} size={28} />
                       </div>
-                      <span className="text-[10px] font-medium text-foreground leading-tight">{val.name}</span>
+                      <span className="text-[10px] font-medium text-foreground leading-tight">{b.name}</span>
                     </button>
                   ))}
-                  {filteredManufacturers.length === 0 && (
-                    <p className="col-span-3 text-center text-muted-foreground text-sm py-4">لا توجد نتائج</p>
-                  )}
-                </div>
-              </div>
 
               {/* Model & Year */}
               <div className="flex gap-3">
