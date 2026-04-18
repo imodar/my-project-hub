@@ -808,7 +808,7 @@ const Tasks = () => {
                       </button>
                     )}
                   </div>
-                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                  <div className="flex gap-3 overflow-x-auto py-3 -mx-1 px-2 scrollbar-hide">
                     {FAMILY_MEMBERS.map((member) => {
                       const isActive = editAssignedTo === member.id;
                       const initial = (member.name || "?").trim().charAt(0);
@@ -816,14 +816,14 @@ const Tasks = () => {
                         <button
                           key={member.id}
                           onClick={() => setEditAssignedTo(isActive ? "" : member.id)}
-                          className={`shrink-0 flex flex-col items-center gap-1.5 transition-all duration-300 ${
-                            isActive ? "scale-105" : "opacity-60 hover:opacity-100"
+                          className={`shrink-0 flex flex-col items-center gap-1.5 transition-all duration-300 focus:outline-none ${
+                            isActive ? "" : "opacity-60 hover:opacity-100"
                           }`}
                         >
                           <div
-                            className={`relative w-14 h-14 rounded-full flex items-center justify-center text-lg font-black bg-gradient-to-br from-primary/15 to-primary/5 text-primary transition-all duration-300 ${
+                            className={`relative w-12 h-12 rounded-full flex items-center justify-center text-base font-black bg-gradient-to-br from-primary/15 to-primary/5 text-primary transition-all duration-300 ${
                               isActive
-                                ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
+                                ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md"
                                 : "ring-0"
                             }`}
                           >
