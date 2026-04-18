@@ -54,9 +54,12 @@ async function extractErrorDetails(
     return { status: 0, message: error.message || "Network error", body: null };
   }
 
-  // Fallback آمن: لا نعتمد على regex لأنه يلتقط أرقاماً من اسم الوظيفة.
+  // Fallback: استخرج الـ status من رسالة Supabase إن وُجدت بنمط محدد جداً
+  // مثال: "Edge Function returned a non-2xx status code: 426"
   const message = error instanceof Error ? error.message : "خطأ غير متوقع";
-  return { status: 500, message, body: null };
+  const statusMatch = message.match(/non-2xx status code[:\s]+(\d{3})/);
+  const status = statusMatch ? parseInt(statusMatch[1], 10) : 500;
+  return { status, message, body: null };
 }
 
 /**
