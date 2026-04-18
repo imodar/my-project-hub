@@ -297,6 +297,7 @@ const HeroSection = React.forwardRef<HTMLDivElement>((_props, ref) => {
   const sectionPaddingTop = useTransform(easedProgress, [0, 1], [16, 0]);
   const sectionPaddingBottom = useTransform(easedProgress, [0, 1], [20, 0]);
   const sectionOpacity = useTransform(easedProgress, [0.6, 1], [1, 0]);
+  const sectionHeight = useTransform(easedProgress, [0, 1], [islamicMode ? 280 : 152, 0]);
   const decorOpacity = useTransform(easedProgress, [0, 0.4], [1, 0]);
   const orbScale = useTransform(easedProgress, [0, 0.6], [1, 0]);
   const orbOpacity = useTransform(easedProgress, [0, 0.5], [1, 0]);
