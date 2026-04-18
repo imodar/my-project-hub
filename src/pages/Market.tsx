@@ -449,6 +449,7 @@ const Market = () => {
       
       <PageHeader
         title="أغراض السوق"
+        onBack={() => navigate("/")}
         actions={[
           ...(activeList && !activeList.isDefault
             ? [{
