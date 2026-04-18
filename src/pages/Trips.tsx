@@ -391,6 +391,45 @@ const Trips = () => {
     appToast.success("تم إضافة اليوم");
   };
 
+  const openEditDay = (day: DayPlan) => {
+    setEditingDayId(day.id);
+    setEditDayCity(day.city || "");
+    setEditDayDrawer(true);
+  };
+
+  const handleSaveDayEdit = () => {
+    if (!selectedTrip || !editingDayId) return;
+    updateDayPlan.mutate({ id: editingDayId, trip_id: selectedTrip.id, city: editDayCity });
+    setEditDayDrawer(false);
+    setEditingDayId(null);
+    appToast.success("تم تعديل اليوم");
+  };
+
+  const openEditActivity = (act: Activity, dayId: string) => {
+    setEditingActivityId(act.id);
+    setEditingActivityDayId(dayId);
+    setEditActName(act.name);
+    setEditActTime(act.time || "");
+    setEditActLocation(act.location || "");
+    setEditActCost(act.cost ? String(act.cost) : "");
+    setEditActivityDrawer(true);
+  };
+
+  const handleSaveActivityEdit = () => {
+    if (!editingActivityId || !editActName.trim()) return;
+    updateActivity.mutate({
+      id: editingActivityId,
+      day_plan_id: editingActivityDayId,
+      name: editActName,
+      time: editActTime || null,
+      location: editActLocation || null,
+      cost: Number(editActCost) || 0,
+    });
+    setEditActivityDrawer(false);
+    setEditingActivityId(null);
+    appToast.success("تم تعديل النشاط");
+  };
+
   const persistActivity = async () => {
     if (!selectedTrip || !selectedDayId || !activityName.trim()) return;
 
