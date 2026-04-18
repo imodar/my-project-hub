@@ -141,13 +141,39 @@ Deno.serve(async (req) => {
       return json({ data });
     }
 
-    if (action === "toggle-activity") {
-      const { id, completed } = body;
+    if (action === "toggle-activity" || action === "update-activity") {
+      const { id, completed, name, time, location, cost } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       const updates: Record<string, unknown> = {};
       if (completed !== undefined) updates.completed = completed;
-      const { data, error } = await supabase.from("trip_activities").update(updates).eq("id", id).select().single();
+      if (name !== undefined) {
+        if (!validStr(name, MAX_NAME)) return json({ error: "الاسم غير صالح" }, 400);
+        updates.name = sanitize(name, MAX_NAME);
+      }
+      if (time !== undefined) updates.time = time || null;
+      if (location !== undefined) updates.location = location ? sanitize(String(location), MAX_NAME) : null;
+      if (cost !== undefined && cost !== null) {
+        if (!validAmount(cost)) return json({ error: "التكلفة غير صالحة" }, 400);
+        updates.cost = cost;
+      }
+      const { data, error } = await adminClient.from("trip_activities").update(updates).eq("id", id).select().maybeSingle();
       if (error) return json({ error: error.message }, 400);
+      if (!data) return json({ error: "النشاط غير موجود بعد، سيُعاد لاحقاً", retry: true }, 409);
+      return json({ data });
+    }
+
+    if (action === "update-day-plan") {
+      const { id, city, day_number } = body;
+      if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
+      const updates: Record<string, unknown> = {};
+      if (city !== undefined) updates.city = city ? sanitize(String(city), MAX_NAME) : null;
+      if (day_number !== undefined) {
+        if (typeof day_number !== "number" || day_number < 1 || day_number > 365) return json({ error: "رقم اليوم غير صالح" }, 400);
+        updates.day_number = day_number;
+      }
+      const { data, error } = await adminClient.from("trip_day_plans").update(updates).eq("id", id).select().maybeSingle();
+      if (error) return json({ error: error.message }, 400);
+      if (!data) return json({ error: "اليوم غير موجود بعد، سيُعاد لاحقاً", retry: true }, 409);
       return json({ data });
     }
 
