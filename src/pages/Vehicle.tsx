@@ -1031,7 +1031,7 @@ const Vehicle = () => {
               {deleteConfirmCar && (
                 <>
                   <p className="font-bold text-foreground">
-                    {CAR_MANUFACTURERS[deleteConfirmCar.manufacturer]?.name || deleteConfirmCar.manufacturer} {deleteConfirmCar.model}
+                    {getBrandName(deleteConfirmCar.manufacturer)} {deleteConfirmCar.model}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     سيتم نقل المركبة مع كل سجلات صيانتها ({deleteConfirmCar.maintenance.length} سجل) إلى سلة المحذوفات
