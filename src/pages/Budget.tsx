@@ -154,6 +154,7 @@ const Budget = () => {
   const [showEditBudget, setShowEditBudget] = useState<MonthBudget | null>(null);
   const [showEditExpense, setShowEditExpense] = useState<{ budgetId: string; expense: ExpenseItem } | null>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"shared" | "personal">("shared");
 
   const [budgetType, setBudgetType] = useState<BudgetType>("month");
   const [newMonthIdx, setNewMonthIdx] = useState(String(new Date().getMonth()));
