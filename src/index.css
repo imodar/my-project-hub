@@ -162,3 +162,30 @@
 /* Hide scrollbars utility */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* === Native-feel staggered fade-up on mount === */
+@keyframes stagger-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-item {
+  opacity: 0;
+  animation: stagger-fade-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger-item-1 { animation-delay: 40ms; }
+.stagger-item-2 { animation-delay: 120ms; }
+.stagger-item-3 { animation-delay: 200ms; }
+.stagger-item-4 { animation-delay: 280ms; }
+.stagger-item-5 { animation-delay: 360ms; }
+.stagger-item-6 { animation-delay: 440ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-item { animation: none; opacity: 1; }
+}
