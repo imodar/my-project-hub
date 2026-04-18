@@ -353,6 +353,7 @@ const Budget = () => {
                       setEditExpenseDate(exp.date ? new Date(exp.date) : undefined);
                       setShowEditExpense({ budgetId: b.id, expense: exp });
                     }},
+                    { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteExpense({ budgetId: b.id, expenseId: exp.id }) },
                   ]}
                 >
                   <div className="rounded-2xl bg-card border border-border p-3 flex items-center gap-3">
@@ -586,13 +587,13 @@ const Budget = () => {
                       key={b.id}
                       onSwipeOpen={() => setOpenCardId(b.id)}
                       actions={[
-                        { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteBudget(b.id) },
                         { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
                           setShowEditBudget(b);
                           setNewIncome(b.income.toString());
                           setProjectLabel(b.label || "");
                           setShareIds([...b.sharedWith]);
                         }},
+                        { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteBudget(b.id) },
                       ]}
                     >
                       <BudgetCard b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />
@@ -613,13 +614,13 @@ const Budget = () => {
                       key={b.id}
                       onSwipeOpen={() => setOpenCardId(b.id)}
                       actions={[
-                        { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteBudget(b.id) },
                         { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
                           setShowEditBudget(b);
                           setNewIncome(b.income.toString());
                           setProjectLabel(b.label || "");
                           setShareIds([...b.sharedWith]);
                         }},
+                        { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setShowDeleteBudget(b.id) },
                       ]}
                     >
                       <BudgetCard b={b} onSelect={setSelectedBudget} remaining={remaining} spentPercent={spentPercent} />

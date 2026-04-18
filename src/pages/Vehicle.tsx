@@ -576,9 +576,9 @@ const Vehicle = () => {
                     key={record.id}
                     onSwipeOpen={() => setOpenCardId(record.id)}
                     actions={[
-                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleDeleteMaintenance(record.id) },
-                      { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditMaintenance(record) },
                       { icon: <Bell size={16} />, label: "تذكير", color: "bg-amber-500", onClick: () => handleSetReminder(record) },
+                      { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditMaintenance(record) },
+                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => handleDeleteMaintenance(record.id) },
                     ]}
                   >
                     <div className="bg-card rounded-2xl p-4 border border-border" dir="rtl">
@@ -791,8 +791,8 @@ const Vehicle = () => {
                     key={car.id}
                     onSwipeOpen={() => setOpenCardId(car.id)}
                     actions={[
-                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteConfirmCar(car) },
                       { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => openEditCar(car) },
+                      { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteConfirmCar(car) },
                     ]}
                   >
                     <button

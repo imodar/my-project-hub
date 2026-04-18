@@ -1280,8 +1280,8 @@ const Trips = () => {
               <SwipeableCard
                 key={trip.id}
                 actions={[
-                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => { setDeleteTarget(trip.id); setDeleteDrawer(true); } },
                   { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleEditTrip(trip) },
+                  { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => { setDeleteTarget(trip.id); setDeleteDrawer(true); } },
                 ]}
                 onSwipeOpen={() => setOpenTripCardId(trip.id)}
               >

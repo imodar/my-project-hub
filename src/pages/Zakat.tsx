@@ -463,6 +463,8 @@ const Zakat = () => {
                       key={asset.id}
                       onSwipeOpen={() => setOpenCardId(asset.id)}
                       actions={[
+                        { icon: <Check size={16} />, label: "زكّيت", color: "bg-emerald-600", onClick: () => setZakatPaidAsset(asset.id) },
+                        { icon: <Bell size={16} />, label: "تذكير", color: "bg-amber-500", onClick: () => setReminderAsset(asset.id) },
                         { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => {
                           setAddType(asset.type);
                           setAddLabel(asset.label);
@@ -473,8 +475,6 @@ const Zakat = () => {
                           setEditingAssetId(asset.id);
                           setShowAdd(true);
                         }},
-                        { icon: <Bell size={16} />, label: "تذكير", color: "bg-amber-500", onClick: () => setReminderAsset(asset.id) },
-                        { icon: <Check size={16} />, label: "زكّيت", color: "bg-emerald-600", onClick: () => setZakatPaidAsset(asset.id) },
                         { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteConfirm(asset.id) },
                       ]}
                      >

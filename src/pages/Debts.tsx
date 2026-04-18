@@ -515,8 +515,8 @@ const Debts = () => {
               key={debt.id}
               onSwipeOpen={() => setOpenCardId(debt.id)}
               actions={[
-                { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget({ id: debt.id, name: debt.personName }) },
                 { icon: <Pencil size={16} />, label: "تعديل", color: "bg-primary", onClick: () => handleStartEdit(debt) },
+                { icon: <Trash2 size={16} />, label: "حذف", color: "bg-destructive", onClick: () => setDeleteTarget({ id: debt.id, name: debt.personName }) },
               ]}
             >
               <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${debt.isFullyPaid ? "bg-muted/40" : "bg-card"}`}>
