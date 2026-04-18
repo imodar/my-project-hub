@@ -1305,7 +1305,35 @@ const Trips = () => {
           </DrawerContent>
         </Drawer>
 
-        {/* Add Suggestion Drawer */}
+        {/* Over-Budget Warning Drawer */}
+        <Drawer open={budgetWarnDrawer} onOpenChange={(o) => { setBudgetWarnDrawer(o); if (!o) setPendingActivity(null); }}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle className="text-destructive">تنبيه: تجاوز الميزانية</DrawerTitle>
+              <DrawerDescription>
+                إضافة هذا النشاط ستجعل إجمالي تكاليف الأنشطة يتجاوز ميزانية الرحلة بمقدار{" "}
+                <span className="font-bold text-destructive">{pendingActivity?.overBy.toLocaleString()}</span>.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="flex flex-col gap-2 px-5 pb-8">
+              <Button
+                variant="outline"
+                className="w-full rounded-xl"
+                onClick={() => { setBudgetWarnDrawer(false); setPendingActivity(null); }}
+              >
+                <ChevronLeft size={16} /> العودة والتعديل
+              </Button>
+              <Button
+                variant="destructive"
+                className="w-full rounded-xl"
+                onClick={() => { void persistActivity(); }}
+              >
+                المتابعة على أي حال
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+
         <Drawer open={newSuggestionDrawer} onOpenChange={setNewSuggestionDrawer}>
           <DrawerContent>
             <DrawerHeader><DrawerTitle>إضافة مقترح</DrawerTitle></DrawerHeader>
