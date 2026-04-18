@@ -731,55 +731,127 @@ const Tasks = () => {
         {/* Edit Item Drawer */}
         <Drawer open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
           <DrawerContent dir="rtl">
-            <DrawerHeader className="text-right">
-              <DrawerTitle>تعديل المهمة</DrawerTitle>
-              <DrawerDescription>عدّل تفاصيل المهمة</DrawerDescription>
+            <DrawerHeader className="text-right pb-1">
+              <DrawerTitle className="text-lg">تعديل المهمة</DrawerTitle>
+              <DrawerDescription className="text-xs">حدّد الأولوية واسم المهمة والمسؤول</DrawerDescription>
             </DrawerHeader>
-            <div className="space-y-3 px-4">
-              <Input placeholder="اسم المهمة" value={editName} onChange={(e) => setEditName(e.target.value)} className="rounded-xl" />
-              <Input placeholder="ملاحظة (اختياري)" value={editNote} onChange={(e) => setEditNote(e.target.value)} className="rounded-xl" />
+            <div className="flex-1 overflow-y-auto space-y-5 px-4 pb-3">
+              {/* Priority grid — same spirit as Market category grid */}
               <div>
-                <p className="text-xs text-muted-foreground mb-2">الأولوية</p>
-                <div className="flex gap-2">
-                  {Object.entries(PRIORITY_INFO).map(([key, info]) => (
-                    <button
-                      key={key}
-                      onClick={() => setEditPriority(key as TaskItem["priority"])}
-                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                        editPriority === key
-                          ? "bg-primary text-primary-foreground"
-                          : `${info.bg} ${info.text} border border-border`
-                      }`}
-                    >
-                      {info.emoji} {info.label}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <p className="text-sm font-bold text-foreground">الأولوية</p>
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">
+                    {PRIORITY_INFO[editPriority]?.emoji || "⚪️"} {PRIORITY_INFO[editPriority]?.label}
+                  </span>
                 </div>
-              </div>
-              {activeList?.type !== "personal" && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">تكليف إلى</p>
-                  <div className="flex flex-wrap gap-2">
-                    {FAMILY_MEMBERS.map((member) => (
+                <div className="grid grid-cols-4 gap-2.5">
+                  {Object.entries(PRIORITY_INFO).map(([key, info]) => {
+                    const isActive = editPriority === key;
+                    const emoji = info.emoji || "⚪️";
+                    return (
                       <button
-                        key={member.id}
-                        onClick={() => setEditAssignedTo(editAssignedTo === member.id ? "" : member.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
-                          editAssignedTo === member.id
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-card text-foreground"
+                        key={key}
+                        onClick={() => setEditPriority(key as TaskItem["priority"])}
+                        className={`group relative flex flex-col items-center gap-1.5 py-2 transition-all duration-300 ${
+                          isActive ? "scale-105" : "opacity-60 hover:opacity-100"
                         }`}
                       >
-                        {member.name}
+                        <div
+                          className={`relative w-14 h-14 rounded-[20px] flex items-center justify-center text-2xl transition-all duration-300 ${
+                            isActive
+                              ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
+                              : "ring-0"
+                          }`}
+                        >
+                          {emoji}
+                          {isActive && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md animate-in zoom-in duration-200">
+                              <Check size={12} className="text-primary-foreground" strokeWidth={3} />
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] leading-tight text-center transition-all ${
+                          isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
+                        }`}>
+                          {info.label}
+                        </span>
                       </button>
-                    ))}
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Underline-only task name input */}
+              <div className="space-y-2 px-1">
+                <div className="relative">
+                  <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">المهمة</label>
+                  <Input
+                    placeholder="مثال: شراء الخبز"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+                  />
+                </div>
+              </div>
+
+              {/* Members — beautiful avatar list */}
+              {activeList?.type !== "personal" && FAMILY_MEMBERS.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-sm font-bold text-foreground">تكليف إلى</p>
+                    {editAssignedTo && (
+                      <button
+                        onClick={() => setEditAssignedTo("")}
+                        className="text-[11px] text-muted-foreground hover:text-foreground font-medium"
+                      >
+                        إلغاء التحديد
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                    {FAMILY_MEMBERS.map((member) => {
+                      const isActive = editAssignedTo === member.id;
+                      const initial = (member.name || "?").trim().charAt(0);
+                      return (
+                        <button
+                          key={member.id}
+                          onClick={() => setEditAssignedTo(isActive ? "" : member.id)}
+                          className={`shrink-0 flex flex-col items-center gap-1.5 transition-all duration-300 ${
+                            isActive ? "scale-105" : "opacity-60 hover:opacity-100"
+                          }`}
+                        >
+                          <div
+                            className={`relative w-14 h-14 rounded-full flex items-center justify-center text-lg font-black bg-gradient-to-br from-primary/15 to-primary/5 text-primary transition-all duration-300 ${
+                              isActive
+                                ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
+                                : "ring-0"
+                            }`}
+                          >
+                            {initial}
+                            {isActive && (
+                              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md animate-in zoom-in duration-200">
+                                <Check size={12} className="text-primary-foreground" strokeWidth={3} />
+                              </span>
+                            )}
+                          </div>
+                          <span className={`text-[10px] leading-tight text-center max-w-[60px] truncate ${
+                            isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
+                          }`}>
+                            {member.name}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
             </div>
-            <DrawerFooter className="flex-row gap-2">
-              <Button onClick={saveEdit} className="flex-1 rounded-xl">حفظ</Button>
-              <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1 rounded-xl">إلغاء</Button>
+            <DrawerFooter className="flex-row gap-2 pt-3">
+              <Button onClick={saveEdit} className="flex-[2] rounded-2xl h-12 font-bold text-base shadow-md">
+                <Check size={18} className="ml-1" />
+                حفظ التعديلات
+              </Button>
+              <Button variant="outline" onClick={() => setEditTarget(null)} className="flex-1 rounded-2xl h-12">إلغاء</Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
@@ -790,58 +862,128 @@ const Tasks = () => {
           setShowAddItem(open);
         }}>
           <DrawerContent dir="rtl">
-            <DrawerHeader className="text-right">
-              <DrawerTitle>إضافة مهمة جديدة</DrawerTitle>
-              <DrawerDescription>أضف مهمة مع الأولوية والتكليف</DrawerDescription>
+            <DrawerHeader className="text-right pb-1">
+              <DrawerTitle className="text-lg">إضافة مهمة جديدة</DrawerTitle>
+              <DrawerDescription className="text-xs">حدّد الأولوية واكتب اسم المهمة واختر المسؤول</DrawerDescription>
             </DrawerHeader>
-            <div className="space-y-3 px-4">
-              <Input placeholder="اسم المهمة" value={newItemName}
-                onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); taskDraft.saveDraft({ name: e.target.value, note: newItemNote, priority: newItemPriority, assignedTo: newItemAssignedTo }); }}
-                onInput={(e) => { newItemNameRef.current = (e.target as HTMLInputElement).value; }}
-                className="rounded-xl" />
-              <Input placeholder="ملاحظة (اختياري)" value={newItemNote} onChange={(e) => { setNewItemNote(e.target.value); taskDraft.saveDraft({ name: newItemName, note: e.target.value, priority: newItemPriority, assignedTo: newItemAssignedTo }); }} className="rounded-xl" />
+            <div className="flex-1 overflow-y-auto space-y-5 px-4 pb-3">
+              {/* Priority grid first */}
               <div>
-                <p className="text-xs text-muted-foreground mb-2">الأولوية</p>
-                <div className="flex gap-2">
-                  {Object.entries(PRIORITY_INFO).map(([key, info]) => (
-                    <button
-                      key={key}
-                      onClick={() => setNewItemPriority(key as TaskItem["priority"])}
-                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                        newItemPriority === key
-                          ? "bg-primary text-primary-foreground"
-                          : `${info.bg} ${info.text} border border-border`
-                      }`}
-                    >
-                      {info.emoji} {info.label}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <p className="text-sm font-bold text-foreground">الأولوية</p>
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">
+                    {PRIORITY_INFO[newItemPriority]?.emoji || "⚪️"} {PRIORITY_INFO[newItemPriority]?.label}
+                  </span>
                 </div>
-              </div>
-              {activeList?.type !== "personal" && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">تكليف إلى</p>
-                  <div className="flex flex-wrap gap-2">
-                    {FAMILY_MEMBERS.map((member) => (
+                <div className="grid grid-cols-4 gap-2.5">
+                  {Object.entries(PRIORITY_INFO).map(([key, info]) => {
+                    const isActive = newItemPriority === key;
+                    const emoji = info.emoji || "⚪️";
+                    return (
                       <button
-                        key={member.id}
-                        onClick={() => setNewItemAssignedTo(newItemAssignedTo === member.id ? "" : member.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
-                          newItemAssignedTo === member.id
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-card text-foreground"
+                        key={key}
+                        onClick={() => { setNewItemPriority(key as TaskItem["priority"]); taskDraft.saveDraft({ name: newItemName, note: "", priority: key as TaskItem["priority"], assignedTo: newItemAssignedTo }); }}
+                        className={`group relative flex flex-col items-center gap-1.5 py-2 transition-all duration-300 ${
+                          isActive ? "scale-105" : "opacity-60 hover:opacity-100"
                         }`}
                       >
-                        {member.name}
+                        <div
+                          className={`relative w-14 h-14 rounded-[20px] flex items-center justify-center text-2xl transition-all duration-300 ${
+                            isActive
+                              ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
+                              : "ring-0"
+                          }`}
+                        >
+                          {emoji}
+                          {isActive && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md animate-in zoom-in duration-200">
+                              <Check size={12} className="text-primary-foreground" strokeWidth={3} />
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] leading-tight text-center transition-all ${
+                          isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
+                        }`}>
+                          {info.label}
+                        </span>
                       </button>
-                    ))}
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Underline-only task name input */}
+              <div className="space-y-2 px-1">
+                <div className="relative">
+                  <label className="absolute right-0 top-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider">المهمة</label>
+                  <Input
+                    placeholder="مثال: شراء الخبز"
+                    value={newItemName}
+                    onChange={(e) => { newItemNameRef.current = e.target.value; setNewItemName(e.target.value); taskDraft.saveDraft({ name: e.target.value, note: "", priority: newItemPriority, assignedTo: newItemAssignedTo }); }}
+                    onInput={(e) => { newItemNameRef.current = (e.target as HTMLInputElement).value; }}
+                    className="h-[60px] border-0 border-b-2 border-border rounded-none bg-transparent text-lg font-bold pt-7 pb-2 px-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-colors placeholder:text-muted-foreground/50 placeholder:font-normal"
+                  />
+                </div>
+              </div>
+
+              {/* Members — beautiful avatar list */}
+              {activeList?.type !== "personal" && FAMILY_MEMBERS.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-sm font-bold text-foreground">تكليف إلى</p>
+                    {newItemAssignedTo && (
+                      <button
+                        onClick={() => { setNewItemAssignedTo(""); taskDraft.saveDraft({ name: newItemName, note: "", priority: newItemPriority, assignedTo: "" }); }}
+                        className="text-[11px] text-muted-foreground hover:text-foreground font-medium"
+                      >
+                        إلغاء التحديد
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                    {FAMILY_MEMBERS.map((member) => {
+                      const isActive = newItemAssignedTo === member.id;
+                      const initial = (member.name || "?").trim().charAt(0);
+                      return (
+                        <button
+                          key={member.id}
+                          onClick={() => { const next = isActive ? "" : member.id; setNewItemAssignedTo(next); taskDraft.saveDraft({ name: newItemName, note: "", priority: newItemPriority, assignedTo: next }); }}
+                          className={`shrink-0 flex flex-col items-center gap-1.5 transition-all duration-300 ${
+                            isActive ? "scale-105" : "opacity-60 hover:opacity-100"
+                          }`}
+                        >
+                          <div
+                            className={`relative w-14 h-14 rounded-full flex items-center justify-center text-lg font-black bg-gradient-to-br from-primary/15 to-primary/5 text-primary transition-all duration-300 ${
+                              isActive
+                                ? "ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-lg"
+                                : "ring-0"
+                            }`}
+                          >
+                            {initial}
+                            {isActive && (
+                              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md animate-in zoom-in duration-200">
+                                <Check size={12} className="text-primary-foreground" strokeWidth={3} />
+                              </span>
+                            )}
+                          </div>
+                          <span className={`text-[10px] leading-tight text-center max-w-[60px] truncate ${
+                            isActive ? "font-bold text-foreground" : "font-medium text-muted-foreground"
+                          }`}>
+                            {member.name}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
             </div>
-            <DrawerFooter className="flex-row gap-2">
-              <Button onClick={() => { taskDraft.clearDraft(); addItem(); }} className="flex-1 rounded-xl">إضافة</Button>
-              <Button variant="outline" onClick={() => { taskDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-xl">إلغاء</Button>
+            <DrawerFooter className="flex-row gap-2 pt-3">
+              <Button onClick={() => { taskDraft.clearDraft(); addItem(); }} className="flex-[2] rounded-2xl h-12 font-bold text-base shadow-md">
+                <Plus size={18} className="ml-1" />
+                إضافة المهمة
+              </Button>
+              <Button variant="outline" onClick={() => { taskDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-2xl h-12">إلغاء</Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
