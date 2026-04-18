@@ -621,11 +621,8 @@ const Tasks = () => {
           )}
 
           {doneItems.length > 0 && (
-            <div className="pt-3">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">✅ مكتملة</p>
-              <div className="space-y-2">
-                {visibleDoneItems.map((item) => renderItem(item, true))}
-              </div>
+            <>
+              {visibleDoneItems.map((item) => renderItem(item, true))}
               {doneItems.length > visibleDoneCount && (
                 <button
                   onClick={() => setVisibleDoneCount((n) => n + PAGE_SIZE)}
@@ -634,7 +631,7 @@ const Tasks = () => {
                   تحميل {Math.min(PAGE_SIZE, doneItems.length - visibleDoneCount)} مكتملة إضافية
                 </button>
               )}
-            </div>
+            </>
           )}
 
           {filteredItems.length === 0 && (
