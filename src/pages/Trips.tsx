@@ -1245,18 +1245,33 @@ const Trips = () => {
     <div className="min-h-screen bg-background pb-32" dir="rtl">
       <PageHeader title="الرحلات" subtitle="خطط لرحلاتك العائلية والشخصية" />
 
-      {/* Sticky tabs — always visible under header */}
-      <div className="sticky top-0 z-10 bg-background px-5 pt-3 pb-2 border-b border-border/40">
-        <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
-          <TabsList className="w-full grid grid-cols-2 rounded-xl h-11 bg-muted">
-            <TabsTrigger value="family" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
-              <Users size={14} className="ml-1" /> رحلات عائلية
-            </TabsTrigger>
-            <TabsTrigger value="personal" className="rounded-lg text-xs font-bold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md">
-              <Plane size={14} className="ml-1" /> رحلات شخصية
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Sticky segmented tabs */}
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-md px-5 pt-3 pb-3">
+        <div className="relative flex items-center bg-muted/60 rounded-full p-1 h-11 border border-border/40">
+          <span
+            className="absolute top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-full bg-background shadow-sm border border-border/40 transition-transform duration-300 ease-out"
+            style={{ transform: activeTab === "family" ? "translateX(0)" : "translateX(-100%)" }}
+            aria-hidden
+          />
+          {[
+            { value: "family", icon: Users, label: "رحلات عائلية" },
+            { value: "personal", icon: Plane, label: "رحلات شخصية" },
+          ].map(({ value, icon: Icon, label }) => {
+            const active = activeTab === value;
+            return (
+              <button
+                key={value}
+                onClick={() => setActiveTab(value)}
+                className={`relative z-10 flex-1 h-full flex items-center justify-center gap-1.5 rounded-full text-xs font-bold transition-colors ${
+                  active ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <Icon size={14} />
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {tripsLoading ? (
