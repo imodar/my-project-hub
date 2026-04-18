@@ -108,6 +108,7 @@ export const SwipeableCard = ({ children, actions, onSwipeOpen }: SwipeableCardP
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // Skip if touch already active (avoid double-handling on hybrid devices)
     if (pointerType.current === "touch") return;
+    e.stopPropagation();
     e.preventDefault();
     onDragStart(e.clientX, e.clientY, "mouse");
 
