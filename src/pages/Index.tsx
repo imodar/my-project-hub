@@ -21,10 +21,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background relative">
       <PullToRefresh onRefresh={handleRefresh}>
-        <HeroSection />
-        <IslamicQuickActions />
-        <FeatureGrid />
-        <UpcomingEvents />
+        <div className="stagger-item stagger-item-1"><HeroSection /></div>
+        <div className="stagger-item stagger-item-2"><IslamicQuickActions /></div>
+        <div className="stagger-item stagger-item-3"><FeatureGrid /></div>
+        <div className="stagger-item stagger-item-4"><UpcomingEvents /></div>
       </PullToRefresh>
     </div>
   );
