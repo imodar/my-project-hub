@@ -872,11 +872,11 @@ const Market = () => {
             </div>
           </div>
           <DrawerFooter className="flex-row gap-2 pt-3">
-            <Button variant="outline" onClick={() => { marketDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-2xl h-12">إلغاء</Button>
             <Button onClick={() => { marketDraft.clearDraft(); addItem(); }} className="flex-[2] rounded-2xl h-12 font-bold text-base shadow-md">
               <Plus size={18} className="ml-1" />
               إضافة المنتج
             </Button>
+            <Button variant="outline" onClick={() => { marketDraft.clearDraft(); setShowAddItem(false); }} className="flex-1 rounded-2xl h-12">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
