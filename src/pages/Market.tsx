@@ -366,12 +366,12 @@ const Market = () => {
   }, [deleteListTarget, deleteListMutation, dbLists, addToTrash]);
 
   const shareList = useCallback(() => {
-    if (selectedShareMembers.length === 0 || !activeListId) return;
+    if (!activeListId) return;
     haptic.medium();
     updateListMutation.mutate({
       id: activeListId,
       shared_with: selectedShareMembers,
-      type: "shared",
+      type: selectedShareMembers.length === 0 ? "personal" : "shared",
     });
     setSelectedShareMembers([]);
     setShowShareDialog(false);
@@ -998,7 +998,7 @@ const Market = () => {
             ))}
           </div>
           <DrawerFooter className="flex-row gap-2">
-            <Button onClick={shareList} className="flex-1 rounded-xl">مشاركة</Button>
+            <Button onClick={shareList} className="flex-1 rounded-xl">{selectedShareMembers.length === 0 ? "حفظ" : "مشاركة"}</Button>
             <Button variant="outline" onClick={() => setShowShareDialog(false)} className="flex-1 rounded-xl">إلغاء</Button>
           </DrawerFooter>
         </DrawerContent>
