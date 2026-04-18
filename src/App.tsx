@@ -353,7 +353,7 @@ const App = () => (
                     <StorageQuotaGuard />
                     <ScrollToTop />
                     <WarmCacheProvider>
-                      <Suspense fallback={<ListPageSkeleton />}>
+                      <Suspense fallback={<RouteFallback />}>
                         <AnimatedRoutes />
                       </Suspense>
                       <BottomNav />
