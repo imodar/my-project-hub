@@ -815,8 +815,14 @@ const Trips = () => {
                   key={day.id}
                   actions={[
                     {
+                      icon: <Pencil size={18} />,
+                      label: "تعديل",
+                      color: "bg-primary",
+                      onClick: () => openEditDay(day),
+                    },
+                    {
                       icon: <Trash2 size={18} />,
-                      label: "حذف اليوم",
+                      label: "حذف",
                       color: "bg-destructive",
                       onClick: () => {
                         deleteDayPlan.mutate(day.id, selectedTrip.id);
