@@ -581,41 +581,41 @@ const Vehicle = () => {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label className="text-right block">تاريخ الصيانة</Label>
-                <Input type="date" value={maintDate} onChange={e => setMaintDate(e.target.value)} className="text-right" />
+              <div className="space-y-1.5" dir="rtl">
+                <Label className="text-xs text-muted-foreground">تاريخ الصيانة</Label>
+                <Input type="date" value={maintDate} onChange={e => setMaintDate(e.target.value)} className={lineInputClass} />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-right block">الممشى عند الصيانة ({selectedCar.mileageUnit === "km" ? "كم" : "ميل"})</Label>
+              <div className="space-y-1.5" dir="rtl">
+                <Label className="text-xs text-muted-foreground">الممشى عند الصيانة ({selectedCar.mileageUnit === "km" ? "كم" : "ميل"})</Label>
                 <Input type="text" inputMode="numeric" pattern="\d*" value={maintMileage} onChange={e => setMaintMileage(e.target.value)}
-                  placeholder={selectedCar.mileage.toLocaleString()} className="text-right" />
+                  placeholder={selectedCar.mileage.toLocaleString()} className={lineInputClass} />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-right block">التغيير القادم عند ({selectedCar.mileageUnit === "km" ? "كم" : "ميل"})</Label>
+              <div className="space-y-1.5" dir="rtl">
+                <Label className="text-xs text-muted-foreground">التغيير القادم عند ({selectedCar.mileageUnit === "km" ? "كم" : "ميل"})</Label>
                 <Input type="text" inputMode="numeric" pattern="\d*" value={maintNextMileage} onChange={e => setMaintNextMileage(e.target.value)}
-                  placeholder="مثال: 50000" className="text-right" />
+                  placeholder="مثال: 50000" className={lineInputClass} />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-right block">أو التغيير القادم بتاريخ</Label>
-                <Input type="date" value={maintNextDate} onChange={e => setMaintNextDate(e.target.value)} className="text-right" />
+              <div className="space-y-1.5" dir="rtl">
+                <Label className="text-xs text-muted-foreground">أو التغيير القادم بتاريخ</Label>
+                <Input type="date" value={maintNextDate} onChange={e => setMaintNextDate(e.target.value)} className={lineInputClass} />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-right block">ملاحظات (اختياري)</Label>
+              <div className="space-y-1.5" dir="rtl">
+                <Label className="text-xs text-muted-foreground">ملاحظات (اختياري)</Label>
                 <Input value={maintNotes} onChange={e => setMaintNotes(e.target.value)}
-                  placeholder="مثلاً: زيت موبيل 5W-30" className="text-right" />
+                  placeholder="مثلاً: زيت موبيل 5W-30" className={lineInputClass} />
               </div>
             </div>
-            <DrawerFooter>
-              <Button onClick={handleAddMaintenance} disabled={!maintType} className="w-full rounded-xl h-12">
-                {editMaintenanceRecord ? "حفظ التعديلات" : "إضافة"}
-              </Button>
+            <DrawerFooter className="flex-row gap-2">
               <DrawerClose asChild>
-                <Button variant="outline" className="w-full rounded-xl">إلغاء</Button>
+                <Button variant="outline" className="flex-1 rounded-xl">إلغاء</Button>
               </DrawerClose>
+              <Button onClick={handleAddMaintenance} disabled={!maintType} className="flex-1 rounded-xl">
+                {editMaintenanceRecord ? "حفظ" : "إضافة"}
+              </Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
