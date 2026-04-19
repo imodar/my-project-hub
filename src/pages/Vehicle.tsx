@@ -694,19 +694,50 @@ const Vehicle = () => {
       ) : (
       <PullToRefresh onRefresh={handleRefresh}>
 
+        {/* Sticky segmented tabs — Underline (matches Trips style) */}
+        <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-md px-5 pt-2 border-b border-border/40">
+          <div className="relative flex items-center h-12">
+            {[
+              { value: "personal" as const, icon: User, label: "مركباتي الشخصية" },
+              { value: "family" as const, icon: Users, label: "مركبات عائلية" },
+            ].map(({ value, icon: Icon, label }) => {
+              const active = activeTab === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => setActiveTab(value)}
+                  className={`relative flex-1 h-full flex items-center justify-center gap-1.5 text-sm font-bold transition-colors duration-200 ${
+                    active ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
+                  }`}
+                >
+                  <Icon size={16} strokeWidth={active ? 2.5 : 2} />
+                  {label}
+                  {active && (
+                    <span className="absolute -bottom-px left-1/2 -translate-x-1/2 h-[3px] w-16 rounded-t-full bg-accent transition-all duration-300" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Cars */}
         <div className="px-4 pt-5">
-          {cars.length === 0 ? (
+          {filteredCars.length === 0 ? (
             <div className="text-center py-20">
               <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                 <Car size={36} className="text-muted-foreground/40" />
               </div>
-              <h3 className="text-foreground font-bold mb-1">لا توجد مركبات</h3>
-              <p className="text-muted-foreground text-sm">أضف مركبتك الأولى لتتبع صيانتها</p>
+              <h3 className="text-foreground font-bold mb-1">
+                لا توجد {activeTab === "family" ? "مركبات عائلية" : "مركبات شخصية"}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {activeTab === "family" ? "أضف مركبة وشاركها مع العائلة" : "أضف مركبتك الأولى لتتبع صيانتها"}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {cars.map(car => {
+              {filteredCars.map(car => {
                 const carInfo = { name: getBrandName(car.manufacturer) };
                 const overdueCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "overdue").length;
                 const soonCount = car.maintenance.filter(m => getMaintenanceStatus(m, car).status === "soon").length;
