@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-// skeleton is inlined below PageHeader
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useTrash } from "@/contexts/TrashContext";
+import { useAuth } from "@/contexts/AuthContext";
 import FAB from "@/components/FAB";
 import { useNavigate } from "react-router-dom";
-import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search, Users, UserPlus } from "lucide-react";
+import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search, Users, UserPlus, User } from "lucide-react";
 import SwipeableCard from "@/components/SwipeableCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,9 @@ import { appToast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 import PullToRefresh from "@/components/PullToRefresh";
 import { CAR_BRANDS, POPULAR_COUNT, carLogoUrl, type CarBrand } from "@/data/carBrands";
+
+// Borderless single-line input (matches Tasks "create list" style)
+const lineInputClass = "border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary text-right h-10";
 
 // ─── Types ───
 interface MaintenanceRecord {
