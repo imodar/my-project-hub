@@ -52,31 +52,45 @@ Deno.serve(async (req) => {
     }
 
     if (action === "create-vehicle") {
-      const { family_id, manufacturer, model, year, mileage, mileage_unit, color, plate_number } = body;
+      const { family_id, manufacturer, model, year, mileage, mileage_unit, color, plate_number, shared_with } = body;
       if (!validUuid(family_id)) return json({ error: "family_id غير صالح" }, 400);
       const denied = await verifyFamily(family_id); if (denied) return denied;
       if (manufacturer && typeof manufacturer === "string" && manufacturer.length > MAX_NAME) return json({ error: "الشركة المصنعة طويلة جداً" }, 400);
       if (model && typeof model === "string" && model.length > MAX_NAME) return json({ error: "الموديل طويل جداً" }, 400);
-      if (year !== undefined && year !== null && (typeof year !== "number" || year < 1900 || year > 2100)) return json({ error: "السنة غير صالحة" }, 400);
+      const yearStr = year === undefined || year === null ? null : String(year);
+      if (yearStr !== null) {
+        const yn = Number(yearStr);
+        if (!Number.isFinite(yn) || yn < 1900 || yn > 2100) return json({ error: "السنة غير صالحة" }, 400);
+      }
       if (mileage !== undefined && mileage !== null && (typeof mileage !== "number" || mileage < 0 || mileage > 10_000_000)) return json({ error: "المسافة غير صالحة" }, 400);
       if (plate_number && typeof plate_number === "string" && plate_number.length > MAX_PLATE) return json({ error: "رقم اللوحة طويل جداً" }, 400);
       if (color && typeof color === "string" && color.length > MAX_COLOR) return json({ error: "اللون طويل جداً" }, 400);
-      const { data, error } = await supabase.from("vehicles" as any).insert({ family_id, manufacturer: manufacturer ? sanitize(manufacturer, MAX_NAME) : null, model: model ? sanitize(model, MAX_NAME) : null, year, mileage, mileage_unit, color, plate_number: plate_number ? sanitize(plate_number, MAX_PLATE) : null, created_by: userId }).select().single();
+      const sharedArr = Array.isArray(shared_with) ? shared_with.filter((u) => validUuid(u)) : [];
+      const { data, error } = await supabase.from("vehicles" as any).insert({ family_id, manufacturer: manufacturer ? sanitize(manufacturer, MAX_NAME) : null, model: model ? sanitize(model, MAX_NAME) : null, year: yearStr, mileage, mileage_unit, color, plate_number: plate_number ? sanitize(plate_number, MAX_PLATE) : null, shared_with: sharedArr, created_by: userId }).select().single();
       if (error) return json({ error: error.message }, 400);
       return json({ data });
     }
 
     if (action === "update-vehicle") {
-      const { id, manufacturer, model, year, mileage, ...rest } = body;
+      const { id, manufacturer, model, year, mileage, shared_with, ...rest } = body;
       if (!validUuid(id)) return json({ error: "id غير صالح" }, 400);
       if (manufacturer !== undefined && manufacturer !== null && typeof manufacturer === "string" && manufacturer.length > MAX_NAME) return json({ error: "الشركة المصنعة طويلة جداً" }, 400);
       if (model !== undefined && model !== null && typeof model === "string" && model.length > MAX_NAME) return json({ error: "الموديل طويل جداً" }, 400);
-      if (year !== undefined && year !== null && (typeof year !== "number" || year < 1900 || year > 2100)) return json({ error: "السنة غير صالحة" }, 400);
+      let yearStr: string | null | undefined = undefined;
+      if (year !== undefined) {
+        if (year === null || year === "") { yearStr = null; }
+        else {
+          const yn = Number(year);
+          if (!Number.isFinite(yn) || yn < 1900 || yn > 2100) return json({ error: "السنة غير صالحة" }, 400);
+          yearStr = String(year);
+        }
+      }
       const updates: Record<string, unknown> = {};
       if (manufacturer !== undefined) updates.manufacturer = manufacturer;
       if (model !== undefined) updates.model = model;
-      if (year !== undefined) updates.year = year;
+      if (yearStr !== undefined) updates.year = yearStr;
       if (mileage !== undefined) updates.mileage = mileage;
+      if (shared_with !== undefined) updates.shared_with = Array.isArray(shared_with) ? shared_with.filter((u: any) => validUuid(u)) : [];
       for (const k of ["mileage_unit", "color", "plate_number"]) { if (rest[k] !== undefined) updates[k] = rest[k]; }
       delete updates.action;
       const { data, error } = await supabase.from("vehicles" as any).update(updates).eq("id", id).select().single();
