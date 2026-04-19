@@ -171,14 +171,20 @@ const Vehicle = () => {
 
   const filteredManufacturers = useMemo(() => {
     const search = manufacturerSearch.toLowerCase().trim();
-    const list = !search
-      ? CAR_BRANDS
-      : CAR_BRANDS.filter((b) =>
-          b.name.toLowerCase().includes(search) || b.slug.includes(search)
-        );
-    // Always keep manual "other" option at the end
-    return list;
+    if (!search) return CAR_BRANDS;
+    return CAR_BRANDS.filter((b) =>
+      b.name.toLowerCase().includes(search) || b.slug.includes(search)
+    );
   }, [manufacturerSearch]);
+
+  // Personal = created by me AND not shared. Family = shared OR created by others.
+  const filteredCars = useMemo(() => {
+    return cars.filter((c) => {
+      const isMine = c.createdBy === user?.id;
+      const isFamily = (c.sharedWith?.length || 0) > 0 || !isMine;
+      return activeTab === "family" ? isFamily : (isMine && !isFamily);
+    });
+  }, [cars, activeTab, user?.id]);
 
   const resetAddForm = () => {
     setNewManufacturer(""); setNewModel(""); setNewYear("");
