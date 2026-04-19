@@ -45,6 +45,7 @@ interface CarData {
   color?: string;
   plateNumber?: string;
   sharedWith: string[];
+  createdBy: string;
   maintenance: MaintenanceRecord[];
   createdAt: string;
 }
