@@ -265,32 +265,32 @@ const Auth = () => {
                       </Button>
                     </motion.div>
                   ) : (() => {
-                    // Pick an upper corner of the blue area above the white sheet
-                    const goLeft = Math.random() < 0.5;
-                    // Incomplete-circle orbit (≈ 280°) then a straight dart to the corner
-                    // Orbit center is slightly above the button
-                    const R = 26; // small orbit radius — looks like a hovering fly
-                    const orbitSteps = 8;
-                    const startAngle = Math.PI / 2; // start at bottom of orbit (button position)
-                    const sweep = (280 * Math.PI) / 180; // incomplete circle
-                    const dir = goLeft ? -1 : 1;
-                    const orbitX: number[] = [];
-                    const orbitY: number[] = [];
-                    for (let i = 0; i <= orbitSteps; i++) {
-                      const a = startAngle + dir * (sweep * (i / orbitSteps));
-                      orbitX.push(Math.cos(a) * R);
-                      orbitY.push(-R + Math.sin(a) * R); // shift so orbit sits just above button
+                    // Motion path inspired by the user's sketch:
+                    // 1) Drift right a bit
+                    // 2) Loop in a near-full circle (counter-clockwise)
+                    // 3) Curve up & away to the top-right corner
+                    const R = 30; // loop radius
+                    const loopSteps = 14;
+                    const cx = 40; // loop center to the right of start
+                    const cy = 0;
+                    const startAngle = Math.PI; // enter loop from its left side
+                    const sweep = (330 * Math.PI) / 180; // almost a full circle
+                    const loopX: number[] = [];
+                    const loopY: number[] = [];
+                    for (let i = 1; i <= loopSteps; i++) {
+                      const a = startAngle - sweep * (i / loopSteps); // counter-clockwise
+                      loopX.push(cx + Math.cos(a) * R);
+                      loopY.push(cy + Math.sin(a) * R);
                     }
-                    // Final straight-line dart to corner of blue area
-                    const cornerX = goLeft ? -170 : 170;
-                    const cornerY = -360;
-                    const xPath = [0, ...orbitX, cornerX];
-                    const yPath = [0, ...orbitY, cornerY];
+                    const driftX = [0, 18];
+                    const driftY = [0, 4];
+                    const exitX = [120, 200];
+                    const exitY = [-120, -360];
+                    const xPath = [...driftX, ...loopX, ...exitX];
+                    const yPath = [...driftY, ...loopY, ...exitY];
                     const n = xPath.length;
                     const times = xPath.map((_, i) => i / (n - 1));
-                    const opacityPath = xPath.map((_, i) =>
-                      i === 0 ? 1 : i < n - 1 ? 1 : 0
-                    );
+                    const opacityPath = xPath.map((_, i) => (i < n - 1 ? 1 : 0));
                     const scalePath = xPath.map((_, i) =>
                       i === 0 ? 1 : i < n - 1 ? 1 : 0.4
                     );
@@ -309,10 +309,10 @@ const Auth = () => {
                       transition={{
                         width: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                         borderRadius: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
-                        x: { duration: 1.5, times, ease: "linear", delay: 0.25 },
-                        y: { duration: 1.5, times, ease: "linear", delay: 0.25 },
-                        opacity: { duration: 1.5, times, delay: 0.25 },
-                        scale: { duration: 1.5, times, delay: 0.25, ease: "easeIn" },
+                        x: { duration: 1.7, times, ease: "easeInOut", delay: 0.25 },
+                        y: { duration: 1.7, times, ease: "easeInOut", delay: 0.25 },
+                        opacity: { duration: 1.7, times, delay: 0.25 },
+                        scale: { duration: 1.7, times, delay: 0.25, ease: "easeIn" },
                       }}
                       className="h-14 bg-primary text-primary-foreground shadow-lg flex items-center justify-center overflow-hidden"
                     >
