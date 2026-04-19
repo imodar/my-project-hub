@@ -138,6 +138,8 @@ const Vehicle = () => {
   const [shareDrawerOpen, setShareDrawerOpen] = useState(false);
   const [shareWith, setShareWith] = useState<string[]>([]);
   const [manufacturerSearch, setManufacturerSearch] = useState("");
+  const [manufacturerPickerOpen, setManufacturerPickerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"personal" | "family">("personal");
 
   // Family members for sharing
   const { members: familyMembers } = useFamilyMembers();
