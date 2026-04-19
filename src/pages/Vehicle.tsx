@@ -76,25 +76,39 @@ const MAINTENANCE_TYPES = [
 
 // localStorage helpers removed — using Supabase hooks
 
-// ─── Car Logo Component ───
+// ─── Car Logo Component (lazy-loaded with spinner) ───
 const CarLogo = ({ manufacturer, size = 40 }: { manufacturer: string; size?: number }) => {
   const brand = BRAND_BY_SLUG[manufacturer];
-  if (brand) {
-    return (
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+
+  if (!brand || errored) {
+    return <Car size={size * 0.6} className="text-muted-foreground" />;
+  }
+
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
+      {!loaded && (
+        <Loader2
+          className="absolute animate-spin text-muted-foreground/60"
+          style={{ width: size * 0.5, height: size * 0.5 }}
+        />
+      )}
       <img
         src={carLogoUrl(brand.slug)}
         alt={`شعار ${brand.name}`}
-        className="object-contain"
+        className={`object-contain transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
         style={{ width: size, height: size }}
         loading="lazy"
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = "none";
-          (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
-        }}
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => setErrored(true)}
       />
-    );
-  }
-  return <Car size={size * 0.6} className="text-muted-foreground" />;
+    </div>
+  );
 };
 
 // Using shared SwipeableCard component
