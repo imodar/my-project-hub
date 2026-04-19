@@ -102,6 +102,7 @@ const CarLogo = ({ manufacturer, size = 40 }: { manufacturer: string; size?: num
 // ─── Main Component ───
 const Vehicle = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { vehicles: dbVehicles, isLoading: vehiclesLoading, addVehicle: addVehicleMut, updateVehicle: updateVehicleMut, deleteVehicle: deleteVehicleMut, addMaintenance: addMaintMut, updateMaintenance: updateMaintMut, deleteMaintenance: deleteMaintMut } = useVehicles();
 
   const cars: CarData[] = useMemo(() => (dbVehicles || []).map((v: any) => ({
@@ -114,6 +115,7 @@ const Vehicle = () => {
     color: v.color || "",
     plateNumber: v.plate_number || "",
     sharedWith: v.shared_with || [],
+    createdBy: v.created_by || "",
     createdAt: v.created_at,
     maintenance: (v.vehicle_maintenance || []).map((m: any) => ({
       id: m.id,
