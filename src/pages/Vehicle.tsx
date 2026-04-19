@@ -6,7 +6,7 @@ import { useTrash } from "@/contexts/TrashContext";
 import { useAuth } from "@/contexts/AuthContext";
 import FAB from "@/components/FAB";
 import { useNavigate } from "react-router-dom";
-import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search, Users, UserPlus, User } from "lucide-react";
+import { Plus, Car, Gauge, Fuel, Calendar, Wrench, ChevronLeft, Share2, Trash2, Bell, Pencil, Check, X, Filter, Droplets, Wind, Disc3, Zap, Sparkles, CircleDot, Settings2, AlertTriangle, Search, Users, UserPlus, User, Loader2 } from "lucide-react";
 import SwipeableCard from "@/components/SwipeableCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
