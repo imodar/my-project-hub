@@ -677,7 +677,7 @@ const Vehicle = () => {
   // ─── Cars List View ───
   return (
     <div className="min-h-screen bg-background pb-24">
-      <PageHeader title="مركباتي" subtitle={cars.length > 0 ? `${cars.length} مركبة` : undefined} />
+      <PageHeader title="مركباتي" subtitle={filteredCars.length > 0 ? `${filteredCars.length} مركبة` : undefined} />
       {vehiclesLoading ? (
         <div className="px-4 py-4 space-y-3">
           <div className="flex gap-3">
