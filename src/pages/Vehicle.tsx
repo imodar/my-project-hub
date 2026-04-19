@@ -881,114 +881,66 @@ const Vehicle = () => {
 
         {/* Edit Car Drawer */}
         <Drawer open={editCarOpen} onOpenChange={(open) => { setEditCarOpen(open); if (!open) { setEditingCar(null); resetAddForm(); } }}>
-          <DrawerContent>
-            <DrawerHeader>
+          <DrawerContent dir="rtl">
+            <DrawerHeader className="text-right">
               <DrawerTitle>تعديل المركبة</DrawerTitle>
             </DrawerHeader>
-            <div className="px-4 pb-4 space-y-4 flex-1 overflow-y-auto">
-              {/* Manufacturer with search */}
-              <div className="space-y-2">
-                <Label className="text-right block">الشركة المصنعة *</Label>
-                <div className="relative mb-2">
-                  <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={manufacturerSearch}
-                    onChange={e => setManufacturerSearch(e.target.value)}
-                    placeholder="ابحث عن الشركة..."
-                    className="text-right pr-9"
-                  />
+            <div className="px-4 pb-2 space-y-5 flex-1 overflow-y-auto">
+              <button type="button" onClick={() => setManufacturerPickerOpen(true)}
+                className="w-full flex items-center gap-3 py-2 border-b border-border text-right">
+                <ChevronLeft size={16} className="text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  {newManufacturer ? (
+                    <p className="font-medium text-foreground">{getBrandName(newManufacturer)}</p>
+                  ) : (
+                    <p className="text-muted-foreground">الشركة المصنعة *</p>
+                  )}
                 </div>
-                <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                  {filteredManufacturers.map((b) => (
-                    <button
-                      key={b.slug}
-                      onClick={() => { setNewManufacturer(b.slug); setManufacturerSearch(""); }}
-                      className={`p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 ${
-                        newManufacturer === b.slug
-                          ? "border-primary bg-primary/5 ring-1 ring-primary"
-                          : "border-border bg-card"
-                      }`}
-                    >
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        <CarLogo manufacturer={b.slug} size={28} />
-                      </div>
-                      <span className="text-[10px] font-medium text-foreground leading-tight">{b.name}</span>
-                    </button>
-                  ))}
+                <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                  {newManufacturer ? <CarLogo manufacturer={newManufacturer} size={28} /> : <Car size={18} className="text-muted-foreground" />}
                 </div>
-              </div>
+              </button>
 
-              {/* Model & Year */}
               <div className="flex gap-3">
-                <div className="space-y-2 flex-1">
-                  <Label className="text-right block">الموديل *</Label>
-                  <Input value={newModel} onChange={e => setNewModel(e.target.value)}
-                    placeholder="مثال: Camry, Accord" className="text-right" />
-                </div>
-                <div className="space-y-2 w-28 shrink-0">
-                  <Label className="text-right block">السنة *</Label>
-                  <Input type="text" inputMode="numeric" pattern="\d*" value={newYear} onChange={e => setNewYear(e.target.value)}
-                    placeholder="2024" className="text-right" />
-                </div>
+                <Input value={newModel} onChange={e => setNewModel(e.target.value)}
+                  placeholder="الموديل *" className={`${lineInputClass} flex-1`} />
+                <Input type="text" inputMode="numeric" pattern="\d*" value={newYear} onChange={e => setNewYear(e.target.value)}
+                  placeholder="السنة *" className={`${lineInputClass} w-24 shrink-0`} />
               </div>
 
-              {/* Mileage */}
-              <div className="space-y-2">
-                <Label className="text-right block">الممشى</Label>
-                <div className="flex gap-3">
-                  <Input type="text" inputMode="numeric" pattern="\d*" value={newMileage} onChange={e => setNewMileage(e.target.value)}
-                    placeholder="0" className="text-right flex-1" />
-                  <Select value={newMileageUnit} onValueChange={v => setNewMileageUnit(v as "km" | "mi")}>
-                    <SelectTrigger className="w-28 shrink-0 text-right" dir="rtl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="km">كم</SelectItem>
-                      <SelectItem value="mi">ميل</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex gap-3 items-end">
+                <Input type="text" inputMode="numeric" pattern="\d*" value={newMileage} onChange={e => setNewMileage(e.target.value)}
+                  placeholder="الممشى" className={`${lineInputClass} flex-1`} />
+                <Select value={newMileageUnit} onValueChange={v => setNewMileageUnit(v as "km" | "mi")}>
+                  <SelectTrigger className="w-20 h-10 shrink-0 border-0 border-b border-border rounded-none bg-transparent px-0 text-right focus:ring-0" dir="rtl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="km">كم</SelectItem>
+                    <SelectItem value="mi">ميل</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Plate */}
-              <div className="space-y-2">
-                <Label className="text-right block">رقم اللوحة</Label>
-                <Input value={newPlate} onChange={e => setNewPlate(e.target.value)}
-                  placeholder="مثال: ABC 1234" className="text-right" />
-              </div>
+              <Input value={newPlate} onChange={e => setNewPlate(e.target.value)}
+                placeholder="رقم اللوحة" className={lineInputClass} />
 
-              {/* Share with family */}
-              <div className="space-y-2">
-                <Label className="text-right block flex items-center gap-2 flex-row-reverse justify-start">
-                  <Users size={14} className="text-muted-foreground" />
-                  <span>مشاركة مع</span>
-                </Label>
-                {familyMembers.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-right">لا يوجد أفراد</p>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">مشاركة مع (اختياري)</p>
+                {familyMembers.filter(m => m.id !== user?.id).length === 0 ? (
+                  <p className="text-xs text-muted-foreground">لا يوجد أفراد</p>
                 ) : (
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    {familyMembers.filter(m => m.id !== "creator").map(member => {
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {familyMembers.filter(m => m.id !== user?.id).map(member => {
                       const isSelected = newSharedWith.includes(member.id);
                       return (
-                        <button
-                          key={member.id}
-                          type="button"
-                          onClick={() => {
-                            setNewSharedWith(prev =>
-                              isSelected ? prev.filter(id => id !== member.id) : [...prev, member.id]
-                            );
-                          }}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all flex-row-reverse ${
-                            isSelected
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border bg-card text-foreground"
-                          }`}
-                        >
-                          {isSelected && <Check size={14} />}
-                          <span>{member.name}</span>
-                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
-                            {member.name?.charAt(0) || "؟"}
-                          </div>
+                        <button key={member.id} type="button"
+                          onClick={() => setNewSharedWith(prev => isSelected ? prev.filter(id => id !== member.id) : [...prev, member.id])}
+                          className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-sm transition-all ${
+                            isSelected ? "border-primary bg-primary/10" : "border-border bg-card"
+                          }`}>
+                          <span className="font-medium text-foreground">{member.name}</span>
+                          {isSelected && <Check size={14} className="text-primary" />}
                         </button>
                       );
                     })}
@@ -996,15 +948,59 @@ const Vehicle = () => {
                 )}
               </div>
             </div>
-            <DrawerFooter>
-              <Button onClick={handleEditCar} disabled={!newManufacturer || !newModel || !newYear}
-                className="w-full rounded-xl h-12">
+            <DrawerFooter className="flex-row gap-2">
+              <Button onClick={handleEditCar} disabled={!newManufacturer || !newModel || !newYear} className="flex-1 rounded-xl">
                 حفظ التعديلات
               </Button>
-              <DrawerClose asChild>
-                <Button variant="outline" className="w-full rounded-xl">إلغاء</Button>
-              </DrawerClose>
+              <Button variant="outline" onClick={() => setEditCarOpen(false)} className="flex-1 rounded-xl">إلغاء</Button>
             </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+
+        {/* Manufacturer Picker Drawer — shared by Add/Edit */}
+        <Drawer open={manufacturerPickerOpen} onOpenChange={(open) => { setManufacturerPickerOpen(open); if (!open) setManufacturerSearch(""); }}>
+          <DrawerContent dir="rtl" className="max-h-[85vh]">
+            <DrawerHeader className="text-right pb-2">
+              <DrawerTitle>اختر الشركة المصنعة</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-2">
+              <div className="relative">
+                <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  value={manufacturerSearch}
+                  onChange={e => setManufacturerSearch(e.target.value)}
+                  placeholder={`ابحث في ${CAR_BRANDS.length} ماركة...`}
+                  className="text-right pr-9 rounded-xl"
+                />
+              </div>
+            </div>
+            <div className="px-4 pb-4 overflow-y-auto flex-1">
+              {!manufacturerSearch && (
+                <p className="text-[11px] font-bold text-muted-foreground mt-2 mb-2">الأكثر شيوعاً</p>
+              )}
+              <div className="grid grid-cols-3 gap-2">
+                {filteredManufacturers.map((b) => (
+                  <button
+                    key={b.slug}
+                    onClick={() => { setNewManufacturer(b.slug); setManufacturerPickerOpen(false); setManufacturerSearch(""); }}
+                    className={`p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 ${
+                      newManufacturer === b.slug
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <div className="w-10 h-10 flex items-center justify-center">
+                      <CarLogo manufacturer={b.slug} size={36} />
+                    </div>
+                    <span className="text-[10px] font-medium text-foreground leading-tight line-clamp-2">{b.name}</span>
+                  </button>
+                ))}
+              </div>
+              {filteredManufacturers.length === 0 && (
+                <p className="text-center text-muted-foreground text-sm py-8">لا توجد نتائج لـ "{manufacturerSearch}"</p>
+              )}
+            </div>
           </DrawerContent>
         </Drawer>
 
