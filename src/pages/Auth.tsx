@@ -264,55 +264,23 @@ const Auth = () => {
                         {t.auth.sendOtp}
                       </Button>
                     </motion.div>
-                  ) : (() => {
-                    // Motion path inspired by the user's sketch:
-                    // 1) Drift right a bit
-                    // 2) Loop in a near-full circle (counter-clockwise)
-                    // 3) Curve up & away to the top-right corner
-                    const R = 30; // loop radius
-                    const loopSteps = 14;
-                    const cx = 40; // loop center to the right of start
-                    const cy = 0;
-                    const startAngle = Math.PI; // enter loop from its left side
-                    const sweep = (330 * Math.PI) / 180; // almost a full circle
-                    const loopX: number[] = [];
-                    const loopY: number[] = [];
-                    for (let i = 1; i <= loopSteps; i++) {
-                      const a = startAngle - sweep * (i / loopSteps); // counter-clockwise
-                      loopX.push(cx + Math.cos(a) * R);
-                      loopY.push(cy + Math.sin(a) * R);
-                    }
-                    const driftX = [0, 18];
-                    const driftY = [0, 4];
-                    const exitX = [120, 200];
-                    const exitY = [-120, -360];
-                    const xPath = [...driftX, ...loopX, ...exitX];
-                    const yPath = [...driftY, ...loopY, ...exitY];
-                    const n = xPath.length;
-                    const times = xPath.map((_, i) => i / (n - 1));
-                    const opacityPath = xPath.map((_, i) => (i < n - 1 ? 1 : 0));
-                    const scalePath = xPath.map((_, i) =>
-                      i === 0 ? 1 : i < n - 1 ? 1 : 0.4
-                    );
-                    return (
+                  ) : (
                     <motion.div
                       key="circle"
                       initial={{ width: "100%", borderRadius: "0.75rem" }}
                       animate={{
                         width: 56,
                         borderRadius: "9999px",
-                        x: xPath,
-                        y: yPath,
-                        opacity: opacityPath,
-                        scale: scalePath,
+                        y: [0, 0, -300],
+                        opacity: [1, 1, 0],
+                        scale: [1, 1, 0.5],
                       }}
                       transition={{
                         width: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
                         borderRadius: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
-                        x: { duration: 1.7, times, ease: "easeInOut", delay: 0.25 },
-                        y: { duration: 1.7, times, ease: "easeInOut", delay: 0.25 },
-                        opacity: { duration: 1.7, times, delay: 0.25 },
-                        scale: { duration: 1.7, times, delay: 0.25, ease: "easeIn" },
+                        y: { duration: 1.2, times: [0, 0.3, 1], ease: "easeIn", delay: 0.3 },
+                        opacity: { duration: 1.2, times: [0, 0.5, 1], delay: 0.3 },
+                        scale: { duration: 1.2, times: [0, 0.3, 1], delay: 0.3, ease: "easeIn" },
                       }}
                       className="h-14 bg-primary text-primary-foreground shadow-lg flex items-center justify-center overflow-hidden"
                     >
@@ -324,8 +292,7 @@ const Auth = () => {
                         <Mail className="h-5 w-5" />
                       </motion.div>
                     </motion.div>
-                    );
-                  })()}
+                  )}
                 </AnimatePresence>
               </div>
 
